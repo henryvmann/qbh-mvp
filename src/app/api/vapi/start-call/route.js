@@ -32,30 +32,30 @@ export async function POST(req) {
     );
   }
 
-
   const vapiRes = await fetch("https://api.vapi.ai/call", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-body: JSON.stringify({
-  phoneNumberId,
-  assistantId,
-  customer: {
-    number: office_number,
-    numberE164CheckEnabled: false
-  },
-  assistantOverrides: {
-    variableValues: {
-      attempt_id,
-      provider_id,
-      patient_name,
-      provider_name,
-      preferred_timeframe,
-    },
-  },
-}),
+    body: JSON.stringify({
+      phoneNumberId,
+      assistantId,
+      customer: {
+        number: office_number,
+        numberE164CheckEnabled: false,
+      },
+      assistantOverrides: {
+        variableValues: {
+          attempt_id,
+          provider_id,
+          patient_name,
+          provider_name,
+          preferred_timeframe,
+        },
+      },
+    }),
+  });
 
   let data = {};
   try {
