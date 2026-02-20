@@ -8,6 +8,7 @@ export async function POST(req) {
     patient_name,
     provider_name,
     preferred_timeframe,
+    demo_autoconfirm,
   } = body;
 
   if (!office_number) {
@@ -52,6 +53,7 @@ export async function POST(req) {
           patient_name,
           provider_name,
           preferred_timeframe,
+          demo_autoconfirm: Boolean(demo_autoconfirm),
         },
       },
     }),
