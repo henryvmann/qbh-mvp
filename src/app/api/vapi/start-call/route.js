@@ -32,7 +32,6 @@ export async function POST(req) {
     );
   }
 
-  const webhookUrl = `${baseUrl}/api/vapi/webhook`;
 
   const vapiRes = await fetch("https://api.vapi.ai/call", {
     method: "POST",
