@@ -57,7 +57,12 @@ body: JSON.stringify({
   },
 }),
 
-  const data = await vapiRes.json().catch(() => ({}));
+  let data = {};
+  try {
+    data = await vapiRes.json();
+  } catch (e) {
+    data = {};
+}
 
   if (!vapiRes.ok) {
     return Response.json(
