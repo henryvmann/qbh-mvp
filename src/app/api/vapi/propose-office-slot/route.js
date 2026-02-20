@@ -7,18 +7,12 @@ export async function POST(req) {
 
   return Response.json({
     result: {
-      ok: true,
-      attempt_id: body.attempt_id,
-      provider_id: body.provider_id,
-      next_action: autoConfirm ? "CONFIRM_NOW" : "AWAIT_PATIENT_APPROVAL",
-      proposal: {
-        proposal_id: `proposal_${Date.now()}`,
-        office_offer_raw: raw,
-        conflict: false,
-        message: autoConfirm
-          ? "Auto-confirm enabled. Proceed to confirm."
-          : "Slot recorded. Awaiting patient approval."
-      }
+      message_to_say: autoConfirm
+        ? "Auto-confirm enabled. Proceed to confirm."
+        : "Slot recorded. Awaiting patient approval.",
+      next_action: autoConfirm ? "CONFIRM_BOOKING" : "WAIT_FOR_USER_APPROVAL",
+      proposal_id: `proposal_${Date.now()}`,
+      conflict: false
     }
   });
 }
