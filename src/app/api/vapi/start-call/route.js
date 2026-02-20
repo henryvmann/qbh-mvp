@@ -40,22 +40,23 @@ export async function POST(req) {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      phoneNumberId,
-      assistantId,
-      customer: { number: office_number },
-      webhookUrl,
-      assistantOverrides: {
-        variableValues: {
-          attempt_id,
-          provider_id,
-          patient_name,
-          provider_name,
-          preferred_timeframe,
-        },
-      },
-    }),
-  });
+body: JSON.stringify({
+  phoneNumberId,
+  assistantId,
+  customer: {
+    number: office_number,
+    numberE164CheckEnabled: false
+  },
+  assistantOverrides: {
+    variableValues: {
+      attempt_id,
+      provider_id,
+      patient_name,
+      provider_name,
+      preferred_timeframe,
+    },
+  },
+}),
 
   const data = await vapiRes.json().catch(() => ({}));
 
