@@ -4,16 +4,20 @@ export async function POST(req) {
 
   const raw = body?.office_offer?.raw_text || "";
 
-  // MVP stub: always "no conflict" and create a proposal_id
+  // demo mode: auto-confirm on conflict=false
+  const autoConfirm = Boolean(body?.demo_autoconfirm);
+
   return Response.json({
     ok: true,
     attempt_id: body.attempt_id,
     provider_id: body.provider_id,
+    next_action: autoConfirm ? "CONFIRM_NOW" : "AWAIT_PATIENT_APPROVAL",
     proposal: {
       proposal_id: `proposal_${Date.now()}`,
       office_offer_raw: raw,
       conflict: false,
-      message: "Slot recorded. Awaiting patient approval."
+      message: autoConfirm
+        ? "Auto-confirm enabled. Proceed to confirm."
+        : "Slot recorded. Awaiting patient approval."
     }
   });
-}
