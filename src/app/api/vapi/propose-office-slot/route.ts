@@ -8,23 +8,16 @@ function extractToolCalls(body: AnyObj) {
     body?.message?.tool_calls ||
     body?.toolCalls ||
     body?.tool_calls ||
+    body?.message?.toolCallList ||
+    body?.toolCallList ||
     null;
 
-  if (Array.isArray(candidates) && candidates.length > 0) {
-    return candidates;
-  }
+  if (Array.isArray(candidates) && candidates.length > 0) return candidates;
 
-  // Fallback: flat payload
-  if (body?.toolCallId || body?.tool_call_id || body?.id) {
-    return [
-      {
-        id: body.toolCallId || body.tool_call_id || body.id,
-        function: { arguments: body },
-      },
-    ];
-  }
-
-  return [];
+  // Fallback: flat payload (curl/manual)
+  const toolCallId = body?.toolCallId || body?.tool_call_id || body?.id || null;
+  if (!toolCallId) return [];
+  return [{ id: toolCallId, function: { arguments: body } }];
 }
 
 function parseArgs(tc: AnyObj) {
@@ -36,36 +29,26 @@ function parseArgs(tc: AnyObj) {
       args = {};
     }
   }
-  return args;
+  return args || {};
 }
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({}));
+  const body = await req.json().catch(() => ({} as AnyObj));
   console.log("PROPOSE_OFFICE_SLOT:", JSON.stringify(body, null, 2));
 
   const toolCalls = extractToolCalls(body);
-
   if (!toolCalls.length) {
     return Response.json({
-      results: [
-        {
-          toolCallId: "missing_toolCallId",
-          error: "Missing toolCallId in request payload",
-        },
-      ],
+      results: [{ toolCallId: "missing_toolCallId", error: "Missing toolCallId in request payload" }],
     });
   }
 
-  const results = [];
+  const results: AnyObj[] = [];
 
   for (const tc of toolCalls) {
     const toolCallId = tc?.id;
-
     if (!toolCallId) {
-      results.push({
-        toolCallId: "missing_toolCallId",
-        error: "Missing toolCallId in request payload",
-      });
+      results.push({ toolCallId: "missing_toolCallId", error: "Missing toolCallId in request payload" });
       continue;
     }
 
@@ -74,52 +57,81 @@ export async function POST(req: Request) {
     const attempt_id = Number(args?.attempt_id);
     const provider_id = Number(args?.provider_id);
     const raw = args?.office_offer?.raw_text || "";
-    const autoConfirm = Boolean(args?.demo_autoconfirm);
 
-    if (!attempt_id) {
+    if (!Number.isFinite(attempt_id)) {
       results.push({
         toolCallId,
         result: JSON.stringify({
-          message_to_say: "Missing attempt context.",
+          message_to_say: "Thanks — I’m missing the scheduling context on my side. Could you repeat the date and time once more?",
           next_action: "WAIT_FOR_USER_APPROVAL",
           proposal_id: null,
           conflict: false,
           office_offer_raw: raw,
+          error: "Missing or invalid attempt_id",
         }),
       });
       continue;
     }
 
-    const message_to_say = autoConfirm
+    // ✅ Authoritative demo_autoconfirm comes from Supabase (system-of-record)
+    let demo_autoconfirm = false;
+    const { data: attemptRow } = await supabaseAdmin
+      .from("schedule_attempts")
+      .select("demo_autoconfirm")
+      .eq("id", attempt_id)
+      .maybeSingle();
+
+    if (attemptRow?.demo_autoconfirm === true) demo_autoconfirm = true;
+
+    const message_to_say = demo_autoconfirm
       ? "Auto-confirm enabled. Proceed to confirm."
       : "Slot recorded. Awaiting patient approval.";
 
-    const next_action = autoConfirm ? "CONFIRM_BOOKING" : "WAIT_FOR_USER_APPROVAL";
+    const next_action = demo_autoconfirm ? "CONFIRM_BOOKING" : "WAIT_FOR_USER_APPROVAL";
 
-    const { data: proposal } = await supabaseAdmin
+    // Insert proposal
+    const { data: proposal, error: propErr } = await supabaseAdmin
       .from("proposals")
       .insert({
         attempt_id,
         tool_call_id: toolCallId,
-        office_offer_raw_text: raw,
+        office_offer_raw_text: raw || "(empty)",
         conflict: false,
         message_to_say,
         next_action,
         status: "PROPOSED",
+        payload: { provider_id: Number.isFinite(provider_id) ? provider_id : null },
       })
       .select("id")
       .single();
 
-    results.push({
-      toolCallId,
-      result: JSON.stringify({
-        message_to_say,
-        next_action,
-        proposal_id: proposal?.id ?? null,
-        conflict: false,
-        office_offer_raw: raw,
-      }),
-    });
+    // Update attempt status (best-effort)
+    if (!propErr && proposal?.id) {
+      await supabaseAdmin
+        .from("schedule_attempts")
+        .update({ status: "PROPOSED", metadata: { last_event: "PROPOSE_OFFICE_SLOT" } })
+        .eq("id", attempt_id);
+
+      await supabaseAdmin.from("call_events").insert({
+        attempt_id,
+        source: "tool",
+        event_type: "proposal_created",
+        tool_name: "propose-office-slot",
+        tool_payload: { toolCallId, next_action, conflict: false },
+        vapi_event: body,
+      });
+    }
+
+    const payload = {
+      message_to_say,
+      next_action,
+      proposal_id: proposal?.id ?? null,
+      conflict: false,
+      office_offer_raw: raw,
+      ...(propErr ? { error: propErr.message } : {}),
+    };
+
+    results.push({ toolCallId, result: JSON.stringify(payload) });
   }
 
   return Response.json({ results });

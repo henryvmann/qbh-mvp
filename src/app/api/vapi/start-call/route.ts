@@ -1,29 +1,34 @@
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 
+function toNumber(v: any): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v))) return Number(v);
+  return null;
+}
+
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
 
-  const {
-    office_number,
-    attempt_id: attemptIdFromBody,
-    provider_id,
-    patient_name,
-    provider_name,
-    preferred_timeframe,
-    demo_autoconfirm,
-  } = body;
+  const office_number = body?.office_number;
+  const attemptIdFromBody = body?.attempt_id;
+  const provider_id_raw = body?.provider_id;
+
+  const patient_name = body?.patient_name;
+  const provider_name = body?.provider_name;
+  const preferred_timeframe = body?.preferred_timeframe;
+  const demo_autoconfirm = Boolean(body?.demo_autoconfirm);
 
   if (!office_number) {
     return Response.json({ ok: false, error: "office_number is required" }, { status: 400 });
   }
 
-  if (typeof provider_id !== "number") {
+  const provider_id = toNumber(provider_id_raw);
+  if (!provider_id) {
     return Response.json({ ok: false, error: "provider_id must be a number" }, { status: 400 });
   }
 
-  // attempt_id is now OPTIONAL (we can create it)
-  let attempt_id: number | null =
-    typeof attemptIdFromBody === "number" ? attemptIdFromBody : null;
+  // attempt_id is OPTIONAL (we can create it)
+  let attempt_id: number | null = toNumber(attemptIdFromBody);
 
   const apiKey = process.env.VAPI_API_KEY;
   const assistantId = process.env.VAPI_ASSISTANT_ID;
@@ -33,15 +38,15 @@ export async function POST(req: Request) {
     return Response.json(
       {
         ok: false,
-        error:
-          "Missing env vars: VAPI_API_KEY, VAPI_ASSISTANT_ID, VAPI_PHONE_NUMBER_ID",
+        error: "Missing env vars: VAPI_API_KEY, VAPI_ASSISTANT_ID, VAPI_PHONE_NUMBER_ID",
       },
       { status: 500 }
     );
   }
 
-  // 1) Create schedule_attempt if attempt_id not provided
+  // 1) Ensure schedule_attempt exists and demo_autoconfirm is correct
   if (!attempt_id) {
+    // Create new attempt
     const { data: attempt, error: attemptErr } = await supabaseAdmin
       .from("schedule_attempts")
       .insert({
@@ -49,7 +54,7 @@ export async function POST(req: Request) {
         patient_name: patient_name ?? null,
         provider_name: provider_name ?? null,
         preferred_timeframe: preferred_timeframe ?? null,
-        demo_autoconfirm: Boolean(demo_autoconfirm),
+        demo_autoconfirm,
         office_phone: office_number ?? null,
         status: "INITIATED",
         metadata: { source: "start-call" },
@@ -65,6 +70,20 @@ export async function POST(req: Request) {
     }
 
     attempt_id = attempt.id;
+  } else {
+    // Update existing attempt to ensure demo_autoconfirm + context are correct
+    await supabaseAdmin
+      .from("schedule_attempts")
+      .update({
+        provider_id,
+        patient_name: patient_name ?? null,
+        provider_name: provider_name ?? null,
+        preferred_timeframe: preferred_timeframe ?? null,
+        demo_autoconfirm,
+        office_phone: office_number ?? null,
+        metadata: { last_event: "START_CALL_REUSED_ATTEMPT" },
+      })
+      .eq("id", attempt_id);
   }
 
   // 2) Create Vapi call
@@ -88,7 +107,7 @@ export async function POST(req: Request) {
           patient_name,
           provider_name,
           preferred_timeframe,
-          demo_autoconfirm: Boolean(demo_autoconfirm),
+          demo_autoconfirm,
         },
       },
     }),
@@ -115,7 +134,6 @@ export async function POST(req: Request) {
       })
       .eq("id", attempt_id);
 
-    // optional event log
     await supabaseAdmin.from("call_events").insert({
       attempt_id,
       source: "api",
@@ -145,13 +163,12 @@ export async function POST(req: Request) {
     })
     .eq("id", attempt_id);
 
-  // optional event log
   await supabaseAdmin.from("call_events").insert({
     attempt_id,
     source: "api",
     event_type: "call_started",
     tool_name: "start-call",
-    tool_payload: { provider_id, demo_autoconfirm: Boolean(demo_autoconfirm) },
+    tool_payload: { provider_id, demo_autoconfirm },
     vapi_event: data,
   });
 
