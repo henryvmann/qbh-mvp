@@ -1,34 +1,30 @@
-import { supabaseAdmin } from "../../../../lib/supabase-server";
-
-function toNumber(v: any): number | null {
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-  if (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v))) return Number(v);
-  return null;
-}
+import { supabaseAdmin } from '../../../../lib/supabase-server';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
 
-  const office_number = body?.office_number;
-  const attemptIdFromBody = body?.attempt_id;
-  const provider_id_raw = body?.provider_id;
+  const office_number = String(body?.office_number || '').trim();
+  const provider_id = String(body?.provider_id || '').trim();     // UUID string
+  const attemptIdFromBody = body?.attempt_id ? String(body.attempt_id).trim() : null;
 
-  const patient_name = body?.patient_name;
-  const provider_name = body?.provider_name;
-  const preferred_timeframe = body?.preferred_timeframe;
+  const patient_name = body?.patient_name ?? null;
+  const provider_name = body?.provider_name ?? null;
+  const preferred_timeframe = body?.preferred_timeframe ?? null;
   const demo_autoconfirm = Boolean(body?.demo_autoconfirm);
 
+  const user_id = process.env.QBH_DEMO_USER_ID;
+
   if (!office_number) {
-    return Response.json({ ok: false, error: "office_number is required" }, { status: 400 });
+    return Response.json({ ok: false, error: 'office_number is required' }, { status: 400 });
   }
-
-  const provider_id = toNumber(provider_id_raw);
   if (!provider_id) {
-    return Response.json({ ok: false, error: "provider_id must be a number" }, { status: 400 });
+    return Response.json({ ok: false, error: 'provider_id is required (UUID string)' }, { status: 400 });
+  }
+  if (!user_id) {
+    return Response.json({ ok: false, error: 'QBH_DEMO_USER_ID not set' }, { status: 500 });
   }
 
-  // attempt_id is OPTIONAL (we can create it)
-  let attempt_id: number | null = toNumber(attemptIdFromBody);
+  let attempt_id: string | null = attemptIdFromBody;
 
   const apiKey = process.env.VAPI_API_KEY;
   const assistantId = process.env.VAPI_ASSISTANT_ID;
@@ -36,74 +32,64 @@ export async function POST(req: Request) {
 
   if (!apiKey || !assistantId || !phoneNumberId) {
     return Response.json(
-      {
-        ok: false,
-        error: "Missing env vars: VAPI_API_KEY, VAPI_ASSISTANT_ID, VAPI_PHONE_NUMBER_ID",
-      },
+      { ok: false, error: 'Missing env vars: VAPI_API_KEY, VAPI_ASSISTANT_ID, VAPI_PHONE_NUMBER_ID' },
       { status: 500 }
     );
   }
 
-  // 1) Ensure schedule_attempt exists and demo_autoconfirm is correct
+  // 1) Ensure schedule_attempt exists
   if (!attempt_id) {
-    // Create new attempt
     const { data: attempt, error: attemptErr } = await supabaseAdmin
-      .from("schedule_attempts")
+      .from('schedule_attempts')
       .insert({
+        user_id,
         provider_id,
-        patient_name: patient_name ?? null,
-        provider_name: provider_name ?? null,
-        preferred_timeframe: preferred_timeframe ?? null,
+        patient_name,
+        provider_name,
+        preferred_timeframe,
         demo_autoconfirm,
-        office_phone: office_number ?? null,
-        status: "INITIATED",
-        metadata: { source: "start-call" },
+        office_phone: office_number,
+        status: 'INITIATED',
+        metadata: { source: 'start-call' },
       })
-      .select("id")
+      .select('id')
       .single();
 
     if (attemptErr || !attempt?.id) {
       return Response.json(
-        { ok: false, error: "Failed to create schedule_attempt", detail: attemptErr?.message },
+        { ok: false, error: 'Failed to create schedule_attempt', detail: attemptErr?.message },
         { status: 500 }
       );
     }
 
-    attempt_id = attempt.id;
+    attempt_id = String(attempt.id);
   } else {
-    // Update existing attempt to ensure demo_autoconfirm + context are correct
     await supabaseAdmin
-      .from("schedule_attempts")
+      .from('schedule_attempts')
       .update({
         provider_id,
-        patient_name: patient_name ?? null,
-        provider_name: provider_name ?? null,
-        preferred_timeframe: preferred_timeframe ?? null,
+        patient_name,
+        provider_name,
+        preferred_timeframe,
         demo_autoconfirm,
-        office_phone: office_number ?? null,
-        metadata: { last_event: "START_CALL_REUSED_ATTEMPT" },
+        office_phone: office_number,
+        metadata: { last_event: 'START_CALL_REUSED_ATTEMPT' },
       })
-      .eq("id", attempt_id);
+      .eq('id', attempt_id);
   }
 
   // 2) Create Vapi call
-  const vapiRes = await fetch("https://api.vapi.ai/call", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+  const vapiRes = await fetch('https://api.vapi.ai/call', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       phoneNumberId,
       assistantId,
-      customer: {
-        number: office_number,
-        numberE164CheckEnabled: false,
-      },
+      customer: { number: office_number, numberE164CheckEnabled: false },
       assistantOverrides: {
         variableValues: {
-          attempt_id,
-          provider_id,
+          attempt_id,           // UUID string
+          provider_id,          // UUID string
           patient_name,
           provider_name,
           preferred_timeframe,
@@ -120,57 +106,33 @@ export async function POST(req: Request) {
     data = {};
   }
 
-  // If Vapi failed, mark attempt FAILED (best-effort)
   if (!vapiRes.ok) {
     await supabaseAdmin
-      .from("schedule_attempts")
+      .from('schedule_attempts')
       .update({
-        status: "FAILED",
-        metadata: {
-          last_event: "VAPI_CALL_CREATE_FAILED",
-          vapi_status: vapiRes.status,
-          vapi_error: data,
-        },
+        status: 'FAILED',
+        metadata: { last_event: 'VAPI_CALL_CREATE_FAILED', vapi_status: vapiRes.status, vapi_error: data },
       })
-      .eq("id", attempt_id);
-
-    await supabaseAdmin.from("call_events").insert({
-      attempt_id,
-      source: "api",
-      event_type: "vapi_call_create_failed",
-      tool_name: "start-call",
-      tool_payload: { vapi_status: vapiRes.status },
-      vapi_event: data,
-    });
+      .eq('id', attempt_id);
 
     return Response.json(
-      { ok: false, error: "Vapi call create failed", status: vapiRes.status, data, attempt_id },
+      { ok: false, error: 'Vapi call create failed', status: vapiRes.status, data, attempt_id },
       { status: 500 }
     );
   }
 
-  // 3) Update attempt with vapi_call_id + status (best-effort)
   const vapi_call_id = data?.id ?? data?.call?.id ?? null;
 
   await supabaseAdmin
-    .from("schedule_attempts")
+    .from('schedule_attempts')
     .update({
-      status: "CALL_STARTED",
+      status: 'CALL_STARTED',
       vapi_call_id,
       vapi_assistant_id: assistantId,
-      office_phone: office_number ?? null,
-      metadata: { last_event: "CALL_STARTED" },
+      office_phone: office_number,
+      metadata: { last_event: 'CALL_STARTED' },
     })
-    .eq("id", attempt_id);
-
-  await supabaseAdmin.from("call_events").insert({
-    attempt_id,
-    source: "api",
-    event_type: "call_started",
-    tool_name: "start-call",
-    tool_payload: { provider_id, demo_autoconfirm },
-    vapi_event: data,
-  });
+    .eq('id', attempt_id);
 
   return Response.json({ ok: true, attempt_id, vapi: data });
 }
