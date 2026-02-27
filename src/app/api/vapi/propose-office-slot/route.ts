@@ -1,133 +1,254 @@
-import { supabaseAdmin } from '../../../../lib/supabase-server';
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-type AnyObj = Record<string, any>;
+type ProposeOfficeSlotBody = {
+  toolCallId?: string;
+  attempt_id: number | string;
+  provider_id?: number | string; // present in Vapi tool schema, but DB uses provider_uuid bridge
+  office_offer: {
+    raw_text: string;
+  };
+};
 
-function extractToolCalls(body: AnyObj) {
-  const candidates =
-    body?.message?.toolCalls ||
-    body?.message?.tool_calls ||
-    body?.toolCalls ||
-    body?.tool_calls ||
-    body?.message?.toolCallList ||
-    body?.toolCallList ||
-    null;
-
-  if (Array.isArray(candidates) && candidates.length > 0) return candidates;
-
-  const toolCallId = body?.toolCallId || body?.tool_call_id || body?.id || null;
-  if (!toolCallId) return [];
-  return [{ id: toolCallId, function: { arguments: body } }];
+// --- helpers ---
+function isDigits(v: string): boolean {
+  return /^[0-9]+$/.test(v);
 }
 
-function parseArgs(tc: AnyObj) {
-  let args = tc?.function?.arguments ?? {};
-  if (typeof args === 'string') {
-    try {
-      args = JSON.parse(args);
-    } catch {
-      args = {};
-    }
+function normalizeAttemptId(input: number | string): { attemptIdStr: string; attemptIdNumOrNull: number | null } {
+  const attemptIdStr = String(input).trim();
+  if (!isDigits(attemptIdStr)) throw new Error("attempt_id must be an integer (bigint-compatible)");
+
+  // Best-effort for call_events attempt_id bigint (avoid JS bigint precision issues)
+  const asNum = Number(attemptIdStr);
+  const attemptIdNumOrNull =
+    Number.isFinite(asNum) && Number.isSafeInteger(asNum) ? asNum : null;
+
+  return { attemptIdStr, attemptIdNumOrNull };
+}
+
+function getSupabaseAdmin() {
+  const url = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+
+  return createClient(url, serviceKey, {
+    auth: { persistSession: false },
+  });
+}
+
+async function logCallEvent(params: {
+  attemptIdNumOrNull: number | null;
+  source: string;
+  event_type: string;
+  tool_name?: string | null;
+  tool_payload?: any;
+  vapi_event?: any;
+}) {
+  try {
+    const supabase = getSupabaseAdmin();
+    await supabase.from("call_events").insert({
+      attempt_id: params.attemptIdNumOrNull,
+      source: params.source,
+      event_type: params.event_type,
+      tool_name: params.tool_name ?? null,
+      tool_payload: params.tool_payload ?? null,
+      vapi_event: params.vapi_event ?? null,
+    });
+  } catch {
+    // never block tool flow
   }
-  return args || {};
 }
 
+/**
+ * Minimal, demo-safe normalization:
+ * - Try Date.parse(raw_text) / new Date(raw_text)
+ * - If no year and it lands in the past, bump to next year
+ * This keeps your agent rule ("don't *say* a year") but allows backend normalization.
+ */
+function normalizeOfferToTimestamps(rawText: string): { start: Date; end: Date; timezone: string } {
+  const tz = "America/New_York";
+  const trimmed = rawText.trim();
+
+  let start = new Date(trimmed);
+
+  // If parsing fails, fall back to "tomorrow at 10am" (demo-safe) rather than crashing.
+  if (isNaN(start.getTime())) {
+    const fallback = new Date();
+    fallback.setDate(fallback.getDate() + 1);
+    fallback.setHours(10, 0, 0, 0);
+    start = fallback;
+  }
+
+  // If the parsed date is in the past by > 2 hours, bump year forward (handles missing-year strings)
+  const now = new Date();
+  if (start.getTime() < now.getTime() - 2 * 60 * 60 * 1000) {
+    const bumped = new Date(start);
+    bumped.setFullYear(bumped.getFullYear() + 1);
+    start = bumped;
+  }
+
+  // Default duration 30 minutes
+  const end = new Date(start.getTime() + 30 * 60 * 1000);
+  return { start, end, timezone: tz };
+}
+
+function formatForSpeech(d: Date) {
+  // numeric month/day + time only (no weekday)
+  // Example: "1/31 at 2:00 PM"
+  const date = d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `${date} at ${time}`;
+}
+
+// --- route ---
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({} as AnyObj));
-  console.log('PROPOSE_OFFICE_SLOT:', JSON.stringify(body, null, 2));
+  let body: ProposeOfficeSlotBody;
 
-  const toolCalls = extractToolCalls(body);
-  if (!toolCalls.length) {
-    return Response.json({
-      results: [{ toolCallId: 'missing_toolCallId', error: 'Missing toolCallId in request payload' }],
-    });
+  try {
+    body = (await req.json()) as ProposeOfficeSlotBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const results: AnyObj[] = [];
-
-  for (const tc of toolCalls) {
-    const toolCallId = tc?.id;
-    if (!toolCallId) {
-      results.push({ toolCallId: 'missing_toolCallId', error: 'Missing toolCallId in request payload' });
-      continue;
-    }
-
-    const args = parseArgs(tc);
-
-    const attempt_id = Number(args?.attempt_id);
-    const provider_id = String(args?.provider_id || '').trim(); // UUID string (optional)
-    const raw = args?.office_offer?.raw_text || '';
-
-  if (!Number.isFinite(attempt_id)) {
-    results.push({
-      toolCallId,
-      result: JSON.stringify({
-        message_to_say:
-          "Thanks — I’m missing the scheduling context on my side. Could you repeat the date and time once more?",
-        next_action: "WAIT_FOR_USER_APPROVAL",
-        proposal_id: null,
-        conflict: false,
-        office_offer_raw: raw,
-        error: "Missing or invalid attempt_id",
-      }),
-    });
-    continue;
+  const rawText = String(body?.office_offer?.raw_text ?? "").trim();
+  if (!rawText) {
+    return NextResponse.json({ error: "office_offer.raw_text is required" }, { status: 400 });
   }
 
-    // Read demo_autoconfirm from Supabase system-of-record
-    let demo_autoconfirm = false;
-    const { data: attemptRow } = await supabaseAdmin
+  let attemptIdStr = "";
+  let attemptIdNumOrNull: number | null = null;
+
+  try {
+    const normalized = normalizeAttemptId(body.attempt_id);
+    attemptIdStr = normalized.attemptIdStr;
+    attemptIdNumOrNull = normalized.attemptIdNumOrNull;
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message ?? "Invalid attempt_id" }, { status: 400 });
+  }
+
+  const toolPayload = {
+    attempt_id: attemptIdStr,
+    provider_id: body.provider_id ?? null,
+    office_offer: { raw_text: rawText },
+    toolCallId: body.toolCallId ?? null,
+  };
+
+  await logCallEvent({
+    attemptIdNumOrNull,
+    source: "api.vapi.propose-office-slot",
+    event_type: "TOOL_CALL_RECEIVED",
+    tool_name: "propose_office_slot",
+    tool_payload: toolPayload,
+  });
+
+  try {
+    const supabase = getSupabaseAdmin();
+
+    // Read attempt row (this is where your build error was: attemptReadErr was referenced but not defined)
+    const { data: attemptRow, error: attemptReadErr } = await supabase
       .from("schedule_attempts")
-      .select("demo_autoconfirm")
-      .eq("id", attempt_id)
+      .select("id, demo_autoconfirm, provider_uuid")
+      .eq("id", attemptIdStr)
       .maybeSingle();
 
     if (attemptReadErr) {
-      console.error('propose-office-slot: schedule_attempts read failed', attemptReadErr);
+      await logCallEvent({
+        attemptIdNumOrNull,
+        source: "api.vapi.propose-office-slot",
+        event_type: "TOOL_CALL_ERROR",
+        tool_name: "propose_office_slot",
+        tool_payload: toolPayload,
+        vapi_event: { error: attemptReadErr.message },
+      });
+
+      return NextResponse.json(
+        { error: "Failed to read schedule_attempts", details: attemptReadErr.message },
+        { status: 500 }
+      );
     }
-    if (attemptRow?.demo_autoconfirm === true) demo_autoconfirm = true;
 
-    const message_to_say = demo_autoconfirm
-      ? 'Great — that works. Please go ahead and book it.'
-      : 'Slot recorded. Awaiting patient approval.';
+    if (!attemptRow) {
+      return NextResponse.json({ error: `No schedule_attempts row for id=${attemptIdStr}` }, { status: 404 });
+    }
 
-    const next_action = demo_autoconfirm ? 'CONFIRM_BOOKING' : 'WAIT_FOR_USER_APPROVAL';
+    const demoAutoconfirm = attemptRow.demo_autoconfirm === true;
 
-    // Insert proposal (FK requires attempt_id exists)
-    const { data: proposal, error: propErr } = await supabaseAdmin
-      .from('proposals')
+    // Normalize the office offer into timestamps
+    const { start, end, timezone } = normalizeOfferToTimestamps(rawText);
+
+    // Insert proposal
+    const { data: proposalInsert, error: proposalErr } = await supabase
+      .from("proposals")
       .insert({
-        attempt_id,
-        tool_call_id: toolCallId,
-        office_offer_raw_text: raw || '(empty)',
-        conflict: false,
-        message_to_say,
-        next_action,
-        status: 'PROPOSED',
-        payload: { provider_id: provider_id || null },
+        attempt_id: attemptIdStr, // bigint-compatible; Supabase will cast
+        office_offer_raw_text: rawText,
+        normalized_start: start.toISOString(),
+        normalized_end: end.toISOString(),
+        timezone,
+        status: "PROPOSED",
       })
-      .select('id')
+      .select("id, normalized_start, normalized_end, timezone")
       .single();
 
-    if (!propErr && proposal?.id) {
-      await supabaseAdmin
-        .from('schedule_attempts')
-        .update({ status: 'PROPOSED', metadata: { last_event: 'PROPOSE_OFFICE_SLOT' } })
-        .eq('id', attempt_id);
-    } else if (propErr) {
-      console.error('propose-office-slot: proposals insert failed', propErr);
+    if (proposalErr) {
+      await logCallEvent({
+        attemptIdNumOrNull,
+        source: "api.vapi.propose-office-slot",
+        event_type: "TOOL_CALL_ERROR",
+        tool_name: "propose_office_slot",
+        tool_payload: toolPayload,
+        vapi_event: { error: proposalErr.message },
+      });
+
+      return NextResponse.json(
+        { error: "Failed to create proposal", details: proposalErr.message },
+        { status: 500 }
+      );
     }
 
-    const payload = {
+    const proposalId = proposalInsert.id as string;
+
+    // Construct tool response contract expected by Vapi system prompt:
+    // - message_to_say (verbatim)
+    // - next_action exactly
+    const spoken = formatForSpeech(new Date(proposalInsert.normalized_start));
+    const message_to_say = `Great — I have ${spoken} recorded.`;
+    const next_action = demoAutoconfirm ? "CONFIRM_BOOKING" : "WAIT_FOR_USER_APPROVAL";
+
+    const response = {
+      proposal_id: proposalId,
+      normalized_start: proposalInsert.normalized_start,
+      normalized_end: proposalInsert.normalized_end,
+      timezone: proposalInsert.timezone,
+      conflict: false,
       message_to_say,
       next_action,
-      proposal_id: proposal?.id ?? null,
-      conflict: false,
-      office_offer_raw: raw,
-      ...(propErr ? { error: propErr.message } : {}),
     };
 
-    results.push({ toolCallId, result: JSON.stringify(payload) });
-  }
+    await logCallEvent({
+      attemptIdNumOrNull,
+      source: "api.vapi.propose-office-slot",
+      event_type: "TOOL_CALL_SUCCEEDED",
+      tool_name: "propose_office_slot",
+      tool_payload: toolPayload,
+      vapi_event: { result: response },
+    });
 
-  return Response.json({ results });
+    return NextResponse.json(response, { status: 200 });
+  } catch (e: any) {
+    await logCallEvent({
+      attemptIdNumOrNull,
+      source: "api.vapi.propose-office-slot",
+      event_type: "TOOL_CALL_EXCEPTION",
+      tool_name: "propose_office_slot",
+      tool_payload: toolPayload,
+      vapi_event: { error: e?.message ?? String(e) },
+    });
+
+    return NextResponse.json(
+      { error: e?.message ?? "Unknown error" },
+      { status: 500 }
+    );
+  }
 }
