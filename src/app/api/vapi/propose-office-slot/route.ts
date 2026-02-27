@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { normalizeProviderId } from "../../../../lib/vapi/ids";
 
 type ProposeOfficeSlotBody = {
   toolCallId?: string;
+  tool_call_id?: string;
+  id?: string;
   attempt_id: number | string;
-  provider_id?: number | string; // present in Vapi tool schema, but DB uses provider_uuid bridge
+  provider_id?: unknown; // accept unknown; we'll normalize safely
   office_offer: {
     raw_text: string;
   };
@@ -15,7 +18,10 @@ function isDigits(v: string): boolean {
   return /^[0-9]+$/.test(v);
 }
 
-function normalizeAttemptId(input: number | string): { attemptIdStr: string; attemptIdNumOrNull: number | null } {
+function normalizeAttemptId(input: number | string): {
+  attemptIdStr: string;
+  attemptIdNumOrNull: number | null;
+} {
   const attemptIdStr = String(input).trim();
   if (!isDigits(attemptIdStr)) throw new Error("attempt_id must be an integer (bigint-compatible)");
 
@@ -111,6 +117,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  const toolCallId = body?.toolCallId || body?.tool_call_id || body?.id || null;
+
   const rawText = String(body?.office_offer?.raw_text ?? "").trim();
   if (!rawText) {
     return NextResponse.json({ error: "office_offer.raw_text is required" }, { status: 400 });
@@ -127,11 +135,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: e?.message ?? "Invalid attempt_id" }, { status: 400 });
   }
 
+  // ✅ provider_id transition-safe:
+  // - if it’s already a UUID string, normalize it
+  // - if it’s a number (legacy), keep it for logs but don’t depend on it
+  let providerIdUuid: string | null = null;
+  try {
+    if (typeof body.provider_id === "string") {
+      providerIdUuid = normalizeProviderId(body.provider_id);
+    }
+  } catch {
+    providerIdUuid = null;
+  }
+
   const toolPayload = {
+    toolCallId,
     attempt_id: attemptIdStr,
-    provider_id: body.provider_id ?? null,
+    provider_id_raw: body.provider_id ?? null,
+    provider_id_uuid: providerIdUuid,
     office_offer: { raw_text: rawText },
-    toolCallId: body.toolCallId ?? null,
   };
 
   await logCallEvent({
@@ -145,7 +166,6 @@ export async function POST(req: Request) {
   try {
     const supabase = getSupabaseAdmin();
 
-    // Read attempt row (this is where your build error was: attemptReadErr was referenced but not defined)
     const { data: attemptRow, error: attemptReadErr } = await supabase
       .from("schedule_attempts")
       .select("id, demo_autoconfirm, provider_uuid")
@@ -174,14 +194,12 @@ export async function POST(req: Request) {
 
     const demoAutoconfirm = attemptRow.demo_autoconfirm === true;
 
-    // Normalize the office offer into timestamps
     const { start, end, timezone } = normalizeOfferToTimestamps(rawText);
 
-    // Insert proposal
     const { data: proposalInsert, error: proposalErr } = await supabase
       .from("proposals")
       .insert({
-        attempt_id: attemptIdStr, // bigint-compatible; Supabase will cast
+        attempt_id: attemptIdStr,
         office_offer_raw_text: rawText,
         normalized_start: start.toISOString(),
         normalized_end: end.toISOString(),
@@ -209,9 +227,6 @@ export async function POST(req: Request) {
 
     const proposalId = proposalInsert.id as string;
 
-    // Construct tool response contract expected by Vapi system prompt:
-    // - message_to_say (verbatim)
-    // - next_action exactly
     const spoken = formatForSpeech(new Date(proposalInsert.normalized_start));
     const message_to_say = `Great — I have ${spoken} recorded.`;
     const next_action = demoAutoconfirm ? "CONFIRM_BOOKING" : "WAIT_FOR_USER_APPROVAL";
@@ -235,6 +250,7 @@ export async function POST(req: Request) {
       vapi_event: { result: response },
     });
 
+    // ✅ keep existing response shape (since your flow already works)
     return NextResponse.json(response, { status: 200 });
   } catch (e: any) {
     await logCallEvent({
@@ -246,9 +262,6 @@ export async function POST(req: Request) {
       vapi_event: { error: e?.message ?? String(e) },
     });
 
-    return NextResponse.json(
-      { error: e?.message ?? "Unknown error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: e?.message ?? "Unknown error" }, { status: 500 });
   }
 }
