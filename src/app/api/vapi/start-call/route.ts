@@ -126,11 +126,11 @@ export async function POST(req: Request) {
   await supabaseAdmin
     .from('schedule_attempts')
     .update({
-      status: 'CALL_STARTED',
+      status: 'CALLING',
       vapi_call_id,
       vapi_assistant_id: assistantId,
       office_phone: office_number,
-      metadata: { last_event: 'CALL_STARTED' },
+      metadata: { last_event: 'CALLING' },
     })
     .eq('id', attempt_id);
 

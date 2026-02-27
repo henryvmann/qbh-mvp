@@ -2,9 +2,13 @@
 
 import PortalGuess from './PortalGuess';
 import PortalTimeline from './PortalTimeline';
+import { useRouter } from 'next/navigation';
+
+
 
 export default function ProviderCard({ provider }: { provider: any }) {
   async function approveFollowUp(providerId: string) {
+    const router = useRouter();
     const res = await fetch('/api/followup/approve', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -13,7 +17,7 @@ export default function ProviderCard({ provider }: { provider: any }) {
 
     // For now we just reload to re-fetch server-rendered data.
     // If endpoint doesn't exist yet, you'll see a 404 in the terminal/network tab.
-    if (res.ok) location.reload();
+    if (res.ok) router.refresh();
   }
 
   return (

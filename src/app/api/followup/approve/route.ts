@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-server';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(req: Request) {
   try {
@@ -94,13 +95,15 @@ export async function POST(req: Request) {
     await supabaseAdmin
       .from('schedule_attempts')
       .update({
-        status: 'CALL_STARTED',
+        status: 'CALLING',
         vapi_call_id,
         vapi_assistant_id: assistantId,
         office_phone: office_number,
-        metadata: { last_event: 'CALL_STARTED' },
+        metadata: { last_event: 'CALLING' },
       })
       .eq('id', attempt_id);
+
+    revalidatePath('/providers');
 
     return NextResponse.json({ ok: true, attempt_id, vapi: vapiJson });
   } catch (e: any) {

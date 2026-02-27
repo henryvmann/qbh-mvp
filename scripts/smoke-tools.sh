@@ -21,7 +21,7 @@ echo "$PROPOSE_RESP" | cat
 echo
 
 # Extract proposal_id from the stringified result payload
-PROPOSAL_ID="$(echo "$PROPOSE_RESP" | grep -oE '"proposal_id":"[^"]+"' | head -n 1 | cut -d':' -f2 | tr -d '"')"
+PROPOSAL_ID="$(echo "$PROPOSE_RESP" | sed -nE 's/.*proposal_id\\":\\"([0-9a-f-]{36}).*/\1/p' | head -n 1)"
 
 if [[ -z "${PROPOSAL_ID:-}" ]]; then
   echo "ERROR: Could not extract proposal_id from propose-office-slot response"
