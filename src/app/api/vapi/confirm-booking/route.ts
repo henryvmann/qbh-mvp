@@ -65,7 +65,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ ...data, confirmation_number: confirmationNumber });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+  results: [
+    {
+      toolCallId:
+        body?.toolCallId ||
+        body?.tool_call_id ||
+        body?.id ||
+        "confirm_call",
+      result: JSON.stringify({
+        status: "OK",
+        calendar_event_id: data.calendar_event_id,
+        provider_id: data.provider_id,
+        user_id: data.user_id,
+        start_at: data.start_at,
+        end_at: data.end_at,
+        message_to_say:
+          "The appointment has been successfully scheduled.",
+        next_action: "ASK_CONFIRMATION_NUMBER",
+      }),
+    },
+  ],
+});
   } catch (err: any) {
     return NextResponse.json(
       { booked: false, error: err?.message || "Unknown error" },
