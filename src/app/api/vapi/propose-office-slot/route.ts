@@ -1,46 +1,47 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { normalizeProviderId } from "../../../../lib/vapi/ids";
 
-type ProposeOfficeSlotBody = {
+type VapiToolResultEnvelope = {
+  toolCallId: string;
+  result: string; // JSON-stringified result
+};
+
+type VapiToolCallsBody = {
+  message?: {
+    type?: string;
+    toolCalls?: Array<{
+      id?: string;
+      function?: { name?: string; arguments?: string | Record<string, any> };
+    }>;
+  };
   toolCallId?: string;
   tool_call_id?: string;
   id?: string;
-  attempt_id: number | string;
-  provider_id?: unknown; // accept unknown; we'll normalize safely
-  office_offer: {
-    raw_text: string;
-  };
 };
 
-// --- helpers ---
+type ProposeOfficeSlotArgs = {
+  attempt_id?: number | string;
+  provider_id?: unknown;
+  proposal_id?: string;
+  proposalId?: string;
+};
+
+function jsonToolResults(results: VapiToolResultEnvelope[]) {
+  return Response.json({ results });
+}
+
 function isDigits(v: string): boolean {
   return /^[0-9]+$/.test(v);
 }
 
-function normalizeAttemptId(input: number | string): {
-  attemptIdStr: string;
-  attemptIdNumOrNull: number | null;
-} {
+function normalizeAttemptId(input: number | string): { attemptIdStr: string; attemptIdNumOrNull: number | null } {
   const attemptIdStr = String(input).trim();
   if (!isDigits(attemptIdStr)) throw new Error("attempt_id must be an integer (bigint-compatible)");
 
-  // Best-effort for call_events attempt_id bigint (avoid JS bigint precision issues)
   const asNum = Number(attemptIdStr);
-  const attemptIdNumOrNull =
-    Number.isFinite(asNum) && Number.isSafeInteger(asNum) ? asNum : null;
+  const attemptIdNumOrNull = Number.isFinite(asNum) && Number.isSafeInteger(asNum) ? asNum : null;
 
   return { attemptIdStr, attemptIdNumOrNull };
-}
-
-function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
-
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false },
-  });
 }
 
 async function logCallEvent(params: {
@@ -52,8 +53,7 @@ async function logCallEvent(params: {
   vapi_event?: any;
 }) {
   try {
-    const supabase = getSupabaseAdmin();
-    await supabase.from("call_events").insert({
+    await supabaseAdmin.from("call_events").insert({
       attempt_id: params.attemptIdNumOrNull,
       source: params.source,
       event_type: params.event_type,
@@ -66,93 +66,63 @@ async function logCallEvent(params: {
   }
 }
 
-/**
- * Minimal, demo-safe normalization:
- * - Try Date.parse(raw_text) / new Date(raw_text)
- * - If no year and it lands in the past, bump to next year
- * This keeps your agent rule ("don't *say* a year") but allows backend normalization.
- */
-function normalizeOfferToTimestamps(rawText: string): { start: Date; end: Date; timezone: string } {
-  const tz = "America/New_York";
-  const trimmed = rawText.trim();
-
-  let start = new Date(trimmed);
-
-  // If parsing fails, fall back to "tomorrow at 10am" (demo-safe) rather than crashing.
-  if (isNaN(start.getTime())) {
-    const fallback = new Date();
-    fallback.setDate(fallback.getDate() + 1);
-    fallback.setHours(10, 0, 0, 0);
-    start = fallback;
-  }
-
-  // If the parsed date is in the past by > 2 hours, bump year forward (handles missing-year strings)
-  const now = new Date();
-  if (start.getTime() < now.getTime() - 2 * 60 * 60 * 1000) {
-    const bumped = new Date(start);
-    bumped.setFullYear(bumped.getFullYear() + 1);
-    start = bumped;
-  }
-
-  // Default duration 30 minutes
-  const end = new Date(start.getTime() + 30 * 60 * 1000);
-  return { start, end, timezone: tz };
-}
-
-function formatForSpeech(d: Date) {
-  // numeric month/day + time only (no weekday)
-  // Example: "1/31 at 2:00 PM"
-  const date = d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
-  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+function formatForSpeechFromIso(iso: string) {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("en-US", { month: "numeric", day: "numeric", timeZone: "America/New_York" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
   return `${date} at ${time}`;
 }
 
-// --- route ---
-export async function POST(req: Request) {
-  let body: ProposeOfficeSlotBody;
-
-  try {
-    body = (await req.json()) as ProposeOfficeSlotBody;
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+function safeParseArgs(raw: any): Record<string, any> {
+  if (!raw) return {};
+  if (typeof raw === "object") return raw as Record<string, any>;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
   }
+  return {};
+}
 
-  const toolCallId = body?.toolCallId || body?.tool_call_id || body?.id || null;
-
-  const rawText = String(body?.office_offer?.raw_text ?? "").trim();
-  if (!rawText) {
-    return NextResponse.json({ error: "office_offer.raw_text is required" }, { status: 400 });
-  }
-
+async function handleOne(toolCallId: string, args: ProposeOfficeSlotArgs) {
+  // attempt_id
   let attemptIdStr = "";
   let attemptIdNumOrNull: number | null = null;
 
   try {
-    const normalized = normalizeAttemptId(body.attempt_id);
+    const normalized = normalizeAttemptId(args.attempt_id as any);
     attemptIdStr = normalized.attemptIdStr;
     attemptIdNumOrNull = normalized.attemptIdNumOrNull;
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "Invalid attempt_id" }, { status: 400 });
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "ERROR",
+        code: "INVALID_ATTEMPT_ID",
+        message_to_say: e?.message ?? "Invalid attempt_id",
+        next_action: "END_CALL",
+      }),
+    };
   }
 
-  // ✅ provider_id transition-safe:
-  // - if it’s already a UUID string, normalize it
-  // - if it’s a number (legacy), keep it for logs but don’t depend on it
+  // provider_id transition-safe (not required for logic, but good telemetry)
   let providerIdUuid: string | null = null;
   try {
-    if (typeof body.provider_id === "string") {
-      providerIdUuid = normalizeProviderId(body.provider_id);
-    }
+    if (typeof args.provider_id === "string") providerIdUuid = normalizeProviderId(args.provider_id);
   } catch {
     providerIdUuid = null;
   }
 
+  const proposalId = String(args?.proposal_id ?? args?.proposalId ?? "").trim();
+
   const toolPayload = {
     toolCallId,
     attempt_id: attemptIdStr,
-    provider_id_raw: body.provider_id ?? null,
+    provider_id_raw: args.provider_id ?? null,
     provider_id_uuid: providerIdUuid,
-    office_offer: { raw_text: rawText },
+    proposal_id: proposalId || null,
   };
 
   await logCallEvent({
@@ -163,105 +133,155 @@ export async function POST(req: Request) {
     tool_payload: toolPayload,
   });
 
-  try {
-    const supabase = getSupabaseAdmin();
-
-    const { data: attemptRow, error: attemptReadErr } = await supabase
-      .from("schedule_attempts")
-      .select("id, demo_autoconfirm, provider_uuid")
-      .eq("id", attemptIdStr)
-      .maybeSingle();
-
-    if (attemptReadErr) {
-      await logCallEvent({
-        attemptIdNumOrNull,
-        source: "api.vapi.propose-office-slot",
-        event_type: "TOOL_CALL_ERROR",
-        tool_name: "propose_office_slot",
-        tool_payload: toolPayload,
-        vapi_event: { error: attemptReadErr.message },
-      });
-
-      return NextResponse.json(
-        { error: "Failed to read schedule_attempts", details: attemptReadErr.message },
-        { status: 500 }
-      );
-    }
-
-    if (!attemptRow) {
-      return NextResponse.json({ error: `No schedule_attempts row for id=${attemptIdStr}` }, { status: 404 });
-    }
-
-    const demoAutoconfirm = attemptRow.demo_autoconfirm === true;
-
-    const { start, end, timezone } = normalizeOfferToTimestamps(rawText);
-
-    const { data: proposalInsert, error: proposalErr } = await supabase
-      .from("proposals")
-      .insert({
-        attempt_id: attemptIdStr,
-        office_offer_raw_text: rawText,
-        normalized_start: start.toISOString(),
-        normalized_end: end.toISOString(),
-        timezone,
-        status: "PROPOSED",
-      })
-      .select("id, normalized_start, normalized_end, timezone")
-      .single();
-
-    if (proposalErr) {
-      await logCallEvent({
-        attemptIdNumOrNull,
-        source: "api.vapi.propose-office-slot",
-        event_type: "TOOL_CALL_ERROR",
-        tool_name: "propose_office_slot",
-        tool_payload: toolPayload,
-        vapi_event: { error: proposalErr.message },
-      });
-
-      return NextResponse.json(
-        { error: "Failed to create proposal", details: proposalErr.message },
-        { status: 500 }
-      );
-    }
-
-    const proposalId = proposalInsert.id as string;
-
-    const spoken = formatForSpeech(new Date(proposalInsert.normalized_start));
-    const message_to_say = `Great — I have ${spoken} recorded.`;
-    const next_action = demoAutoconfirm ? "CONFIRM_BOOKING" : "WAIT_FOR_USER_APPROVAL";
-
-    const response = {
-      proposal_id: proposalId,
-      normalized_start: proposalInsert.normalized_start,
-      normalized_end: proposalInsert.normalized_end,
-      timezone: proposalInsert.timezone,
-      conflict: false,
-      message_to_say,
-      next_action,
+  // If proposal_id missing, fail fast with deterministic instruction.
+  // (This prevents the “repeat the times” spiral.)
+  if (!proposalId) {
+    const resp = {
+      status: "ERROR",
+      code: "MISSING_PROPOSAL_ID",
+      message_to_say: "Please choose one of the options by saying first, second, or third.",
+      next_action: "ASK_USER_TO_CHOOSE_SLOT",
     };
 
     await logCallEvent({
       attemptIdNumOrNull,
       source: "api.vapi.propose-office-slot",
-      event_type: "TOOL_CALL_SUCCEEDED",
+      event_type: "TOOL_CALL_ERROR",
       tool_name: "propose_office_slot",
       tool_payload: toolPayload,
-      vapi_event: { result: response },
+      vapi_event: { error: "proposal_id missing" },
     });
 
-    // ✅ keep existing response shape (since your flow already works)
-    return NextResponse.json(response, { status: 200 });
-  } catch (e: any) {
+    return { toolCallId, result: JSON.stringify(resp) };
+  }
+
+  // Read attempt for demo_autoconfirm decision
+  const { data: attemptRow, error: attemptReadErr } = await supabaseAdmin
+    .from("schedule_attempts")
+    .select("id, demo_autoconfirm")
+    .eq("id", attemptIdStr)
+    .maybeSingle();
+
+  if (attemptReadErr || !attemptRow) {
+    const resp = {
+      status: "ERROR",
+      code: "ATTEMPT_NOT_FOUND",
+      message_to_say: "There was a system issue. I will call back shortly.",
+      next_action: "END_CALL",
+    };
+
     await logCallEvent({
       attemptIdNumOrNull,
       source: "api.vapi.propose-office-slot",
-      event_type: "TOOL_CALL_EXCEPTION",
+      event_type: "TOOL_CALL_ERROR",
       tool_name: "propose_office_slot",
       tool_payload: toolPayload,
-      vapi_event: { error: e?.message ?? String(e) },
+      vapi_event: { error: attemptReadErr?.message ?? "attempt not found" },
     });
 
-    return NextResponse.json({ error: e?.message ?? "Unknown error" }, { status: 500 });
+    return { toolCallId, result: JSON.stringify(resp) };
   }
+
+  const demoAutoconfirm = attemptRow.demo_autoconfirm === true;
+
+  // Proposal is source of truth (created by select_candidate_slot)
+  const { data: proposal, error: proposalErr } = await supabaseAdmin
+    .from("proposals")
+    .select("id, attempt_id, normalized_start, normalized_end, timezone, payload")
+    .eq("id", proposalId)
+    .eq("attempt_id", attemptIdStr)
+    .single();
+
+  if (proposalErr || !proposal) {
+    const resp = {
+      status: "ERROR",
+      code: "PROPOSAL_NOT_FOUND",
+      message_to_say: "I couldn’t find the selected time. Please say first, second, or third.",
+      next_action: "ASK_USER_TO_CHOOSE_SLOT",
+    };
+
+    await logCallEvent({
+      attemptIdNumOrNull,
+      source: "api.vapi.propose-office-slot",
+      event_type: "TOOL_CALL_ERROR",
+      tool_name: "propose_office_slot",
+      tool_payload: toolPayload,
+      vapi_event: { error: proposalErr?.message ?? "proposal not found" },
+    });
+
+    return { toolCallId, result: JSON.stringify(resp) };
+  }
+
+  const tz = String(proposal.timezone ?? (proposal as any)?.payload?.timezone ?? "America/New_York");
+  const spokenStart =
+    String((proposal as any)?.payload?.spoken_start ?? "").trim() || formatForSpeechFromIso(proposal.normalized_start);
+
+  // Preserve the response shape your loop expects (and include status OK for tool envelope consumers)
+  const response = {
+    status: "OK",
+    proposal_id: proposal.id,
+    normalized_start: proposal.normalized_start,
+    normalized_end: proposal.normalized_end,
+    timezone: tz,
+    conflict: false,
+    message_to_say: `Great — I have ${spokenStart} recorded.`,
+    next_action: demoAutoconfirm ? "CONFIRM_BOOKING" : "WAIT_FOR_USER_APPROVAL",
+  };
+
+  await logCallEvent({
+    attemptIdNumOrNull,
+    source: "api.vapi.propose-office-slot",
+    event_type: "TOOL_CALL_SUCCEEDED",
+    tool_name: "propose_office_slot",
+    tool_payload: toolPayload,
+    vapi_event: { result: response },
+  });
+
+  return { toolCallId, result: JSON.stringify(response) };
+}
+
+export async function POST(req: Request) {
+  const raw = (await req.json().catch(() => ({}))) as VapiToolCallsBody;
+
+  // 1) Vapi tool-calls envelope (preferred)
+  const msgType = raw?.message?.type;
+  const toolCalls = raw?.message?.toolCalls;
+
+  if (msgType === "tool-calls" && Array.isArray(toolCalls) && toolCalls.length > 0) {
+    const results: VapiToolResultEnvelope[] = [];
+
+    for (const tc of toolCalls) {
+      const toolCallId = String(tc?.id ?? "").trim() || "missing_toolCallId";
+      const fnName = String(tc?.function?.name ?? "").trim();
+      const args = safeParseArgs(tc?.function?.arguments);
+
+      // Only handle propose_office_slot tool calls here
+      if (fnName !== "propose_office_slot") continue;
+
+      results.push(await handleOne(toolCallId, args as ProposeOfficeSlotArgs));
+    }
+
+    // If none matched, still respond in tool-results format so Vapi doesn’t choke
+    if (results.length === 0) {
+      return jsonToolResults([
+        {
+          toolCallId: "no_matching_tool",
+          result: JSON.stringify({
+            status: "ERROR",
+            code: "NO_MATCHING_TOOL_CALL",
+            message_to_say: "There was a system issue. I will call back shortly.",
+            next_action: "END_CALL",
+          }),
+        },
+      ]);
+    }
+
+    return jsonToolResults(results);
+  }
+
+  // 2) Flat JSON body fallback (local curl / legacy callers)
+  const toolCallId = String(raw?.toolCallId || raw?.tool_call_id || raw?.id || "local_call").trim();
+  const args = raw as any as ProposeOfficeSlotArgs;
+  const one = await handleOne(toolCallId, args);
+  return jsonToolResults([one]);
 }
