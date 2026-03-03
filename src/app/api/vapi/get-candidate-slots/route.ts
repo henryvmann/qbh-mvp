@@ -1,5 +1,4 @@
 import { supabaseAdmin } from "../../../../lib/supabase-server";
-import { normalizeAttemptId } from "../../../../lib/vapi/ids";
 import { generateCandidateSlots } from "../../../../lib/availability/generateCandidateSlots";
 
 type VapiToolResultEnvelope = {
@@ -22,16 +21,15 @@ type VapiToolCallsBody = {
 };
 
 function normalizeAttemptIdAny(v: any): string | number {
-  // already a number
   if (typeof v === "number" && Number.isFinite(v)) return v;
 
   const s = String(v ?? "").trim();
   if (!s) throw new Error("missing_attempt_id");
 
-  // numeric string -> number (legacy bigint ids)
+  // legacy bigint ids passed as string
   if (/^\d+$/.test(s)) return Number(s);
 
-  // uuid -> keep as string
+  // uuid
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)) return s;
 
   throw new Error("invalid_attempt_id");
@@ -150,7 +148,6 @@ function pad2(n: number) {
 
 // Convert a UTC Date to an ISO string *with a fixed offset* (deterministic)
 function toIsoWithOffset(dUtc: Date, offsetMinutes: number): string {
-  // represent the same instant, but stamp with offsetMinutes
   const localMs = dUtc.getTime() + offsetMinutes * 60_000;
   const local = new Date(localMs);
 
@@ -202,8 +199,6 @@ function parseOfficeOfferTimes(raw: string, baseNowUtc: Date, offsetMinutes: num
   const text = String(raw ?? "").trim();
   if (!text) return [];
 
-  // Match: "<month> <day|ordinal> at <time>"
-  // time: noon | midday | midnight | 3 PM | 3:30 PM | 15:00 (rare)
   const re =
     /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+([0-9]{1,2}|[a-z]+(?:[-\s][a-z]+)?)\s+at\s+(noon|midday|midnight|[0-9]{1,2}(?::[0-9]{2})?\s*(am|pm)?)\b/gi;
 
@@ -235,7 +230,6 @@ function parseOfficeOfferTimes(raw: string, baseNowUtc: Date, offsetMinutes: num
       hour24 = 0;
       minute = 0;
     } else {
-      // e.g. "3 pm" or "3:30 pm" or "15:00"
       const compact = timeRaw.replace(/\s+/g, "");
       const parts = compact.split(":");
       const h = Number(parts[0].replace(/[^0-9]/g, ""));
@@ -251,17 +245,13 @@ function parseOfficeOfferTimes(raw: string, baseNowUtc: Date, offsetMinutes: num
         const h12 = h % 12;
         hour24 = ampm === "pm" ? h12 + 12 : h12;
       } else {
-        hour24 = h; // treat as 24-hour
+        hour24 = h;
       }
       minute = min;
     }
 
-    // Deterministic year selection:
-    // - Start with current UTC year
-    // - If computed start is >2h in the past relative to nowUtc, bump to next year
     const year = nowUtc.getUTCFullYear();
 
-    // Local wall clock (month/day/hour/minute) represented in UTC fields
     const localWall = new Date(Date.UTC(year, month - 1, day, hour24, minute, 0, 0));
     const startUtcMs = localWall.getTime() - offsetMinutes * 60_000;
     let startUtc = new Date(startUtcMs);
@@ -287,12 +277,12 @@ function parseOfficeOfferTimes(raw: string, baseNowUtc: Date, offsetMinutes: num
 }
 
 async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultEnvelope> {
-let attemptId: string | number;
-try {
-  attemptId = normalizeAttemptIdAny(args?.attempt_id);
-} catch {
-  return toolError(toolCallId, { stage: "invalid_attempt_id", received: args?.attempt_id });
-}
+  let attemptId: string | number;
+  try {
+    attemptId = normalizeAttemptIdAny(args?.attempt_id);
+  } catch {
+    return toolError(toolCallId, { stage: "invalid_attempt_id", received: args?.attempt_id });
+  }
 
   console.info("[get_candidate_slots] incoming_args", {
     toolCallId,
@@ -328,12 +318,9 @@ try {
 
     // Demo-default timezone: America/New_York
     // IMPORTANT: Vercel runs in UTC; do NOT use server getTimezoneOffset() here.
-    // Deterministic demo offset (EST). If you later want DST correctness, we’ll implement
-    // provider_timezone -> IANA -> offset calculation deterministically.
     const timezone = "America/New_York";
     const timezoneOffsetMinutes = -300;
 
-    // Prefer office-offered times if provided and parseable
     const parsed: ParsedOfficeSlot[] = officeOfferRawText
       ? parseOfficeOfferTimes(officeOfferRawText, nowUtc, timezoneOffsetMinutes)
       : [];
@@ -373,6 +360,8 @@ try {
               slotMinutes: 30,
               count: 3,
             });
+
+            if (!generated.length) return [];
 
             return generated.map((slot: any, i: number) => ({
               attempt_id: attemptId,
@@ -453,7 +442,7 @@ try {
     toolCallId,
     result: JSON.stringify({
       status: "OK",
-      build_id: "get_candidate_slots_2026-03-03c",
+      build_id: "get_candidate_slots_2026-03-03d",
       candidate_slots: canonicalSlots,
       message_to_say,
       next_action: "ASK_USER_TO_CHOOSE_SLOT",
