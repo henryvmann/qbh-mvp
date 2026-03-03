@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+type VapiToolResultEnvelope = { toolCallId: string; result: string };
 
 function isDigits(v: string): boolean {
   return /^\d+$/.test(v);
@@ -12,121 +14,190 @@ function isUuid(v: string): boolean {
 function normalizeAttemptIdAny(v: any): string {
   const s = String(v ?? "").trim();
   if (!s) throw new Error("missing_attempt_id");
-  // keep as string; RPC can accept text -> cast inside SQL if needed
   if (isDigits(s) || isUuid(s)) return s;
   throw new Error("invalid_attempt_id");
 }
 
-function vapiToolCallId(body: any): string {
-  return String(body?.toolCallId || body?.tool_call_id || body?.id || "confirm_call").trim();
+function safeParseArgs(raw: any): Record<string, any> {
+  if (!raw) return {};
+  if (typeof raw === "object") return raw as Record<string, any>;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  }
+  return {};
 }
 
-function toolErrorEnvelope(toolCallId: string, debug?: any) {
-  return NextResponse.json({
-    results: [
-      {
-        toolCallId,
-        result: JSON.stringify({
-          status: "ERROR",
-          message_to_say: "There was a system issue. I will call back shortly.",
-          next_action: "END_CALL",
-          ...(debug ? { debug } : {}),
-        }),
-      },
-    ],
-  });
+function jsonToolResults(results: VapiToolResultEnvelope[]) {
+  return NextResponse.json({ results });
 }
 
-export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({}));
-  const toolCallId = vapiToolCallId(body);
+function toolError(toolCallId: string, debug?: any): VapiToolResultEnvelope {
+  return {
+    toolCallId,
+    result: JSON.stringify({
+      status: "ERROR",
+      message_to_say: "There was a system issue. I will call back shortly.",
+      next_action: "END_CALL",
+      ...(debug ? { debug } : {}),
+    }),
+  };
+}
 
-  let attemptIdStr: string;
-  try {
-    attemptIdStr = normalizeAttemptIdAny(body?.attempt_id);
-  } catch (e: any) {
-    return toolErrorEnvelope(toolCallId, {
-      stage: "invalid_attempt_id",
-      received: body?.attempt_id,
+function getSupabaseOrError(toolCallId: string): SupabaseClient | VapiToolResultEnvelope {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    return toolError(toolCallId, {
+      stage: "missing_env",
+      missing: { SUPABASE_URL: !url, SUPABASE_SERVICE_ROLE_KEY: !key },
     });
   }
+  return createClient(url, key, { auth: { persistSession: false } });
+}
 
-  const proposalIdStr = String(body?.proposal_id ?? "").trim();
-  const confirmationNumber = String(body?.confirmation_number ?? "").trim() || null;
+function formatForSpeechFromIso(iso: string) {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("en-US", {
+    month: "numeric",
+    day: "numeric",
+    timeZone: "America/New_York",
+  });
+  const time = d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/New_York",
+  });
+  return `${date} at ${time}`;
+}
 
-  if (!proposalIdStr) {
-    return toolErrorEnvelope(toolCallId, { stage: "missing_proposal_id" });
+async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultEnvelope> {
+  let attemptIdStr: string;
+  try {
+    attemptIdStr = normalizeAttemptIdAny(args?.attempt_id);
+  } catch {
+    return toolError(toolCallId, { stage: "invalid_attempt_id", received: args?.attempt_id });
   }
 
-  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false },
-  });
+  const proposalIdStr = String(args?.proposal_id ?? "").trim();
+  const confirmationNumber = String(args?.confirmation_number ?? "").trim() || null;
+  const providerIdMaybeUuid = String(args?.provider_id ?? "").trim();
 
-  // Self-heal provider_uuid if missing (deterministic, no guessing)
-  const providerIdMaybeUuid = String(body?.provider_id ?? "").trim();
+  if (!proposalIdStr) return toolError(toolCallId, { stage: "missing_proposal_id" });
+
+  const supabaseOrErr = getSupabaseOrError(toolCallId);
+  if ("result" in supabaseOrErr) return supabaseOrErr;
+  const supabase = supabaseOrErr;
+
+  // Read attempt for demo_autoconfirm (demo-only response shaping)
+  const { data: attemptFlags, error: attemptFlagsErr } = await supabase
+    .from("schedule_attempts")
+    .select("id, demo_autoconfirm, provider_uuid")
+    .eq("id", attemptIdStr)
+    .maybeSingle();
+
+  if (attemptFlagsErr) {
+    return toolError(toolCallId, { stage: "attempt_read_failed", message: attemptFlagsErr.message });
+  }
+
+  const demoAutoconfirm = attemptFlags?.demo_autoconfirm === true;
+
+  // Self-heal provider_uuid if missing (deterministic only when provider_id is UUID)
   if (isUuid(providerIdMaybeUuid)) {
-    const { data: attemptRow, error: attemptErr } = await supabase
-      .from("schedule_attempts")
-      .select("id, provider_uuid")
-      .eq("id", attemptIdStr)
-      .maybeSingle();
-
-    if (attemptErr) {
-      return toolErrorEnvelope(toolCallId, { stage: "attempt_read_failed", message: attemptErr.message });
-    }
-
-    if (attemptRow && !attemptRow.provider_uuid) {
+    if (attemptFlags && !attemptFlags.provider_uuid) {
       const { error: updErr } = await supabase
         .from("schedule_attempts")
         .update({ provider_uuid: providerIdMaybeUuid })
         .eq("id", attemptIdStr);
 
       if (updErr) {
-        return toolErrorEnvelope(toolCallId, { stage: "attempt_update_provider_uuid_failed", message: updErr.message });
+        return toolError(toolCallId, { stage: "attempt_update_provider_uuid_failed", message: updErr.message });
       }
     }
   }
 
-  // Fail fast: proposal must belong to attempt
+  // Proposal must belong to attempt
   const { data: proposal, error: proposalErr } = await supabase
     .from("proposals")
-    .select("id, attempt_id")
+    .select("id, attempt_id, normalized_start, normalized_end, timezone, payload")
     .eq("id", proposalIdStr)
     .single();
 
-  if (proposalErr || !proposal?.id) {
-    return toolErrorEnvelope(toolCallId, { stage: "proposal_not_found" });
-  }
-
-  if (String((proposal as any).attempt_id) !== attemptIdStr) {
-    return toolErrorEnvelope(toolCallId, { stage: "proposal_attempt_mismatch" });
-  }
+  if (proposalErr || !proposal?.id) return toolError(toolCallId, { stage: "proposal_not_found" });
+  if (String((proposal as any).attempt_id) !== attemptIdStr) return toolError(toolCallId, { stage: "proposal_attempt_mismatch" });
 
   const { data, error } = await supabase.rpc("finalize_confirm_booking", {
     p_attempt_id: attemptIdStr,
     p_proposal_id: proposalIdStr,
   });
 
-  if (error) {
-    return toolErrorEnvelope(toolCallId, { stage: "rpc_finalize_confirm_booking_failed", message: error.message });
-  }
+  if (error) return toolError(toolCallId, { stage: "rpc_finalize_confirm_booking_failed", message: error.message });
 
-  return NextResponse.json({
-    results: [
-      {
-        toolCallId,
-        result: JSON.stringify({
-          status: "OK",
-          calendar_event_id: data?.calendar_event_id ?? null,
-          provider_id: data?.provider_id ?? null,
-          user_id: data?.user_id ?? null,
-          start_at: data?.start_at ?? null,
-          end_at: data?.end_at ?? null,
-          ...(confirmationNumber ? { confirmation_number: confirmationNumber } : {}),
-          message_to_say: "The appointment has been successfully scheduled.",
-          next_action: "ASK_CONFIRMATION_NUMBER",
-        }),
-      },
-    ],
-  });
+  const tz = String((proposal as any)?.timezone ?? (proposal as any)?.payload?.timezone ?? "America/New_York");
+  const spokenStart =
+    String((proposal as any)?.payload?.spoken_start ?? "").trim() ||
+    (proposal as any)?.normalized_start
+      ? formatForSpeechFromIso((proposal as any).normalized_start)
+      : null;
+
+  // Demo-ready: end call cleanly, no confirmation number step.
+  const messageToSay = demoAutoconfirm
+    ? `Perfect — you’re all set${spokenStart ? ` for ${spokenStart}` : ""}. Thank you.`
+    : "The appointment has been successfully scheduled.";
+
+  const nextAction = demoAutoconfirm ? "END_CALL" : "ASK_CONFIRMATION_NUMBER";
+
+  return {
+    toolCallId,
+    result: JSON.stringify({
+      status: "OK",
+      calendar_event_id: data?.calendar_event_id ?? null,
+      provider_id: data?.provider_id ?? null,
+      user_id: data?.user_id ?? null,
+      start_at: data?.start_at ?? null,
+      end_at: data?.end_at ?? null,
+      ...(confirmationNumber ? { confirmation_number: confirmationNumber } : {}),
+      message_to_say: messageToSay,
+      next_action: nextAction,
+      ...(demoAutoconfirm ? { demo_autoconfirm: true, timezone: tz } : {}),
+    }),
+  };
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json().catch(() => ({}));
+
+    // 1) Vapi tool-calls envelope
+    if (body?.message?.type === "tool-calls" && Array.isArray(body.message.toolCalls)) {
+      const results: VapiToolResultEnvelope[] = [];
+
+      for (const tc of body.message.toolCalls) {
+        const toolCallId = String(tc?.id ?? "").trim() || "missing_toolCallId";
+        const fnName = String(tc?.function?.name ?? "").trim();
+        if (fnName !== "confirm_booking") continue;
+
+        const args = safeParseArgs(tc?.function?.arguments);
+        results.push(await handleOne(toolCallId, args));
+      }
+
+      if (results.length === 0) {
+        return jsonToolResults([toolError("no_matching_tool_call", { stage: "no_matching_tool_call" })]);
+      }
+
+      return jsonToolResults(results);
+    }
+
+    // 2) Flat JSON body
+    const toolCallId = String(body?.toolCallId || body?.tool_call_id || body?.id || "confirm_call").trim();
+    return jsonToolResults([await handleOne(toolCallId, body)]);
+  } catch (e: any) {
+    // absolutely never let Vapi see an unstructured 500
+    return jsonToolResults([
+      toolError("confirm_call", { stage: "unhandled_exception", message: e?.message ?? String(e) }),
+    ]);
+  }
 }

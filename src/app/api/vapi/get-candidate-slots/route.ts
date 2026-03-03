@@ -284,23 +284,57 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
     return toolError(toolCallId, { stage: "invalid_attempt_id", received: args?.attempt_id });
   }
 
+  const officeOfferRawText = String(args?.office_offer_raw_text ?? "").trim();
+
+let demoAutoconfirm = false;
+
+// 1) Prefer explicit tool arg if present (from Vapi variableValues passthrough)
+const argDemo = (args as any)?.demo_autoconfirm;
+if (argDemo === true || argDemo === "true" || argDemo === 1 || argDemo === "1") {
+  demoAutoconfirm = true;
+} else {
+  // 2) Otherwise fall back to DB flag on schedule_attempts
+  try {
+    const { data: attemptRow, error: attemptErr } = await supabaseAdmin
+      .from("schedule_attempts")
+      .select("id, demo_autoconfirm")
+      .eq("id", attemptId as any)
+      .maybeSingle();
+
+    if (!attemptErr && attemptRow) demoAutoconfirm = attemptRow.demo_autoconfirm === true;
+  } catch {
+    // never block tool flow
+  }
+}
+
   console.info("[get_candidate_slots] incoming_args", {
     toolCallId,
     attemptId,
     keys: Object.keys(args || {}),
-    hasOfficeOfferRawText:
-      typeof args?.office_offer_raw_text === "string" && args.office_offer_raw_text.trim().length > 0,
-    officeOfferRawTextPreview:
-      typeof args?.office_offer_raw_text === "string" ? args.office_offer_raw_text.slice(0, 80) : null,
+    demoAutoconfirm,
+    hasOfficeOfferRawText: officeOfferRawText.length > 0,
+    officeOfferRawTextPreview: officeOfferRawText ? officeOfferRawText.slice(0, 80) : null,
   });
 
-  const officeOfferRawText = String(args?.office_offer_raw_text ?? "").trim();
+  // DEMO MODE: if the office didn't give a specific time, ask for one (do not generate our own)
+  if (demoAutoconfirm && !officeOfferRawText) {
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "OK",
+        build_id: "get_candidate_slots_2026-03-03d",
+        candidate_slots: [],
+        message_to_say: "Great — what’s the earliest specific day and time you have available?",
+        next_action: "WAIT_FOR_OFFICE_TIME",
+      }),
+    };
+  }
 
   // 1) If slots already exist, do NOT regenerate (immutability)
   const { data: existingRows, error: existingRowsError } = await supabaseAdmin
     .from("candidate_slots")
     .select("id")
-    .eq("attempt_id", attemptId)
+    .eq("attempt_id", attemptId as any)
     .limit(1);
 
   if (existingRowsError) {
@@ -327,12 +361,27 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
 
     console.info("[get_candidate_slots] office_override_parse", {
       attemptId,
+      demoAutoconfirm,
       hasOfficeOfferRawText: officeOfferRawText.length > 0,
       parsedCount: parsed.length,
       parsedPreview: parsed.slice(0, 3),
       timezoneOffsetMinutes,
       nowUtc: nowUtc.toISOString(),
     });
+
+    // DEMO MODE: if the office's message didn't parse to a specific time, ask for a specific time
+    if (demoAutoconfirm && officeOfferRawText && parsed.length === 0) {
+      return {
+        toolCallId,
+        result: JSON.stringify({
+          status: "OK",
+          build_id: "get_candidate_slots_2026-03-03d",
+          candidate_slots: [],
+          message_to_say: "Sorry — I didn’t catch the exact slot. What’s the earliest specific day and time you have available?",
+          next_action: "WAIT_FOR_OFFICE_TIME",
+        }),
+      };
+    }
 
     const rowsToInsert =
       parsed.length > 0
@@ -353,6 +402,7 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
             },
           }))
         : (() => {
+            // NON-DEMO fallback: generate candidate slots
             const generated = generateCandidateSlots(nowUtc, {
               timezoneOffsetMinutes,
               businessStartHour: 9,
@@ -400,7 +450,7 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
   const { data: canonicalRows, error: readError } = await supabaseAdmin
     .from("candidate_slots")
     .select("slot_index,start_at,end_at,timezone,spoken_start,spoken_end")
-    .eq("attempt_id", attemptId)
+    .eq("attempt_id", attemptId as any)
     .order("slot_index", { ascending: true });
 
   if (readError) {
@@ -425,7 +475,26 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
     return toolError(toolCallId, { stage: "post_read_empty", attemptId });
   }
 
-  // 4) Dynamic spoken output (1/2/3)
+  // 4) Spoken output + next_action
+  if (demoAutoconfirm) {
+    // Demo: do NOT enumerate. Pick the first canonical slot deterministically.
+    const chosen = canonicalSlots[0];
+    const spoken = chosen?.spoken_start ?? "that time";
+
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "OK",
+        build_id: "get_candidate_slots_2026-03-03d",
+        candidate_slots: canonicalSlots,
+        message_to_say: "That works. Let’s book it.",
+        // Demo: immediately proceed to select_candidate_slot using the office's raw reply text as user_selection
+        next_action: "DEMO_AUTO_SELECT_CANDIDATE_SLOT",
+      }),
+    };
+  }
+
+  // Non-demo: ordinal enumeration
   const spokenParts = canonicalSlots.slice(0, 3).map((s, idx) => {
     const label = idx === 0 ? "First" : idx === 1 ? "Second" : "Third";
     return `${label}: ${s.spoken_start}`;
