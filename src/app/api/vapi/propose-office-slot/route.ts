@@ -133,27 +133,30 @@ async function handleOne(toolCallId: string, args: ProposeOfficeSlotArgs) {
     tool_payload: toolPayload,
   });
 
-  // If proposal_id missing, fail fast with deterministic instruction.
-  // (This prevents the “repeat the times” spiral.)
-  if (!proposalId) {
-    const resp = {
-      status: "ERROR",
-      code: "MISSING_PROPOSAL_ID",
-      message_to_say: "Please choose one of the options by saying first, second, or third.",
-      next_action: "ASK_USER_TO_CHOOSE_SLOT",
-    };
+if (!proposalId || proposalId === "proposal_id") {
+  const resp = {
+    status: "ERROR",
+    code: "INVALID_PROPOSAL_ID",
+    message_to_say: "Please choose one of the options by saying first, second, or third.",
+    next_action: "ASK_USER_TO_CHOOSE_SLOT",
+  };
 
-    await logCallEvent({
-      attemptIdNumOrNull,
-      source: "api.vapi.propose-office-slot",
-      event_type: "TOOL_CALL_ERROR",
-      tool_name: "propose_office_slot",
-      tool_payload: toolPayload,
-      vapi_event: { error: "proposal_id missing" },
-    });
+  await logCallEvent({
+    attemptIdNumOrNull,
+    source: "api.vapi.propose-office-slot",
+    event_type: "TOOL_CALL_ERROR",
+    tool_name: "propose_office_slot",
+    tool_payload: toolPayload,
+    vapi_event: { error: "invalid_or_placeholder_proposal_id" },
+  });
 
-    return { toolCallId, result: JSON.stringify(resp) };
-  }
+  return jsonToolResults([
+    {
+      toolCallId: toolCallId || "missing_toolCallId",
+      result: JSON.stringify(resp),
+    },
+  ]);
+}
 
   // Read attempt for demo_autoconfirm decision
   const { data: attemptRow, error: attemptReadErr } = await supabaseAdmin

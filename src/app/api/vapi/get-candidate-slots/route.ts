@@ -58,6 +58,19 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
     return toolError(toolCallId, { stage: "invalid_attempt_id", received: args?.attempt_id });
   }
 
+console.info("[get_candidate_slots] incoming_args", {
+  toolCallId,
+  attemptId,
+  keys: Object.keys(args || {}),
+  hasOfficeOfferRawText:
+    typeof args?.office_offer_raw_text === "string" &&
+    args.office_offer_raw_text.trim().length > 0,
+  officeOfferRawTextPreview:
+    typeof args?.office_offer_raw_text === "string"
+      ? args.office_offer_raw_text.slice(0, 80)
+      : null,
+});  
+
   // 1) If slots already exist, do NOT regenerate
   const { data: existingRows, error: existingRowsError } = await supabaseAdmin
     .from("candidate_slots")
