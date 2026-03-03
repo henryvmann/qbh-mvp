@@ -142,6 +142,21 @@ const ORDINAL_DAY: Record<string, number> = {
   "thirty first": 31,
 };
 
+const WORD_HOUR: Record<string, number> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+};
+
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
@@ -200,7 +215,7 @@ function parseOfficeOfferTimes(raw: string, baseNowUtc: Date, offsetMinutes: num
   if (!text) return [];
 
   const re =
-    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+([0-9]{1,2}|[a-z]+(?:[-\s][a-z]+)?)\s+at\s+(noon|midday|midnight|[0-9]{1,2}(?::[0-9]{2})?\s*(am|pm)?)\b/gi;
+    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+([0-9]{1,2}|[a-z]+(?:[-\s][a-z]+)?)\s+at\s+(noon|midday|midnight|([0-9]{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?::[0-9]{2})?\s*(am|pm)?)\b/gi;
 
   const out: ParsedOfficeSlot[] = [];
   const nowUtc = baseNowUtc;
@@ -230,24 +245,48 @@ function parseOfficeOfferTimes(raw: string, baseNowUtc: Date, offsetMinutes: num
       hour24 = 0;
       minute = 0;
     } else {
-      const compact = timeRaw.replace(/\s+/g, "");
-      const parts = compact.split(":");
-      const h = Number(parts[0].replace(/[^0-9]/g, ""));
-      const min = parts.length > 1 ? Number(parts[1].replace(/[^0-9]/g, "")) : 0;
+const compact = timeRaw.replace(/\s+/g, "").toLowerCase();
 
-      if (!Number.isFinite(h) || h < 0 || h > 23) continue;
-      if (!Number.isFinite(min) || min < 0 || min > 59) continue;
+// ---- NEW: word-hour support ----
+const wordMatch = compact.match(
+  /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?::([0-9]{2}))?(am|pm)?$/
+);
 
-      const hasAmPm = /am|pm/.test(compact) || ampmRaw === "am" || ampmRaw === "pm";
-      const ampm = ampmRaw || (compact.includes("am") ? "am" : compact.includes("pm") ? "pm" : "");
+if (wordMatch) {
+  const WORD_HOUR: Record<string, number> = {
+    one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+    seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12
+  };
 
-      if (hasAmPm) {
-        const h12 = h % 12;
-        hour24 = ampm === "pm" ? h12 + 12 : h12;
-      } else {
-        hour24 = h;
-      }
-      minute = min;
+  const wh = WORD_HOUR[wordMatch[1]];
+  const min = wordMatch[2] ? Number(wordMatch[2]) : 0;
+  const ampm = wordMatch[3] || ampmRaw || "";
+
+  let h12 = wh % 12;
+  hour24 = ampm === "pm" ? h12 + 12 : h12;
+  minute = min;
+
+} else {
+  // ---- EXISTING numeric parsing ----
+  const parts = compact.split(":");
+  const h = Number(parts[0].replace(/[^0-9]/g, ""));
+  const min = parts.length > 1 ? Number(parts[1].replace(/[^0-9]/g, "")) : 0;
+
+  if (!Number.isFinite(h) || h < 0 || h > 23) continue;
+  if (!Number.isFinite(min) || min < 0 || min > 59) continue;
+
+  const hasAmPm = /am|pm/.test(compact) || ampmRaw === "am" || ampmRaw === "pm";
+  const ampm = ampmRaw || (compact.includes("am") ? "am" : compact.includes("pm") ? "pm" : "");
+
+  if (hasAmPm) {
+    const h12 = h % 12;
+    hour24 = ampm === "pm" ? h12 + 12 : h12;
+  } else {
+    hour24 = h;
+  }
+
+  minute = min;
+}
     }
 
     const year = nowUtc.getUTCFullYear();
