@@ -81,6 +81,39 @@ function ordinalToZeroIndex(sel: string): number | null {
     return null;
 }
 
+function isAffirmative(sel: string): boolean {
+  const x = canonSelection(sel);
+
+  // Deterministic whitelist only (no fuzzy)
+  if (
+    x === "yes" ||
+    x === "yeah" ||
+    x === "yep" ||
+    x === "sure" ||
+    x === "ok" ||
+    x === "okay" ||
+    x === "correct" ||
+    x === "works" ||
+    x === "that works" ||
+    x === "sounds good" ||
+    x === "fine" ||
+    x === "perfect" ||
+    x === "great"
+  ) {
+    return true;
+  }
+
+  // Deterministic prefixes (common natural speech)
+  if (x.startsWith("yes ")) return true;
+  if (x.startsWith("yeah ")) return true;
+  if (x.startsWith("yep ")) return true;
+  if (x.startsWith("sure ")) return true;
+  if (x.startsWith("ok ")) return true;
+  if (x.startsWith("okay ")) return true;
+
+  return false;
+}
+
 async function getExistingProposalId(attemptId: number): Promise<string | null> {
     const { data, error } = await supabaseAdmin
         .from("proposals")
