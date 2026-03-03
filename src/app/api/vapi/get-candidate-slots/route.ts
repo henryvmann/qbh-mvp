@@ -21,6 +21,22 @@ type VapiToolCallsBody = {
   attempt_id?: any;
 };
 
+function normalizeAttemptIdAny(v: any): string | number {
+  // already a number
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+
+  const s = String(v ?? "").trim();
+  if (!s) throw new Error("missing_attempt_id");
+
+  // numeric string -> number (legacy bigint ids)
+  if (/^\d+$/.test(s)) return Number(s);
+
+  // uuid -> keep as string
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)) return s;
+
+  throw new Error("invalid_attempt_id");
+}
+
 function jsonToolResults(results: VapiToolResultEnvelope[]) {
   return Response.json({ results });
 }
@@ -271,12 +287,12 @@ function parseOfficeOfferTimes(raw: string, baseNowUtc: Date, offsetMinutes: num
 }
 
 async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultEnvelope> {
-  let attemptId: number;
-  try {
-    attemptId = normalizeAttemptId(args?.attempt_id);
-  } catch {
-    return toolError(toolCallId, { stage: "invalid_attempt_id", received: args?.attempt_id });
-  }
+let attemptId: string | number;
+try {
+  attemptId = normalizeAttemptIdAny(args?.attempt_id);
+} catch {
+  return toolError(toolCallId, { stage: "invalid_attempt_id", received: args?.attempt_id });
+}
 
   console.info("[get_candidate_slots] incoming_args", {
     toolCallId,
