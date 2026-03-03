@@ -86,7 +86,7 @@ function safeParseArgs(raw: any): Record<string, any> {
   return {};
 }
 
-async function handleOne(toolCallId: string, args: ProposeOfficeSlotArgs) {
+async function handleOne(toolCallId: string, args: ProposeOfficeSlotArgs): Promise<VapiToolResultEnvelope> {
   // attempt_id
   let attemptIdStr = "";
   let attemptIdNumOrNull: number | null = null;
