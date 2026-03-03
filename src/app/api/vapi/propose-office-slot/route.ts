@@ -150,12 +150,10 @@ if (!proposalId || proposalId === "proposal_id") {
     vapi_event: { error: "invalid_or_placeholder_proposal_id" },
   });
 
-  return jsonToolResults([
-    {
-      toolCallId: toolCallId || "missing_toolCallId",
-      result: JSON.stringify(resp),
-    },
-  ]);
+return {
+  toolCallId: toolCallId || "missing_toolCallId",
+  result: JSON.stringify(resp),
+};
 }
 
   // Read attempt for demo_autoconfirm decision
