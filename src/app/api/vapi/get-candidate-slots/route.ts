@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { normalizeAttemptId } from "../../../../lib/vapi/ids";
 import { generateCandidateSlots } from "../../../../lib/availability/generateCandidateSlots";
 
 type VapiToolResultEnvelope = {
@@ -19,21 +20,6 @@ type VapiToolCallsBody = {
   id?: string;
   attempt_id?: any;
 };
-
-function normalizeAttemptIdAny(v: any): string | number {
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-
-  const s = String(v ?? "").trim();
-  if (!s) throw new Error("missing_attempt_id");
-
-  // legacy bigint ids passed as string
-  if (/^\d+$/.test(s)) return Number(s);
-
-  // uuid
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)) return s;
-
-  throw new Error("invalid_attempt_id");
-}
 
 function jsonToolResults(results: VapiToolResultEnvelope[]) {
   return Response.json({ results });
@@ -69,99 +55,50 @@ function toolError(toolCallId: string, debug?: any): VapiToolResultEnvelope {
 // Supports examples like:
 // "March fourth at noon"
 // "March 4 at 3 PM"
-// Multiple entries: comma / "or"
+// "March fifteenth at one PM"
 // -----------------------------
 const MONTHS: Record<string, number> = {
-  january: 1,
-  jan: 1,
-  february: 2,
-  feb: 2,
-  march: 3,
-  mar: 3,
-  april: 4,
-  apr: 4,
+  january: 1, jan: 1,
+  february: 2, feb: 2,
+  march: 3, mar: 3,
+  april: 4, apr: 4,
   may: 5,
-  june: 6,
-  jun: 6,
-  july: 7,
-  jul: 7,
-  august: 8,
-  aug: 8,
-  september: 9,
-  sep: 9,
-  sept: 9,
-  october: 10,
-  oct: 10,
-  november: 11,
-  nov: 11,
-  december: 12,
-  dec: 12,
+  june: 6, jun: 6,
+  july: 7, jul: 7,
+  august: 8, aug: 8,
+  september: 9, sep: 9, sept: 9,
+  october: 10, oct: 10,
+  november: 11, nov: 11,
+  december: 12, dec: 12,
 };
 
 const ORDINAL_DAY: Record<string, number> = {
-  first: 1,
-  second: 2,
-  third: 3,
-  fourth: 4,
-  fifth: 5,
-  sixth: 6,
-  seventh: 7,
-  eighth: 8,
-  ninth: 9,
-  tenth: 10,
-  eleventh: 11,
-  twelfth: 12,
-  thirteenth: 13,
-  fourteenth: 14,
-  fifteenth: 15,
-  sixteenth: 16,
-  seventeenth: 17,
-  eighteenth: 18,
-  nineteenth: 19,
-  twentieth: 20,
-  "twenty-first": 21,
-  "twenty first": 21,
-  "twenty-second": 22,
-  "twenty second": 22,
-  "twenty-third": 23,
-  "twenty third": 23,
-  "twenty-fourth": 24,
-  "twenty fourth": 24,
-  "twenty-fifth": 25,
-  "twenty fifth": 25,
-  "twenty-sixth": 26,
-  "twenty sixth": 26,
-  "twenty-seventh": 27,
-  "twenty seventh": 27,
-  "twenty-eighth": 28,
-  "twenty eighth": 28,
-  "twenty-ninth": 29,
-  "twenty ninth": 29,
+  first: 1, second: 2, third: 3, fourth: 4, fifth: 5,
+  sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
+  eleventh: 11, twelfth: 12, thirteenth: 13, fourteenth: 14, fifteenth: 15,
+  sixteenth: 16, seventeenth: 17, eighteenth: 18, nineteenth: 19, twentieth: 20,
+  "twenty-first": 21, "twenty first": 21,
+  "twenty-second": 22, "twenty second": 22,
+  "twenty-third": 23, "twenty third": 23,
+  "twenty-fourth": 24, "twenty fourth": 24,
+  "twenty-fifth": 25, "twenty fifth": 25,
+  "twenty-sixth": 26, "twenty sixth": 26,
+  "twenty-seventh": 27, "twenty seventh": 27,
+  "twenty-eighth": 28, "twenty eighth": 28,
+  "twenty-ninth": 29, "twenty ninth": 29,
   thirtieth: 30,
-  "thirty-first": 31,
-  "thirty first": 31,
+  "thirty-first": 31, "thirty first": 31,
 };
 
 const WORD_HOUR: Record<string, number> = {
-  one: 1,
-  two: 2,
-  three: 3,
-  four: 4,
-  five: 5,
-  six: 6,
-  seven: 7,
-  eight: 8,
-  nine: 9,
-  ten: 10,
-  eleven: 11,
-  twelve: 12,
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+  seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
 };
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
 
-// Convert a UTC Date to an ISO string *with a fixed offset* (deterministic)
 function toIsoWithOffset(dUtc: Date, offsetMinutes: number): string {
   const localMs = dUtc.getTime() + offsetMinutes * 60_000;
   const local = new Date(localMs);
@@ -182,50 +119,50 @@ function toIsoWithOffset(dUtc: Date, offsetMinutes: number): string {
 }
 
 function formatSpeech(month: number, day: number, hour24: number, minute: number) {
-  const monthNames = [
-    "",
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+  const monthNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const h12 = ((hour24 + 11) % 12) + 1;
   const ampm = hour24 >= 12 ? "PM" : "AM";
   const mm = minute === 0 ? "" : `:${pad2(minute)}`;
   return `${monthNames[month]} ${day} at ${h12}${mm} ${ampm}`;
 }
 
-type ParsedOfficeSlot = {
-  startIso: string;
-  endIso: string;
-  spokenStart: string;
-  spokenEnd: string;
-};
+// DST-safe NY offset (no libs)
+function nthWeekdayOfMonthUtc(year: number, month1to12: number, weekday0Sun: number, n: number): number {
+  const first = new Date(Date.UTC(year, month1to12 - 1, 1));
+  const firstDow = first.getUTCDay();
+  const delta = (weekday0Sun - firstDow + 7) % 7;
+  return 1 + delta + (n - 1) * 7;
+}
 
-function parseOfficeOfferTimes(raw: string, baseNowUtc: Date, offsetMinutes: number): ParsedOfficeSlot[] {
+function nyOffsetMinutesForLocalDate(year: number, month1to12: number, day: number): number {
+  const dstStartDay = nthWeekdayOfMonthUtc(year, 3, 0, 2);  // 2nd Sunday March
+  const dstEndDay = nthWeekdayOfMonthUtc(year, 11, 0, 1);   // 1st Sunday Nov
+
+  const ymd = year * 10000 + month1to12 * 100 + day;
+  const start = year * 10000 + 3 * 100 + dstStartDay;
+  const end = year * 10000 + 11 * 100 + dstEndDay;
+
+  return ymd >= start && ymd < end ? -240 : -300;
+}
+
+type ParsedOfficeSlot = { startIso: string; endIso: string; spokenStart: string; spokenEnd: string };
+
+function parseOfficeOfferTimes(raw: string, baseNowUtc: Date): ParsedOfficeSlot[] {
   const text = String(raw ?? "").trim();
   if (!text) return [];
 
   const re =
-    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+([0-9]{1,2}|[a-z]+(?:[-\s][a-z]+)?)\s+at\s+(noon|midday|midnight|([0-9]{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?::[0-9]{2})?\s*(am|pm)?)\b/gi;
+    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+([0-9]{1,2}|[a-z]+(?:[-\s][a-z]+)?)\s+at\s+(noon|midday|midnight|((?:[0-9]{1,2})|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?::[0-9]{2})?\s*(am|pm)?)\b/gi;
 
   const out: ParsedOfficeSlot[] = [];
-  const nowUtc = baseNowUtc;
+  const now = baseNowUtc;
 
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) && out.length < 3) {
     const monRaw = (m[1] || "").toLowerCase();
     const dayRaw = (m[2] || "").toLowerCase().trim();
     const timeRaw = (m[3] || "").toLowerCase().trim();
-    const ampmRaw = (m[4] || "").toLowerCase().trim();
+    const ampmRaw = (m[5] || "").toLowerCase().trim(); // IMPORTANT: group 5
 
     const month = MONTHS[monRaw];
     if (!month) continue;
@@ -239,63 +176,53 @@ function parseOfficeOfferTimes(raw: string, baseNowUtc: Date, offsetMinutes: num
     let minute = 0;
 
     if (timeRaw === "noon" || timeRaw === "midday") {
-      hour24 = 12;
-      minute = 0;
+      hour24 = 12; minute = 0;
     } else if (timeRaw === "midnight") {
-      hour24 = 0;
-      minute = 0;
+      hour24 = 0; minute = 0;
     } else {
-const compact = timeRaw.replace(/\s+/g, "").toLowerCase();
+      const compact = timeRaw.replace(/\s+/g, "").toLowerCase();
 
-// ---- NEW: word-hour support ----
-const wordMatch = compact.match(
-  /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?::([0-9]{2}))?(am|pm)?$/
-);
+      const wordMatch = compact.match(/^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?::([0-9]{2}))?(am|pm)?$/);
+      if (wordMatch) {
+        const wh = WORD_HOUR[wordMatch[1]];
+        const min = wordMatch[2] ? Number(wordMatch[2]) : 0;
+        const ampm = wordMatch[3] || ampmRaw || "";
 
-if (wordMatch) {
-  const WORD_HOUR: Record<string, number> = {
-    one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
-    seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12
-  };
+        if (!Number.isFinite(min) || min < 0 || min > 59) continue;
 
-  const wh = WORD_HOUR[wordMatch[1]];
-  const min = wordMatch[2] ? Number(wordMatch[2]) : 0;
-  const ampm = wordMatch[3] || ampmRaw || "";
+        const h12 = wh % 12;
+        hour24 = ampm === "pm" ? h12 + 12 : h12;
+        minute = min;
+      } else {
+        const parts = compact.split(":");
+        const h = Number(parts[0].replace(/[^0-9]/g, ""));
+        const min = parts.length > 1 ? Number(parts[1].replace(/[^0-9]/g, "")) : 0;
 
-  let h12 = wh % 12;
-  hour24 = ampm === "pm" ? h12 + 12 : h12;
-  minute = min;
+        if (!Number.isFinite(h) || h < 0 || h > 23) continue;
+        if (!Number.isFinite(min) || min < 0 || min > 59) continue;
 
-} else {
-  // ---- EXISTING numeric parsing ----
-  const parts = compact.split(":");
-  const h = Number(parts[0].replace(/[^0-9]/g, ""));
-  const min = parts.length > 1 ? Number(parts[1].replace(/[^0-9]/g, "")) : 0;
+        const hasAmPm = /am|pm/.test(compact) || ampmRaw === "am" || ampmRaw === "pm";
+        const ampm = ampmRaw || (compact.includes("am") ? "am" : compact.includes("pm") ? "pm" : "");
 
-  if (!Number.isFinite(h) || h < 0 || h > 23) continue;
-  if (!Number.isFinite(min) || min < 0 || min > 59) continue;
+        if (hasAmPm) {
+          const h12 = h % 12;
+          hour24 = ampm === "pm" ? h12 + 12 : h12;
+        } else {
+          hour24 = h;
+        }
 
-  const hasAmPm = /am|pm/.test(compact) || ampmRaw === "am" || ampmRaw === "pm";
-  const ampm = ampmRaw || (compact.includes("am") ? "am" : compact.includes("pm") ? "pm" : "");
-
-  if (hasAmPm) {
-    const h12 = h % 12;
-    hour24 = ampm === "pm" ? h12 + 12 : h12;
-  } else {
-    hour24 = h;
-  }
-
-  minute = min;
-}
+        minute = min;
+      }
     }
 
-    const year = nowUtc.getUTCFullYear();
+    const year = now.getUTCFullYear();
+    const offsetMinutes = nyOffsetMinutesForLocalDate(year, month, day);
 
     const localWall = new Date(Date.UTC(year, month - 1, day, hour24, minute, 0, 0));
     const startUtcMs = localWall.getTime() - offsetMinutes * 60_000;
     let startUtc = new Date(startUtcMs);
 
-    if (startUtc.getTime() < nowUtc.getTime() - 2 * 60 * 60 * 1000) {
+    if (startUtc.getTime() < now.getTime() - 2 * 60 * 60 * 1000) {
       const localWallNext = new Date(Date.UTC(year + 1, month - 1, day, hour24, minute, 0, 0));
       startUtc = new Date(localWallNext.getTime() - offsetMinutes * 60_000);
     }
@@ -316,52 +243,40 @@ if (wordMatch) {
 }
 
 async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultEnvelope> {
-  let attemptId: string | number;
+  let attemptId: number;
   try {
-    attemptId = normalizeAttemptIdAny(args?.attempt_id);
+    attemptId = normalizeAttemptId(args?.attempt_id);
   } catch {
     return toolError(toolCallId, { stage: "invalid_attempt_id", received: args?.attempt_id });
   }
 
   const officeOfferRawText = String(args?.office_offer_raw_text ?? "").trim();
 
-let demoAutoconfirm = false;
-
-// 1) Prefer explicit tool arg if present (from Vapi variableValues passthrough)
-const argDemo = (args as any)?.demo_autoconfirm;
-if (argDemo === true || argDemo === "true" || argDemo === 1 || argDemo === "1") {
-  demoAutoconfirm = true;
-} else {
-  // 2) Otherwise fall back to DB flag on schedule_attempts
-  try {
-    const { data: attemptRow, error: attemptErr } = await supabaseAdmin
-      .from("schedule_attempts")
-      .select("id, demo_autoconfirm")
-      .eq("id", attemptId as any)
-      .maybeSingle();
-
-    if (!attemptErr && attemptRow) demoAutoconfirm = attemptRow.demo_autoconfirm === true;
-  } catch {
-    // never block tool flow
+  // Demo flag: prefer arg, else DB
+  let demoAutoconfirm = false;
+  const argDemo = (args as any)?.demo_autoconfirm;
+  if (argDemo === true || argDemo === "true" || argDemo === 1 || argDemo === "1") {
+    demoAutoconfirm = true;
+  } else {
+    try {
+      const { data: attemptRow, error: attemptErr } = await supabaseAdmin
+        .from("schedule_attempts")
+        .select("id, demo_autoconfirm")
+        .eq("id", attemptId)
+        .maybeSingle();
+      if (!attemptErr && attemptRow) demoAutoconfirm = attemptRow.demo_autoconfirm === true;
+    } catch {
+      // never block tool flow
+    }
   }
-}
 
-  console.info("[get_candidate_slots] incoming_args", {
-    toolCallId,
-    attemptId,
-    keys: Object.keys(args || {}),
-    demoAutoconfirm,
-    hasOfficeOfferRawText: officeOfferRawText.length > 0,
-    officeOfferRawTextPreview: officeOfferRawText ? officeOfferRawText.slice(0, 80) : null,
-  });
-
-  // DEMO MODE: if the office didn't give a specific time, ask for one (do not generate our own)
+  // DEMO: if no time provided, ask for specific time (don’t generate)
   if (demoAutoconfirm && !officeOfferRawText) {
     return {
       toolCallId,
       result: JSON.stringify({
         status: "OK",
-        build_id: "get_candidate_slots_2026-03-03d",
+        build_id: "get_candidate_slots_2026-03-03f",
         candidate_slots: [],
         message_to_say: "Great — what’s the earliest specific day and time you have available?",
         next_action: "WAIT_FOR_OFFICE_TIME",
@@ -369,52 +284,30 @@ if (argDemo === true || argDemo === "true" || argDemo === 1 || argDemo === "1") 
     };
   }
 
-  // 1) If slots already exist, do NOT regenerate (immutability)
+  // 1) If slots already exist, do NOT regenerate
   const { data: existingRows, error: existingRowsError } = await supabaseAdmin
     .from("candidate_slots")
     .select("id")
-    .eq("attempt_id", attemptId as any)
+    .eq("attempt_id", attemptId)
     .limit(1);
 
   if (existingRowsError) {
-    return toolError(toolCallId, {
-      stage: "check_existing",
-      message: existingRowsError.message,
-      details: existingRowsError.details,
-      code: existingRowsError.code,
-    });
+    return toolError(toolCallId, { stage: "check_existing", message: existingRowsError.message });
   }
 
   // 2) Only generate + insert if none exist
   if (!existingRows || existingRows.length === 0) {
     const nowUtc = new Date();
-
-    // Demo-default timezone: America/New_York
-    // IMPORTANT: Vercel runs in UTC; do NOT use server getTimezoneOffset() here.
     const timezone = "America/New_York";
-    const timezoneOffsetMinutes = -300;
 
-    const parsed: ParsedOfficeSlot[] = officeOfferRawText
-      ? parseOfficeOfferTimes(officeOfferRawText, nowUtc, timezoneOffsetMinutes)
-      : [];
+    const parsed = officeOfferRawText ? parseOfficeOfferTimes(officeOfferRawText, nowUtc) : [];
 
-    console.info("[get_candidate_slots] office_override_parse", {
-      attemptId,
-      demoAutoconfirm,
-      hasOfficeOfferRawText: officeOfferRawText.length > 0,
-      parsedCount: parsed.length,
-      parsedPreview: parsed.slice(0, 3),
-      timezoneOffsetMinutes,
-      nowUtc: nowUtc.toISOString(),
-    });
-
-    // DEMO MODE: if the office's message didn't parse to a specific time, ask for a specific time
     if (demoAutoconfirm && officeOfferRawText && parsed.length === 0) {
       return {
         toolCallId,
         result: JSON.stringify({
           status: "OK",
-          build_id: "get_candidate_slots_2026-03-03d",
+          build_id: "get_candidate_slots_2026-03-03f",
           candidate_slots: [],
           message_to_say: "Sorry — I didn’t catch the exact slot. What’s the earliest specific day and time you have available?",
           next_action: "WAIT_FOR_OFFICE_TIME",
@@ -434,14 +327,11 @@ if (argDemo === true || argDemo === "true" || argDemo === 1 || argDemo === "1") 
             timezone,
             engine_version: "office_v1",
             anchor_utc: null,
-            payload: {
-              source: "office_offer_raw_text",
-              raw_text: officeOfferRawText,
-              parsed: p,
-            },
+            payload: { source: "office_offer_raw_text", raw_text: officeOfferRawText, parsed: p },
           }))
         : (() => {
-            // NON-DEMO fallback: generate candidate slots
+            // NON-DEMO fallback: generator
+            const timezoneOffsetMinutes = -300;
             const generated = generateCandidateSlots(nowUtc, {
               timezoneOffsetMinutes,
               businessStartHour: 9,
@@ -466,40 +356,24 @@ if (argDemo === true || argDemo === "true" || argDemo === 1 || argDemo === "1") 
             }));
           })();
 
-    if (!rowsToInsert.length) {
-      return toolError(toolCallId, { stage: "generate_empty" });
-    }
+    if (!rowsToInsert.length) return toolError(toolCallId, { stage: "generate_empty" });
 
     const { error: insertError } = await supabaseAdmin.from("candidate_slots").upsert(rowsToInsert, {
       onConflict: "attempt_id,start_at,end_at",
       ignoreDuplicates: true,
     });
 
-    if (insertError) {
-      return toolError(toolCallId, {
-        stage: "insert",
-        message: insertError.message,
-        details: insertError.details,
-        code: insertError.code,
-      });
-    }
+    if (insertError) return toolError(toolCallId, { stage: "insert", message: insertError.message });
   }
 
   // 3) Read canonical rows
   const { data: canonicalRows, error: readError } = await supabaseAdmin
     .from("candidate_slots")
     .select("slot_index,start_at,end_at,timezone,spoken_start,spoken_end")
-    .eq("attempt_id", attemptId as any)
+    .eq("attempt_id", attemptId)
     .order("slot_index", { ascending: true });
 
-  if (readError) {
-    return toolError(toolCallId, {
-      stage: "read",
-      message: readError.message,
-      details: readError.details,
-      code: readError.code,
-    });
-  }
+  if (readError) return toolError(toolCallId, { stage: "read", message: readError.message });
 
   const canonicalSlots =
     canonicalRows?.map((r: any) => ({
@@ -510,24 +384,17 @@ if (argDemo === true || argDemo === "true" || argDemo === 1 || argDemo === "1") 
       spoken_end: r.spoken_end ?? r.end_at,
     })) ?? [];
 
-  if (!canonicalSlots.length) {
-    return toolError(toolCallId, { stage: "post_read_empty", attemptId });
-  }
+  if (!canonicalSlots.length) return toolError(toolCallId, { stage: "post_read_empty", attemptId });
 
-  // 4) Spoken output + next_action
+  // 4) Demo fast lane
   if (demoAutoconfirm) {
-    // Demo: do NOT enumerate. Pick the first canonical slot deterministically.
-    const chosen = canonicalSlots[0];
-    const spoken = chosen?.spoken_start ?? "that time";
-
     return {
       toolCallId,
       result: JSON.stringify({
         status: "OK",
-        build_id: "get_candidate_slots_2026-03-03d",
+        build_id: "get_candidate_slots_2026-03-03f",
         candidate_slots: canonicalSlots,
         message_to_say: "That works. Let’s book it.",
-        // Demo: immediately proceed to select_candidate_slot using the office's raw reply text as user_selection
         next_action: "DEMO_AUTO_SELECT_CANDIDATE_SLOT",
       }),
     };
@@ -550,7 +417,7 @@ if (argDemo === true || argDemo === "true" || argDemo === 1 || argDemo === "1") 
     toolCallId,
     result: JSON.stringify({
       status: "OK",
-      build_id: "get_candidate_slots_2026-03-03d",
+      build_id: "get_candidate_slots_2026-03-03f",
       candidate_slots: canonicalSlots,
       message_to_say,
       next_action: "ASK_USER_TO_CHOOSE_SLOT",
@@ -561,7 +428,6 @@ if (argDemo === true || argDemo === "true" || argDemo === 1 || argDemo === "1") 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as VapiToolCallsBody;
 
-  // 1) Vapi tool-calls envelope
   if (body?.message?.type === "tool-calls" && Array.isArray(body.message.toolCalls)) {
     const results: VapiToolResultEnvelope[] = [];
 
@@ -575,18 +441,12 @@ export async function POST(req: Request) {
     }
 
     if (results.length === 0) {
-      return jsonToolResults([
-        toolError("no_matching_tool", {
-          stage: "no_matching_tool_call",
-          received_names: body.message.toolCalls.map((t) => t?.function?.name ?? null),
-        }),
-      ]);
+      return jsonToolResults([toolError("no_matching_tool", { stage: "no_matching_tool_call" })]);
     }
 
     return jsonToolResults(results);
   }
 
-  // 2) Flat JSON body (curl / legacy)
   const toolCallId = String(body?.toolCallId || body?.tool_call_id || body?.id || "local_call").trim();
   return jsonToolResults([await handleOne(toolCallId, body)]);
 }
