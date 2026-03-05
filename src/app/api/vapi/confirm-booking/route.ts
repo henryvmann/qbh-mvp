@@ -59,19 +59,45 @@ function getSupabaseOrError(toolCallId: string): SupabaseClient | VapiToolResult
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
+function ordinal(n: number) {
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return `${n}th`;
+  switch (n % 10) {
+    case 1:
+      return `${n}st`;
+    case 2:
+      return `${n}nd`;
+    case 3:
+      return `${n}rd`;
+    default:
+      return `${n}th`;
+  }
+}
+
+/**
+ * Speech-safe formatting:
+ * - No weekdays
+ * - No year guessing
+ * - No numeric slashes like 3/10 (which TTS reads as "three ten")
+ * - Uses "March 10th at 12 PM"
+ */
 function formatForSpeechFromIso(iso: string) {
   const d = new Date(iso);
-  const date = d.toLocaleDateString("en-US", {
-    month: "numeric",
-    day: "numeric",
-    timeZone: "America/New_York",
-  });
-  const time = d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/New_York",
-  });
-  return `${date} at ${time}`;
+  const tz = "America/New_York";
+
+  const month = d.toLocaleDateString("en-US", { month: "long", timeZone: tz });
+  const dayNum = Number(d.toLocaleDateString("en-US", { day: "numeric", timeZone: tz }));
+
+  // "12 PM" (no :00)
+  const time = d
+    .toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: tz,
+    })
+    .replace(":00 ", " ");
+
+  return `${month} ${ordinal(dayNum)} at ${time}`;
 }
 
 async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultEnvelope> {
@@ -114,7 +140,10 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
         .eq("id", attemptIdStr);
 
       if (updErr) {
-        return toolError(toolCallId, { stage: "attempt_update_provider_uuid_failed", message: updErr.message });
+        return toolError(toolCallId, {
+          stage: "attempt_update_provider_uuid_failed",
+          message: updErr.message,
+        });
       }
     }
   }
@@ -127,7 +156,9 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
     .single();
 
   if (proposalErr || !proposal?.id) return toolError(toolCallId, { stage: "proposal_not_found" });
-  if (String((proposal as any).attempt_id) !== attemptIdStr) return toolError(toolCallId, { stage: "proposal_attempt_mismatch" });
+  if (String((proposal as any).attempt_id) !== attemptIdStr) {
+    return toolError(toolCallId, { stage: "proposal_attempt_mismatch" });
+  }
 
   const { data, error } = await supabase.rpc("finalize_confirm_booking", {
     p_attempt_id: attemptIdStr,
@@ -137,11 +168,16 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
   if (error) return toolError(toolCallId, { stage: "rpc_finalize_confirm_booking_failed", message: error.message });
 
   const tz = String((proposal as any)?.timezone ?? (proposal as any)?.payload?.timezone ?? "America/New_York");
+
+  // Prefer payload.spoken_start ONLY if it is speech-safe; otherwise derive from normalized_start.
+  const payloadSpokenStartRaw = String((proposal as any)?.payload?.spoken_start ?? "").trim();
+  const payloadLooksUnsafe =
+    /\b\d{1,2}\s*\/\s*\d{1,2}\b/.test(payloadSpokenStartRaw) || // 3/10
+    /\b\d{1,2}-\d{1,2}\b/.test(payloadSpokenStartRaw); // 3-10 (just in case)
+
   const spokenStart =
-    String((proposal as any)?.payload?.spoken_start ?? "").trim() ||
-    (proposal as any)?.normalized_start
-      ? formatForSpeechFromIso((proposal as any).normalized_start)
-      : null;
+    (!payloadLooksUnsafe && payloadSpokenStartRaw ? payloadSpokenStartRaw : "") ||
+    ((proposal as any)?.normalized_start ? formatForSpeechFromIso((proposal as any).normalized_start) : null);
 
   // Demo-ready: end call cleanly, no confirmation number step.
   const messageToSay = demoAutoconfirm
