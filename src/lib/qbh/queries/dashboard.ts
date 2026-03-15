@@ -22,7 +22,8 @@ export async function getDashboardProvidersForUser(
   // 1) Providers (active) — demo-safe unscoped for now
   const { data: providers, error: providersError } = await supabaseAdmin
     .from("providers")
-    .select("id,name,status,created_at")
+    .select("id,name,status,created_at,user_id")
+    .eq("user_id", _userId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
 
@@ -30,6 +31,7 @@ export async function getDashboardProvidersForUser(
 
   const providerRows = (providers ?? []) as Array<{
     id: string;
+    user_id: string;
     name: string;
     status: string;
     created_at: string;
