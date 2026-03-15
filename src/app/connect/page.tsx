@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
 
-export default function ConnectPage() {
+function ConnectPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -24,39 +24,39 @@ export default function ConnectPage() {
   }, [running, step]);
 
   async function runDiscovery() {
-  if (running) return;
+    if (running) return;
 
-  setRunning(true);
-  setStep(0);
-
-  const t1 = setTimeout(() => setStep(1), 600);
-  const t2 = setTimeout(() => setStep(2), 1400);
-  const t3 = setTimeout(() => setStep(3), 2200);
-
-  try {
-    const response = await fetch("/api/discovery/run", {
-      method: "POST",
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data?.ok) {
-      throw new Error(data?.error || "Discovery failed.");
-    }
-
-    setStep(3);
-    setTimeout(() => router.push(dashboardHref), 600);
-  } catch (error) {
-    console.error("Discovery run failed:", error);
-    setRunning(false);
+    setRunning(true);
     setStep(0);
-    alert(error instanceof Error ? error.message : "Discovery failed.");
-  } finally {
-    clearTimeout(t1);
-    clearTimeout(t2);
-    clearTimeout(t3);
+
+    const t1 = setTimeout(() => setStep(1), 600);
+    const t2 = setTimeout(() => setStep(2), 1400);
+    const t3 = setTimeout(() => setStep(3), 2200);
+
+    try {
+      const response = await fetch("/api/discovery/run", {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || "Discovery failed.");
+      }
+
+      setStep(3);
+      setTimeout(() => router.push(dashboardHref), 600);
+    } catch (error) {
+      console.error("Discovery run failed:", error);
+      setRunning(false);
+      setStep(0);
+      alert(error instanceof Error ? error.message : "Discovery failed.");
+    } finally {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    }
   }
-}
 
   return (
     <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
@@ -181,5 +181,13 @@ function StepChip({ label, done }: { label: string; done: boolean }) {
       <span>{label}</span>
       {done ? <span className="text-neutral-400">✓</span> : null}
     </div>
+  );
+}
+
+export default function ConnectPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F5F1E8]" />}>
+      <ConnectPageInner />
+    </Suspense>
   );
 }
