@@ -3,22 +3,25 @@ import { supabaseAdmin } from "../../../../lib/supabase-server";
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
 
-  const office_number = String(body?.office_number || "").trim();
-  const provider_uuid = String(body?.provider_id || "").trim(); // UUID string from request
+  const office_number = String(
+    body?.office_number || process.env.QBH_DEMO_CALL_DESTINATION || ""
+  ).trim();
+  const provider_id = String(body?.provider_id || "").trim();
   const attemptIdFromBody = body?.attempt_id ? String(body.attempt_id).trim() : null;
 
   const patient_name = body?.patient_name ?? null;
   const provider_name = body?.provider_name ?? null;
   const preferred_timeframe = body?.preferred_timeframe ?? null;
-  const demo_autoconfirm = Boolean(body?.demo_autoconfirm);
+    const demo_autoconfirm =
+    typeof body?.demo_autoconfirm === "boolean" ? body.demo_autoconfirm : true;
 
   const user_id = process.env.QBH_DEMO_USER_ID;
 
   if (!office_number) {
     return Response.json({ ok: false, error: "office_number is required" }, { status: 400 });
   }
-  if (!provider_uuid) {
-    return Response.json({ ok: false, error: "provider_id is required (UUID string)" }, { status: 400 });
+  if (!provider_id) {
+    return Response.json({ ok: false, error: "provider_id is required" }, { status: 400 });
   }
   if (!user_id) {
     return Response.json({ ok: false, error: "QBH_DEMO_USER_ID not set" }, { status: 500 });
@@ -37,17 +40,13 @@ export async function POST(req: Request) {
     );
   }
 
-  // Legacy provider_id is NOT NULL in schedule_attempts. Use 0 as a safe placeholder.
-  const legacy_provider_id = 0;
-
   // 1) Ensure schedule_attempt exists
   if (!attempt_id) {
     const { data: attempt, error: attemptErr } = await supabaseAdmin
       .from("schedule_attempts")
       .insert({
         user_id,
-        provider_id: legacy_provider_id, // ✅ satisfy NOT NULL
-        provider_uuid: provider_uuid,    // ✅ real UUID for downstream booking
+        provider_id,
         patient_name,
         provider_name,
         preferred_timeframe,
@@ -71,8 +70,7 @@ export async function POST(req: Request) {
     await supabaseAdmin
       .from("schedule_attempts")
       .update({
-        provider_id: legacy_provider_id,
-        provider_uuid: provider_uuid,
+        provider_id,
         patient_name,
         provider_name,
         preferred_timeframe,
@@ -87,15 +85,18 @@ export async function POST(req: Request) {
   // 2) Create Vapi call
   const vapiRes = await fetch("https://api.vapi.ai/call", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
       phoneNumberId,
       assistantId,
       customer: { number: office_number, numberE164CheckEnabled: false },
       assistantOverrides: {
         variableValues: {
-          attempt_id,            // bigint string
-          provider_id: provider_uuid, // UUID string
+          attempt_id,
+          provider_id,
           patient_name,
           provider_name,
           preferred_timeframe,
@@ -117,7 +118,11 @@ export async function POST(req: Request) {
       .from("schedule_attempts")
       .update({
         status: "FAILED",
-        metadata: { last_event: "VAPI_CALL_CREATE_FAILED", vapi_status: vapiRes.status, vapi_error: data },
+        metadata: {
+          last_event: "VAPI_CALL_CREATE_FAILED",
+          vapi_status: vapiRes.status,
+          vapi_error: data,
+        },
       })
       .eq("id", attempt_id);
 
