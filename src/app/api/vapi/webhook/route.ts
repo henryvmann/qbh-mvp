@@ -69,29 +69,49 @@ function extractAttemptId(body: VapiWebhookBody): number | null {
   return null;
 }
 
+function normalizeTranscriptLine(message: {
+  role?: string;
+  content?: string;
+  message?: string;
+}): string | null {
+  const role = asTrimmedString(message?.role)?.toLowerCase() || "unknown";
+
+  if (role === "system") {
+    return null;
+  }
+
+  const content = asTrimmedString(message?.content ?? message?.message);
+  if (!content) {
+    return null;
+  }
+
+  return `${role}: ${content}`;
+}
+
 function extractTranscript(body: VapiWebhookBody): string | null {
   const conversationTranscript = body?.message?.conversation
-    ?.map((m) => {
-      const role = asTrimmedString(m?.role) || "unknown";
-      const content = asTrimmedString(m?.content ?? m?.message);
-      if (!content) return null;
-      return `${role}: ${content}`;
-    })
+    ?.map(normalizeTranscriptLine)
+    .filter(Boolean)
+    .join("\n");
+
+  const artifactTranscript = body?.message?.artifact?.messages
+    ?.map((m) =>
+      normalizeTranscriptLine({
+        role: m?.role,
+        message: m?.message,
+      })
+    )
     .filter(Boolean)
     .join("\n");
 
   const messagesTranscript = body?.messages
-    ?.map((m) => {
-      const role = asTrimmedString(m?.role) || "unknown";
-      const content = asTrimmedString(m?.content ?? m?.message);
-      if (!content) return null;
-      return `${role}: ${content}`;
-    })
+    ?.map(normalizeTranscriptLine)
     .filter(Boolean)
     .join("\n");
 
   return (
     asTrimmedString(conversationTranscript) ||
+    asTrimmedString(artifactTranscript) ||
     asTrimmedString(body?.message?.artifact?.transcript) ||
     asTrimmedString(body?.transcript) ||
     asTrimmedString(body?.call?.transcript) ||
@@ -101,18 +121,45 @@ function extractTranscript(body: VapiWebhookBody): string | null {
 }
 
 function buildSummary(transcript: string): string | null {
-  const cleaned = transcript.replace(/\s+/g, " ").trim();
-  if (!cleaned) return null;
-
-  const sentences = cleaned
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
+  const lines = transcript
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
     .filter(Boolean);
 
-  if (sentences.length === 0) return cleaned.slice(0, 240) || null;
+  if (lines.length === 0) {
+    return null;
+  }
 
-  const summary = sentences.slice(0, 2).join(" ").trim();
-  return summary || cleaned.slice(0, 240) || null;
+  const priorityLines = lines.filter((line) => {
+    const lower = line.toLowerCase();
+
+    return (
+      lower.includes("appointment") ||
+      lower.includes("book") ||
+      lower.includes("confirmed") ||
+      lower.includes("confirm") ||
+      lower.includes("bring") ||
+      lower.includes("need") ||
+      lower.includes("insurance") ||
+      lower.includes("records") ||
+      lower.includes("photo id") ||
+      lower.includes("scan") ||
+      lower.includes("blood work")
+    );
+  });
+
+  const selectedLines = (priorityLines.length > 0 ? priorityLines : lines).slice(
+    0,
+    3
+  );
+
+  const summary = selectedLines.join(" ").replace(/\s+/g, " ").trim();
+
+  if (!summary) {
+    return null;
+  }
+
+  return summary.length <= 500 ? summary : `${summary.slice(0, 497)}...`;
 }
 
 export async function POST(req: Request) {
@@ -169,6 +216,7 @@ export async function POST(req: Request) {
       console.log("WEBHOOK_STORE_SUCCESS:", {
         attemptId,
         messageType,
+        summary,
       });
     }
   } catch (e) {
