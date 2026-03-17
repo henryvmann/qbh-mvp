@@ -197,9 +197,21 @@ function extractFollowUpNotes(lines: string[]): string | null {
 
 function buildStructuredBookingNotes(transcript: string): StructuredBookingNotes {
   const lines = transcript
-    .split("\n")
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
+  .split("\n")
+  .map((line) => line.replace(/\s+/g, " ").trim())
+  .filter(Boolean)
+  .filter((line) => {
+    const lower = line.toLowerCase();
+
+    if (lower.startsWith("tool:")) return false;
+    if (lower.includes('"status":"ok"')) return false;
+    if (lower.includes('"next_action"')) return false;
+    if (lower.includes('"calendar_event_id"')) return false;
+    if (lower.includes('"provider_id"')) return false;
+    if (lower.includes('"user_id"')) return false;
+
+    return true;
+  });
 
   const appointmentTimeSpoken = extractAppointmentTimeSpoken(transcript);
   const documentsToBring = extractDocumentsToBring(transcript);
