@@ -6,11 +6,18 @@
  * No booking logic here.
  */
 
+const QBH_FALLBACK_TIMEZONE = "America/New_York";
+
+function resolvedTimezone(tz?: string): string {
+  const s = String(tz ?? "").trim();
+  return s || QBH_FALLBACK_TIMEZONE;
+}
+
 export function formatMonthDay(iso: string, tz?: string): string {
   const d = safeDate(iso);
-  // e.g. "March 9"
+
   return d.toLocaleDateString("en-US", {
-    timeZone: tz,
+    timeZone: resolvedTimezone(tz),
     month: "long",
     day: "numeric",
   });
@@ -18,9 +25,9 @@ export function formatMonthDay(iso: string, tz?: string): string {
 
 export function formatMonthDayYear(iso: string, tz?: string): string {
   const d = safeDate(iso);
-  // e.g. "March 9, 2026"
+
   return d.toLocaleDateString("en-US", {
-    timeZone: tz,
+    timeZone: resolvedTimezone(tz),
     month: "long",
     day: "numeric",
     year: "numeric",
@@ -29,16 +36,15 @@ export function formatMonthDayYear(iso: string, tz?: string): string {
 
 export function formatTime(iso: string, tz?: string): string {
   const d = safeDate(iso);
-  // e.g. "1:00 PM"
+
   return d.toLocaleTimeString("en-US", {
-    timeZone: tz,
+    timeZone: resolvedTimezone(tz),
     hour: "numeric",
     minute: "2-digit",
   });
 }
 
 export function formatDateTime(iso: string, tz?: string): string {
-  // e.g. "March 9 at 1:00 PM"
   return `${formatMonthDay(iso, tz)} at ${formatTime(iso, tz)}`;
 }
 
@@ -47,7 +53,6 @@ export function formatDateRange(
   endIso: string,
   tz?: string
 ): string {
-  // e.g. "March 9 at 1:00 PM – 1:30 PM"
   return `${formatMonthDay(startIso, tz)} at ${formatTime(
     startIso,
     tz
@@ -56,8 +61,6 @@ export function formatDateRange(
 
 /**
  * Internal: ensure we always have a valid Date object.
- * If iso is empty/invalid, we return an "Invalid Date" Date
- * but callers can still render safely with fallbacks if desired.
  */
 function safeDate(iso: string): Date {
   const s = String(iso ?? "").trim();
