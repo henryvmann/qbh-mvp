@@ -4,7 +4,10 @@ import Link from "next/link";
 
 import ProviderCard from "../../components/qbh/ProviderCard";
 import DailyBrief from "../../components/qbh/DailyBrief";
-import { getDashboardProvidersForUser } from "../../lib/qbh/queries/dashboard";
+import {
+  getDashboardProvidersForUser,
+  getDashboardDiscoverySummaryForUser,
+} from "../../lib/qbh/queries/dashboard";
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 type PageProps = { searchParams?: Promise<SearchParams> };
@@ -26,32 +29,31 @@ function firstString(v: string | string[] | undefined): string {
   return Array.isArray(v) ? String(v[0] ?? "") : String(v);
 }
 
-function SectionHeader(props: {
-  title: string;
-  href: string;
-  cta: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="font-serif text-2xl tracking-tight text-slate-900">
-          {props.title}
-        </h2>
+function classifyProvider(name: string): "doctor" | "lab" | "pharmacy" {
+  const n = name.toLowerCase();
 
-        <Link
-          href={props.href}
-          className="text-sm font-medium text-[#8B9D83] hover:underline"
-        >
-          {props.cta} →
-        </Link>
-      </div>
+  if (
+    n.includes("quest") ||
+    n.includes("labcorp") ||
+    n.includes("diagnostic") ||
+    n.includes("lab") ||
+    n.includes("imaging") ||
+    n.includes("radiology") ||
+    n.includes("testing")
+  ) {
+    return "lab";
+  }
 
-      {props.subtitle ? (
-        <p className="text-sm text-slate-600">{props.subtitle}</p>
-      ) : null}
-    </div>
-  );
+  if (
+    n.includes("cvs") ||
+    n.includes("walgreens") ||
+    n.includes("rite aid") ||
+    n.includes("pharmacy")
+  ) {
+    return "pharmacy";
+  }
+
+  return "doctor";
 }
 
 function TopNav() {
@@ -104,7 +106,9 @@ function PreviewList(props: { items: PreviewItem[] }) {
           key={`${item.title}-${item.detail}`}
           className="rounded-2xl bg-[#F7FAF6] p-4 ring-1 ring-slate-200"
         >
-          <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+          <div className="text-sm font-semibold text-slate-900">
+            {item.title}
+          </div>
           <div className="mt-1 text-sm text-slate-600">{item.detail}</div>
           {item.meta ? (
             <div className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -157,13 +161,107 @@ function FeaturePreviewCard(props: {
   );
 }
 
+function DiscoverySummaryCard(props: {
+  chargesAnalyzed: number;
+  providersFound: number;
+}) {
+  return (
+    <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="inline-flex items-center rounded-full bg-[#F7FAF6] px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#6F8168] ring-1 ring-slate-200">
+            Discovery summary
+          </div>
+
+          <h2 className="mt-3 font-serif text-2xl tracking-tight text-slate-900">
+            QBH analyzed your healthcare spending and identified providers that
+            need coordination
+          </h2>
+
+          <p className="mt-2 max-w-3xl text-sm text-slate-600">
+            This is the QBH hook: we scan healthcare-related charges, identify
+            the providers behind them, and turn that fragmented spending history
+            into a live scheduling workflow.
+          </p>
+        </div>
+
+        <div className="text-sm text-slate-500">
+          Backend-derived from provider visits and active providers
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl bg-[#F7FAF6] p-5 ring-1 ring-slate-200">
+          <div className="text-sm font-medium text-slate-600">
+            Healthcare charges analyzed
+          </div>
+          <div className="mt-2 font-serif text-4xl tracking-tight text-slate-900">
+            {props.chargesAnalyzed}
+          </div>
+          <div className="mt-2 text-sm text-slate-600">
+            Distinct healthcare-related charges that fed the discovery engine.
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#F7FAF6] p-5 ring-1 ring-slate-200">
+          <div className="text-sm font-medium text-slate-600">
+            Providers found
+          </div>
+          <div className="mt-2 font-serif text-4xl tracking-tight text-slate-900">
+            {props.providersFound}
+          </div>
+          <div className="mt-2 text-sm text-slate-600">
+            Providers surfaced from spending analysis and now tracked by QBH.
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProviderGroupSection(props: {
+  title: string;
+  subtitle: string;
+  snapshots: Awaited<ReturnType<typeof getDashboardProvidersForUser>>;
+}) {
+  if (props.snapshots.length === 0) return null;
+
+  return (
+    <div>
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-slate-900">{props.title}</h3>
+        <p className="mt-1 text-sm text-slate-600">{props.subtitle}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {props.snapshots.map((s) => (
+          <ProviderCard key={s.provider.id} snapshot={s} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default async function DashboardPage({ searchParams }: PageProps) {
   const sp = (await searchParams) ?? {};
   const userIdFromQuery = firstString(sp.user_id);
   const userIdFromEnv = (process.env.QBH_DEMO_USER_ID || "").trim();
   const userId = (userIdFromQuery || userIdFromEnv || "").trim();
 
-  const snapshots = await getDashboardProvidersForUser(userId);
+  const [snapshots, discoverySummary] = await Promise.all([
+    getDashboardProvidersForUser(userId),
+    getDashboardDiscoverySummaryForUser(userId),
+  ]);
+
+  const doctors = snapshots.filter(
+    (s) => classifyProvider(s.provider.name) === "doctor"
+  );
+  const labs = snapshots.filter(
+    (s) => classifyProvider(s.provider.name) === "lab"
+  );
+  const pharmacies = snapshots.filter(
+    (s) => classifyProvider(s.provider.name) === "pharmacy"
+  );
 
   const followUps = snapshots.filter((s) => s.followUpNeeded).length;
   const upcoming = snapshots.filter((s) => Boolean(s.futureConfirmedEvent)).length;
@@ -175,7 +273,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     {
       label: "Connected providers",
       value: String(snapshots.length),
-      helper: "Live provider cards and booking state from the backend system of record.",
+      helper:
+        "Live provider cards and booking state from the backend system of record.",
     },
     {
       label: "Upcoming bookings",
@@ -197,24 +296,30 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const goalsPreview: PreviewItem[] = [
     {
       title: "Stay ahead of preventive care",
-      detail: "Annual physical, dermatology skin check, and routine labs tracked in one place.",
+      detail:
+        "Annual physical, dermatology skin check, and routine labs tracked in one place.",
       meta: "Seeded demo data",
     },
     {
       title: "Keep follow-ups from slipping",
-      detail: "Turn doctor recommendations into visible next steps with reminders and scheduling support.",
+      detail:
+        "Turn doctor recommendations into visible next steps with reminders and scheduling support.",
       meta: "Future Health OS",
     },
     {
       title: "Coordinate household care",
-      detail: "Manage solo, couple, family, or caregiving workflows from one shared dashboard.",
+      detail:
+        "Manage solo, couple, family, or caregiving workflows from one shared dashboard.",
       meta: "Future Health OS",
     },
   ];
 
   const upcomingCarePreview: PreviewItem[] = [
     {
-      title: upcoming > 0 ? `${upcoming} confirmed appointment${upcoming === 1 ? "" : "s"}` : "No confirmed appointments yet",
+      title:
+        upcoming > 0
+          ? `${upcoming} confirmed appointment${upcoming === 1 ? "" : "s"}`
+          : "No confirmed appointments yet",
       detail:
         upcoming > 0
           ? "Confirmed visits are already flowing from the live booking system into the dashboard."
@@ -223,12 +328,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
     },
     {
       title: "Handle scheduling for me",
-      detail: "QBH can call offices, confirm availability, and move from outreach to booking.",
+      detail:
+        "QBH can call offices, confirm availability, and move from outreach to booking.",
       meta: "Working today",
     },
     {
       title: "Calendar-driven care coordination",
-      detail: "Future state: use real calendar availability to auto-book into open slots and confirm afterward.",
+      detail:
+        "Future state: use real calendar availability to auto-book into open slots and confirm afterward.",
       meta: "Roadmap",
     },
   ];
@@ -236,17 +343,20 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const timelinePreview: PreviewItem[] = [
     {
       title: "Visit booked",
-      detail: "A confirmed appointment becomes part of a longitudinal medical memory timeline.",
+      detail:
+        "A confirmed appointment becomes part of a longitudinal medical memory timeline.",
       meta: "Health Memory preview",
     },
     {
       title: "Medication change",
-      detail: "Dose adjustments and refill events will appear alongside visits and care decisions.",
+      detail:
+        "Dose adjustments and refill events will appear alongside visits and care decisions.",
       meta: "Future platform",
     },
     {
       title: "Lab or diagnosis milestone",
-      detail: "Important health events roll up into one clean history instead of getting lost across portals.",
+      detail:
+        "Important health events roll up into one clean history instead of getting lost across portals.",
       meta: "Future platform",
     },
   ];
@@ -254,17 +364,20 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const insightsPreview: PreviewItem[] = [
     {
       title: "What needs attention now",
-      detail: "AI will surface missed follow-ups, unresolved referrals, and likely next actions.",
+      detail:
+        "AI will surface missed follow-ups, unresolved referrals, and likely next actions.",
       meta: "AI Insights preview",
     },
     {
       title: "Patterns across your care",
-      detail: "QBH will connect financial, visit, medication, and memory data into practical suggestions.",
+      detail:
+        "QBH will connect financial, visit, medication, and memory data into practical suggestions.",
       meta: "Future platform",
     },
     {
       title: "Explainable recommendations",
-      detail: "Each insight should tie back to actual appointments, records, or household context.",
+      detail:
+        "Each insight should tie back to actual appointments, records, or household context.",
       meta: "Product direction",
     },
   ];
@@ -272,12 +385,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const medicationPreview: PreviewItem[] = [
     {
       title: "Unified medication list",
-      detail: "Track active medications, changes over time, and refill context in one place.",
+      detail:
+        "Track active medications, changes over time, and refill context in one place.",
       meta: "Medications preview",
     },
     {
       title: "Tie meds to visits",
-      detail: "Medication updates can connect directly to appointments, provider instructions, and symptoms.",
+      detail:
+        "Medication updates can connect directly to appointments, provider instructions, and symptoms.",
       meta: "Future platform",
     },
   ];
@@ -285,12 +400,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const caregiverPreview: PreviewItem[] = [
     {
       title: "Shared household visibility",
-      detail: "Support family or caregiving setups with clear permissions and role-based access.",
+      detail:
+        "Support family or caregiving setups with clear permissions and role-based access.",
       meta: "Caregivers preview",
     },
     {
       title: "Delegated coordination",
-      detail: "Let a spouse, parent, or caregiver help manage scheduling and follow-through without chaos.",
+      detail:
+        "Let a spouse, parent, or caregiver help manage scheduling and follow-through without chaos.",
       meta: "Future platform",
     },
   ];
@@ -300,13 +417,14 @@ export default async function DashboardPage({ searchParams }: PageProps) {
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-4">
           <div>
-<h1 className="font-serif text-4xl tracking-tight text-slate-900">
-Quarterback Health
-</h1>
+            <h1 className="font-serif text-4xl tracking-tight text-slate-900">
+              Quarterback Health
+            </h1>
 
-<p className="mt-2 text-sm text-slate-600">
-Your health command center — scheduling, memory, insights, and coordination.
-</p>
+            <p className="mt-2 text-sm text-slate-600">
+              Your health command center — scheduling, memory, insights, and
+              coordination.
+            </p>
 
             <p className="mt-2 max-w-3xl text-sm text-slate-600">
               QBH today: real providers, real booking status, real scheduling
@@ -319,6 +437,11 @@ Your health command center — scheduling, memory, insights, and coordination.
 
           <TopNav />
         </div>
+
+        <DiscoverySummaryCard
+          chargesAnalyzed={discoverySummary.chargesAnalyzed}
+          providersFound={discoverySummary.providersFound}
+        />
 
         <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
@@ -364,7 +487,9 @@ Your health command center — scheduling, memory, insights, and coordination.
                 </h2>
 
                 <p className="mt-2 text-sm text-slate-600">
-                  These providers are connected to QBH. Their booking status updates automatically as QBH schedules and confirms appointments.
+                  These providers are connected to QBH. Their booking status
+                  updates automatically as QBH schedules and confirms
+                  appointments.
                 </p>
               </div>
 
@@ -387,24 +512,34 @@ Your health command center — scheduling, memory, insights, and coordination.
             </div>
           </div>
 
-          <div
-            id="provider-cards"
-            className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2"
-          >            {snapshots.map((s) => (
-              <ProviderCard key={s.provider.id} snapshot={s} />
-            ))}
+          <div id="provider-cards" className="mt-6 space-y-10">
+            <ProviderGroupSection
+              title="Doctors & Care Providers"
+              subtitle="Primary care, specialists, dentists, behavioral health, and health systems."
+              snapshots={doctors}
+            />
+
+            <ProviderGroupSection
+              title="Labs & Testing"
+              subtitle="Diagnostics, labs, imaging, and testing-related providers."
+              snapshots={labs}
+            />
+
+            <ProviderGroupSection
+              title="Pharmacy"
+              subtitle="Medication-related providers and pharmacies discovered from spending."
+              snapshots={pharmacies}
+            />
           </div>
         </section>
 
-{/* Future Platform Divider */}
-
-<div className="mt-12 mb-4 flex items-center gap-3">
-  <div className="h-px flex-1 bg-slate-200" />
-  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-Live scheduling system
-  </span>
-  <div className="h-px flex-1 bg-slate-200" />
-</div>
+        <div className="mb-4 mt-12 flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Live scheduling system
+          </span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
 
         <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <FeaturePreviewCard

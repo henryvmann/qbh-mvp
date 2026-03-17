@@ -1,5 +1,3 @@
-// src/lib/QBH/queries/dashboard.ts
-
 import { supabaseAdmin } from "../../supabase-server";
 import type {
   ProviderDashboardSnapshot,
@@ -16,10 +14,16 @@ import type {
  *
  * No fallbacks, no casts, no drift.
  */
+
+export type DashboardDiscoverySummary = {
+  chargesAnalyzed: number;
+  providersFound: number;
+};
+
 export async function getDashboardProvidersForUser(
   _userId: string
 ): Promise<ProviderDashboardSnapshot[]> {
-  // 1) Providers (active) — demo-safe unscoped for now
+  // 1) Providers (active)
   const { data: providers, error: providersError } = await supabaseAdmin
     .from("providers")
     .select("id,name,status,created_at,user_id")
@@ -41,7 +45,7 @@ export async function getDashboardProvidersForUser(
 
   const providerIds = providerRows.map((p) => p.id);
 
-  // 2) Latest schedule attempt per provider (uuid provider_id)
+  // 2) Latest schedule attempt per provider
   const { data: attempts, error: attemptsError } = await supabaseAdmin
     .from("schedule_attempts")
     .select("id,provider_id,status,created_at")
@@ -67,12 +71,12 @@ export async function getDashboardProvidersForUser(
     }
   }
 
-  // 3) Nearest future confirmed calendar event per provider (uuid provider_id)
+  // 3) Nearest future confirmed calendar event per provider
   const nowIso = new Date().toISOString();
 
   const { data: events, error: eventsError } = await supabaseAdmin
     .from("calendar_events")
-    .select("id,provider_id,start_at,end_at,status,created_at")
+    .select("id,provider_id,start_at,end_at,timezone,status,created_at")
     .in("provider_id", providerIds)
     .eq("status", "confirmed")
     .gte("start_at", nowIso)
@@ -87,6 +91,7 @@ export async function getDashboardProvidersForUser(
     provider_id: string;
     start_at: string;
     end_at: string;
+    timezone: string | null;
     status: string;
     created_at: string;
   }>) {
@@ -95,12 +100,46 @@ export async function getDashboardProvidersForUser(
         id: row.id,
         start_at: row.start_at,
         end_at: row.end_at,
+        timezone: row.timezone,
         status: row.status as any,
       });
     }
   }
 
-  // 4) Compose snapshots
+  // 4) Latest call note per latest attempt
+  const latestAttemptIds = Array.from(
+    new Set(
+      Array.from(latestAttemptByProvider.values())
+        .map((a) => a.id)
+        .filter((id) => Number.isFinite(id))
+    )
+  );
+
+  const latestNoteByAttemptId = new Map<number, { summary: string | null }>();
+
+  if (latestAttemptIds.length > 0) {
+    const { data: notes, error: notesError } = await supabaseAdmin
+      .from("call_notes")
+      .select("attempt_id,summary,created_at")
+      .in("attempt_id", latestAttemptIds)
+      .order("created_at", { ascending: false });
+
+    if (notesError) throw notesError;
+
+    for (const row of (notes ?? []) as Array<{
+      attempt_id: number;
+      summary: string | null;
+      created_at: string;
+    }>) {
+      if (!latestNoteByAttemptId.has(Number(row.attempt_id))) {
+        latestNoteByAttemptId.set(Number(row.attempt_id), {
+          summary: row.summary,
+        });
+      }
+    }
+  }
+
+  // 5) Compose snapshots
   return providerRows.map((pRow) => {
     const provider: Provider = {
       id: pRow.id,
@@ -115,11 +154,43 @@ export async function getDashboardProvidersForUser(
 
     const latestAttempt = latestAttemptByProvider.get(pRow.id) ?? null;
 
+    const latestNote = latestAttempt
+      ? latestNoteByAttemptId.get(latestAttempt.id) ?? null
+      : null;
+
     return {
       provider,
       followUpNeeded: !futureConfirmedEvent,
       latestAttempt,
       futureConfirmedEvent,
+      latestNote,
     };
   });
+}
+
+export async function getDashboardDiscoverySummaryForUser(
+  userId: string
+): Promise<DashboardDiscoverySummary> {
+  const [
+    { count: chargesCount, error: visitsError },
+    { count: providersCount, error: providersError },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("provider_visits")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId),
+    supabaseAdmin
+      .from("providers")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "active"),
+  ]);
+
+  if (visitsError) throw visitsError;
+  if (providersError) throw providersError;
+
+  return {
+    chargesAnalyzed: chargesCount ?? 0,
+    providersFound: providersCount ?? 0,
+  };
 }

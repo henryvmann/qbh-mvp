@@ -40,7 +40,8 @@ export type CalendarEventStatus =
 export type CalendarEventSnapshot = {
   id: string;
   start_at: string; // ISO
-  end_at: string;   // ISO
+  end_at: string; // ISO
+  timezone?: string | null;
   status: CalendarEventStatus; // DB is text default 'confirmed'
 };
 
@@ -56,4 +57,8 @@ export type ProviderDashboardSnapshot = {
   latestAttempt: ScheduleAttemptSnapshot | null;
 
   futureConfirmedEvent: CalendarEventSnapshot | null;
+
+  latestNote?: {
+    summary: string | null;
+  } | null;
 };

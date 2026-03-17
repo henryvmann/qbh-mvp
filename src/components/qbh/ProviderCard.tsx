@@ -69,6 +69,17 @@ export default function ProviderCard({ snapshot }: Props) {
 
       <BookingStatusPanel snapshot={snapshot} />
 
+      {snapshot.latestNote?.summary && (
+        <div className="mt-4 rounded-2xl bg-[#FBFBF9] p-4 ring-1 ring-slate-200">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Booking notes
+          </div>
+          <div className="mt-2 text-sm text-slate-700">
+            {snapshot.latestNote.summary}
+          </div>
+        </div>
+      )}
+
       <HandleItButton providerId={p.id} label="Handle It" />
 
       <div className="mt-3 text-xs text-slate-500">

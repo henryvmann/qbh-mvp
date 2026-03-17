@@ -23,11 +23,13 @@ async function getProvidersWithFacts() {
     .in('provider_id', providerIds)
     .order('created_at', { ascending: false });
 
-  const factsByProvider: Record<string, any[]> = {};
-  facts?.forEach((f: any) => {
-    if (!factsByProvider[f.provider_id]) factsByProvider[f.provider_id] = [];
+const factsByProvider: Record<string, any[]> = {};
+facts?.forEach((f: any) => {
+  if (!factsByProvider[f.provider_id]) factsByProvider[f.provider_id] = [];
+  if (factsByProvider[f.provider_id].length < 8) {
     factsByProvider[f.provider_id].push(f);
-  });
+  }
+});
 
   // 3️⃣ Get visits (charges truth)
   const { data: visits } = await supabaseAdmin

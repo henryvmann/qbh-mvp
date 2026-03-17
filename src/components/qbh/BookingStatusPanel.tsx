@@ -52,7 +52,9 @@ export default function BookingStatusPanel({ snapshot }: Props) {
           <div className="text-sm font-semibold text-slate-900">{headline}</div>
           <div className="mt-1 text-sm text-slate-700">
             {ev ? (
-              <span>{formatDateRange(ev.start_at, ev.end_at)}</span>
+              <span>
+                {formatDateRange(ev.start_at, ev.end_at, ev.timezone ?? undefined)}
+              </span>
             ) : attempt ? (
               <span>
                 Latest attempt:{" "}
