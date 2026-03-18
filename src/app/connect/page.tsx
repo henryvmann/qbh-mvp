@@ -15,7 +15,17 @@ function ConnectPageInner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (userId) {
+      window.sessionStorage.setItem("qbh_user_id", userId);
+    }
+  }, [userId]);
+
+  useEffect(() => {
     async function createLinkToken() {
+      if (typeof window === "undefined") return;
+
       if (!userId) {
         setError("Missing user_id");
         return;
@@ -42,8 +52,9 @@ function ConnectPageInner() {
         }
 
         setLinkToken(data.link_token);
+        window.sessionStorage.setItem("qbh_plaid_link_token", data.link_token);
       } catch (err) {
-        console.error("Link token creation failed:", err);
+        console.log("Link token creation failed:", err);
         setError(
           err instanceof Error
             ? err.message
@@ -61,8 +72,17 @@ function ConnectPageInner() {
     token: linkToken,
     onSuccess: async (public_token) => {
       try {
+        if (typeof window === "undefined") return;
+
         setSubmitting(true);
         setError(null);
+
+        const effectiveUserId =
+          userId || window.sessionStorage.getItem("qbh_user_id") || "";
+
+        if (!effectiveUserId) {
+          throw new Error("Missing user_id");
+        }
 
         const exchangeResponse = await fetch("/api/plaid/exchange-token", {
           method: "POST",
@@ -70,7 +90,7 @@ function ConnectPageInner() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: userId,
+            user_id: effectiveUserId,
             public_token,
           }),
         });
@@ -81,13 +101,15 @@ function ConnectPageInner() {
           throw new Error(exchangeData?.error || "Failed to exchange token.");
         }
 
+        window.sessionStorage.removeItem("qbh_plaid_link_token");
+
         const discoveryResponse = await fetch("/api/discovery/run", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: userId,
+            user_id: effectiveUserId,
           }),
         });
 
@@ -97,9 +119,13 @@ function ConnectPageInner() {
           throw new Error(discoveryData?.error || "Failed to run discovery.");
         }
 
-        window.location.href = `/dashboard?user_id=${encodeURIComponent(userId)}`;
+        window.sessionStorage.removeItem("qbh_user_id");
+
+        window.location.href = `/dashboard?user_id=${encodeURIComponent(
+          effectiveUserId
+        )}`;
       } catch (err) {
-        console.error("Connect flow failed:", err);
+        console.log("Connect flow failed:", err);
         setError(
           err instanceof Error ? err.message : "Failed to complete connection."
         );
@@ -107,11 +133,23 @@ function ConnectPageInner() {
         setSubmitting(false);
       }
     },
-    onExit: (err) => {
+    onExit: (err, metadata) => {
       if (err) {
-        console.error("Plaid Link exited with error:", err);
-        setError("Plaid Link was closed before completion.");
+        console.log("Plaid Link exit error:", {
+          error_code: err.error_code,
+          error_message: err.error_message,
+          error_type: err.error_type,
+          request_id: (err as any)?.request_id,
+          status: metadata?.status,
+          institution: metadata?.institution,
+          link_session_id: metadata?.link_session_id,
+        });
+
+        setError(err.error_message || "Plaid Link exited before completion.");
+        return;
       }
+
+      console.log("Plaid Link exited without error:", metadata);
     },
   });
 

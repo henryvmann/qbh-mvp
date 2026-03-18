@@ -18,18 +18,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data: item, error: itemError } = await supabaseAdmin
-      .from("plaid_items")
-      .select("access_token")
-      .eq("user_id", userId)
-      .single();
+const { data: items, error: itemError } = await supabaseAdmin
+  .from("plaid_items")
+  .select("access_token, created_at")
+  .eq("user_id", userId)
+  .order("created_at", { ascending: false })
+  .limit(1);
 
-    if (itemError || !item?.access_token) {
-      return NextResponse.json(
-        { ok: false, error: "No Plaid item found for user" },
-        { status: 404 }
-      );
-    }
+const item = items?.[0];
+
+if (itemError || !item?.access_token) {
+  return NextResponse.json(
+    { ok: false, error: "No Plaid item found for user" },
+    { status: 404 }
+  );
+}
 
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 12);
