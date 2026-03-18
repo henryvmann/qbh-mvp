@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "name": "QBH Vapi Tool Configs (Production Canonical)",
+    "generated_at": "2026-03-04",
+    "primary_domain": "https://getquarterback.com",
+    "notes": [
+      "Canonical production snapshot aligned to QBH Architecture Decisions + Production Verification.",
+      "Manus is not part of runtime; all tool URLs use getquarterback.com.",
+      "provider_id is a UUID string; attempt_id is a number (bigint-compatible).",
+      "This file is meant to be copied into Vapi tool definitions / assistant variables config."
+    ]
+  },
+  "tools": [
+    {
+      "name": "start_call",
+      "description": "Starts an outbound scheduling call via Vapi using system-provided variables (attempt_id, provider_id, patient_name, provider_name, preferred_timeframe, demo_autoconfirm). Typically invoked from the web UI when the user clicks Handle It / Approve Call.",
+      "url": "https://getquarterback.com/api/vapi/start-call",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "provider_id": {
+            "type": "string",
+            "description": "Provider UUID (string). Passed from UI."
+          },
+          "patient_name": {
+            "type": "string"
+          },
+          "provider_name": {
+            "type": "string"
+          },
+          "preferred_timeframe": {
+            "type": "string"
+          },
+          "demo_autoconfirm": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "provider_id",
+          "patient_name",
+          "provider_name",
+          "preferred_timeframe"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_candidate_slots",
+      "description": "Retrieves suggested alternative time slots based on calendar availability. Use when the office asks what times are available or asks for alternatives.",
+      "url": "https://getquarterback.com/api/vapi/get-candidate-slots",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "attempt_id": {
+            "type": "number",
+            "description": "Internal attempt id (bigint-compatible). Provided by Vapi call variables; never ask the office."
+          },
+          "provider_id": {
+            "type": "string",
+            "description": "Provider UUID string. Provided by Vapi call variables; never ask the office."
+          }
+        },
+        "required": [
+          "attempt_id",
+          "provider_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "propose_office_slot",
+      "description": "Records the time slot offered by the office and checks for conflicts. Use immediately after the office offers a specific date/time.",
+      "url": "https://getquarterback.com/api/vapi/propose-office-slot",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "attempt_id": {
+            "type": "number"
+          },
+          "provider_id": {
+            "type": "string"
+          },
+          "office_offer_raw_text": {
+            "type": "string",
+            "description": "Raw text of the office-offered datetime, e.g. 'March 10th at 12 PM'."
+          }
+        },
+        "required": [
+          "attempt_id",
+          "provider_id",
+          "office_offer_raw_text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "confirm_booking",
+      "description": "Finalizes the appointment. In demo fast lane (demo_autoconfirm=true), this is called immediately after propose_office_slot returns next_action=CONFIRM_BOOKING.",
+      "url": "https://getquarterback.com/api/vapi/confirm-booking",
+      "method": "POST",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "attempt_id": {
+            "type": "number"
+          },
+          "proposal_id": {
+            "type": "string",
+            "description": "UUID proposal_id returned from propose_office_slot."
+          }
+        },
+        "required": [
+          "attempt_id",
+          "proposal_id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "assistant_variables": {
+    "attempt_id": {
+      "type": "number",
+      "description": "Internal attempt identifier passed during call initiation"
+    },
+    "provider_id": {
+      "type": "string",
+      "description": "Provider UUID passed during call initiation"
+    },
+    "patient_name": {
+      "type": "string",
+      "description": "Patient name for introduction"
+    },
+    "provider_name": {
+      "type": "string",
+      "description": "Provider/office name for introduction"
+    },
+    "preferred_timeframe": {
+      "type": "string",
+      "description": "Preferred scheduling timeframe (e.g., 'next two weeks')"
+    },
+    "demo_autoconfirm": {
+      "type": "boolean",
+      "description": "When true, enable fast-lane behavior (accept office time, auto-confirm, end call)."
+    }
+  },
+  "verification_checklist": [
+    "All tool URLs start with https://getquarterback.com/api/vapi/",
+    "attempt_id is type number; provider_id is type string (UUID).",
+    "No default fields in tool schemas; values flow from assistant variable injection / UI.",
+    "Assistant is configured with variables: attempt_id, provider_id, patient_name, provider_name, preferred_timeframe, demo_autoconfirm.",
+    "Routes exist in Next.js App Router: start-call, webhook, get-candidate-slots, propose-office-slot, confirm-booking."
+  ]
+}

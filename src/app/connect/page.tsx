@@ -1,62 +1,119 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { usePlaidLink } from "react-plaid-link";
 
 function ConnectPageInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-
   const userId = (searchParams.get("user_id") || "").trim();
 
-  const dashboardHref = userId
-    ? `/dashboard?user_id=${encodeURIComponent(userId)}`
-    : "/dashboard";
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [loadingToken, setLoadingToken] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [running, setRunning] = useState(false);
-  const [step, setStep] = useState(0);
-
-  const progress = useMemo(() => {
-    if (!running) return 0;
-    const map = [15, 45, 70, 95];
-    return map[Math.max(0, Math.min(3, step))];
-  }, [running, step]);
-
-  async function runDiscovery() {
-    if (running) return;
-
-    setRunning(true);
-    setStep(0);
-
-    const t1 = setTimeout(() => setStep(1), 600);
-    const t2 = setTimeout(() => setStep(2), 1400);
-    const t3 = setTimeout(() => setStep(3), 2200);
-
-    try {
-      const response = await fetch("/api/discovery/run", {
-        method: "POST",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data?.ok) {
-        throw new Error(data?.error || "Discovery failed.");
+  useEffect(() => {
+    async function createLinkToken() {
+      if (!userId) {
+        setError("Missing user_id");
+        return;
       }
 
-      setStep(3);
-      setTimeout(() => router.push(dashboardHref), 600);
-    } catch (error) {
-      console.error("Discovery run failed:", error);
-      setRunning(false);
-      setStep(0);
-      alert(error instanceof Error ? error.message : "Discovery failed.");
-    } finally {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      try {
+        setLoadingToken(true);
+        setError(null);
+
+        const response = await fetch("/api/plaid/link-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data?.ok || !data?.link_token) {
+          throw new Error(data?.error || "Failed to create Plaid Link token.");
+        }
+
+        setLinkToken(data.link_token);
+      } catch (err) {
+        console.error("Link token creation failed:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to create Plaid Link token."
+        );
+      } finally {
+        setLoadingToken(false);
+      }
     }
-  }
+
+    createLinkToken();
+  }, [userId]);
+
+  const { open, ready } = usePlaidLink({
+    token: linkToken,
+    onSuccess: async (public_token) => {
+      try {
+        setSubmitting(true);
+        setError(null);
+
+        const exchangeResponse = await fetch("/api/plaid/exchange-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            public_token,
+          }),
+        });
+
+        const exchangeData = await exchangeResponse.json();
+
+        if (!exchangeResponse.ok || !exchangeData?.ok) {
+          throw new Error(exchangeData?.error || "Failed to exchange token.");
+        }
+
+        const discoveryResponse = await fetch("/api/discovery/run", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+          }),
+        });
+
+        const discoveryData = await discoveryResponse.json();
+
+        if (!discoveryResponse.ok || !discoveryData?.ok) {
+          throw new Error(discoveryData?.error || "Failed to run discovery.");
+        }
+
+        window.location.href = `/dashboard?user_id=${encodeURIComponent(userId)}`;
+      } catch (err) {
+        console.error("Connect flow failed:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to complete connection."
+        );
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    onExit: (err) => {
+      if (err) {
+        console.error("Plaid Link exited with error:", err);
+        setError("Plaid Link was closed before completion.");
+      }
+    },
+  });
 
   return (
     <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
@@ -77,110 +134,52 @@ function ConnectPageInner() {
             className="text-4xl tracking-tight sm:text-5xl"
             style={{ fontFamily: "Playfair Display, serif" }}
           >
-            Analyze your healthcare spending
+            Connect the account you use for healthcare spending
           </h1>
 
           <p className="mt-4 max-w-xl text-lg text-neutral-700">
-            Quarterback analyzes the last 12 months of healthcare charges to
-            identify providers, pharmacies, labs, and likely follow-up needs.
+            Quarterback uses Plaid to securely connect your account so we can
+            identify real healthcare providers from real transactions.
           </p>
 
           <div className="mt-10 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-black/5">
             <div>
               <div className="text-sm font-medium text-neutral-900">
-                Healthcare spending analysis
+                Secure account connection
               </div>
               <div className="mt-1 text-sm text-neutral-600">
-                Credit card charges are used to identify providers and
-                determine whether appointments or follow-ups are likely due.
+                Your account is connected through Plaid. QBH never asks for your
+                banking username or password directly.
               </div>
             </div>
 
             <div className="mt-6">
-              {!running ? (
-                <button
-                  onClick={runDiscovery}
-                  className="w-full rounded-2xl bg-[#8B9D83] px-6 py-3 text-white shadow-sm transition hover:brightness-95 active:brightness-90"
-                >
-                  Analyze healthcare spending
-                </button>
-              ) : (
-                <div className="rounded-2xl bg-[#F9F7F2] p-5 ring-1 ring-black/5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-medium text-neutral-900">
-                        Analyzing healthcare spending
-                      </div>
-                      <div className="mt-1 text-sm text-neutral-600">
-                        Scanning the last 12 months of healthcare charges to
-                        identify providers and follow-up needs.
-                      </div>
-                    </div>
-
-                    <div
-                      className="h-5 w-5 animate-spin rounded-full border-2 border-black/10 border-t-black/40"
-                      aria-hidden
-                    />
-                  </div>
-
-                  <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-black/5">
-                    <div
-                      className="h-full rounded-full bg-[#8B9D83] transition-all duration-500"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                    <StepChip label="Providers" done={step >= 1} />
-                    <StepChip label="Pharmacies" done={step >= 2} />
-                    <StepChip label="Labs & imaging" done={step >= 3} />
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={() => open()}
+                disabled={!ready || !linkToken || loadingToken || submitting}
+                className="w-full rounded-2xl bg-[#8B9D83] px-6 py-3 text-white shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loadingToken
+                  ? "Preparing secure connection..."
+                  : submitting
+                  ? "Connecting and analyzing..."
+                  : "Connect account with Plaid"}
+              </button>
             </div>
+
+            {error ? (
+              <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+                {error}
+              </div>
+            ) : null}
 
             <div className="mt-4 text-center text-xs text-neutral-500">
-              Secure analysis • No credentials required
+              Plaid-secured connection • Real transaction discovery
             </div>
-          </div>
-
-          <div className="mt-10 flex items-center justify-between">
-            <div className="text-xs text-neutral-500">
-              You can skip this during the demo.
-            </div>
-
-            <Link
-              href={dashboardHref}
-              className="rounded-2xl bg-[#8B9D83] px-6 py-3 text-white shadow-sm transition hover:brightness-95 active:brightness-90"
-            >
-              Continue to dashboard
-            </Link>
           </div>
         </section>
       </div>
     </main>
-  );
-}
-
-function StepChip({ label, done }: { label: string; done: boolean }) {
-  return (
-    <div
-      className={[
-        "inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1",
-        done
-          ? "bg-white text-neutral-900 ring-black/10"
-          : "bg-white/50 text-neutral-500 ring-black/5",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "h-2 w-2 rounded-full",
-          done ? "bg-[#8B9D83]" : "bg-black/15",
-        ].join(" ")}
-      />
-      <span>{label}</span>
-      {done ? <span className="text-neutral-400">✓</span> : null}
-    </div>
   );
 }
 

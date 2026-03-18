@@ -1,15 +1,6 @@
-// src/lib/qbh/discovery/build-provider-registry.ts
-
 type DiscoveryBucket = "HEALTHCARE" | "REVIEW_NEEDED" | "IGNORE";
 
-export type PlaidDiscoveryTransaction = {
-  transaction_id: string;
-  name: string | null;
-  merchant_name: string | null;
-  amount: number | string | null;
-  date: string;
-  category: string[] | null;
-};
+import type { SeededTransaction } from "./load-seeded-transactions";
 
 export type DiscoveredProvider = {
   provider_key: string;
@@ -28,12 +19,12 @@ function normalizeProviderName(input: string): string {
   return input
     .toUpperCase()
     .replace(/[^A-Z0-9 ]/g, " ")
-    .replace(/\b(ACH|POS|PURCHASE|DEBIT|CHECKCARD|CHECK CARD|CARD|ONLINE|PMT|PAYMENT)\b/g, " ")
+    .replace(/\b(ACH|POS|PURCHASE|DEBIT|CHECKCARD|CHECK CARD|CARD)\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function pickProviderName(tx: PlaidDiscoveryTransaction): string {
+function pickProviderName(tx: SeededTransaction): string {
   const raw = (tx.merchant_name || tx.name || "").trim();
   return raw || "UNKNOWN PROVIDER";
 }
@@ -46,7 +37,6 @@ function daysBetween(a: string, b: string): number {
 
 function median(values: number[]): number | null {
   if (!values.length) return null;
-
   const sorted = [...values].sort((x, y) => x - y);
   const mid = Math.floor(sorted.length / 2);
 
@@ -60,12 +50,10 @@ function median(values: number[]): number | null {
 function classifyProvider(
   normalizedName: string,
   visitCount: number,
-  amountSamples: number[],
-  categories: string[]
+  amountSamples: number[]
 ): { bucket: DiscoveryBucket; care_action_type: string | null } {
   const joined = normalizedName;
   const words = new Set(normalizedName.split(" ").filter(Boolean));
-  const joinedCategories = categories.join(" ").toUpperCase();
 
   const healthcareHints = [
     "MD",
@@ -79,10 +67,7 @@ function classifyProvider(
     "HEALTH",
     "CLINIC",
     "RADIOLOGY",
-    "IMAGING",
     "LAB",
-    "LABCORP",
-    "QUEST",
     "PHARMACY",
     "URGENT CARE",
     "DERM",
@@ -90,28 +75,23 @@ function classifyProvider(
     "VISION",
     "OPTICAL",
     "THERAPY",
-    "PT",
-    "CHIROPRACTIC",
-    "PEDS",
   ];
 
   const ignoreHints = [
+    "CVS",
+    "WALGREENS",
+    "RITE AID",
     "AMAZON",
     "UBER",
     "LYFT",
     "SHELL",
     "EXXON",
-    "CHEVRON",
     "MCDONALD",
     "STARBUCKS",
     "TARGET",
     "WALMART",
     "COSTCO",
-    "WHOLE FOODS",
-    "TRADER JOE",
   ];
-
-  const pharmacyReviewHints = ["CVS", "WALGREENS", "RITE AID", "DUANE READE"];
 
   const hasHint = (hint: string): boolean => {
     if (hint.includes(" ")) {
@@ -120,19 +100,6 @@ function classifyProvider(
 
     return words.has(hint);
   };
-
-  if (
-    joinedCategories.includes("DOCTOR") ||
-    joinedCategories.includes("HOSPITAL") ||
-    joinedCategories.includes("PHARMACY") ||
-    joinedCategories.includes("MEDICAL") ||
-    joinedCategories.includes("HEALTHCARE")
-  ) {
-    return {
-      bucket: "HEALTHCARE",
-      care_action_type: "CHECK_APPOINTMENT_STATUS",
-    };
-  }
 
   if (ignoreHints.some(hasHint)) {
     return { bucket: "IGNORE", care_action_type: null };
@@ -145,19 +112,12 @@ function classifyProvider(
     };
   }
 
-  if (pharmacyReviewHints.some(hasHint)) {
-    return {
-      bucket: "REVIEW_NEEDED",
-      care_action_type: "REVIEW_PROVIDER",
-    };
-  }
-
   const avgAmount =
     amountSamples.length > 0
       ? amountSamples.reduce((sum, value) => sum + value, 0) / amountSamples.length
       : 0;
 
-  if (visitCount >= 2 && avgAmount > 40) {
+  if (visitCount >= 2 && avgAmount > 50) {
     return { bucket: "REVIEW_NEEDED", care_action_type: "REVIEW_PROVIDER" };
   }
 
@@ -165,7 +125,7 @@ function classifyProvider(
 }
 
 export function buildProviderRegistry(
-  transactions: PlaidDiscoveryTransaction[]
+  transactions: SeededTransaction[]
 ): DiscoveredProvider[] {
   const grouped = new Map<
     string,
@@ -175,7 +135,6 @@ export function buildProviderRegistry(
       transaction_ids: string[];
       dates: string[];
       amounts: number[];
-      categories: string[];
     }
   >();
 
@@ -185,14 +144,12 @@ export function buildProviderRegistry(
 
     if (!normalizedName) continue;
 
-    const txCategories = Array.isArray(tx.category) ? tx.category : [];
     const existing = grouped.get(normalizedName);
 
     if (existing) {
       existing.transaction_ids.push(tx.transaction_id);
       existing.dates.push(tx.date);
       existing.amounts.push(Math.abs(Number(tx.amount || 0)));
-      existing.categories.push(...txCategories);
       continue;
     }
 
@@ -202,7 +159,6 @@ export function buildProviderRegistry(
       transaction_ids: [tx.transaction_id],
       dates: [tx.date],
       amounts: [Math.abs(Number(tx.amount || 0))],
-      categories: [...txCategories],
     });
   }
 
@@ -219,8 +175,7 @@ export function buildProviderRegistry(
     const { bucket, care_action_type } = classifyProvider(
       entry.normalized_name,
       entry.transaction_ids.length,
-      entry.amounts,
-      entry.categories
+      entry.amounts
     );
 
     if (bucket === "IGNORE") continue;
