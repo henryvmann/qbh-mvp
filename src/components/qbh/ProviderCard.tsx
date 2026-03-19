@@ -2,7 +2,10 @@ import type { ProviderDashboardSnapshot } from "../../app/lib/QBH/types";
 import BookingStatusPanel from "./BookingStatusPanel";
 import HandleItButton from "./HandleItButton";
 
-type Props = { snapshot: ProviderDashboardSnapshot };
+type Props = {
+  snapshot: ProviderDashboardSnapshot;
+  userId: string;
+};
 
 function formatDate(input: string | null | undefined): string {
   if (!input) return "Date pending";
@@ -16,13 +19,13 @@ function formatDate(input: string | null | undefined): string {
   });
 }
 
-export default function ProviderCard({ snapshot }: Props) {
+export default function ProviderCard({ snapshot, userId }: Props) {
   const p = snapshot.provider;
 
   const statusLabel = snapshot.futureConfirmedEvent
-    ? "Booked"
+    ? "Upcoming"
     : snapshot.followUpNeeded
-    ? "Follow-up likely"
+    ? "Follow-up"
     : "In progress";
 
   const statusTone = snapshot.futureConfirmedEvent
@@ -33,6 +36,10 @@ export default function ProviderCard({ snapshot }: Props) {
 
   const summaryLine = snapshot.futureConfirmedEvent
     ? `Confirmed for ${formatDate(snapshot.futureConfirmedEvent.start_at)}`
+    : snapshot.followUpNeeded
+    ? snapshot.latestAttempt
+      ? `Last outreach ${formatDate(snapshot.latestAttempt.created_at)}`
+      : "Follow-up likely"
     : snapshot.latestAttempt
     ? `Last outreach ${formatDate(snapshot.latestAttempt.created_at)}`
     : "No outreach attempt yet";
@@ -80,7 +87,20 @@ export default function ProviderCard({ snapshot }: Props) {
         </div>
       )}
 
-      <HandleItButton providerId={p.id} label="Handle It" />
+      {!snapshot.futureConfirmedEvent ? (
+        <HandleItButton
+          userId={userId}
+          providerId={p.id}
+          providerName={p.name}
+          label={
+            snapshot.followUpNeeded
+              ? "Follow up"
+              : snapshot.latestAttempt
+              ? "Continue booking"
+              : "Handle It"
+          }
+        />
+      ) : null}
 
       <div className="mt-3 text-xs text-slate-500">
         QBH will call and book using your saved preferences.

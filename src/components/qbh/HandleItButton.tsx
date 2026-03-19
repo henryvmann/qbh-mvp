@@ -4,7 +4,9 @@
 import * as React from "react";
 
 type Props = {
+  userId?: string | null;
   providerId: string;
+  providerName?: string | null;
   attemptId?: number | null;
   label?: string;
 };
@@ -16,9 +18,18 @@ function getEndpoint(): string {
   );
 }
 
-export default function HandleItButton({ providerId, attemptId, label = "Handle It" }: Props) {
+export default function HandleItButton({
+  userId,
+  providerId,
+  providerName,
+  attemptId,
+  label = "Handle It",
+}: Props) {
   const [loading, setLoading] = React.useState(false);
-  const [toast, setToast] = React.useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [toast, setToast] = React.useState<{
+    kind: "ok" | "error";
+    text: string;
+  } | null>(null);
 
   async function onClick() {
     if (loading) return;
@@ -26,13 +37,17 @@ export default function HandleItButton({ providerId, attemptId, label = "Handle 
     setToast(null);
 
     try {
+      const body = {
+        ...(userId ? { user_id: userId } : {}),
+        provider_id: providerId,
+        ...(providerName ? { provider_name: providerName } : {}),
+        ...(attemptId ? { attempt_id: attemptId } : {}),
+      };
+
       const res = await fetch(getEndpoint(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider_id: providerId,
-          ...(attemptId ? { attempt_id: attemptId } : {}),
-        }),
+        body: JSON.stringify(body),
       });
 
       const ct = res.headers.get("content-type") || "";

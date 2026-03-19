@@ -12,6 +12,10 @@ type WriteDiscoveryParams = {
   transactions: PlaidDiscoveryTransaction[];
 };
 
+function cleanName(input: string): string {
+  return input.trim().toLowerCase();
+}
+
 export async function writeDiscoveredProviders({
   userId,
   providers,
@@ -32,24 +36,38 @@ export async function writeDiscoveredProviders({
       .eq("user_id", userId);
 
   if (existingProvidersError) {
+    console.error("[writeDiscoveredProviders] failed reading providers", {
+      userId,
+      message: existingProvidersError.message,
+      details: existingProvidersError.details,
+      hint: existingProvidersError.hint,
+      code: existingProvidersError.code,
+    });
+
     throw new Error(existingProvidersError.message);
   }
 
   const existingByName = new Map(
     (existingProviders || []).map((provider) => [
-      provider.name.trim().toLowerCase(),
+      cleanName(provider.name),
       provider.id,
     ])
   );
 
+  const seenInsertNames = new Set<string>();
+
   const providersToInsert = healthcareProviders
-    .filter(
-      (provider) =>
-        !existingByName.has(provider.provider_name.trim().toLowerCase())
-    )
+    .filter((provider) => {
+      const key = cleanName(provider.provider_name);
+      if (!key) return false;
+      if (existingByName.has(key)) return false;
+      if (seenInsertNames.has(key)) return false;
+      seenInsertNames.add(key);
+      return true;
+    })
     .map((provider) => ({
       user_id: userId,
-      name: provider.provider_name,
+      name: provider.provider_name.trim(),
       status: "active",
       guessed_portal_brand: null,
       guessed_portal_confidence: null,
@@ -64,6 +82,16 @@ export async function writeDiscoveredProviders({
       .select("id, name");
 
     if (error) {
+      console.error("[writeDiscoveredProviders] failed inserting providers", {
+        userId,
+        providerCount: providersToInsert.length,
+        providerNames: providersToInsert.map((p) => p.name),
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+
       throw new Error(error.message);
     }
 
@@ -73,54 +101,129 @@ export async function writeDiscoveredProviders({
   const providerIdByName = new Map<string, string>();
 
   for (const provider of existingProviders || []) {
-    providerIdByName.set(provider.name.trim().toLowerCase(), provider.id);
+    providerIdByName.set(cleanName(provider.name), provider.id);
   }
 
   for (const provider of insertedProviders) {
-    providerIdByName.set(provider.name.trim().toLowerCase(), provider.id);
+    providerIdByName.set(cleanName(provider.name), provider.id);
   }
 
-  const visitRows: Array<{
+  const rawVisitRows: Array<{
     user_id: string;
     provider_id: string;
     source: string;
     visit_date: string;
     amount_cents: number;
+    source_transaction_id: string;
   }> = [];
 
-  for (const provider of healthcareProviders) {
-    const providerId = providerIdByName.get(
-      provider.provider_name.trim().toLowerCase()
-    );
+  const seenVisitTransactionIds = new Set<string>();
 
-    if (!providerId) continue;
+  for (const provider of healthcareProviders) {
+    const cleanProviderName = cleanName(provider.provider_name);
+    const providerId = providerIdByName.get(cleanProviderName);
+
+    if (!providerId) {
+      console.warn("[writeDiscoveredProviders] missing providerId for provider", {
+        userId,
+        provider_name: provider.provider_name,
+        normalized_name: provider.normalized_name,
+      });
+      continue;
+    }
 
     for (const txId of provider.source_transaction_ids) {
-      const tx = txById.get(txId);
-      if (!tx) continue;
+      if (seenVisitTransactionIds.has(txId)) continue;
 
-      visitRows.push({
+      const tx = txById.get(txId);
+      if (!tx?.date) {
+        console.warn("[writeDiscoveredProviders] missing tx/date for txId", {
+          userId,
+          provider_name: provider.provider_name,
+          txId,
+        });
+        continue;
+      }
+
+      seenVisitTransactionIds.add(txId);
+
+      rawVisitRows.push({
         user_id: userId,
         provider_id: providerId,
         source: "transaction",
         visit_date: tx.date,
         amount_cents: Math.round(Math.abs(Number(tx.amount || 0)) * 100),
+        source_transaction_id: tx.transaction_id,
       });
     }
   }
 
-  if (visitRows.length > 0) {
-    const { error: visitInsertError } = await supabaseAdmin
-      .from("provider_visits")
-      .insert(visitRows);
+  if (rawVisitRows.length > 0) {
+    const sourceTransactionIds = rawVisitRows.map(
+      (row) => row.source_transaction_id
+    );
 
-    if (visitInsertError) {
-      throw new Error(visitInsertError.message);
+    const { data: existingVisits, error: existingVisitsError } =
+      await supabaseAdmin
+        .from("provider_visits")
+        .select("source_transaction_id")
+        .eq("user_id", userId)
+        .in("source_transaction_id", sourceTransactionIds);
+
+    if (existingVisitsError) {
+      console.error(
+        "[writeDiscoveredProviders] failed reading existing provider_visits",
+        {
+          userId,
+          message: existingVisitsError.message,
+          details: existingVisitsError.details,
+          hint: existingVisitsError.hint,
+          code: existingVisitsError.code,
+        }
+      );
+
+      throw new Error(existingVisitsError.message);
     }
+
+    const existingSourceIds = new Set(
+      (existingVisits || []).map((row) => row.source_transaction_id)
+    );
+
+    const visitRows = rawVisitRows.filter(
+      (row) => !existingSourceIds.has(row.source_transaction_id)
+    );
+
+    if (visitRows.length > 0) {
+      const { error: visitInsertError } = await supabaseAdmin
+        .from("provider_visits")
+        .insert(visitRows);
+
+      if (visitInsertError) {
+        console.error(
+          "[writeDiscoveredProviders] failed inserting provider_visits",
+          {
+            userId,
+            visitCount: visitRows.length,
+            sampleRows: visitRows.slice(0, 5),
+            message: visitInsertError.message,
+            details: visitInsertError.details,
+            hint: visitInsertError.hint,
+            code: visitInsertError.code,
+          }
+        );
+
+        throw new Error(visitInsertError.message);
+      }
+    }
+
+    return {
+      provider_count: insertedProviders.length,
+      visit_count: visitRows.length,
+    };
   }
 
   return {
     provider_count: insertedProviders.length,
-    visit_count: visitRows.length,
+    visit_count: 0,
   };
 }

@@ -18,34 +18,55 @@ export async function POST(req: NextRequest) {
       );
     }
 
-const { data: items, error: itemError } = await supabaseAdmin
-  .from("plaid_items")
-  .select("access_token, created_at")
-  .eq("user_id", userId)
-  .order("created_at", { ascending: false })
-  .limit(1);
+    const { data: items, error: itemError } = await supabaseAdmin
+      .from("plaid_items")
+      .select("access_token, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1);
 
-const item = items?.[0];
+    const item = items?.[0];
 
-if (itemError || !item?.access_token) {
-  return NextResponse.json(
-    { ok: false, error: "No Plaid item found for user" },
-    { status: 404 }
-  );
-}
+    if (itemError || !item?.access_token) {
+      return NextResponse.json(
+        { ok: false, error: "No Plaid item found for user" },
+        { status: 404 }
+      );
+    }
 
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 12);
 
     const endDate = new Date();
 
-    const plaidResponse = await plaidClient.transactionsGet({
-      access_token: item.access_token,
-      start_date: startDate.toISOString().slice(0, 10),
-      end_date: endDate.toISOString().slice(0, 10),
-    });
+    let transactions: any[] = [];
 
-    const transactions = plaidResponse.data.transactions;
+    try {
+      const plaidResponse = await plaidClient.transactionsGet({
+        access_token: item.access_token,
+        start_date: startDate.toISOString().slice(0, 10),
+        end_date: endDate.toISOString().slice(0, 10),
+      });
+
+      transactions = plaidResponse.data.transactions;
+    } catch (error: any) {
+      const errorCode = error?.response?.data?.error_code;
+
+      if (errorCode === "PRODUCT_NOT_READY") {
+        console.warn("[discovery/run] plaid transactions not ready yet", {
+          userId,
+          errorCode,
+        });
+
+        return NextResponse.json({
+          ok: true,
+          pending: true,
+          message: "Transactions not ready yet. Retrying shortly.",
+        });
+      }
+
+      throw error;
+    }
 
     const transactionRows = transactions.map((tx) => ({
       user_id: userId,
@@ -63,8 +84,20 @@ if (itemError || !item?.access_token) {
       .upsert(transactionRows, { onConflict: "transaction_id" });
 
     if (txInsertError) {
+      console.error("[discovery/run] failed to store plaid_transactions", {
+        userId,
+        message: txInsertError.message,
+        details: txInsertError.details,
+        hint: txInsertError.hint,
+        code: txInsertError.code,
+      });
+
       return NextResponse.json(
-        { ok: false, error: "Failed to store transactions" },
+        {
+          ok: false,
+          error: "Failed to store transactions",
+          details: txInsertError.message,
+        },
         { status: 500 }
       );
     }
@@ -96,7 +129,19 @@ if (itemError || !item?.access_token) {
     });
   } catch (error: any) {
     const details =
-      error?.response?.data || error?.message || "Unknown discovery error";
+      error?.response?.data ||
+      error?.details ||
+      error?.message ||
+      "Unknown discovery error";
+
+    console.error("[discovery/run] unhandled error", {
+      message: error?.message,
+      details: error?.details,
+      hint: error?.hint,
+      code: error?.code,
+      responseData: error?.response?.data,
+      stack: error?.stack,
+    });
 
     return NextResponse.json(
       {
