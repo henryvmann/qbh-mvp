@@ -7,7 +7,34 @@ import { usePlaidLink } from "react-plaid-link";
 
 function ConnectPageInner() {
   const searchParams = useSearchParams();
-  const userId = (searchParams.get("user_id") || "").trim();
+
+const [userId, setUserId] = useState("");
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  // 1. Query param (highest priority)
+  const fromQuery = (searchParams.get("user_id") || "").trim();
+
+  if (fromQuery) {
+    window.localStorage.setItem("qbh_user_id", fromQuery);
+    setUserId(fromQuery);
+    return;
+  }
+
+  // 2. Existing stored user
+  const existing = window.localStorage.getItem("qbh_user_id");
+
+  if (existing) {
+    setUserId(existing);
+    return;
+  }
+
+  // 3. Create new user_id
+  const newId = crypto.randomUUID();
+  window.localStorage.setItem("qbh_user_id", newId);
+  setUserId(newId);
+}, [searchParams]);
 
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [loadingToken, setLoadingToken] = useState(false);

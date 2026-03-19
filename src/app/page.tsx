@@ -43,17 +43,17 @@ export default function HomePage() {
 
           <div className="mt-8 flex gap-4">
             <Link
-              href="/start"
+              href="/connect"
               className="rounded-2xl bg-[#8B9D83] px-6 py-3 text-white shadow-sm"
             >
-              Start
+              Connect your account
             </Link>
 
             <Link
               href="/dashboard"
               className="rounded-2xl bg-white px-6 py-3 ring-1 ring-black/5 shadow-sm"
             >
-              Demo Dashboard
+              View dashboard
             </Link>
           </div>
         </section>
