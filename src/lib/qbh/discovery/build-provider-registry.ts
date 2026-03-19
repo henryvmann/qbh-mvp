@@ -28,7 +28,10 @@ function normalizeProviderName(input: string): string {
   return input
     .toUpperCase()
     .replace(/[^A-Z0-9 ]/g, " ")
-    .replace(/\b(ACH|POS|PURCHASE|DEBIT|CHECKCARD|CHECK CARD|CARD|ONLINE|PMT|PAYMENT)\b/g, " ")
+    .replace(
+      /\b(ACH|POS|PURCHASE|DEBIT|CHECKCARD|CHECK CARD|CARD|ONLINE|PMT|PAYMENT)\b/g,
+      " "
+    )
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -109,9 +112,23 @@ function classifyProvider(
     "COSTCO",
     "WHOLE FOODS",
     "TRADER JOE",
+    "VENMO",
+    "ZELLE",
+    "GUSTO",
+    "PAYROLL",
+    "ADP",
+    "PAYCHEX",
+    "INTUIT PAYROLL",
+    "QUICKBOOKS PAYROLL",
+    "RIPPLING",
+    "TRINET",
+    "JUSTWORKS",
+    "DEEL",
   ];
 
-  const pharmacyReviewHints = ["CVS", "WALGREENS", "RITE AID", "DUANE READE"];
+  const pharmacyHealthcareHints = ["CVS", "WALGREENS"];
+
+  const pharmacyReviewHints = ["RITE AID", "DUANE READE"];
 
   const hasHint = (hint: string): boolean => {
     if (hint.includes(" ")) {
@@ -120,6 +137,10 @@ function classifyProvider(
 
     return words.has(hint);
   };
+
+  if (ignoreHints.some(hasHint)) {
+    return { bucket: "IGNORE", care_action_type: null };
+  }
 
   if (
     joinedCategories.includes("DOCTOR") ||
@@ -134,8 +155,11 @@ function classifyProvider(
     };
   }
 
-  if (ignoreHints.some(hasHint)) {
-    return { bucket: "IGNORE", care_action_type: null };
+  if (pharmacyHealthcareHints.some(hasHint)) {
+    return {
+      bucket: "HEALTHCARE",
+      care_action_type: "CHECK_APPOINTMENT_STATUS",
+    };
   }
 
   if (healthcareHints.some(hasHint)) {
@@ -154,7 +178,8 @@ function classifyProvider(
 
   const avgAmount =
     amountSamples.length > 0
-      ? amountSamples.reduce((sum, value) => sum + value, 0) / amountSamples.length
+      ? amountSamples.reduce((sum, value) => sum + value, 0) /
+        amountSamples.length
       : 0;
 
   if (visitCount >= 2 && avgAmount > 40) {

@@ -12,6 +12,8 @@ function ConnectPageInner() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [loadingToken, setLoadingToken] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,6 +23,29 @@ function ConnectPageInner() {
       window.sessionStorage.setItem("qbh_user_id", userId);
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (!analyzing) return;
+
+    const messages = [
+      0, // Connecting your account
+      1, // Pulling transactions
+      2, // Finding providers
+      3, // Organizing your care history
+    ];
+
+    let index = 0;
+    const interval = window.setInterval(() => {
+      index += 1;
+      if (index >= messages.length) {
+        window.clearInterval(interval);
+        return;
+      }
+      setAnalysisStep(messages[index]);
+    }, 1400);
+
+    return () => window.clearInterval(interval);
+  }, [analyzing]);
 
   useEffect(() => {
     async function createLinkToken() {
@@ -75,6 +100,8 @@ function ConnectPageInner() {
         if (typeof window === "undefined") return;
 
         setSubmitting(true);
+        setAnalyzing(true);
+        setAnalysisStep(0);
         setError(null);
 
         const effectiveUserId =
@@ -103,32 +130,15 @@ function ConnectPageInner() {
 
         window.sessionStorage.removeItem("qbh_plaid_link_token");
 
-        const discoveryResponse = await fetch("/api/discovery/run", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: effectiveUserId,
-          }),
-        });
-
-        const discoveryData = await discoveryResponse.json();
-
-        if (!discoveryResponse.ok || !discoveryData?.ok) {
-          throw new Error(discoveryData?.error || "Failed to run discovery.");
-        }
-
-        window.sessionStorage.removeItem("qbh_user_id");
-
         window.location.href = `/dashboard?user_id=${encodeURIComponent(
           effectiveUserId
-        )}`;
+        )}&analyzing=1`;
       } catch (err) {
         console.log("Connect flow failed:", err);
         setError(
           err instanceof Error ? err.message : "Failed to complete connection."
         );
+        setAnalyzing(false);
       } finally {
         setSubmitting(false);
       }
@@ -152,6 +162,73 @@ function ConnectPageInner() {
       console.log("Plaid Link exited without error:", metadata);
     },
   });
+
+  const analysisMessages = [
+    "Connecting your account",
+    "Pulling recent transactions",
+    "Finding healthcare providers",
+    "Organizing your care history",
+  ];
+
+  if (analyzing) {
+    return (
+      <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
+        <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
+          <div className="w-full max-w-2xl rounded-3xl bg-white p-10 shadow-sm ring-1 ring-black/5">
+            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#8B9D83]">
+              Quarterback AI
+            </div>
+
+            <h1
+              className="mt-4 text-4xl tracking-tight sm:text-5xl"
+              style={{ fontFamily: "Playfair Display, serif" }}
+            >
+              Analyzing your healthcare spending
+            </h1>
+
+            <p className="mt-4 text-lg text-neutral-700">
+              We’re securely reviewing your recent transactions, identifying
+              providers, and preparing your dashboard.
+            </p>
+
+            <div className="mt-8 h-3 w-full overflow-hidden rounded-full bg-neutral-200">
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-[#8B9D83]" />
+            </div>
+
+            <div className="mt-8 space-y-3">
+              {analysisMessages.map((message, index) => {
+                const isActive = index <= analysisStep;
+
+                return (
+                  <div
+                    key={message}
+                    className={[
+                      "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition",
+                      isActive
+                        ? "bg-[#F3F7F1] text-neutral-900"
+                        : "bg-neutral-50 text-neutral-400",
+                    ].join(" ")}
+                  >
+                    <div
+                      className={[
+                        "h-2.5 w-2.5 rounded-full",
+                        isActive ? "bg-[#8B9D83]" : "bg-neutral-300",
+                      ].join(" ")}
+                    />
+                    <span>{message}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-8 text-sm text-neutral-500">
+              This usually takes a few seconds.
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
@@ -200,7 +277,7 @@ function ConnectPageInner() {
                 {loadingToken
                   ? "Preparing secure connection..."
                   : submitting
-                  ? "Connecting and analyzing..."
+                  ? "Connecting..."
                   : "Connect account with Plaid"}
               </button>
             </div>

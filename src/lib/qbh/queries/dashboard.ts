@@ -20,6 +20,12 @@ export type DashboardDiscoverySummary = {
   providersFound: number;
 };
 
+const ACTIVE_ATTEMPT_STATUSES = new Set([
+  "CREATED",
+  "CALLING",
+  "PROPOSED",
+]);
+
 export async function getDashboardProvidersForUser(
   _userId: string
 ): Promise<ProviderDashboardSnapshot[]> {
@@ -106,7 +112,39 @@ export async function getDashboardProvidersForUser(
     }
   }
 
-  // 4) Latest call note per latest attempt
+  // 4) Provider visit rollup
+  const { data: visits, error: visitsError } = await supabaseAdmin
+    .from("provider_visits")
+    .select("provider_id,visit_date,created_at")
+    .eq("user_id", _userId)
+    .in("provider_id", providerIds)
+    .order("visit_date", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (visitsError) throw visitsError;
+
+  const visitCountByProvider = new Map<string, number>();
+  const latestVisitDateByProvider = new Map<string, string>();
+
+  for (const row of (visits ?? []) as Array<{
+    provider_id: string;
+    visit_date: string | null;
+    created_at: string;
+  }>) {
+    visitCountByProvider.set(
+      row.provider_id,
+      (visitCountByProvider.get(row.provider_id) ?? 0) + 1
+    );
+
+    if (!latestVisitDateByProvider.has(row.provider_id)) {
+      latestVisitDateByProvider.set(
+        row.provider_id,
+        row.visit_date || row.created_at
+      );
+    }
+  }
+
+  // 5) Latest call note per latest attempt
   const latestAttemptIds = Array.from(
     new Set(
       Array.from(latestAttemptByProvider.values())
@@ -139,7 +177,7 @@ export async function getDashboardProvidersForUser(
     }
   }
 
-  // 5) Compose snapshots
+  // 6) Compose snapshots
   return providerRows.map((pRow) => {
     const provider: Provider = {
       id: pRow.id,
@@ -158,9 +196,18 @@ export async function getDashboardProvidersForUser(
       ? latestNoteByAttemptId.get(latestAttempt.id) ?? null
       : null;
 
+    const visitCount = visitCountByProvider.get(pRow.id) ?? 0;
+    const hasVisitHistory = visitCount > 0;
+    const hasActiveBookingAttempt = latestAttempt
+      ? ACTIVE_ATTEMPT_STATUSES.has(String(latestAttempt.status).toUpperCase())
+      : false;
+
+    const followUpNeeded =
+      !futureConfirmedEvent && hasVisitHistory && !hasActiveBookingAttempt;
+
     return {
       provider,
-      followUpNeeded: !futureConfirmedEvent,
+      followUpNeeded,
       latestAttempt,
       futureConfirmedEvent,
       latestNote,
