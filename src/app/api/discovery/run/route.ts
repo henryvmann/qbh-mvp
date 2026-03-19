@@ -18,6 +18,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+// Ensure user exists (idempotent)
+const { error: userUpsertError } = await supabaseAdmin
+  .from("app_users")
+  .upsert(
+    [{ id: userId }],
+    { onConflict: "id" }
+  );
+
+if (userUpsertError) {
+  console.error("[discovery/run] failed to ensure user", {
+    userId,
+    message: userUpsertError.message,
+    details: userUpsertError.details,
+    hint: userUpsertError.hint,
+    code: userUpsertError.code,
+  });
+
+  return NextResponse.json(
+    { ok: false, error: "Failed to create user" },
+    { status: 500 }
+  );
+}
+
     const { data: items, error: itemError } = await supabaseAdmin
       .from("plaid_items")
       .select("access_token, created_at")
