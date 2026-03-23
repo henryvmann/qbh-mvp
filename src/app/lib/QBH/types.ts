@@ -1,21 +1,13 @@
 // src/lib/qbh/types.ts
 
-/**
- * Core UI-layer types for QBH Dashboard.
- * These mirror backend truth but do NOT redefine it.
- * Booking state is derived from schedule_attempts + calendar_events.
- */
-
 export type Provider = {
-  id: string; // UUID (matches providers.id)
+  id: string;
   name: string;
   phone?: string | null;
   specialty?: string | null;
   location?: string | null;
 };
 
-// DB stores status as text (default 'CREATED'). We keep known values,
-// but allow others safely without breaking UI when backend adds more.
 export type ScheduleAttemptStatus =
   | "CREATED"
   | "CALLING"
@@ -26,10 +18,60 @@ export type ScheduleAttemptStatus =
   | "CANCELLED"
   | (string & {});
 
+export type BookingSummary = {
+  status?: string | null;
+  timezone?: string | null;
+  provider_id?: string | null;
+  display_time?: string | null;
+  appointment_start?: string | null;
+  appointment_end?: string | null;
+  calendar_event_id?: string | null;
+  proof?: {
+    calendar_event_created?: boolean;
+    portal_fact_written?: boolean;
+  };
+};
+
+export type ExistingBookedAppointment = {
+  source_attempt_id: number;
+  booking_summary: {
+    status: "BOOKED_CONFIRMED";
+    timezone: string | null;
+    provider_id: string | null;
+    display_time: string | null;
+    appointment_start: string | null;
+    appointment_end: string | null;
+    calendar_event_id: string | null;
+  };
+};
+
+export type AvailabilityContext = {
+  calendar_connected?: boolean;
+  time_min?: string | null;
+  time_max?: string | null;
+  time_zone?: string | null;
+  busy_blocks?: unknown[];
+  busy_block_count?: number;
+  source_summaries?: unknown[];
+  availability_error?: string;
+};
+
+export type ScheduleAttemptMetadata = {
+  booking_summary?: BookingSummary;
+  last_event?: string | null;
+  source?: string | null;
+  flow_mode?: "BOOK" | "ADJUST" | (string & {});
+  availability_context?: AvailabilityContext;
+  existing_booking?: ExistingBookedAppointment | null;
+  vapi_status?: number;
+  vapi_error?: unknown;
+};
+
 export type ScheduleAttemptSnapshot = {
-  id: number; // bigint in DB → number in TS
+  id: number;
   status: ScheduleAttemptStatus;
-  created_at: string; // ISO
+  created_at: string;
+  metadata?: ScheduleAttemptMetadata | null;
 };
 
 export type CalendarEventStatus =
@@ -39,26 +81,33 @@ export type CalendarEventStatus =
 
 export type CalendarEventSnapshot = {
   id: string;
-  start_at: string; // ISO
-  end_at: string; // ISO
+  start_at: string;
+  end_at: string;
   timezone?: string | null;
-  status: CalendarEventStatus; // DB is text default 'confirmed'
+  status: CalendarEventStatus;
+};
+
+export type BookingStateStatus =
+  | "BOOKED"
+  | "IN_PROGRESS"
+  | "FOLLOW_UP"
+  | "NONE";
+
+export type BookingState = {
+  status: BookingStateStatus;
+  displayTime: string | null;
+  appointmentStart: string | null;
+  appointmentEnd: string | null;
+  timezone: string | null;
 };
 
 export type ProviderDashboardSnapshot = {
   provider: Provider;
-
-  /**
-   * Derived state for UI rendering only.
-   * All truth comes from DB reads.
-   */
   followUpNeeded: boolean;
-
   latestAttempt: ScheduleAttemptSnapshot | null;
-
   futureConfirmedEvent: CalendarEventSnapshot | null;
-
   latestNote?: {
     summary: string | null;
   } | null;
+  booking_state: BookingState;
 };

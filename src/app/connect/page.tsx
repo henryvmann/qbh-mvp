@@ -8,40 +8,36 @@ import { usePlaidLink } from "react-plaid-link";
 function ConnectPageInner() {
   const searchParams = useSearchParams();
 
-const [userId, setUserId] = useState("");
-
-useEffect(() => {
-  if (typeof window === "undefined") return;
-
-  // 1. Query param (highest priority)
-  const fromQuery = (searchParams.get("user_id") || "").trim();
-
-  if (fromQuery) {
-    window.localStorage.setItem("qbh_user_id", fromQuery);
-    setUserId(fromQuery);
-    return;
-  }
-
-  // 2. Existing stored user
-  const existing = window.localStorage.getItem("qbh_user_id");
-
-  if (existing) {
-    setUserId(existing);
-    return;
-  }
-
-  // 3. Create new user_id
-  const newId = crypto.randomUUID();
-  window.localStorage.setItem("qbh_user_id", newId);
-  setUserId(newId);
-}, [searchParams]);
-
+  const [userId, setUserId] = useState("");
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [loadingToken, setLoadingToken] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const fromQuery = (searchParams.get("user_id") || "").trim();
+
+    if (fromQuery) {
+      window.localStorage.setItem("qbh_user_id", fromQuery);
+      setUserId(fromQuery);
+      return;
+    }
+
+    const existing = window.localStorage.getItem("qbh_user_id");
+
+    if (existing) {
+      setUserId(existing);
+      return;
+    }
+
+    const newId = crypto.randomUUID();
+    window.localStorage.setItem("qbh_user_id", newId);
+    setUserId(newId);
+  }, [searchParams]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -54,12 +50,7 @@ useEffect(() => {
   useEffect(() => {
     if (!analyzing) return;
 
-    const messages = [
-      0, // Connecting your account
-      1, // Pulling transactions
-      2, // Finding providers
-      3, // Organizing your care history
-    ];
+    const messages = [0, 1, 2, 3];
 
     let index = 0;
     const interval = window.setInterval(() => {
@@ -259,7 +250,7 @@ useEffect(() => {
 
   return (
     <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
-      <div className="mx-auto max-w-4xl px-6 pt-10 pb-16">
+      <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
         <header className="flex items-center justify-between">
           <Link
             href="/start"
@@ -276,15 +267,16 @@ useEffect(() => {
             className="text-4xl tracking-tight sm:text-5xl"
             style={{ fontFamily: "Playfair Display, serif" }}
           >
-            Connect the account you use for healthcare spending
+            Connect your health spending
           </h1>
 
-          <p className="mt-4 max-w-xl text-lg text-neutral-700">
-            Quarterback uses Plaid to securely connect your account so we can
-            identify real healthcare providers from real transactions.
+          <p className="mt-4 max-w-2xl text-lg text-neutral-700">
+            Quarterback uses Plaid to identify real healthcare providers from
+            real transactions and build the care picture that powers your
+            dashboard.
           </p>
 
-          <div className="mt-10 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-black/5">
+          <div className="mt-10 max-w-2xl rounded-2xl bg-white p-8 shadow-sm ring-1 ring-black/5">
             <div>
               <div className="text-sm font-medium text-neutral-900">
                 Secure account connection
@@ -309,16 +301,16 @@ useEffect(() => {
               </button>
             </div>
 
-            {error ? (
-              <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-                {error}
-              </div>
-            ) : null}
-
             <div className="mt-4 text-center text-xs text-neutral-500">
               Plaid-secured connection • Real transaction discovery
             </div>
           </div>
+
+          {error ? (
+            <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+              {error}
+            </div>
+          ) : null}
         </section>
       </div>
     </main>

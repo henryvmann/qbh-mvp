@@ -6,15 +6,6 @@ import type {
   CalendarEventSnapshot,
 } from "../../../app/lib/QBH/types";
 
-/**
- * Phase A (clean UUID world):
- * - providers.id is uuid
- * - schedule_attempts.provider_id is uuid
- * - calendar_events.provider_id is uuid
- *
- * No fallbacks, no casts, no drift.
- */
-
 export type DashboardDiscoverySummary = {
   chargesAnalyzed: number;
   providersFound: number;
@@ -26,58 +17,95 @@ const ACTIVE_ATTEMPT_STATUSES = new Set([
   "PROPOSED",
 ]);
 
+type JsonRecord = Record<string, unknown>;
+
+type ProviderRow = {
+  id: string;
+  app_user_id: string;
+  name: string;
+  status: string;
+  created_at: string;
+};
+
+type AttemptRow = {
+  id: number | string;
+  provider_id: string;
+  status: string;
+  created_at: string;
+  metadata: unknown;
+};
+
+type EventRow = {
+  id: string;
+  provider_id: string;
+  start_at: string;
+  end_at: string;
+  timezone: string | null;
+  status: string;
+  created_at: string;
+};
+
+type VisitRow = {
+  provider_id: string;
+  visit_date: string | null;
+  created_at: string;
+};
+
+type CallNoteRow = {
+  attempt_id: number | string;
+  summary: string | null;
+  created_at: string;
+};
+
+function asRecord(value: unknown): JsonRecord | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as JsonRecord;
+}
+
 export async function getDashboardProvidersForUser(
-  _userId: string
+  userId: string
 ): Promise<ProviderDashboardSnapshot[]> {
-  // 1) Providers (active)
+  const cleanedUserId = String(userId || "").trim();
+
   const { data: providers, error: providersError } = await supabaseAdmin
     .from("providers")
-    .select("id,name,status,created_at,user_id")
-    .eq("user_id", _userId)
+    .select("id,name,status,created_at,app_user_id")
+    .eq("app_user_id", cleanedUserId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
 
   if (providersError) throw providersError;
 
-  const providerRows = (providers ?? []) as Array<{
-    id: string;
-    user_id: string;
-    name: string;
-    status: string;
-    created_at: string;
-  }>;
+  const providerRows = (providers ?? []) as ProviderRow[];
 
   if (providerRows.length === 0) return [];
 
   const providerIds = providerRows.map((p) => p.id);
 
-  // 2) Latest schedule attempt per provider
   const { data: attempts, error: attemptsError } = await supabaseAdmin
     .from("schedule_attempts")
-    .select("id,provider_id,status,created_at")
+    .select("id,provider_id,status,created_at,metadata")
     .in("provider_id", providerIds)
     .order("created_at", { ascending: false });
 
   if (attemptsError) throw attemptsError;
 
-  const latestAttemptByProvider = new Map<string, ScheduleAttemptSnapshot>();
+  const latestAttemptByProvider = new Map<
+    string,
+    ScheduleAttemptSnapshot & { metadata?: unknown }
+  >();
 
-  for (const row of (attempts ?? []) as Array<{
-    id: number;
-    provider_id: string;
-    status: string;
-    created_at: string;
-  }>) {
+  for (const row of (attempts ?? []) as AttemptRow[]) {
     if (!latestAttemptByProvider.has(row.provider_id)) {
       latestAttemptByProvider.set(row.provider_id, {
         id: Number(row.id),
-        status: row.status as any,
+        status: row.status as ScheduleAttemptSnapshot["status"],
         created_at: row.created_at,
+        metadata: row.metadata ?? null,
       });
     }
   }
 
-  // 3) Nearest future confirmed calendar event per provider
   const nowIso = new Date().toISOString();
 
   const { data: events, error: eventsError } = await supabaseAdmin
@@ -92,31 +120,22 @@ export async function getDashboardProvidersForUser(
 
   const futureConfirmedByProvider = new Map<string, CalendarEventSnapshot>();
 
-  for (const row of (events ?? []) as Array<{
-    id: string;
-    provider_id: string;
-    start_at: string;
-    end_at: string;
-    timezone: string | null;
-    status: string;
-    created_at: string;
-  }>) {
+  for (const row of (events ?? []) as EventRow[]) {
     if (!futureConfirmedByProvider.has(row.provider_id)) {
       futureConfirmedByProvider.set(row.provider_id, {
         id: row.id,
         start_at: row.start_at,
         end_at: row.end_at,
         timezone: row.timezone,
-        status: row.status as any,
+        status: row.status as CalendarEventSnapshot["status"],
       });
     }
   }
 
-  // 4) Provider visit rollup
   const { data: visits, error: visitsError } = await supabaseAdmin
     .from("provider_visits")
     .select("provider_id,visit_date,created_at")
-    .eq("user_id", _userId)
+    .eq("app_user_id", cleanedUserId)
     .in("provider_id", providerIds)
     .order("visit_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
@@ -124,27 +143,14 @@ export async function getDashboardProvidersForUser(
   if (visitsError) throw visitsError;
 
   const visitCountByProvider = new Map<string, number>();
-  const latestVisitDateByProvider = new Map<string, string>();
 
-  for (const row of (visits ?? []) as Array<{
-    provider_id: string;
-    visit_date: string | null;
-    created_at: string;
-  }>) {
+  for (const row of (visits ?? []) as VisitRow[]) {
     visitCountByProvider.set(
       row.provider_id,
       (visitCountByProvider.get(row.provider_id) ?? 0) + 1
     );
-
-    if (!latestVisitDateByProvider.has(row.provider_id)) {
-      latestVisitDateByProvider.set(
-        row.provider_id,
-        row.visit_date || row.created_at
-      );
-    }
   }
 
-  // 5) Latest call note per latest attempt
   const latestAttemptIds = Array.from(
     new Set(
       Array.from(latestAttemptByProvider.values())
@@ -164,21 +170,18 @@ export async function getDashboardProvidersForUser(
 
     if (notesError) throw notesError;
 
-    for (const row of (notes ?? []) as Array<{
-      attempt_id: number;
-      summary: string | null;
-      created_at: string;
-    }>) {
-      if (!latestNoteByAttemptId.has(Number(row.attempt_id))) {
-        latestNoteByAttemptId.set(Number(row.attempt_id), {
+    for (const row of (notes ?? []) as CallNoteRow[]) {
+      const attemptId = Number(row.attempt_id);
+
+      if (!latestNoteByAttemptId.has(attemptId)) {
+        latestNoteByAttemptId.set(attemptId, {
           summary: row.summary,
         });
       }
     }
   }
 
-  // 6) Compose snapshots
-  return providerRows.map((pRow) => {
+  return providerRows.map((pRow): ProviderDashboardSnapshot => {
     const provider: Provider = {
       id: pRow.id,
       name: pRow.name,
@@ -202,8 +205,46 @@ export async function getDashboardProvidersForUser(
       ? ACTIVE_ATTEMPT_STATUSES.has(String(latestAttempt.status).toUpperCase())
       : false;
 
-    const followUpNeeded =
-      !futureConfirmedEvent && hasVisitHistory && !hasActiveBookingAttempt;
+    const metadata = asRecord(latestAttempt?.metadata);
+    const bookingSummary = asRecord(metadata?.booking_summary);
+
+    const bookingSummaryStatus =
+      typeof bookingSummary?.status === "string" ? bookingSummary.status : null;
+    const lastEvent =
+      typeof metadata?.last_event === "string" ? metadata.last_event : null;
+
+    const isBooked =
+      bookingSummaryStatus === "BOOKED_CONFIRMED" ||
+      latestAttempt?.status === "BOOKED_CONFIRMED" ||
+      lastEvent === "BOOKED_CONFIRMED";
+
+    const booking_state: ProviderDashboardSnapshot["booking_state"] = {
+      status: isBooked
+        ? "BOOKED"
+        : hasActiveBookingAttempt
+        ? "IN_PROGRESS"
+        : hasVisitHistory
+        ? "FOLLOW_UP"
+        : "NONE",
+      displayTime:
+        typeof bookingSummary?.display_time === "string"
+          ? bookingSummary.display_time
+          : null,
+      appointmentStart:
+        typeof bookingSummary?.appointment_start === "string"
+          ? bookingSummary.appointment_start
+          : null,
+      appointmentEnd:
+        typeof bookingSummary?.appointment_end === "string"
+          ? bookingSummary.appointment_end
+          : null,
+      timezone:
+        typeof bookingSummary?.timezone === "string"
+          ? bookingSummary.timezone
+          : null,
+    };
+
+    const followUpNeeded = booking_state.status === "FOLLOW_UP";
 
     return {
       provider,
@@ -211,6 +252,7 @@ export async function getDashboardProvidersForUser(
       latestAttempt,
       futureConfirmedEvent,
       latestNote,
+      booking_state,
     };
   });
 }
@@ -218,6 +260,8 @@ export async function getDashboardProvidersForUser(
 export async function getDashboardDiscoverySummaryForUser(
   userId: string
 ): Promise<DashboardDiscoverySummary> {
+  const cleanedUserId = String(userId || "").trim();
+
   const [
     { count: chargesCount, error: visitsError },
     { count: providersCount, error: providersError },
@@ -225,11 +269,11 @@ export async function getDashboardDiscoverySummaryForUser(
     supabaseAdmin
       .from("provider_visits")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", userId),
+      .eq("app_user_id", cleanedUserId),
     supabaseAdmin
       .from("providers")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
+      .eq("app_user_id", cleanedUserId)
       .eq("status", "active"),
   ]);
 
@@ -240,4 +284,25 @@ export async function getDashboardDiscoverySummaryForUser(
     chargesAnalyzed: chargesCount ?? 0,
     providersFound: providersCount ?? 0,
   };
+}
+
+export async function getGoogleCalendarConnectionForUser(
+  userId: string
+): Promise<boolean> {
+  const cleanedUserId = String(userId || "").trim();
+
+  if (!cleanedUserId) return false;
+
+  const { data, error } = await supabaseAdmin
+    .from("integrations")
+    .select("id")
+    .eq("app_user_id", cleanedUserId)
+    .eq("integration_type", "calendar")
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return Boolean(data?.id);
 }

@@ -1,5 +1,3 @@
-// src/lib/qbh/discovery/write-discovered-providers.ts
-
 import { supabaseAdmin } from "../../supabase-server";
 import type {
   DiscoveredProvider,
@@ -33,7 +31,7 @@ export async function writeDiscoveredProviders({
     await supabaseAdmin
       .from("providers")
       .select("id, name")
-      .eq("user_id", userId);
+      .eq("app_user_id", userId);
 
   if (existingProvidersError) {
     console.error("[writeDiscoveredProviders] failed reading providers", {
@@ -66,7 +64,7 @@ export async function writeDiscoveredProviders({
       return true;
     })
     .map((provider) => ({
-      user_id: userId,
+      app_user_id: userId,
       name: provider.provider_name.trim(),
       status: "active",
       guessed_portal_brand: null,
@@ -109,7 +107,7 @@ export async function writeDiscoveredProviders({
   }
 
   const rawVisitRows: Array<{
-    user_id: string;
+    app_user_id: string;
     provider_id: string;
     source: string;
     visit_date: string;
@@ -148,7 +146,7 @@ export async function writeDiscoveredProviders({
       seenVisitTransactionIds.add(txId);
 
       rawVisitRows.push({
-        user_id: userId,
+        app_user_id: userId,
         provider_id: providerId,
         source: "transaction",
         visit_date: tx.date,
@@ -167,7 +165,7 @@ export async function writeDiscoveredProviders({
       await supabaseAdmin
         .from("provider_visits")
         .select("source_transaction_id")
-        .eq("user_id", userId)
+        .eq("app_user_id", userId)
         .in("source_transaction_id", sourceTransactionIds);
 
     if (existingVisitsError) {

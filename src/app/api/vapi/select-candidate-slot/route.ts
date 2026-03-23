@@ -250,15 +250,17 @@ async function handleOne(toolCallId: string, args: any): Promise<VapiToolResultE
     chosen = matches[0];
   }
 
-  const payload = {
+   const payload = {
     source: "candidate_slot_selection",
     provider_id: providerId,
     user_selection: userSelection,
-    slot_index: chosen.slot_index,
-    spoken_start: chosen.spoken_start,
-    spoken_end: chosen.spoken_end,
-    start_at: chosen.start_at,
-    end_at: chosen.end_at,
+    candidate_slot: {
+      slot_index: chosen.slot_index,
+      start_at: chosen.start_at,
+      end_at: chosen.end_at,
+      spoken_start: chosen.spoken_start,
+      spoken_end: chosen.spoken_end,
+    },
     candidate_payload: chosen.payload ?? {},
   };
 

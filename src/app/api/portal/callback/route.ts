@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 
 type CallbackState = {
-  user_id?: string;
+  app_user_id?: string;
   provider_id?: string;
   portal_brand?: string;
   portal_tenant?: string | null;
@@ -38,8 +38,8 @@ function getBaseUrl(req: Request): string {
   return `${url.protocol}//${url.host}`;
 }
 
-function dashboardHref(userId: string): string {
-  return `/dashboard?user_id=${encodeURIComponent(userId)}`;
+function dashboardHref(appUserId: string): string {
+  return `/dashboard?app_user_id=${encodeURIComponent(appUserId)}`;
 }
 
 function parseState(rawState: string): CallbackState | null {
@@ -112,15 +112,28 @@ export async function GET(req: Request) {
     );
   }
 
-  const userId = String(decoded.user_id || "").trim();
+  const appUserId = String(decoded.app_user_id || "").trim();
   const providerId = String(decoded.provider_id || "").trim();
   const portalBrand = String(decoded.portal_brand || "").trim();
   const portalTenant = decoded.portal_tenant ?? null;
   const pkceVerifier = String(decoded.pkce_verifier || "").trim();
 
-  if (!userId || !providerId || !portalBrand || !pkceVerifier) {
+  if (!appUserId || !providerId || !portalBrand || !pkceVerifier) {
     return NextResponse.json(
       { ok: false, error: "invalid_state_payload" },
+      { status: 400 }
+    );
+  }
+
+  const { data: appUser, error: appUserError } = await supabaseAdmin
+    .from("app_users")
+    .select("id")
+    .eq("id", appUserId)
+    .single();
+
+  if (appUserError || !appUser) {
+    return NextResponse.json(
+      { ok: false, error: "invalid_app_user_id" },
       { status: 400 }
     );
   }
@@ -173,11 +186,66 @@ export async function GET(req: Request) {
 
   const tokenExpiresAt = computeExpiresAt(tokenJson.expires_in);
 
-  const { error: upsertError } = await supabaseAdmin
+  const { data: existingPortalConnection, error: existingPortalConnectionError } =
+    await supabaseAdmin
+      .from("portal_connections")
+      .select("integration_id")
+      .eq("app_user_id", appUserId)
+      .eq("provider_id", providerId)
+      .eq("portal_brand", portalBrand)
+      .maybeSingle();
+
+  if (existingPortalConnectionError) {
+    return NextResponse.json(
+      { ok: false, error: existingPortalConnectionError.message },
+      { status: 500 }
+    );
+  }
+
+  let integrationId = String(existingPortalConnection?.integration_id || "").trim();
+
+  if (!integrationId) {
+    const { data: integration, error: integrationError } = await supabaseAdmin
+      .from("integrations")
+      .insert({
+        app_user_id: appUserId,
+        integration_type: "portal",
+        status: "connected",
+      })
+      .select("id")
+      .single();
+
+    if (integrationError || !integration?.id) {
+      return NextResponse.json(
+        { ok: false, error: integrationError?.message || "integration_create_failed" },
+        { status: 500 }
+      );
+    }
+
+    integrationId = integration.id;
+  } else {
+    const { error: integrationUpdateError } = await supabaseAdmin
+      .from("integrations")
+      .update({
+        status: "connected",
+        updated_at: nowIso,
+      })
+      .eq("id", integrationId);
+
+    if (integrationUpdateError) {
+      return NextResponse.json(
+        { ok: false, error: integrationUpdateError.message },
+        { status: 500 }
+      );
+    }
+  }
+
+  const { error: portalConnectionError } = await supabaseAdmin
     .from("portal_connections")
     .upsert(
       {
-        user_id: userId,
+        integration_id: integrationId,
+        app_user_id: appUserId,
         provider_id: providerId,
         portal_brand: portalBrand,
         portal_tenant: portalTenant,
@@ -189,19 +257,19 @@ export async function GET(req: Request) {
         token_scope: tokenJson.scope ?? null,
         token_type: tokenJson.token_type ?? null,
       },
-      { onConflict: "user_id,provider_id,portal_brand" }
+      { onConflict: "app_user_id,provider_id,portal_brand" }
     );
 
-  if (upsertError) {
+  if (portalConnectionError) {
     return NextResponse.json(
-      { ok: false, error: upsertError.message },
+      { ok: false, error: portalConnectionError.message },
       { status: 500 }
     );
   }
 
   const facts = [
     {
-      user_id: userId,
+      app_user_id: appUserId,
       provider_id: providerId,
       fact_type: "portal_connected",
       fact_date: nowIso.slice(0, 10),
@@ -214,7 +282,7 @@ export async function GET(req: Request) {
       source: "portal",
     },
     {
-      user_id: userId,
+      app_user_id: appUserId,
       provider_id: providerId,
       fact_type: "portal_token_received",
       fact_date: nowIso.slice(0, 10),
@@ -242,5 +310,5 @@ export async function GET(req: Request) {
     );
   }
 
-  return NextResponse.redirect(new URL(dashboardHref(userId), url.origin));
+  return NextResponse.redirect(new URL(dashboardHref(appUserId), url.origin));
 }

@@ -1,50 +1,45 @@
-// src/app/api/discovery/run/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { plaidClient } from "../../../../lib/plaid";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { buildProviderRegistry } from "../../../../lib/qbh/discovery/build-provider-registry";
 import { writeDiscoveredProviders } from "../../../../lib/qbh/discovery/write-discovered-providers";
 
+async function requireAppUser(appUserId: string): Promise<void> {
+  const cleaned = String(appUserId || "").trim();
+
+  if (!cleaned) {
+    throw new Error("Missing app_user_id");
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("app_users")
+    .select("id")
+    .eq("id", cleaned)
+    .single();
+
+  if (error || !data?.id) {
+    throw new Error("Invalid app_user_id");
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const userId = String(body?.user_id || "").trim();
+    const appUserId = String(body?.app_user_id || "").trim();
 
-    if (!userId) {
+    if (!appUserId) {
       return NextResponse.json(
-        { ok: false, error: "Missing user_id" },
+        { ok: false, error: "Missing app_user_id" },
         { status: 400 }
       );
     }
 
-// Ensure user exists (idempotent)
-const { error: userUpsertError } = await supabaseAdmin
-  .from("app_users")
-  .upsert(
-    [{ id: userId }],
-    { onConflict: "id" }
-  );
-
-if (userUpsertError) {
-  console.error("[discovery/run] failed to ensure user", {
-    userId,
-    message: userUpsertError.message,
-    details: userUpsertError.details,
-    hint: userUpsertError.hint,
-    code: userUpsertError.code,
-  });
-
-  return NextResponse.json(
-    { ok: false, error: "Failed to create user" },
-    { status: 500 }
-  );
-}
+    await requireAppUser(appUserId);
 
     const { data: items, error: itemError } = await supabaseAdmin
       .from("plaid_items")
       .select("access_token, created_at")
-      .eq("user_id", userId)
+      .eq("app_user_id", appUserId)
       .order("created_at", { ascending: false })
       .limit(1);
 
@@ -77,7 +72,7 @@ if (userUpsertError) {
 
       if (errorCode === "PRODUCT_NOT_READY") {
         console.warn("[discovery/run] plaid transactions not ready yet", {
-          userId,
+          appUserId,
           errorCode,
         });
 
@@ -92,7 +87,7 @@ if (userUpsertError) {
     }
 
     const transactionRows = transactions.map((tx) => ({
-      user_id: userId,
+      app_user_id: appUserId,
       transaction_id: tx.transaction_id,
       name: tx.name,
       amount: tx.amount,
@@ -108,7 +103,7 @@ if (userUpsertError) {
 
     if (txInsertError) {
       console.error("[discovery/run] failed to store plaid_transactions", {
-        userId,
+        appUserId,
         message: txInsertError.message,
         details: txInsertError.details,
         hint: txInsertError.hint,
@@ -137,7 +132,7 @@ if (userUpsertError) {
     const providers = buildProviderRegistry(normalizedTransactions);
 
     const writeResult = await writeDiscoveredProviders({
-      userId,
+      userId: appUserId, // internal helper still uses userId naming but maps to app_user_id
       providers,
       transactions: normalizedTransactions,
     });

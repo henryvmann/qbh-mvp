@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CountryCode, Products } from "plaid";
 import { plaidClient } from "../../../../lib/plaid";
+import { supabaseAdmin } from "../../../../lib/supabase-server";
 
 function parseProducts(value: string | undefined): Products[] {
   return (value || "transactions")
@@ -20,17 +21,37 @@ function parseCountryCodes(value: string | undefined): CountryCode[] {
     .map((item) => item as CountryCode);
 }
 
+async function requireAppUser(appUserId: string): Promise<void> {
+  const cleanedAppUserId = String(appUserId || "").trim();
+
+  if (!cleanedAppUserId) {
+    throw new Error("Missing app_user_id");
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("app_users")
+    .select("id")
+    .eq("id", cleanedAppUserId)
+    .single();
+
+  if (error || !data?.id) {
+    throw new Error("Invalid app_user_id");
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const userId = String(body?.user_id || "").trim();
+    const appUserId = String(body?.app_user_id || "").trim();
 
-    if (!userId) {
+    if (!appUserId) {
       return NextResponse.json(
-        { ok: false, error: "Missing user_id" },
+        { ok: false, error: "Missing app_user_id" },
         { status: 400 }
       );
     }
+
+    await requireAppUser(appUserId);
 
     const products = parseProducts(process.env.PLAID_PRODUCTS);
     const countryCodes = parseCountryCodes(process.env.PLAID_COUNTRY_CODES);
@@ -38,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     const response = await plaidClient.linkTokenCreate({
       user: {
-        client_user_id: userId,
+        client_user_id: appUserId,
       },
       client_name: "QBHealth",
       products,

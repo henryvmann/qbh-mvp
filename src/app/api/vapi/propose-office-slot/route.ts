@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { getAvailabilityContext } from "../../../../lib/availability";
 import { normalizeProviderId } from "../../../../lib/vapi/ids";
 
 type VapiToolResultEnvelope = {
@@ -39,6 +40,7 @@ function normalizeAttemptId(input: number | string): {
   attemptIdNumOrNull: number | null;
 } {
   const attemptIdStr = String(input).trim();
+
   if (!isDigits(attemptIdStr)) {
     throw new Error("attempt_id must be an integer (bigint-compatible)");
   }
@@ -72,19 +74,50 @@ async function logCallEvent(params: {
   }
 }
 
+function ordinal(n: number) {
+  const v = n % 100;
+
+  if (v >= 11 && v <= 13) {
+    return `${n}th`;
+  }
+
+  switch (n % 10) {
+    case 1:
+      return `${n}st`;
+    case 2:
+      return `${n}nd`;
+    case 3:
+      return `${n}rd`;
+    default:
+      return `${n}th`;
+  }
+}
+
 function formatForSpeechFromIso(iso: string) {
   const d = new Date(iso);
-  const date = d.toLocaleDateString("en-US", {
-    month: "numeric",
-    day: "numeric",
-    timeZone: "America/New_York",
+  const tz = "America/New_York";
+
+  const month = d.toLocaleDateString("en-US", {
+    month: "long",
+    timeZone: tz,
   });
-  const time = d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/New_York",
-  });
-  return `${date} at ${time}`;
+
+  const dayNum = Number(
+    d.toLocaleDateString("en-US", {
+      day: "numeric",
+      timeZone: tz,
+    })
+  );
+
+  const time = d
+    .toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: tz,
+    })
+    .replace(":00 ", " ");
+
+  return `${month} ${ordinal(dayNum)} at ${time}`;
 }
 
 function safeParseArgs(raw: any): Record<string, any> {
@@ -150,10 +183,9 @@ async function handleOne(
     tool_payload: toolPayload,
   });
 
-  // Read attempt EARLY so demo mode routing works everywhere (includes demo_retry_count)
   const { data: attemptRow, error: attemptReadErr } = await supabaseAdmin
     .from("schedule_attempts")
-    .select("id, demo_autoconfirm, demo_retry_count")
+    .select("id, app_user_id, demo_autoconfirm, demo_retry_count, metadata")
     .eq("id", attemptIdStr)
     .maybeSingle();
 
@@ -169,11 +201,14 @@ async function handleOne(
     };
   }
 
+  const appUserId = String(attemptRow.app_user_id ?? "").trim();
   const demoAutoconfirm = attemptRow.demo_autoconfirm === true;
   const demoRetryCount = Number((attemptRow as any).demo_retry_count ?? 0);
 
   async function bumpDemoRetryAndMaybeEnd(why: string) {
-    if (!demoAutoconfirm) return null;
+    if (!demoAutoconfirm) {
+      return null;
+    }
 
     const nextCount = demoRetryCount + 1;
 
@@ -190,7 +225,8 @@ async function handleOne(
       return {
         status: "OK",
         code: "DEMO_RETRY_LIMIT",
-        message_to_say: "I’m going to call back shortly to confirm a time. Thank you.",
+        message_to_say:
+          "I’m going to call back shortly to confirm a time. Thank you.",
         next_action: "END_CALL",
         demo_retry_count: nextCount,
         demo_retry_reason: why,
@@ -200,10 +236,12 @@ async function handleOne(
     return null;
   }
 
-  // Demo-safe handling of missing proposal
   if (!proposalId || proposalId === "proposal_id") {
     if (demoAutoconfirm) {
-      const maybeEnd = await bumpDemoRetryAndMaybeEnd("missing_or_placeholder_proposal_id");
+      const maybeEnd = await bumpDemoRetryAndMaybeEnd(
+        "missing_or_placeholder_proposal_id"
+      );
+
       if (maybeEnd) {
         return {
           toolCallId: toolCallId || "missing_toolCallId",
@@ -211,25 +249,29 @@ async function handleOne(
         };
       }
 
-      const resp = {
-        status: "OK",
-        code: "NEED_SPECIFIC_TIME",
-        message_to_say: "Great — what’s the earliest specific day and time you have available?",
-        next_action: "WAIT_FOR_OFFICE_TIME",
-        demo_retry_count: demoRetryCount + 1,
+      return {
+        toolCallId,
+        result: JSON.stringify({
+          status: "OK",
+          code: "NEED_SPECIFIC_TIME",
+          message_to_say:
+            "Great — what’s the earliest specific day and time you have available?",
+          next_action: "WAIT_FOR_OFFICE_TIME",
+          demo_retry_count: demoRetryCount + 1,
+        }),
       };
-
-      return { toolCallId, result: JSON.stringify(resp) };
     }
 
-    const resp = {
-      status: "ERROR",
-      code: "INVALID_PROPOSAL_ID",
-      message_to_say: "Please choose one of the options by saying first, second, or third.",
-      next_action: "ASK_USER_TO_CHOOSE_SLOT",
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "ERROR",
+        code: "INVALID_PROPOSAL_ID",
+        message_to_say:
+          "Please choose one of the options by saying first, second, or third.",
+        next_action: "ASK_USER_TO_CHOOSE_SLOT",
+      }),
     };
-
-    return { toolCallId, result: JSON.stringify(resp) };
   }
 
   const { data: proposal, error: proposalErr } = await supabaseAdmin
@@ -242,55 +284,183 @@ async function handleOne(
   if (proposalErr || !proposal) {
     if (demoAutoconfirm) {
       const maybeEnd = await bumpDemoRetryAndMaybeEnd("proposal_not_found");
-      if (maybeEnd) return { toolCallId, result: JSON.stringify(maybeEnd) };
 
-      const resp = {
-        status: "OK",
-        code: "NEED_SPECIFIC_TIME",
-        message_to_say: "Sorry — I didn’t catch the exact slot. What’s the earliest specific day and time you have available?",
-        next_action: "WAIT_FOR_OFFICE_TIME",
-        demo_retry_count: demoRetryCount + 1,
+      if (maybeEnd) {
+        return { toolCallId, result: JSON.stringify(maybeEnd) };
+      }
+
+      return {
+        toolCallId,
+        result: JSON.stringify({
+          status: "OK",
+          code: "NEED_SPECIFIC_TIME",
+          message_to_say:
+            "Sorry — I didn’t catch the exact slot. What’s the earliest specific day and time you have available?",
+          next_action: "WAIT_FOR_OFFICE_TIME",
+          demo_retry_count: demoRetryCount + 1,
+        }),
       };
-
-      return { toolCallId, result: JSON.stringify(resp) };
     }
 
-    const resp = {
-      status: "ERROR",
-      code: "PROPOSAL_NOT_FOUND",
-      message_to_say: "I couldn’t find the selected time. Please say first, second, or third.",
-      next_action: "ASK_USER_TO_CHOOSE_SLOT",
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "ERROR",
+        code: "PROPOSAL_NOT_FOUND",
+        message_to_say:
+          "I couldn’t find the selected time. Please say first, second, or third.",
+        next_action: "ASK_USER_TO_CHOOSE_SLOT",
+      }),
     };
-
-    return { toolCallId, result: JSON.stringify(resp) };
   }
 
-  const tz = String(proposal.timezone ?? (proposal as any)?.payload?.timezone ?? "America/New_York");
+  const proposalStart = String(proposal.normalized_start ?? "").trim();
+  const proposalEnd = String(proposal.normalized_end ?? "").trim();
+  const tz = String(
+    proposal.timezone ?? (proposal as any)?.payload?.timezone ?? "America/New_York"
+  );
+
+  if (!proposalStart || !proposalEnd) {
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "ERROR",
+        code: "PROPOSAL_MISSING_NORMALIZED_TIMES",
+        message_to_say: "There was a system issue. I will call back shortly.",
+        next_action: "END_CALL",
+      }),
+    };
+  }
+
+  if (!appUserId) {
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "ERROR",
+        code: "MISSING_APP_USER_ID",
+        message_to_say: "There was a system issue. I will call back shortly.",
+        next_action: "END_CALL",
+      }),
+    };
+  }
+
+  const availability = await getAvailabilityContext({
+    app_user_id: appUserId,
+    window_start: proposalStart,
+    window_end: proposalEnd,
+    timezone: tz,
+    include_sources: ["GOOGLE_CALENDAR"],
+    proposed_slot: {
+      start_at: proposalStart,
+      end_at: proposalEnd,
+      timezone: tz,
+    },
+  });
+
+  if (availability.decision?.status === "CONFLICT") {
+    const conflictingBlocks = availability.blocks.filter((block) =>
+      availability.decision?.blocking_block_ids.includes(block.id)
+    );
+    const spokenConflictTime = formatForSpeechFromIso(proposalStart);
+
+    await supabaseAdmin
+      .from("schedule_attempts")
+      .update({
+        metadata: {
+          ...(typeof attemptRow.metadata === "object" && attemptRow.metadata
+            ? attemptRow.metadata
+            : {}),
+          last_event: "UNEXPECTED_CONFLICT_AT_PROPOSE",
+          conflicting_blocks: conflictingBlocks,
+          conflicting_proposal_id: proposal.id,
+          conflicting_start: proposalStart,
+          conflicting_end: proposalEnd,
+          availability_context: availability,
+        },
+      })
+      .eq("id", attemptIdStr);
+
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "CONFLICT",
+        code: "UNEXPECTED_CONFLICT",
+        proposal_id: proposal.id,
+        normalized_start: proposalStart,
+        normalized_end: proposalEnd,
+        timezone: tz,
+        conflict: true,
+        conflicting_blocks: conflictingBlocks,
+        message_to_say: `That time is no longer available${
+  spokenConflictTime ? ` at ${spokenConflictTime}` : ""
+}. Could we look at another time?`,
+        next_action: "REQUEST_ALTERNATE_SLOT",
+      }),
+    };
+  }
+
+  if (availability.decision?.status === "INVALID") {
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "ERROR",
+        code: "INVALID_PROPOSED_SLOT",
+        message_to_say: "There was a system issue. I will call back shortly.",
+        next_action: "END_CALL",
+      }),
+    };
+  }
+
+  if (availability.decision?.status === "OUTSIDE_WINDOW") {
+    return {
+      toolCallId,
+      result: JSON.stringify({
+        status: "CONFLICT",
+        code: "OUTSIDE_BOOKING_RULES",
+        proposal_id: proposal.id,
+        normalized_start: proposalStart,
+        normalized_end: proposalEnd,
+        timezone: tz,
+        conflict: true,
+        message_to_say:
+          "That time does not fit the patient's scheduling rules. Could we look at another time?",
+        next_action: "REQUEST_ALTERNATE_SLOT",
+      }),
+    };
+  }
 
   const spokenStart =
-    String((proposal as any)?.payload?.spoken_start ?? "").trim() || formatForSpeechFromIso(proposal.normalized_start);
+    String((proposal as any)?.payload?.spoken_start ?? "").trim() ||
+    formatForSpeechFromIso(proposal.normalized_start);
 
-  // Reset demo retry counter on success (best-effort)
   if (demoAutoconfirm) {
     try {
-      await supabaseAdmin.from("schedule_attempts").update({ demo_retry_count: 0 }).eq("id", attemptIdStr);
+      await supabaseAdmin
+        .from("schedule_attempts")
+        .update({ demo_retry_count: 0 })
+        .eq("id", attemptIdStr);
     } catch {
       // ignore
     }
   }
 
-  const response = {
-    status: "OK",
-    proposal_id: proposal.id,
-    normalized_start: proposal.normalized_start,
-    normalized_end: proposal.normalized_end,
-    timezone: tz,
-    conflict: false,
-    message_to_say: demoAutoconfirm ? `That works. Let’s book ${spokenStart}.` : `Great — I have ${spokenStart} recorded.`,
-    next_action: demoAutoconfirm ? "CONFIRM_BOOKING" : "WAIT_FOR_USER_APPROVAL",
+  return {
+    toolCallId,
+    result: JSON.stringify({
+      status: "OK",
+      proposal_id: proposal.id,
+      normalized_start: proposal.normalized_start,
+      normalized_end: proposal.normalized_end,
+      timezone: tz,
+      conflict: false,
+      message_to_say: demoAutoconfirm
+        ? `That works. Let’s book ${spokenStart}.`
+        : `Great — I have ${spokenStart} recorded.`,
+      next_action: demoAutoconfirm
+        ? "CONFIRM_BOOKING"
+        : "WAIT_FOR_USER_APPROVAL",
+    }),
   };
-
-  return { toolCallId, result: JSON.stringify(response) };
 }
 
 export async function POST(req: Request) {
@@ -299,7 +469,11 @@ export async function POST(req: Request) {
   const msgType = raw?.message?.type;
   const toolCalls = raw?.message?.toolCalls;
 
-  if (msgType === "tool-calls" && Array.isArray(toolCalls) && toolCalls.length > 0) {
+  if (
+    msgType === "tool-calls" &&
+    Array.isArray(toolCalls) &&
+    toolCalls.length > 0
+  ) {
     const results: VapiToolResultEnvelope[] = [];
 
     for (const tc of toolCalls) {
@@ -307,7 +481,9 @@ export async function POST(req: Request) {
       const fnName = String(tc?.function?.name ?? "").trim();
       const args = safeParseArgs(tc?.function?.arguments);
 
-      if (fnName !== "propose_office_slot") continue;
+      if (fnName !== "propose_office_slot") {
+        continue;
+      }
 
       results.push(await handleOne(toolCallId, args as ProposeOfficeSlotArgs));
     }
@@ -319,7 +495,8 @@ export async function POST(req: Request) {
           result: JSON.stringify({
             status: "ERROR",
             code: "NO_MATCHING_TOOL_CALL",
-            message_to_say: "There was a system issue. I will call back shortly.",
+            message_to_say:
+              "There was a system issue. I will call back shortly.",
             next_action: "END_CALL",
           }),
         },
@@ -329,7 +506,9 @@ export async function POST(req: Request) {
     return jsonToolResults(results);
   }
 
-  const toolCallId = String(raw?.toolCallId || raw?.tool_call_id || raw?.id || "local_call").trim();
+  const toolCallId = String(
+    raw?.toolCallId || raw?.tool_call_id || raw?.id || "local_call"
+  ).trim();
 
   const args = raw as any as ProposeOfficeSlotArgs;
   const one = await handleOne(toolCallId, args);

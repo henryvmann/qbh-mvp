@@ -78,6 +78,60 @@ function getEpicPortalConfig(portalTenant?: string | null): EpicPortalConfig {
   };
 }
 
+async function requireAppUser(appUserId: string): Promise<void> {
+  const cleanedAppUserId = String(appUserId || "").trim();
+
+  if (!cleanedAppUserId) {
+    throw new Error("Missing app_user_id");
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("app_users")
+    .select("id")
+    .eq("id", cleanedAppUserId)
+    .single();
+
+  if (error || !data?.id) {
+    throw new Error("Invalid app_user_id");
+  }
+}
+
+async function ensurePortalIntegration(appUserId: string) {
+  const { data: existing, error: existingError } = await supabaseAdmin
+    .from("integrations")
+    .select("id")
+    .eq("app_user_id", appUserId)
+    .eq("integration_type", "portal")
+    .in("status", ["active", "connected"])
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  if (existing?.id) {
+    return existing;
+  }
+
+  const { data: inserted, error: insertError } = await supabaseAdmin
+    .from("integrations")
+    .insert({
+      app_user_id: appUserId,
+      integration_type: "portal",
+      status: "active",
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !inserted?.id) {
+    throw new Error(insertError?.message || "Failed to create portal integration");
+  }
+
+  return inserted;
+}
+
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as ConnectBody;
   const { provider_id, portal_brand, portal_tenant, mode } = body ?? {};
@@ -89,96 +143,120 @@ export async function POST(req: Request) {
     );
   }
 
-  const userId = (process.env.QBH_DEMO_USER_ID || "").trim();
-  if (!userId) {
+  const appUserId = (process.env.QBH_DEMO_USER_ID || "").trim();
+  if (!appUserId) {
     return NextResponse.json(
       { ok: false, error: "QBH_DEMO_USER_ID not set" },
       { status: 500 }
     );
   }
 
-  if (mode === "mock") {
-    const { data, error } = await supabaseAdmin
-      .from("portal_connections")
-      .upsert(
-        {
-          user_id: userId,
-          provider_id,
-          portal_brand,
-          portal_tenant: portal_tenant ?? null,
-          status: "mock",
-        },
-        { onConflict: "user_id,provider_id,portal_brand" }
-      )
-      .select()
-      .single();
+  try {
+    await requireAppUser(appUserId);
+    const integration = await ensurePortalIntegration(appUserId);
 
-    if (error) {
+    if (mode === "mock") {
+      const { data, error } = await supabaseAdmin
+        .from("portal_connections")
+        .upsert(
+          {
+            integration_id: integration.id,
+            app_user_id: appUserId,
+            provider_id,
+            portal_brand,
+            portal_tenant: portal_tenant ?? null,
+            status: "mock",
+          },
+          { onConflict: "app_user_id,provider_id,portal_brand" }
+        )
+        .select()
+        .single();
+
+      if (error) {
+        return NextResponse.json(
+          { ok: false, error: error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ ok: true, mode: "mock", connection: data });
+    }
+
+    const callbackUrl = `${getBaseUrl(req)}/api/portal/callback`;
+    const { verifier, challenge } = createPkcePair();
+
+    const state = toBase64Url(
+      JSON.stringify({
+        app_user_id: appUserId,
+        provider_id,
+        portal_brand,
+        portal_tenant: portal_tenant ?? null,
+        pkce_verifier: verifier,
+      })
+    );
+
+    const epicConfig = getEpicPortalConfig(portal_tenant);
+
+    if (!epicConfig.clientId) {
       return NextResponse.json(
-        { ok: false, error: error.message },
+        {
+          ok: false,
+          error:
+            portal_tenant === "stamford" || portal_tenant === "stamford_health"
+              ? "EPIC_STAMFORD_CLIENT_ID not set"
+              : "EPIC_SANDBOX_CLIENT_ID not set",
+        },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ ok: true, mode: "mock", connection: data });
-  }
+    const authorizeUrl = new URL(epicConfig.authorizeUrl);
+    authorizeUrl.searchParams.set("response_type", "code");
+    authorizeUrl.searchParams.set("client_id", epicConfig.clientId);
+    authorizeUrl.searchParams.set("redirect_uri", callbackUrl);
+    authorizeUrl.searchParams.set(
+      "scope",
+      "launch/patient openid profile offline_access patient/Patient.read patient/Encounter.read patient/Condition.read patient/MedicationRequest.read"
+    );
+    authorizeUrl.searchParams.set("state", state);
+    authorizeUrl.searchParams.set("aud", epicConfig.fhirBaseUrl);
+    authorizeUrl.searchParams.set("code_challenge_method", "S256");
+    authorizeUrl.searchParams.set("code_challenge", challenge);
 
-  const callbackUrl = `${getBaseUrl(req)}/api/portal/callback`;
-  const { verifier, challenge } = createPkcePair();
+    const { error: pendingError } = await supabaseAdmin
+      .from("portal_connections")
+      .upsert(
+        {
+          integration_id: integration.id,
+          app_user_id: appUserId,
+          provider_id,
+          portal_brand,
+          portal_tenant: portal_tenant ?? null,
+          status: "pending_auth",
+        },
+        { onConflict: "app_user_id,provider_id,portal_brand" }
+      );
 
-  const state = toBase64Url(
-    JSON.stringify({
-      user_id: userId,
-      provider_id,
-      portal_brand,
-      portal_tenant: portal_tenant ?? null,
-      pkce_verifier: verifier,
-    })
-  );
+    if (pendingError) {
+      return NextResponse.json(
+        { ok: false, error: pendingError.message },
+        { status: 500 }
+      );
+    }
 
-  const epicConfig = getEpicPortalConfig(portal_tenant);
+    return NextResponse.json({
+      ok: true,
+      mode: epicConfig.modeLabel,
+      authorize_url: authorizeUrl.toString(),
+      callback_url: callbackUrl,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "portal_connect_failed";
 
-  if (!epicConfig.clientId) {
     return NextResponse.json(
-      {
-        ok: false,
-        error:
-          portal_tenant === "stamford" || portal_tenant === "stamford_health"
-            ? "EPIC_STAMFORD_CLIENT_ID not set"
-            : "EPIC_SANDBOX_CLIENT_ID not set",
-      },
+      { ok: false, error: message },
       { status: 500 }
     );
   }
-
-  const authorizeUrl = new URL(epicConfig.authorizeUrl);
-  authorizeUrl.searchParams.set("response_type", "code");
-  authorizeUrl.searchParams.set("client_id", epicConfig.clientId);
-  authorizeUrl.searchParams.set("redirect_uri", callbackUrl);
-authorizeUrl.searchParams.set(
-  "scope",
-  "launch/patient openid profile offline_access patient/Patient.read patient/Encounter.read patient/Condition.read patient/MedicationRequest.read"
-);
-  authorizeUrl.searchParams.set("state", state);
-  authorizeUrl.searchParams.set("aud", epicConfig.fhirBaseUrl);
-  authorizeUrl.searchParams.set("code_challenge_method", "S256");
-  authorizeUrl.searchParams.set("code_challenge", challenge);
-
-  await supabaseAdmin.from("portal_connections").upsert(
-    {
-      user_id: userId,
-      provider_id,
-      portal_brand,
-      portal_tenant: portal_tenant ?? null,
-      status: "pending_auth",
-    },
-    { onConflict: "user_id,provider_id,portal_brand" }
-  );
-
-  return NextResponse.json({
-    ok: true,
-    mode: epicConfig.modeLabel,
-    authorize_url: authorizeUrl.toString(),
-    callback_url: callbackUrl,
-  });
 }
