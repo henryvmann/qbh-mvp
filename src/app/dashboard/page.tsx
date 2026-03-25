@@ -24,112 +24,33 @@ type DashboardSnapshot = Awaited<
   ReturnType<typeof getDashboardProvidersForUser>
 >[number];
 
-type BookingSummary = {
-  status: string | null;
-  timezone: string | null;
-  provider_id: string | null;
-  display_time: string | null;
-  appointment_start: string | null;
-  appointment_end: string | null;
-  calendar_event_id: string | null;
-  proof: {
-    calendar_event_created: boolean;
-    portal_fact_written: boolean;
-  } | null;
-};
-
 function firstString(v: string | string[] | undefined): string {
   if (!v) return "";
   return Array.isArray(v) ? String(v[0] ?? "") : String(v);
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-function asString(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed ? trimmed : null;
-}
-
-function asBoolean(value: unknown): boolean {
-  return value === true;
-}
-
-function getLatestScheduleAttempt(snapshot: DashboardSnapshot): Record<string, unknown> | null {
-  const record = snapshot as unknown as Record<string, unknown>;
-
-  return (
-    asRecord(record.latestScheduleAttempt) ??
-    asRecord(record.scheduleAttempt) ??
-    asRecord(record.latestAttempt) ??
-    null
-  );
-}
-
-function getAttemptMetadata(snapshot: DashboardSnapshot): Record<string, unknown> | null {
-  const attempt = getLatestScheduleAttempt(snapshot);
-  if (!attempt) return null;
-  return asRecord(attempt.metadata);
-}
-
-function getBookingSummary(snapshot: DashboardSnapshot): BookingSummary | null {
-  const metadata = getAttemptMetadata(snapshot);
-  const raw = asRecord(metadata?.booking_summary);
-  if (!raw) return null;
-
-  const proof = asRecord(raw.proof);
-
-  return {
-    status: asString(raw.status),
-    timezone: asString(raw.timezone),
-    provider_id: asString(raw.provider_id),
-    display_time: asString(raw.display_time),
-    appointment_start: asString(raw.appointment_start),
-    appointment_end: asString(raw.appointment_end),
-    calendar_event_id: asString(raw.calendar_event_id),
-    proof: proof
-      ? {
-          calendar_event_created: asBoolean(proof.calendar_event_created),
-          portal_fact_written: asBoolean(proof.portal_fact_written),
-        }
-      : null,
-  };
-}
-
-function getAttemptStatus(snapshot: DashboardSnapshot): string | null {
-  const attempt = getLatestScheduleAttempt(snapshot);
-  return asString(attempt?.status);
-}
-
-function getLastEvent(snapshot: DashboardSnapshot): string | null {
-  const metadata = getAttemptMetadata(snapshot);
-  return asString(metadata?.last_event);
-}
-
 function hasConfirmedBooking(snapshot: DashboardSnapshot): boolean {
-  const bookingSummary = getBookingSummary(snapshot);
-  const attemptStatus = getAttemptStatus(snapshot);
-  const lastEvent = getLastEvent(snapshot);
-
-  return (
-    bookingSummary?.status === "BOOKED_CONFIRMED" ||
-    attemptStatus === "BOOKED_CONFIRMED" ||
-    lastEvent === "BOOKED_CONFIRMED"
-  );
+  return snapshot.booking_state.status === "BOOKED";
 }
 
 function hasActiveBookingState(snapshot: DashboardSnapshot): boolean {
-  if (hasConfirmedBooking(snapshot)) return false;
-  if (snapshot.followUpNeeded) return false;
+  return snapshot.booking_state.status === "IN_PROGRESS";
+}
 
-  const bookingSummary = getBookingSummary(snapshot);
-  const attemptStatus = getAttemptStatus(snapshot);
-  const lastEvent = getLastEvent(snapshot);
+function hasBrokenSchedulingState(snapshot: DashboardSnapshot): boolean {
+  return snapshot.system_actions.integrity.hasMultipleFutureConfirmedEvents;
+}
 
-  return Boolean(bookingSummary || attemptStatus || lastEvent);
+function isHandleAllEligible(snapshot: DashboardSnapshot): boolean {
+  if (hasBrokenSchedulingState(snapshot)) {
+    return false;
+  }
+
+  return (
+    snapshot.followUpNeeded &&
+    snapshot.system_actions.next?.type === "BOOK_APPOINTMENT" &&
+    snapshot.system_actions.next?.status === "PENDING"
+  );
 }
 
 function classifyProvider(name: string): "doctor" | "lab" | "pharmacy" {
@@ -251,6 +172,24 @@ function CalendarConnectionBanner(props: {
   );
 }
 
+function IntegrityBanner(props: { brokenCount: number }) {
+  if (props.brokenCount <= 0) return null;
+
+  return (
+    <section className="mt-8 rounded-2xl bg-red-50 p-5 shadow-sm ring-1 ring-red-200">
+      <div className="text-sm font-medium text-red-900">
+        Scheduling integrity issue detected
+      </div>
+      <div className="mt-1 text-sm text-red-700">
+        QBH found {props.brokenCount} provider
+        {props.brokenCount === 1 ? "" : "s"} with multiple future confirmed
+        appointments. Those cards are being held out of normal booking actions
+        until reviewed.
+      </div>
+    </section>
+  );
+}
+
 function ProviderGroupSection(props: {
   title: string;
   userId: string;
@@ -304,7 +243,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   );
 
   const actionableProviders = snapshots
-    .filter((s) => s.followUpNeeded)
+    .filter((s) => isHandleAllEligible(s))
     .map((s) => ({
       providerId: s.provider.id,
       providerName: s.provider.name,
@@ -313,6 +252,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const followUps = snapshots.filter((s) => s.followUpNeeded).length;
   const upcoming = snapshots.filter((s) => hasConfirmedBooking(s)).length;
   const inProgress = snapshots.filter((s) => hasActiveBookingState(s)).length;
+  const broken = snapshots.filter((s) => hasBrokenSchedulingState(s)).length;
 
   const stats: DashboardStat[] = [
     {
@@ -360,6 +300,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               userId={userId}
               isConnected={hasGoogleCalendarConnection}
             />
+
+            <IntegrityBanner brokenCount={broken} />
 
             <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
               {stats.map((stat) => (

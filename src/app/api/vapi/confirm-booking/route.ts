@@ -19,6 +19,21 @@ type ExistingBookedAppointment = {
   };
 };
 
+type CalendarConflictResult = {
+  status: "CONFLICT";
+  flow_mode: "BOOK" | "ADJUST";
+  existing_booking: ExistingBookedAppointment | null;
+  calendar_event_id: string | null;
+  provider_id: string | null;
+  app_user_id: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  booking_summary: ReturnType<typeof buildBookingSummary>;
+  message_to_say: string;
+  next_action: "REQUEST_ALTERNATE_SLOT";
+  conflict_reason: "EXISTING_FUTURE_CONFIRMED_EVENT";
+};
+
 function asRecord(value: unknown): JsonRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as JsonRecord;
@@ -45,8 +60,8 @@ function getExistingBooking(metadata: unknown): ExistingBookedAppointment | null
     typeof sourceAttemptIdRaw === "number"
       ? sourceAttemptIdRaw
       : typeof sourceAttemptIdRaw === "string" && sourceAttemptIdRaw.trim()
-      ? Number(sourceAttemptIdRaw)
-      : NaN;
+        ? Number(sourceAttemptIdRaw)
+        : NaN;
 
   if (!Number.isFinite(sourceAttemptId) || !bookingSummary) {
     return null;
@@ -178,6 +193,81 @@ function formatForSpeechFromIso(iso: string) {
   return `${month} ${ordinal(dayNum)} at ${time}`;
 }
 
+function buildConflictResult(params: {
+  toolCallId: string;
+  flowMode: "BOOK" | "ADJUST";
+  existingBooking: ExistingBookedAppointment | null;
+  attemptRow: {
+    app_user_id: string | null;
+    provider_id: string | null;
+    metadata: unknown;
+  };
+  proposal: {
+    normalized_start: string | null;
+    normalized_end: string | null;
+    timezone: string | null;
+    payload: unknown;
+  };
+  existingFutureEvent: {
+    id: string;
+    start_at: string;
+    end_at: string | null;
+    timezone: string | null;
+  } | null;
+}): VapiToolResultEnvelope {
+  const proposalPayload = asRecord(params.proposal.payload);
+  const tz = String(
+    params.proposal.timezone ?? proposalPayload?.timezone ?? "America/New_York"
+  );
+
+  const bookingSummary = buildBookingSummary({
+    provider_id: params.attemptRow.provider_id ?? null,
+    appointment_start:
+      params.existingFutureEvent?.start_at ?? params.proposal.normalized_start,
+    appointment_end:
+      params.existingFutureEvent?.end_at ?? params.proposal.normalized_end,
+    timezone: params.existingFutureEvent?.timezone ?? tz,
+    calendar_event_id: params.existingFutureEvent?.id ?? null,
+    portal_fact_written: false,
+  });
+
+  const existingSpokenTime = params.existingFutureEvent?.start_at
+    ? formatForSpeechFromIso(params.existingFutureEvent.start_at)
+    : "an already confirmed future time";
+
+  const payload: CalendarConflictResult = {
+    status: "CONFLICT",
+    flow_mode: params.flowMode,
+    existing_booking: params.existingBooking,
+    calendar_event_id: params.existingFutureEvent?.id ?? null,
+    provider_id: params.attemptRow.provider_id ?? null,
+    app_user_id: params.attemptRow.app_user_id ?? null,
+    start_at: params.existingFutureEvent?.start_at ?? null,
+    end_at: params.existingFutureEvent?.end_at ?? null,
+    booking_summary: bookingSummary,
+    message_to_say: `I already see a confirmed appointment on the calendar for ${existingSpokenTime}. Could we look at another time?`,
+    next_action: "REQUEST_ALTERNATE_SLOT",
+    conflict_reason: "EXISTING_FUTURE_CONFIRMED_EVENT",
+  };
+
+  return {
+    toolCallId: params.toolCallId,
+    result: JSON.stringify(payload),
+  };
+}
+
+function isInvariantViolationMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+
+  return (
+    normalized.includes("qbh invariant violation") ||
+    normalized.includes("multiple future confirmed calendar events") ||
+    normalized.includes(
+      "uq_calendar_events_provider_user_future_confirmed"
+    )
+  );
+}
+
 async function handleOne(
   toolCallId: string,
   args: Record<string, unknown>
@@ -243,6 +333,8 @@ async function handleOne(
         message: updateProviderErr.message,
       });
     }
+
+    attemptRow.provider_id = providerIdMaybeUuid;
   }
 
   const { data: proposal, error: proposalErr } = await supabaseAdmin
@@ -268,12 +360,104 @@ async function handleOne(
     });
   }
 
+  if (!attemptRow.app_user_id || !attemptRow.provider_id) {
+    return toolError(toolCallId, {
+      stage: "attempt_missing_identity_context",
+      app_user_id: attemptRow.app_user_id ?? null,
+      provider_id: attemptRow.provider_id ?? null,
+    });
+  }
+
+  const { data: existingFutureEvent, error: existingFutureEventError } =
+    await supabaseAdmin
+      .from("calendar_events")
+      .select("id, start_at, end_at, timezone")
+      .eq("app_user_id", attemptRow.app_user_id)
+      .eq("provider_id", attemptRow.provider_id)
+      .eq("status", "confirmed")
+      .gte("start_at", new Date().toISOString())
+      .neq("proposal_id", proposalIdStr)
+      .order("start_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+  if (existingFutureEventError) {
+    return toolError(toolCallId, {
+      stage: "existing_future_event_read_failed",
+      message: existingFutureEventError.message,
+    });
+  }
+
+  if (existingFutureEvent) {
+    const conflictMetadata: JsonRecord = {
+      ...(asRecord(attemptRow.metadata) ?? {}),
+      last_event: "EXISTING_FUTURE_CONFIRMED_EVENT",
+    };
+
+    const { error: metadataConflictUpdateError } = await supabaseAdmin
+      .from("schedule_attempts")
+      .update({
+        metadata: conflictMetadata,
+      })
+      .eq("id", attemptIdStr);
+
+    if (metadataConflictUpdateError) {
+      return toolError(toolCallId, {
+        stage: "attempt_conflict_metadata_update_failed",
+        message: metadataConflictUpdateError.message,
+      });
+    }
+
+    return buildConflictResult({
+      toolCallId,
+      flowMode,
+      existingBooking,
+      attemptRow,
+      proposal,
+      existingFutureEvent,
+    });
+  }
+
   const { data, error } = await supabaseAdmin.rpc("finalize_confirm_booking", {
     p_attempt_id: attemptIdStr,
     p_proposal_id: proposalIdStr,
   });
 
   if (error) {
+    if (isInvariantViolationMessage(error.message)) {
+      const { data: conflictedFutureEvent } = await supabaseAdmin
+        .from("calendar_events")
+        .select("id, start_at, end_at, timezone")
+        .eq("app_user_id", attemptRow.app_user_id)
+        .eq("provider_id", attemptRow.provider_id)
+        .eq("status", "confirmed")
+        .gte("start_at", new Date().toISOString())
+        .order("start_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      const conflictMetadata: JsonRecord = {
+        ...(asRecord(attemptRow.metadata) ?? {}),
+        last_event: "EXISTING_FUTURE_CONFIRMED_EVENT",
+      };
+
+      await supabaseAdmin
+        .from("schedule_attempts")
+        .update({
+          metadata: conflictMetadata,
+        })
+        .eq("id", attemptIdStr);
+
+      return buildConflictResult({
+  toolCallId,
+  flowMode,
+  existingBooking,
+  attemptRow,
+  proposal,
+  existingFutureEvent: conflictedFutureEvent ?? null,
+});
+    }
+
     return toolError(toolCallId, {
       stage: "rpc_finalize_confirm_booking_failed",
       message: error.message,
@@ -339,8 +523,8 @@ async function handleOne(
   const messageToSay = demoAutoconfirm
     ? `Perfect — you’re all set${spokenStart ? ` for ${spokenStart}` : ""}. Thank you.`
     : flowMode === "ADJUST"
-    ? "The appointment has been successfully rescheduled."
-    : "The appointment has been successfully scheduled.";
+      ? "The appointment has been successfully rescheduled."
+      : "The appointment has been successfully scheduled.";
 
   const nextAction = demoAutoconfirm ? "END_CALL" : "ASK_CONFIRMATION_NUMBER";
 
@@ -352,7 +536,7 @@ async function handleOne(
       existing_booking: existingBooking,
       calendar_event_id: data?.calendar_event_id ?? null,
       provider_id: data?.provider_id ?? null,
-      app_user_id: data?.app_user_id ?? null,
+      app_user_id: data?.app_user_id ?? attemptRow.app_user_id ?? null,
       start_at: data?.start_at ?? null,
       end_at: data?.end_at ?? null,
       booking_summary: bookingSummary,

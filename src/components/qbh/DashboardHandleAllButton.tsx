@@ -45,9 +45,10 @@ export default function DashboardHandleAllButton({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: userId,
+            app_user_id: userId,
             provider_id: provider.providerId,
             provider_name: provider.providerName,
+            mode: "BOOK",
           }),
         });
 
@@ -95,8 +96,8 @@ export default function DashboardHandleAllButton({
         {isSubmitting
           ? "Starting booking..."
           : actionableProviders.length === 0
-          ? "Nothing to handle"
-          : "Handle all"}
+            ? "Nothing to handle"
+            : "Handle all"}
       </button>
 
       {showCalendarPrompt ? (
@@ -124,7 +125,9 @@ export default function DashboardHandleAllButton({
               disabled={isSubmitting}
               className="inline-flex items-center justify-center rounded-xl bg-[#8B9D83] px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Starting booking..." : "Skip and handle all anyway"}
+              {isSubmitting
+                ? "Starting booking..."
+                : "Skip and handle all anyway"}
             </button>
 
             <button
