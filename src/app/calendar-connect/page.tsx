@@ -111,7 +111,7 @@ function CalendarConnectPageInner() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: userId,
+          app_user_id: userId,
         }),
       });
 
@@ -158,7 +158,7 @@ function CalendarConnectPageInner() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: userId,
+          app_user_id: userId,
           time_min: timeMin,
           time_max: timeMax,
           time_zone: "America/New_York",
@@ -209,7 +209,7 @@ function CalendarConnectPageInner() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: userId,
+          app_user_id: userId,
           slot_start: slotStartIso,
           slot_end: slotEndIso,
           time_zone: "America/New_York",

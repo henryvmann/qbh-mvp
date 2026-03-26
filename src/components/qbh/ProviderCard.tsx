@@ -413,7 +413,7 @@ export default function ProviderCard({
           <div className="text-sm font-medium text-slate-900">History</div>
 
           <div className="mt-3 space-y-3">
-            {history.map((event) => (
+            {history.map((event, index) => (
               <div
                 key={event.id}
                 className="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"
@@ -425,7 +425,11 @@ export default function ProviderCard({
                     </div>
 
                     <div className="mt-1 text-sm text-slate-600">
-                      {getHistoryDescription(event)}
+                      {event.event_type === "failed" &&
+                      index === 0 &&
+                      snapshot.latestNote?.summary
+                        ? snapshot.latestNote.summary
+                        : getHistoryDescription(event)}
                     </div>
 
                     <div className="mt-1 text-xs text-slate-500">

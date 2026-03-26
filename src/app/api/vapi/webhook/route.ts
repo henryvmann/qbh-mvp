@@ -426,9 +426,21 @@ async function reconcileAttemptIfTerminal(params: {
 export async function POST(req: Request) {
   const body: VapiWebhookBody = await req.json().catch(() => ({}));
 
-  console.log("=== VAPI WEBHOOK START ===");
-  console.log(JSON.stringify(body, null, 2));
-  console.log("=== VAPI WEBHOOK END ===");
+  console.log("VAPI_WEBHOOK_RECEIVED:", {
+    messageType: asTrimmedString(body?.message?.type),
+    messageStatus: asTrimmedString(body?.message?.status),
+    endedReason: asTrimmedString(body?.message?.endedReason),
+    hasTranscript: Boolean(
+      body?.message?.artifact?.transcript ||
+      body?.message?.conversation?.length ||
+      body?.transcript
+    ),
+    hasAttemptId: Boolean(
+      body?.message?.artifact?.variableValues?.attempt_id ||
+      body?.message?.call?.assistantOverrides?.variableValues?.attempt_id ||
+      body?.metadata?.attempt_id
+    ),
+  });
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -487,10 +499,6 @@ export async function POST(req: Request) {
     }
 
     const structured = buildStructuredBookingNotes(transcript);
-    const legacySummary =
-      structured.booking_summary ||
-      transcript.slice(0, 500).replace(/\s+/g, " ").trim() ||
-      null;
 
     const { data: attemptForClassification } = await supabase
       .from("schedule_attempts")
@@ -537,10 +545,15 @@ export async function POST(req: Request) {
       }
     }
 
+    const callSummary =
+      classification?.call_summary ||
+      structured.booking_summary ||
+      null;
+
     const { error } = await supabase.from("call_notes").insert({
       attempt_id: attemptId,
       transcript,
-      summary: legacySummary,
+      summary: callSummary,
       booking_summary: structured.booking_summary,
       appointment_time_spoken: structured.appointment_time_spoken,
       office_instructions: structured.office_instructions,

@@ -43,7 +43,7 @@ export default function DashboardAnalyzer({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: userId,
+            app_user_id: userId,
           }),
         });
 

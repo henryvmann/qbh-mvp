@@ -84,7 +84,7 @@ function ConnectPageInner() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: userId,
+            app_user_id: userId,
           }),
         });
 
@@ -135,7 +135,7 @@ function ConnectPageInner() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: effectiveUserId,
+            app_user_id: effectiveUserId,
             public_token,
           }),
         });

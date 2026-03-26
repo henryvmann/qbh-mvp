@@ -30,6 +30,7 @@ export type QbhCallOutcomeClassification = {
   failure_class: QbhFailureClass | null;
   retry_policy_hint: QbhRetryPolicyHint;
   user_input_required: boolean;
+  call_summary: string;
   reason_summary: string;
   office_status:
     | "OPEN"
@@ -95,6 +96,9 @@ const RESPONSE_FORMAT = {
       user_input_required: {
         type: "boolean",
       },
+      call_summary: {
+        type: "string",
+      },
       reason_summary: {
         type: "string",
       },
@@ -130,6 +134,7 @@ const RESPONSE_FORMAT = {
       "failure_class",
       "retry_policy_hint",
       "user_input_required",
+      "call_summary",
       "reason_summary",
       "office_status",
       "callback_requested",
@@ -174,6 +179,7 @@ export async function classifyCallOutcome(params: {
     "If an office explicitly says they are not accepting new patients, use failure_class = NOT_ACCEPTING_NEW_PATIENTS and retry_policy_hint = DO_NOT_RETRY.",
     "If the office is closed, prefer OFFICE_CLOSED with a retryable hint.",
     "If evidence is weak, use UNKNOWN_FAILURE.",
+    "For call_summary: write 1-2 plain English sentences describing what happened, suitable for showing directly to the patient. Be specific and human. Examples: 'The office was closed when QBH called — QBH will try again during business hours.' or 'QBH successfully booked your appointment for March 15th at 2:00 PM.' or 'The office said they are not currently accepting new patients.' Do not use jargon or internal codes.",
     "",
     "EVIDENCE:",
     JSON.stringify(

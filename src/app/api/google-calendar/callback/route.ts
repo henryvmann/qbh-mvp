@@ -7,14 +7,14 @@ import {
 } from "../../../../lib/google-calendar";
 
 function dashboardHref(appUserId: string): string {
-  return `/dashboard?app_user_id=${encodeURIComponent(appUserId)}`;
+  return `/dashboard?user_id=${encodeURIComponent(appUserId)}`;
 }
 
 function calendarConnectHref(appUserId: string, message?: string): string {
   const params = new URLSearchParams();
 
   if (appUserId) {
-    params.set("app_user_id", appUserId);
+    params.set("user_id", appUserId);
   }
 
   if (message) {

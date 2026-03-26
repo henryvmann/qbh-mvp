@@ -46,7 +46,7 @@ export default function PlaidOAuthRedirectPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: effectiveUserId,
+            app_user_id: effectiveUserId,
             public_token,
           }),
         });
@@ -65,7 +65,7 @@ export default function PlaidOAuthRedirectPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: effectiveUserId,
+            app_user_id: effectiveUserId,
           }),
         });
 
