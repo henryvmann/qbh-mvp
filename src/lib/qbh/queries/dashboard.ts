@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../../supabase-server";
+import { deriveRetryDecision } from "../derive-retry-decision";
 import type {
   ProviderDashboardSnapshot,
   Provider,
@@ -110,47 +111,6 @@ function getAttemptLastEvent(
 ): string | null {
   const metadata = getAttemptMetadata(attempt);
   return typeof metadata?.last_event === "string" ? metadata.last_event : null;
-}
-
-function getAttemptOpenAiClassification(
-  attempt: AttemptRow | null | undefined
-): JsonRecord | null {
-  const metadata = getAttemptMetadata(attempt);
-  return asRecord(metadata?.openai_call_classification);
-}
-
-function getAttemptRetryPolicyHint(
-  attempt: AttemptRow | null | undefined
-):
-  | "RETRY_SOON"
-  | "RETRY_NEXT_BUSINESS_HOURS"
-  | "RETRY_AFTER_CALLBACK_WINDOW"
-  | "REQUIRES_USER_INPUT"
-  | "DO_NOT_RETRY"
-  | null {
-  const classification = getAttemptOpenAiClassification(attempt);
-  const value = classification?.retry_policy_hint;
-
-  if (
-    value === "RETRY_SOON" ||
-    value === "RETRY_NEXT_BUSINESS_HOURS" ||
-    value === "RETRY_AFTER_CALLBACK_WINDOW" ||
-    value === "REQUIRES_USER_INPUT" ||
-    value === "DO_NOT_RETRY"
-  ) {
-    return value;
-  }
-
-  return null;
-}
-
-function getAttemptFailureClass(
-  attempt: AttemptRow | null | undefined
-): string | null {
-  const classification = getAttemptOpenAiClassification(attempt);
-  return typeof classification?.failure_class === "string"
-    ? classification.failure_class
-    : null;
 }
 
 function getPrimaryActionType(
@@ -377,8 +337,7 @@ function buildSystemActions(params: {
   if (latestAttempt) {
     const normalizedStatus = String(latestAttempt.status || "").toUpperCase();
     const lastEvent = getAttemptLastEvent(latestAttempt);
-    const retryPolicyHint = getAttemptRetryPolicyHint(latestAttempt);
-    const failureClass = getAttemptFailureClass(latestAttempt);
+    const retryDecision = deriveRetryDecision(latestAttempt.metadata);
 
     if (ACTIVE_ATTEMPT_STATUSES.has(normalizedStatus)) {
       return {
@@ -442,7 +401,7 @@ function buildSystemActions(params: {
     }
 
     if (normalizedStatus === "FAILED") {
-      if (retryPolicyHint === "DO_NOT_RETRY") {
+      if (retryDecision?.next_action === "BLOCK") {
         return {
           current: buildSystemActionItem({
             type: getPrimaryActionType(latestAttempt),
@@ -451,7 +410,7 @@ function buildSystemActions(params: {
             scheduleAttemptId: Number(latestAttempt.id),
             requiredBy: "SYSTEM",
             userInputRequired: false,
-            blockingReason: failureClass ?? "DO_NOT_RETRY",
+            blockingReason: retryDecision.reason,
           }),
           last: mapHistoryEventToSystemAction(history[0]),
           next: null,
@@ -462,7 +421,7 @@ function buildSystemActions(params: {
         };
       }
 
-      if (retryPolicyHint === "REQUIRES_USER_INPUT") {
+      if (retryDecision?.next_action === "USER_REQUIRED") {
         return {
           current: buildSystemActionItem({
             type: getPrimaryActionType(latestAttempt),
@@ -471,7 +430,7 @@ function buildSystemActions(params: {
             scheduleAttemptId: Number(latestAttempt.id),
             requiredBy: "USER",
             userInputRequired: true,
-            blockingReason: failureClass ?? "REQUIRES_USER_INPUT",
+            blockingReason: retryDecision.reason,
           }),
           last: mapHistoryEventToSystemAction(history[0]),
           next: hasVisitHistory
@@ -481,9 +440,28 @@ function buildSystemActions(params: {
                 occurredAt: null,
                 requiredBy: "USER",
                 userInputRequired: true,
-                blockingReason: failureClass ?? "REQUIRES_USER_INPUT",
+                blockingReason: retryDecision.reason,
               })
             : null,
+          integrity: {
+            hasMultipleFutureConfirmedEvents,
+            futureConfirmedEventCount,
+          },
+        };
+      }
+
+      if (retryDecision?.next_action === "AUTO_RETRY") {
+        return {
+          current: null,
+          last: mapHistoryEventToSystemAction(history[0]),
+          next: buildSystemActionItem({
+            type: getPrimaryActionType(latestAttempt),
+            status: "PENDING",
+            occurredAt: retryDecision.retry_after_iso,
+            requiredBy: "SYSTEM",
+            userInputRequired: false,
+            blockingReason: retryDecision.reason,
+          }),
           integrity: {
             hasMultipleFutureConfirmedEvents,
             futureConfirmedEventCount,
@@ -501,8 +479,7 @@ function buildSystemActions(params: {
               occurredAt: null,
               requiredBy: "USER",
               userInputRequired: true,
-              blockingReason:
-                failureClass ?? retryPolicyHint ?? "LATEST_ATTEMPT_FAILED",
+              blockingReason: "LATEST_ATTEMPT_FAILED",
             })
           : null,
         integrity: {
@@ -715,10 +692,7 @@ export async function getDashboardProvidersForUser(
       ? ACTIVE_ATTEMPT_STATUSES.has(String(latestAttempt.status).toUpperCase())
       : false;
 
-    const latestRetryPolicyHint = getAttemptRetryPolicyHint(rawLatestAttempt);
-    const retryBlocked =
-      latestRetryPolicyHint === "DO_NOT_RETRY" ||
-      latestRetryPolicyHint === "REQUIRES_USER_INPUT";
+    const retryDecision = deriveRetryDecision(rawLatestAttempt?.metadata);
 
     const booking_state: ProviderDashboardSnapshot["booking_state"] = {
       status: hasMultipleFutureConfirmedEvents
@@ -761,7 +735,8 @@ export async function getDashboardProvidersForUser(
     const followUpNeeded =
       booking_state.status === "FOLLOW_UP" &&
       !system_actions.integrity.hasMultipleFutureConfirmedEvents &&
-      !retryBlocked;
+      retryDecision?.next_action !== "BLOCK" &&
+      retryDecision?.next_action !== "USER_REQUIRED";
 
     return {
       provider,
