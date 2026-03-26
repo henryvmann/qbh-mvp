@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
+type JsonRecord = Record<string, unknown>;
+
 type VapiConversationMessage = {
   role?: string;
   content?: string;
@@ -21,6 +23,10 @@ type VapiWebhookBody = {
     attempt_id?: string | number | null;
   } | null;
   call?: {
+    id?: string | null;
+    status?: string | null;
+    endedReason?: string | null;
+    endedAt?: string | null;
     transcript?: string | null;
     metadata?: {
       attempt_id?: string | number | null;
@@ -28,6 +34,9 @@ type VapiWebhookBody = {
   } | null;
   message?: {
     type?: string;
+    status?: string | null;
+    endedReason?: string | null;
+    endedAt?: string | null;
     conversation?: VapiConversationMessage[] | null;
     artifact?: {
       transcript?: string | null;
@@ -35,6 +44,28 @@ type VapiWebhookBody = {
         role?: string;
         message?: string;
       }> | null;
+      variableValues?: {
+        attempt_id?: string | number | null;
+      } | null;
+      variables?: {
+        attempt_id?: string | number | null;
+      } | null;
+    } | null;
+    call?: {
+      id?: string | null;
+      status?: string | null;
+      endedReason?: string | null;
+      endedAt?: string | null;
+      assistantOverrides?: {
+        variableValues?: {
+          attempt_id?: string | number | null;
+        } | null;
+      } | null;
+    } | null;
+    assistant?: {
+      variableValues?: {
+        attempt_id?: string | number | null;
+      } | null;
     } | null;
   } | null;
 };
@@ -47,10 +78,17 @@ type StructuredBookingNotes = {
   follow_up_notes: string | null;
 };
 
+type ActiveAttemptStatus = "CREATED" | "CALLING" | "PROPOSED";
+
 function asTrimmedString(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const s = String(value).trim();
   return s ? s : null;
+}
+
+function asRecord(value: unknown): JsonRecord | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as JsonRecord;
 }
 
 function extractAttemptId(body: VapiWebhookBody): number | null {
@@ -58,7 +96,11 @@ function extractAttemptId(body: VapiWebhookBody): number | null {
     body?.variableValues?.attempt_id ??
     body?.metadata?.attempt_id ??
     body?.attempt_id ??
-    body?.call?.metadata?.attempt_id;
+    body?.call?.metadata?.attempt_id ??
+    body?.message?.artifact?.variableValues?.attempt_id ??
+    body?.message?.artifact?.variables?.attempt_id ??
+    body?.message?.call?.assistantOverrides?.variableValues?.attempt_id ??
+    body?.message?.assistant?.variableValues?.attempt_id;
 
   const direct = asTrimmedString(directAttemptId);
   if (direct && /^\d+$/.test(direct)) {
@@ -197,21 +239,22 @@ function extractFollowUpNotes(lines: string[]): string | null {
 
 function buildStructuredBookingNotes(transcript: string): StructuredBookingNotes {
   const lines = transcript
-  .split("\n")
-  .map((line) => line.replace(/\s+/g, " ").trim())
-  .filter(Boolean)
-  .filter((line) => {
-    const lower = line.toLowerCase();
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .filter((line) => {
+      const lower = line.toLowerCase();
 
-    if (lower.startsWith("tool:")) return false;
-    if (lower.includes('"status":"ok"')) return false;
-    if (lower.includes('"next_action"')) return false;
-    if (lower.includes('"calendar_event_id"')) return false;
-    if (lower.includes('"provider_id"')) return false;
-    if (lower.includes('"user_id"')) return false;
+      if (lower.startsWith("tool:")) return false;
+      if (lower.includes('"status":"ok"')) return false;
+      if (lower.includes('"next_action"')) return false;
+      if (lower.includes('"calendar_event_id"')) return false;
+      if (lower.includes('"provider_id"')) return false;
+      if (lower.includes('"user_id"')) return false;
+      if (lower.includes('"app_user_id"')) return false;
 
-    return true;
-  });
+      return true;
+    });
 
   const appointmentTimeSpoken = extractAppointmentTimeSpoken(transcript);
   const documentsToBring = extractDocumentsToBring(transcript);
@@ -250,13 +293,133 @@ function buildStructuredBookingNotes(transcript: string): StructuredBookingNotes
 
   const bookingSummaryRaw = summaryParts.join(" ").replace(/\s+/g, " ").trim();
 
-return {
-  booking_summary: bookingSummaryRaw || null,
-  appointment_time_spoken: appointmentTimeSpoken,
-  office_instructions: officeInstructions,
-  documents_to_bring: documentsToBring,
-  follow_up_notes: followUpNotes,
-};
+  return {
+    booking_summary: bookingSummaryRaw || null,
+    appointment_time_spoken: appointmentTimeSpoken,
+    office_instructions: officeInstructions,
+    documents_to_bring: documentsToBring,
+    follow_up_notes: followUpNotes,
+  };
+}
+
+function isTerminalWebhook(body: VapiWebhookBody): boolean {
+  const messageType = asTrimmedString(body?.message?.type)?.toLowerCase() ?? "";
+  const messageStatus = asTrimmedString(body?.message?.status)?.toLowerCase() ?? "";
+  const messageEndedReason =
+    asTrimmedString(body?.message?.endedReason)?.toLowerCase() ?? "";
+
+  const nestedCallStatus =
+    asTrimmedString(body?.message?.call?.status)?.toLowerCase() ?? "";
+  const nestedCallEndedReason =
+    asTrimmedString(body?.message?.call?.endedReason)?.toLowerCase() ?? "";
+
+  const callStatus = asTrimmedString(body?.call?.status)?.toLowerCase() ?? "";
+  const callEndedReason = asTrimmedString(body?.call?.endedReason)?.toLowerCase() ?? "";
+
+  if (messageType.includes("end")) return true;
+  if (messageType.includes("hang")) return true;
+  if (messageType.includes("status-update") && messageStatus === "ended") return true;
+  if (messageStatus === "ended") return true;
+  if (Boolean(messageEndedReason)) return true;
+  if (nestedCallStatus === "ended") return true;
+  if (Boolean(nestedCallEndedReason)) return true;
+  if (callStatus === "ended") return true;
+  if (Boolean(callEndedReason)) return true;
+
+  return false;
+}
+
+async function reconcileAttemptIfTerminal(params: {
+  supabase: any;
+  attemptId: number;
+  body: VapiWebhookBody;
+}) {
+  const { supabase, attemptId, body } = params;
+
+  if (!isTerminalWebhook(body)) {
+    return;
+  }
+
+  const { data: attemptData, error: attemptReadError } = await supabase
+    .from("schedule_attempts")
+    .select("id,status,metadata")
+    .eq("id", attemptId)
+    .maybeSingle();
+
+  if (attemptReadError || !attemptData) {
+    console.error("WEBHOOK_RECONCILE_ATTEMPT_READ_ERROR:", attemptReadError);
+    return;
+  }
+
+  const attemptRow = attemptData as {
+    id: number;
+    status: string | null;
+    metadata: unknown;
+  };
+
+  const currentStatus = asTrimmedString(attemptRow.status)?.toUpperCase() ?? "";
+  const activeStatuses: ActiveAttemptStatus[] = ["CREATED", "CALLING", "PROPOSED"];
+
+  if (!activeStatuses.includes(currentStatus as ActiveAttemptStatus)) {
+    return;
+  }
+
+  const { data: existingEventData, error: existingEventError } = await supabase
+    .from("calendar_events")
+    .select("id,status")
+    .eq("attempt_id", attemptId)
+    .eq("status", "confirmed")
+    .limit(1)
+    .maybeSingle();
+
+  if (existingEventError) {
+    console.error("WEBHOOK_RECONCILE_EVENT_READ_ERROR:", existingEventError);
+    return;
+  }
+
+  const existingEvent = existingEventData as { id?: string | null } | null;
+
+  if (existingEvent && existingEvent.id) {
+    return;
+  }
+
+  const metadata = asRecord(attemptRow.metadata) ?? {};
+  const nextMetadata = {
+    ...metadata,
+    last_event: "CALL_ENDED_WITHOUT_BOOKING",
+    vapi_terminal_status:
+      asTrimmedString(body?.message?.status) ??
+      asTrimmedString(body?.message?.call?.status) ??
+      asTrimmedString(body?.call?.status),
+    vapi_ended_reason:
+      asTrimmedString(body?.message?.endedReason) ??
+      asTrimmedString(body?.message?.call?.endedReason) ??
+      asTrimmedString(body?.call?.endedReason),
+    vapi_ended_at:
+      asTrimmedString(body?.message?.endedAt) ??
+      asTrimmedString(body?.message?.call?.endedAt) ??
+      asTrimmedString(body?.call?.endedAt),
+  };
+
+  const { error: updateError } = await supabase
+    .from("schedule_attempts")
+    .update({
+      status: "FAILED",
+      metadata: nextMetadata,
+    })
+    .eq("id", attemptId)
+    .in("status", activeStatuses);
+
+  if (updateError) {
+    console.error("WEBHOOK_RECONCILE_UPDATE_ERROR:", updateError);
+  } else {
+    console.log("WEBHOOK_RECONCILE_UPDATE_SUCCESS:", {
+      attemptId,
+      previousStatus: currentStatus,
+      nextStatus: "FAILED",
+      last_event: "CALL_ENDED_WITHOUT_BOOKING",
+    });
+  }
 }
 
 export async function POST(req: Request) {
@@ -288,7 +451,22 @@ export async function POST(req: Request) {
       attemptId,
       hasTranscript: Boolean(transcript),
       transcriptLength: transcript?.length ?? 0,
+      isTerminal: isTerminalWebhook(body),
+      messageStatus: asTrimmedString(body?.message?.status),
+      messageEndedReason: asTrimmedString(body?.message?.endedReason),
+      nestedCallStatus: asTrimmedString(body?.message?.call?.status),
+      nestedCallEndedReason: asTrimmedString(body?.message?.call?.endedReason),
+      callStatus: asTrimmedString(body?.call?.status),
+      callEndedReason: asTrimmedString(body?.call?.endedReason),
     });
+
+    if (attemptId) {
+      await reconcileAttemptIfTerminal({
+        supabase,
+        attemptId,
+        body,
+      });
+    }
 
     if (!attemptId || !transcript) {
       console.log("WEBHOOK_SKIP_STORE:", {
