@@ -365,10 +365,7 @@ function buildSystemActions(params: {
       };
     }
 
-    if (
-      normalizedStatus === "FAILED" ||
-      lastEvent === "CALENDAR_CONFLICT_AT_CONFIRM"
-    ) {
+    if (lastEvent === "CALENDAR_CONFLICT_AT_CONFIRM") {
       return {
         current: buildSystemActionItem({
           type: getPrimaryActionType(latestAttempt),
@@ -379,13 +376,9 @@ function buildSystemActions(params: {
             latestAttempt,
             "calendar_event_id"
           ),
-          requiredBy:
-            lastEvent === "CALENDAR_CONFLICT_AT_CONFIRM" ? "USER" : "SYSTEM",
-          userInputRequired: lastEvent === "CALENDAR_CONFLICT_AT_CONFIRM",
-          blockingReason:
-            lastEvent === "CALENDAR_CONFLICT_AT_CONFIRM"
-              ? "CALENDAR_CONFLICT_AT_CONFIRM"
-              : "LATEST_ATTEMPT_FAILED",
+          requiredBy: "USER",
+          userInputRequired: true,
+          blockingReason: "CALENDAR_CONFLICT_AT_CONFIRM",
         }),
         last: mapHistoryEventToSystemAction(history[0]),
         next: hasVisitHistory
@@ -395,10 +388,28 @@ function buildSystemActions(params: {
               occurredAt: null,
               requiredBy: "USER",
               userInputRequired: true,
-              blockingReason:
-                lastEvent === "CALENDAR_CONFLICT_AT_CONFIRM"
-                  ? "CALENDAR_CONFLICT_AT_CONFIRM"
-                  : "LATEST_ATTEMPT_FAILED",
+              blockingReason: "CALENDAR_CONFLICT_AT_CONFIRM",
+            })
+          : null,
+        integrity: {
+          hasMultipleFutureConfirmedEvents,
+          futureConfirmedEventCount,
+        },
+      };
+    }
+
+    if (normalizedStatus === "FAILED") {
+      return {
+        current: null,
+        last: mapHistoryEventToSystemAction(history[0]),
+        next: hasVisitHistory
+          ? buildSystemActionItem({
+              type: getPrimaryActionType(latestAttempt),
+              status: "PENDING",
+              occurredAt: null,
+              requiredBy: "USER",
+              userInputRequired: true,
+              blockingReason: "LATEST_ATTEMPT_FAILED",
             })
           : null,
         integrity: {
