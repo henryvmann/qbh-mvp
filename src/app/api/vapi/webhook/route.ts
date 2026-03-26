@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { classifyCallOutcome } from "../../../../lib/openai/classify-call-outcome";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -445,6 +446,14 @@ export async function POST(req: Request) {
     const messageType = asTrimmedString(body?.message?.type);
     const attemptId = extractAttemptId(body);
     const transcript = extractTranscript(body);
+    const terminalStatus =
+      asTrimmedString(body?.message?.status) ??
+      asTrimmedString(body?.message?.call?.status) ??
+      asTrimmedString(body?.call?.status);
+    const endedReason =
+      asTrimmedString(body?.message?.endedReason) ??
+      asTrimmedString(body?.message?.call?.endedReason) ??
+      asTrimmedString(body?.call?.endedReason);
 
     console.log("WEBHOOK_PARSED:", {
       messageType,
@@ -482,6 +491,51 @@ export async function POST(req: Request) {
       structured.booking_summary ||
       transcript.slice(0, 500).replace(/\s+/g, " ").trim() ||
       null;
+
+    const { data: attemptForClassification } = await supabase
+      .from("schedule_attempts")
+      .select("metadata")
+      .eq("id", attemptId)
+      .maybeSingle();
+
+    const attemptMetadata = asRecord(attemptForClassification?.metadata);
+    const flowModeRaw = attemptMetadata?.flow_mode;
+    const flowMode =
+      flowModeRaw === "BOOK" || flowModeRaw === "ADJUST" ? flowModeRaw : "UNKNOWN";
+
+    const classification = await classifyCallOutcome({
+      transcript,
+      flowMode,
+      providerName: null,
+      providerType: null,
+      terminalStatus,
+      endedReason,
+    });
+
+    if (classification) {
+      const { error: classificationUpdateError } = await supabase
+        .from("schedule_attempts")
+        .update({
+          metadata: {
+            ...attemptMetadata,
+            openai_call_classification: classification,
+          },
+        })
+        .eq("id", attemptId);
+
+      if (classificationUpdateError) {
+        console.error(
+          "WEBHOOK_CLASSIFICATION_UPDATE_ERROR:",
+          classificationUpdateError
+        );
+      } else {
+        console.log("WEBHOOK_CLASSIFICATION_UPDATE_SUCCESS:", {
+          attemptId,
+          failureClass: classification.failure_class,
+          retryPolicyHint: classification.retry_policy_hint,
+        });
+      }
+    }
 
     const { error } = await supabase.from("call_notes").insert({
       attempt_id: attemptId,
