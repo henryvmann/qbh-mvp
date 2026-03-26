@@ -265,11 +265,17 @@ export default function ProviderCard({
     await startCall("ADJUST");
   }
 
+  const isSystemOwnedRetry =
+    nextAction?.status === "PENDING" &&
+    nextAction.requiredBy === "SYSTEM" &&
+    !nextAction.userInputRequired;
+
   const showHandleButton =
-    state.key === "follow-up" ||
-    (state.key === "blocked" &&
-      nextAction?.type === "BOOK_APPOINTMENT" &&
-      nextAction.userInputRequired);
+    !isSystemOwnedRetry &&
+    (state.key === "follow-up" ||
+      (state.key === "blocked" &&
+        nextAction?.type === "BOOK_APPOINTMENT" &&
+        nextAction.userInputRequired));
 
   const showAdjustButton =
     state.key === "upcoming" &&
@@ -345,7 +351,9 @@ export default function ProviderCard({
             {getActionLabel(nextAction)}
             {nextAction.userInputRequired
               ? " — this requires a user-triggered step."
-              : ""}
+              : nextAction.requiredBy === "SYSTEM"
+                ? " — QBH will handle this automatically."
+                : ""}
           </div>
         </div>
       ) : null}
