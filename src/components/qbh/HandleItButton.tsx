@@ -38,7 +38,7 @@ export default function HandleItButton({
 
     try {
       const body = {
-        ...(userId ? { user_id: userId } : {}),
+        ...(userId ? { app_user_id: userId } : {}),
         provider_id: providerId,
         ...(providerName ? { provider_name: providerName } : {}),
         ...(attemptId ? { attempt_id: attemptId } : {}),

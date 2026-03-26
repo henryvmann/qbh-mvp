@@ -184,7 +184,7 @@ export async function POST(req: Request) {
     typeof body?.demo_autoconfirm === "boolean" ? body.demo_autoconfirm : true;
 
   const app_user_id = String(
-    body?.app_user_id || body?.user_id || process.env.QBH_DEMO_USER_ID || ""
+    body?.app_user_id || process.env.QBH_DEMO_USER_ID || ""
   ).trim();
 
   const mode = getStartCallMode(body?.mode);
