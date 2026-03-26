@@ -141,6 +141,18 @@ function getState(snapshot: ProviderDashboardSnapshot) {
     };
   }
 
+  if (currentAction?.status === "BLOCKED") {
+    return {
+      key: "blocked" as const,
+      label: "Blocked",
+      badgeClassName: "bg-red-50 text-red-700 ring-1 ring-red-200",
+      description:
+        currentAction.blockingReason === "CALENDAR_CONFLICT_AT_CONFIRM"
+          ? "QBH hit a calendar conflict while trying to confirm this appointment."
+          : "QBH cannot continue this action until the blocking issue is resolved.",
+    };
+  }
+
   if (bs?.status === "BOOKED") {
     return {
       key: "upcoming" as const,
@@ -166,18 +178,6 @@ function getState(snapshot: ProviderDashboardSnapshot) {
         nextAction?.status === "PENDING"
           ? "No upcoming appointment is on the calendar yet."
           : "This provider may need a follow-up.",
-    };
-  }
-
-  if (currentAction?.status === "BLOCKED") {
-    return {
-      key: "blocked" as const,
-      label: "Blocked",
-      badgeClassName: "bg-red-50 text-red-700 ring-1 ring-red-200",
-      description:
-        currentAction.blockingReason === "CALENDAR_CONFLICT_AT_CONFIRM"
-          ? "QBH hit a calendar conflict while trying to confirm this appointment."
-          : "QBH cannot continue this action until the blocking issue is resolved.",
     };
   }
 
@@ -312,14 +312,14 @@ export default function ProviderCard({
               <div className="mt-1 text-sm text-slate-600">
                 {currentActionLabel}
                 {currentAction.status === "BLOCKED"
-  ? currentAction.userInputRequired
-    ? " — QBH is blocked and needs user input to continue."
-    : " — QBH is blocked and cannot proceed automatically."
-  : currentAction.userInputRequired
-    ? " — waiting on a user-driven next step."
-    : currentAction.requiredBy === "SYSTEM"
-      ? " — QBH is handling this in the backend."
-      : ""}
+                  ? currentAction.userInputRequired
+                    ? " — QBH is blocked and needs user input to continue."
+                    : " — QBH is blocked and cannot proceed automatically."
+                  : currentAction.userInputRequired
+                    ? " — waiting on a user-driven next step."
+                    : currentAction.requiredBy === "SYSTEM"
+                      ? " — QBH is handling this in the backend."
+                      : ""}
               </div>
 
               {currentAction.blockingReason ? (
