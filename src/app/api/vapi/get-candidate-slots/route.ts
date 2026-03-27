@@ -358,6 +358,16 @@ function parseOfficeOfferTimes(
         /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(fiftyfive|fifty|fortyfive|forty|thirtyfive|thirty|twentyfive|twenty|fifteen|ten|ohfive|ofive)?(?::?([0-9]{2}))?(am|pm)?$/
       );
 
+      // Business hours heuristic: medical offices never offer 1–7 AM slots.
+      // If no AM/PM is given and the resolved hour is 1–7, assume PM.
+      function applyBusinessHoursHeuristic(h12raw: number, ampm: string): number {
+        const h12 = h12raw % 12;
+        if (ampm === "pm") return h12 + 12;
+        if (ampm === "am") return h12;
+        // No AM/PM signal — assume PM for hours 1–7
+        return h12 >= 1 && h12 <= 7 ? h12 + 12 : h12;
+      }
+
       if (wordMatch) {
         const wh = WORD_HOUR[wordMatch[1]];
         const wordMin = wordMatch[2] ? (WORD_MINUTE_COMPACT[wordMatch[2]] ?? null) : null;
@@ -367,8 +377,7 @@ function parseOfficeOfferTimes(
 
         if (!Number.isFinite(min) || min < 0 || min > 59) continue;
 
-        const h12 = wh % 12;
-        hour24 = ampm === "pm" ? h12 + 12 : h12;
+        hour24 = applyBusinessHoursHeuristic(wh, ampm);
         minute = min;
       } else {
         const parts = compact.split(":");
@@ -379,19 +388,11 @@ function parseOfficeOfferTimes(
         if (!Number.isFinite(h) || h < 0 || h > 23) continue;
         if (!Number.isFinite(min) || min < 0 || min > 59) continue;
 
-        const hasAmPm =
-          /am|pm/.test(compact) || ampmRaw === "am" || ampmRaw === "pm";
         const ampm =
           ampmRaw ||
           (compact.includes("am") ? "am" : compact.includes("pm") ? "pm" : "");
 
-        if (hasAmPm) {
-          const h12 = h % 12;
-          hour24 = ampm === "pm" ? h12 + 12 : h12;
-        } else {
-          hour24 = h;
-        }
-
+        hour24 = applyBusinessHoursHeuristic(h, ampm);
         minute = min;
       }
     }
