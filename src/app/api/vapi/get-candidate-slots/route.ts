@@ -214,6 +214,22 @@ const WORD_HOUR: Record<string, number> = {
   twelve: 12,
 };
 
+// Keyed by compacted form (spaces and hyphens removed)
+const WORD_MINUTE_COMPACT: Record<string, number> = {
+  ten: 10,
+  fifteen: 15,
+  twenty: 20,
+  twentyfive: 25,
+  thirty: 30,
+  thirtyfive: 35,
+  forty: 40,
+  fortyfive: 45,
+  fifty: 50,
+  fiftyfive: 55,
+  ohfive: 5,
+  ofive: 5,
+};
+
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
@@ -306,7 +322,7 @@ function parseOfficeOfferTimes(
   if (!text) return [];
 
   const re =
-    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+([0-9]{1,2}|[a-z]+(?:[-\s][a-z]+)?)\s+at\s+(noon|midday|midnight|((?:[0-9]{1,2})|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?::[0-9]{2})?\s*(am|pm)?)\b/gi;
+    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+([0-9]{1,2}|[a-z]+(?:[-\s][a-z]+)?)\s+at\s+(noon|midday|midnight|((?:[0-9]{1,2})|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?::[0-9]{2}|\s+(?:fifty[\s-]five|fifty|forty[\s-]five|forty|thirty[\s-]five|thirty|twenty[\s-]five|twenty|fifteen|ten|oh[\s-]five|o[\s-]five))?\s*(am|pm)?)\b/gi;
 
   const out: ParsedOfficeSlot[] = [];
   const now = baseNowUtc;
@@ -336,16 +352,18 @@ function parseOfficeOfferTimes(
       hour24 = 0;
       minute = 0;
     } else {
-      const compact = timeRaw.replace(/\s+/g, "").toLowerCase();
+      const compact = timeRaw.replace(/[\s-]+/g, "").toLowerCase();
 
       const wordMatch = compact.match(
-        /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?::([0-9]{2}))?(am|pm)?$/
+        /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(fiftyfive|fifty|fortyfive|forty|thirtyfive|thirty|twentyfive|twenty|fifteen|ten|ohfive|ofive)?(?::?([0-9]{2}))?(am|pm)?$/
       );
 
       if (wordMatch) {
         const wh = WORD_HOUR[wordMatch[1]];
-        const min = wordMatch[2] ? Number(wordMatch[2]) : 0;
-        const ampm = wordMatch[3] || ampmRaw || "";
+        const wordMin = wordMatch[2] ? (WORD_MINUTE_COMPACT[wordMatch[2]] ?? null) : null;
+        const numericMin = wordMatch[3] ? Number(wordMatch[3]) : null;
+        const min = wordMin ?? numericMin ?? 0;
+        const ampm = wordMatch[4] || ampmRaw || "";
 
         if (!Number.isFinite(min) || min < 0 || min > 59) continue;
 
