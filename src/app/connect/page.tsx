@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePlaidLink } from "react-plaid-link";
+import { createClient } from "../../lib/supabase/client";
 
 function ConnectPageInner() {
   const searchParams = useSearchParams();
@@ -15,6 +16,11 @@ function ConnectPageInner() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [email, setEmail] = useState("");
+  const [sendingMagicLink, setSendingMagicLink] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [capturedUserId, setCapturedUserId] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -148,9 +154,9 @@ function ConnectPageInner() {
 
         window.sessionStorage.removeItem("qbh_plaid_link_token");
 
-        window.location.href = `/dashboard?user_id=${encodeURIComponent(
-          effectiveUserId
-        )}&analyzing=1`;
+        setCapturedUserId(effectiveUserId);
+        setAnalyzing(false);
+        setShowEmailCapture(true);
       } catch (err) {
         console.log("Connect flow failed:", err);
         setError(
@@ -181,12 +187,98 @@ function ConnectPageInner() {
     },
   });
 
+  async function handleMagicLink(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || !capturedUserId) return;
+
+    try {
+      setSendingMagicLink(true);
+      setError(null);
+
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?app_user_id=${encodeURIComponent(capturedUserId)}`,
+        },
+      });
+
+      if (error) throw error;
+      setMagicLinkSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send link.");
+    } finally {
+      setSendingMagicLink(false);
+    }
+  }
+
   const analysisMessages = [
     "Connecting your account",
     "Pulling recent transactions",
     "Finding healthcare providers",
     "Organizing your care history",
   ];
+
+  if (showEmailCapture) {
+    return (
+      <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
+        <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
+          <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow-sm ring-1 ring-black/5">
+            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#8B9D83]">
+              Quarterback AI
+            </div>
+
+            <h1
+              className="mt-4 text-3xl tracking-tight"
+              style={{ fontFamily: "Playfair Display, ui-serif, serif" }}
+            >
+              {magicLinkSent ? "Check your email" : "Save your account"}
+            </h1>
+
+            {magicLinkSent ? (
+              <div className="mt-4 text-base text-neutral-600">
+                We sent a sign-in link to <strong>{email}</strong>. Click the
+                link to access your dashboard.
+              </div>
+            ) : (
+              <>
+                <p className="mt-3 text-base text-neutral-600">
+                  Your providers have been found. Enter your email to save your
+                  account and access your dashboard.
+                </p>
+
+                <form onSubmit={handleMagicLink} className="mt-8 space-y-4">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    autoFocus
+                    className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#8B9D83] focus:outline-none focus:ring-1 focus:ring-[#8B9D83]"
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={sendingMagicLink || !email.trim()}
+                    className="w-full rounded-2xl bg-[#8B9D83] px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {sendingMagicLink ? "Sending..." : "Save and continue"}
+                  </button>
+
+                  {error ? (
+                    <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+                      {error}
+                    </div>
+                  ) : null}
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (analyzing) {
     return (

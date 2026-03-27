@@ -1,6 +1,7 @@
 // src/app/dashboard/page.tsx
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import ProviderCard from "../../components/qbh/ProviderCard";
 import DailyBrief from "../../components/qbh/DailyBrief";
@@ -11,6 +12,8 @@ import {
   getDashboardDiscoverySummaryForUser,
   getGoogleCalendarConnectionForUser,
 } from "../../lib/qbh/queries/dashboard";
+import { createClient } from "../../lib/supabase/server";
+import { supabaseAdmin } from "../../lib/supabase-server";
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 type PageProps = { searchParams?: Promise<SearchParams> };
@@ -220,10 +223,27 @@ function ProviderGroupSection(props: {
 
 export default async function DashboardPage({ searchParams }: PageProps) {
   const sp = (await searchParams) ?? {};
-  const userIdFromQuery = firstString(sp.user_id);
-  const userIdFromEnv = (process.env.QBH_DEMO_USER_ID || "").trim();
-  const userId = (userIdFromQuery || userIdFromEnv || "").trim();
   const isAnalyzing = firstString(sp.analyzing) === "1";
+
+  // Resolve user identity from session
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: appUser } = await supabaseAdmin
+    .from("app_users")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  if (!appUser) {
+    redirect("/start");
+  }
+
+  const userId = appUser.id;
 
   const [snapshots, discoverySummary, hasGoogleCalendarConnection] =
     await Promise.all([

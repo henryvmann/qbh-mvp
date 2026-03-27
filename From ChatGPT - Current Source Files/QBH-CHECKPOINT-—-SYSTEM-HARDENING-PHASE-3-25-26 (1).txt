@@ -1,0 +1,217 @@
+QBH CHECKPOINT — SYSTEM HARDENING PHASE
+
+Version: 1.0
+Date: March 2026
+
+🎯 Current Phase
+
+QBH is now in:
+
+SYSTEM HARDENING + PRE-LAUNCH PHASE
+
+This phase is focused on:
+
+execution reliability
+backend correctness
+invariant enforcement
+system trust
+
+We are NOT building new features.
+
+🧠 System State (Verified)
+
+The core QBH system is now functioning end-to-end:
+
+Booking Spine (Working)
+start-call
+→ get_candidate_slots
+→ select_candidate_slot
+→ propose_office_slot
+→ confirm_booking
+→ finalize_confirm_booking
+Verified Outcomes
+proposals are being created ✅
+calendar_events are written ✅
+schedule_attempts transitions to BOOKED_CONFIRMED ✅
+booking_state renders correctly in UI ✅
+⚠️ Known Drift Areas
+
+These are the only areas currently allowed to be worked on:
+
+1. Failed Call Reconciliation (Webhook)
+
+Problem:
+
+Calls that end without booking can leave:
+schedule_attempts.status = CALLING
+
+Goal:
+
+All terminal calls must resolve to:
+BOOKED_CONFIRMED OR
+FAILED
+2. Identity Drift (user_id vs app_user_id)
+
+Current:
+
+Backend mostly uses app_user_id ✅
+Some frontend / query params still use user_id ❌
+
+Canonical rule:
+
+All data must be owned and accessed via app_user_id
+
+3. Scheduling Invariant (Temporary vs Final)
+
+Current temporary rule:
+
+(app_user_id, provider_id) → max 1 future confirmed event
+
+Canonical long-term rule:
+
+(app_user_id, provider_id, profile_id)
+
+Do NOT overfit the temporary model.
+
+🚫 Explicitly Disallowed Work
+
+Do NOT:
+
+build new product features
+redesign UI flows
+introduce new endpoints
+rewrite large files without evidence
+modify schema without confirming live structure
+✅ Allowed Work
+
+Only work on:
+
+A. Execution Reliability
+booking completes or fails deterministically
+no zombie states
+no orphaned attempts
+B. Backend Truth Enforcement
+DB = system of record
+UI reflects derived state only
+C. Identity Normalization
+remove user_id usage from active paths
+standardize on app_user_id
+🧩 System Invariants (Must Always Hold)
+Backend is source of truth
+booking_state is the only UI state
+At most one active future confirmed event per (provider + profile)
+All data scoped by app_user_id
+No UI inference of business logic
+🧪 Testing Standard (Required)
+
+Every change must include:
+
+Observed failure
+DB verification
+Code change (single file)
+Re-test with real call
+DB verification again
+🔁 Execution Workflow (MANDATORY)
+
+Every step must follow:
+
+Observed fact
+Likely cause
+Exact file responsible
+Minimal change
+Test
+Stop
+
+No multi-step changes.
+No speculative rewrites.
+
+🚀 Definition of “Ready to Launch”
+
+QBH is ready when all four pillars are satisfied simultaneously:
+
+1. Execution Reliability
+Booking always resolves to:
+BOOKED_CONFIRMED OR
+FAILED
+No stale CALLING / PROPOSED attempts
+No orphaned proposals
+No duplicate calendar events
+System is deterministic across retries
+2. Data Integrity & Invariants
+
+At most one active future confirmed event per:
+
+(app_user_id, provider_id, profile_id)
+
+(temporary: provider + app_user_id until profiles are live)
+
+schedule_attempts, proposals, calendar_events remain consistent
+No conflicting states across tables
+All writes are idempotent where required
+3. Security & Access Control (REQUIRED)
+
+All security guarantees must be enforced at the backend and database level:
+
+Identity Enforcement
+
+All data access scoped by:
+
+app_user_id
+No cross-user reads or joins possible
+Data Exposure
+No sensitive data exposed to frontend unnecessarily
+UI only receives:
+derived state (booking_state, etc.)
+never raw metadata or internal fields
+API Security
+All endpoints validate:
+app_user_id
+provider_id
+attempt_id
+No trust in client-provided data without verification
+Database Protections
+RLS / equivalent protections in place (if enabled)
+No unscoped queries in backend
+No ability to access another user’s data via API or DB
+Token Safety
+No API keys exposed client-side
+No service role leakage
+Vapi + Supabase usage fully server-side
+4. System Observability & Recovery
+Every call produces:
+transcript
+structured notes
+traceable attempt lifecycle
+System can explain:
+what happened
+why it succeeded or failed
+Failed executions are:
+visible
+recoverable
+not silently dropped
+⚠️ Launch Blockers
+
+QBH must NOT launch if ANY of the following are true:
+
+A user can access another user’s data
+Booking can succeed without writing a calendar event
+Booking can fail without resolving attempt state
+Duplicate future bookings can exist
+Any endpoint allows unscoped reads or writes
+Any API key or service credential is exposed client-side
+🧭 Final Principle
+
+A system that is functionally correct but not secure is not correct.
+
+Security is not a later phase.
+It is part of system integrity.
+
+🧭 Guiding Principle
+
+QBH is a deterministic execution system — not a UI product.
+
+Every change must reinforce:
+
+determinism
+traceability
+correctness

@@ -1,0 +1,99 @@
+Henry Mann — QBH Working Style
+Core Preference
+
+You want:
+
+Deterministic, low-drift, system-level correctness — not fast hacks
+
+🔒 Non-Negotiables
+1. Evidence-First Always
+No guessing
+No assumptions
+No “this is probably”
+Everything tied to:
+real DB rows
+real logs
+real files
+2. Single-Step Changes Only
+One file at a time
+No multi-layer edits
+No “while we’re here”
+3. Backend First, Always
+Backend owns truth
+UI reflects state
+UI never decides logic
+4. No Drift
+
+You are highly sensitive to:
+
+rewriting files unnecessarily
+layering hacks
+losing architectural intent
+
+You explicitly want:
+
+“Use the sources as the end all be all”
+
+5. Determinism > Everything
+
+System must:
+
+always resolve
+never hang
+never contradict itself
+6. You Push Back on:
+speculative ideas
+premature systems
+feature creep
+anything outside current phase
+
+Example:
+
+You correctly stopped the retry queue work because it violated phase scope
+
+7. You Want:
+precision
+clarity
+minimal steps
+full control over system behavior
+8. You Think in Systems, Not Features
+
+You consistently push toward:
+
+system-of-record clarity
+invariants
+architecture correctness
+long-term coherence
+9. Deployment Preference
+
+You want:
+
+exact bash commands
+no ambiguity
+no “just deploy it”
+10. Product Instinct
+
+You care deeply about:
+
+real-world behavior (not demos)
+user trust
+system acting autonomously when appropriate
+QBH feeling like a coordinator, not a tool
+🧭 Summary
+
+Your ideal collaboration is:
+
+You = system architect + product owner
+Me = precise execution engine constrained by your rules
+
+🔁 Key Reminder (for future chats)
+
+If I start to:
+
+speculate
+expand scope
+introduce new systems prematurely
+
+You expect me to:
+
+stop, reset, and return to evidence-first workflow
