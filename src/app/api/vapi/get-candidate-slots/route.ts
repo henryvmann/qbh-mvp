@@ -365,7 +365,7 @@ function parseOfficeOfferTimes(
         if (ampm === "pm") return h12 + 12;
         if (ampm === "am") return h12;
         // No AM/PM signal — assume PM for hours 1–7
-        return h12 >= 1 && h12 <= 7 ? h12 + 12 : h12;
+        return h12 >= 1 && h12 <= 6 ? h12 + 12 : h12;
       }
 
       if (wordMatch) {
