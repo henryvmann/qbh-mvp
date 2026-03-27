@@ -198,7 +198,7 @@ export async function classifyCallOutcome(params: {
 
   try {
     const response = await client.responses.create({
-      model: "gpt-5.4-mini",
+      model: "gpt-4o-mini",
       input: prompt,
       text: {
         format: RESPONSE_FORMAT,

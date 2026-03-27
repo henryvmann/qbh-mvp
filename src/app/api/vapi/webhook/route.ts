@@ -550,6 +550,18 @@ export async function POST(req: Request) {
       structured.booking_summary ||
       null;
 
+    const { data: existingNote } = await supabase
+      .from("call_notes")
+      .select("id")
+      .eq("attempt_id", attemptId)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingNote) {
+      console.log("WEBHOOK_NOTE_SKIP:", { attemptId, reason: "note_already_exists" });
+      return Response.json({ ok: true });
+    }
+
     const { error } = await supabase.from("call_notes").insert({
       attempt_id: attemptId,
       transcript,
