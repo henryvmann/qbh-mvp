@@ -367,7 +367,7 @@ export default function ProviderCard({
         </div>
       ) : null}
 
-      {snapshot.latestNote?.summary ? (
+      {snapshot.latestNote?.summary && state.key !== "upcoming" ? (
         <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
           {snapshot.latestNote.summary}
         </div>
