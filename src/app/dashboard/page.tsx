@@ -90,6 +90,7 @@ function TopNav() {
     { label: "Timeline", href: "/timeline" },
     { label: "Medications", href: "/medications" },
     { label: "Caregivers", href: "/caregivers" },
+    { label: "Account", href: "/account" },
   ];
 
   return (
