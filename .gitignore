@@ -42,3 +42,10 @@ next-env.d.ts
 
 # allow env template
 !.env.example
+
+# local docs and assets
+*.pdf
+*.png
+*.jpg
+*.jpeg
+"From ChatGPT - Current Source Files/"
