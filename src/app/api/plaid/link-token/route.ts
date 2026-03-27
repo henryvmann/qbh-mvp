@@ -28,14 +28,12 @@ async function requireAppUser(appUserId: string): Promise<void> {
     throw new Error("Missing app_user_id");
   }
 
-  const { data, error } = await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from("app_users")
-    .select("id")
-    .eq("id", cleanedAppUserId)
-    .single();
+    .upsert({ id: cleanedAppUserId }, { onConflict: "id", ignoreDuplicates: true });
 
-  if (error || !data?.id) {
-    throw new Error("Invalid app_user_id");
+  if (error) {
+    throw new Error("Failed to resolve app_user_id");
   }
 }
 
