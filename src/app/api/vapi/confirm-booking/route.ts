@@ -389,33 +389,49 @@ async function handleOne(
   }
 
   if (existingFutureEvent) {
-    const conflictMetadata: JsonRecord = {
-      ...(asRecord(attemptRow.metadata) ?? {}),
-      last_event: "EXISTING_FUTURE_CONFIRMED_EVENT",
-    };
+    if (flowMode === "ADJUST") {
+      // In ADJUST mode, cancel the existing event to make room for the new confirmed slot.
+      const { error: cancelError } = await supabaseAdmin
+        .from("calendar_events")
+        .update({ status: "cancelled" })
+        .eq("id", existingFutureEvent.id);
 
-    const { error: metadataConflictUpdateError } = await supabaseAdmin
-      .from("schedule_attempts")
-      .update({
-        metadata: conflictMetadata,
-      })
-      .eq("id", attemptIdStr);
+      if (cancelError) {
+        return toolError(toolCallId, {
+          stage: "cancel_existing_event_failed",
+          message: cancelError.message,
+        });
+      }
+      // Fall through to finalize_confirm_booking with the old event cleared.
+    } else {
+      const conflictMetadata: JsonRecord = {
+        ...(asRecord(attemptRow.metadata) ?? {}),
+        last_event: "EXISTING_FUTURE_CONFIRMED_EVENT",
+      };
 
-    if (metadataConflictUpdateError) {
-      return toolError(toolCallId, {
-        stage: "attempt_conflict_metadata_update_failed",
-        message: metadataConflictUpdateError.message,
+      const { error: metadataConflictUpdateError } = await supabaseAdmin
+        .from("schedule_attempts")
+        .update({
+          metadata: conflictMetadata,
+        })
+        .eq("id", attemptIdStr);
+
+      if (metadataConflictUpdateError) {
+        return toolError(toolCallId, {
+          stage: "attempt_conflict_metadata_update_failed",
+          message: metadataConflictUpdateError.message,
+        });
+      }
+
+      return buildConflictResult({
+        toolCallId,
+        flowMode,
+        existingBooking,
+        attemptRow,
+        proposal,
+        existingFutureEvent,
       });
     }
-
-    return buildConflictResult({
-      toolCallId,
-      flowMode,
-      existingBooking,
-      attemptRow,
-      proposal,
-      existingFutureEvent,
-    });
   }
 
   const { data, error } = await supabaseAdmin.rpc("finalize_confirm_booking", {
