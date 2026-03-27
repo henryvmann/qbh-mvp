@@ -171,7 +171,6 @@ export async function GET(req: Request) {
       .upsert(
         {
           integration_id: integrationId,
-          app_user_id: parsedState.app_user_id,
           provider: "google",
           external_account_id: googleUser.email ?? googleUser.sub,
           access_token: token.access_token ?? null,
