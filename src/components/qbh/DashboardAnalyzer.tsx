@@ -13,18 +13,36 @@ type DiscoveryResponse = {
   error?: string;
 };
 
+const FACTS = [
+  "Americans visit a doctor an average of 4 times per year — but many skip follow-ups that could catch issues early.",
+  "1 in 5 medical bills contains an error. Keeping a clear picture of your care history helps you catch them.",
+  "Preventive care visits are covered at 100% under most insurance plans — no copay required.",
+  "The average person sees 18.7 different physicians over their lifetime.",
+  "Missing a follow-up appointment increases the risk of hospital readmission by up to 25%.",
+  "Only 1 in 3 patients leaves a doctor's appointment understanding their next steps.",
+  "Coordinated care — where your providers communicate — leads to 20% better health outcomes.",
+  "Healthcare is the #1 source of financial stress for American families.",
+];
+
 export default function DashboardAnalyzer({
   userId,
   enabled = false,
 }: DashboardAnalyzerProps) {
   const router = useRouter();
 
-  const [status, setStatus] = useState<
-    "idle" | "running" | "success" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "running" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [factIndex, setFactIndex] = useState(0);
 
   const hasRunRef = useRef(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const interval = setInterval(() => {
+      setFactIndex((i) => (i + 1) % FACTS.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [enabled]);
 
   useEffect(() => {
     async function run() {
@@ -39,12 +57,8 @@ export default function DashboardAnalyzer({
       try {
         const response = await fetch("/api/discovery/run", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            app_user_id: userId,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_user_id: userId }),
         });
 
         const data = (await response.json().catch(() => ({}))) as DiscoveryResponse;
@@ -54,14 +68,11 @@ export default function DashboardAnalyzer({
         }
 
         setStatus("success");
-
-        router.replace(`/dashboard?user_id=${encodeURIComponent(userId)}`);
+        router.replace("/dashboard");
         router.refresh();
       } catch (err) {
         setStatus("error");
-        setError(
-          err instanceof Error ? err.message : "Failed to run discovery."
-        );
+        setError(err instanceof Error ? err.message : "Failed to run discovery.");
       }
     }
 
@@ -71,35 +82,56 @@ export default function DashboardAnalyzer({
   if (!enabled) return null;
 
   return (
-    <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-      <div className="text-sm font-medium text-slate-900">
-        {status === "running" && "Analyzing your healthcare spending"}
-        {status === "success" && "Analysis complete"}
-        {status === "error" && "Analysis failed"}
-        {status === "idle" && "Preparing analysis"}
-      </div>
-
-      <div className="mt-2 text-sm text-slate-600">
-        {status === "running" &&
-          "QBH is reviewing transactions, identifying providers, and preparing your dashboard."}
-        {status === "success" &&
-          "Your dashboard is being refreshed with the latest provider state."}
-        {status === "error" &&
-          "Something went wrong while analyzing your data."}
-        {status === "idle" && "Getting ready..."}
-      </div>
-
-      {status === "running" ? (
-        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full w-1/2 animate-pulse rounded-full bg-[#8B9D83]" />
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="w-full max-w-lg">
+        <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#8B9D83]">
+          Quarterback AI
         </div>
-      ) : null}
 
-      {error ? (
-        <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-          {error}
-        </div>
-      ) : null}
-    </section>
+        <h2
+          className="mt-4 text-3xl tracking-tight text-slate-900"
+          style={{ fontFamily: "Playfair Display, ui-serif, serif" }}
+        >
+          {status === "error" ? "Something went wrong" : "Building your care picture"}
+        </h2>
+
+        {status !== "error" ? (
+          <>
+            <p className="mt-3 text-base text-slate-600">
+              Reviewing your transactions and identifying healthcare providers.
+            </p>
+
+            <div className="mt-8 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+              <div className="h-full w-2/3 animate-pulse rounded-full bg-[#8B9D83]" />
+            </div>
+
+            <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+              <div className="text-xs font-semibold uppercase tracking-widest text-[#8B9D83]">
+                Did you know
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-slate-700 transition-all">
+                {FACTS[factIndex]}
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+              {error}
+            </div>
+            <button
+              onClick={() => {
+                hasRunRef.current = false;
+                setStatus("idle");
+                setError(null);
+              }}
+              className="mt-4 rounded-xl bg-[#8B9D83] px-5 py-2.5 text-sm font-medium text-white hover:brightness-95"
+            >
+              Try again
+            </button>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
