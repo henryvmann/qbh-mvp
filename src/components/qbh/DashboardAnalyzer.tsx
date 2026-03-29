@@ -10,6 +10,7 @@ type DashboardAnalyzerProps = {
 
 type DiscoveryResponse = {
   ok?: boolean;
+  pending?: boolean;
   error?: string;
 };
 
@@ -55,16 +56,26 @@ export default function DashboardAnalyzer({
       setError(null);
 
       try {
-        const response = await fetch("/api/discovery/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ app_user_id: userId }),
-        });
+        let data: DiscoveryResponse = {};
 
-        const data = (await response.json().catch(() => ({}))) as DiscoveryResponse;
+        for (let attempt = 0; attempt < 8; attempt++) {
+          if (attempt > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+          }
 
-        if (!response.ok || !data?.ok) {
-          throw new Error(data?.error || "Failed to run discovery.");
+          const response = await fetch("/api/discovery/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ app_user_id: userId }),
+          });
+
+          data = (await response.json().catch(() => ({}))) as DiscoveryResponse;
+
+          if (!response.ok || !data?.ok) {
+            throw new Error(data?.error || "Failed to run discovery.");
+          }
+
+          if (!data.pending) break;
         }
 
         setStatus("success");
