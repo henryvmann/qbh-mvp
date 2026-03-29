@@ -1,54 +1,40 @@
-// src/app/dashboard/page.tsx
+"use client";
 
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import ProviderCard from "../../components/qbh/ProviderCard";
 import DailyBrief from "../../components/qbh/DailyBrief";
 import DashboardAnalyzer from "../../components/qbh/DashboardAnalyzer";
 import DashboardHandleAllButton from "../../components/qbh/DashboardHandleAllButton";
-import {
-  getDashboardProvidersForUser,
-  getDashboardDiscoverySummaryForUser,
-  getGoogleCalendarConnectionForUser,
-} from "../../lib/qbh/queries/dashboard";
-import { createClient } from "../../lib/supabase/server";
-import { supabaseAdmin } from "../../lib/supabase-server";
-
-type SearchParams = { [key: string]: string | string[] | undefined };
-type PageProps = { searchParams?: Promise<SearchParams> };
 
 type DashboardStat = {
   label: string;
   value: string;
 };
 
-type DashboardSnapshot = Awaited<
-  ReturnType<typeof getDashboardProvidersForUser>
->[number];
+type DashboardData = {
+  appUserId: string;
+  snapshots: any[];
+  discoverySummary: { chargesAnalyzed: number };
+  hasGoogleCalendarConnection: boolean;
+};
 
-function firstString(v: string | string[] | undefined): string {
-  if (!v) return "";
-  return Array.isArray(v) ? String(v[0] ?? "") : String(v);
-}
-
-function hasConfirmedBooking(snapshot: DashboardSnapshot): boolean {
+function hasConfirmedBooking(snapshot: any): boolean {
   return snapshot.booking_state.status === "BOOKED";
 }
 
-function hasActiveBookingState(snapshot: DashboardSnapshot): boolean {
+function hasActiveBookingState(snapshot: any): boolean {
   return snapshot.booking_state.status === "IN_PROGRESS";
 }
 
-function hasBrokenSchedulingState(snapshot: DashboardSnapshot): boolean {
+function hasBrokenSchedulingState(snapshot: any): boolean {
   return snapshot.system_actions.integrity.hasMultipleFutureConfirmedEvents;
 }
 
-function isHandleAllEligible(snapshot: DashboardSnapshot): boolean {
-  if (hasBrokenSchedulingState(snapshot)) {
-    return false;
-  }
-
+function isHandleAllEligible(snapshot: any): boolean {
+  if (hasBrokenSchedulingState(snapshot)) return false;
   return (
     snapshot.followUpNeeded &&
     snapshot.system_actions.next?.type === "BOOK_APPOINTMENT" &&
@@ -58,7 +44,6 @@ function isHandleAllEligible(snapshot: DashboardSnapshot): boolean {
 
 function classifyProvider(name: string): "doctor" | "lab" | "pharmacy" {
   const n = name.toLowerCase();
-
   if (
     n.includes("quest") ||
     n.includes("labcorp") ||
@@ -70,7 +55,6 @@ function classifyProvider(name: string): "doctor" | "lab" | "pharmacy" {
   ) {
     return "lab";
   }
-
   if (
     n.includes("cvs") ||
     n.includes("walgreens") ||
@@ -79,7 +63,6 @@ function classifyProvider(name: string): "doctor" | "lab" | "pharmacy" {
   ) {
     return "pharmacy";
   }
-
   return "doctor";
 }
 
@@ -140,7 +123,6 @@ function CalendarConnectionBanner(props: {
               booking starts.
             </div>
           </div>
-
           <Link
             href={href}
             className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
@@ -164,7 +146,6 @@ function CalendarConnectionBanner(props: {
             continue without connecting it right now.
           </div>
         </div>
-
         <Link
           href={href}
           className="inline-flex items-center justify-center rounded-xl bg-[#8B9D83] px-4 py-2 text-sm font-medium text-white hover:brightness-95"
@@ -178,7 +159,6 @@ function CalendarConnectionBanner(props: {
 
 function IntegrityBanner(props: { brokenCount: number }) {
   if (props.brokenCount <= 0) return null;
-
   return (
     <section className="mt-8 rounded-2xl bg-red-50 p-5 shadow-sm ring-1 ring-red-200">
       <div className="text-sm font-medium text-red-900">
@@ -198,16 +178,14 @@ function ProviderGroupSection(props: {
   title: string;
   userId: string;
   hasGoogleCalendarConnection: boolean;
-  snapshots: Awaited<ReturnType<typeof getDashboardProvidersForUser>>;
+  snapshots: any[];
 }) {
   if (props.snapshots.length === 0) return null;
-
   return (
     <section>
       <h2 className="mb-4 text-lg font-semibold text-slate-900">
         {props.title}
       </h2>
-
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {props.snapshots.map((s) => (
           <ProviderCard
@@ -222,53 +200,44 @@ function ProviderGroupSection(props: {
   );
 }
 
-export default async function DashboardPage({ searchParams }: PageProps) {
-  const sp = (await searchParams) ?? {};
-  const isAnalyzing = firstString(sp.analyzing) === "1";
+function DashboardInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isAnalyzing = searchParams.get("analyzing") === "1";
 
-  // Resolve user identity from session
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!user) {
-    redirect("/login");
+  useEffect(() => {
+    fetch("/api/dashboard/data")
+      .then((res) => {
+        if (res.status === 401) {
+          router.push("/login");
+          return null;
+        }
+        return res.json();
+      })
+      .then((json) => {
+        if (json?.ok) setData(json);
+      })
+      .finally(() => setLoading(false));
+  }, [router]);
+
+  if (loading) {
+    return <main className="min-h-screen bg-[#F5F1E8]" />;
   }
 
-  const { data: appUser } = await supabaseAdmin
-    .from("app_users")
-    .select("id")
-    .eq("auth_user_id", user.id)
-    .maybeSingle();
+  if (!data) return null;
 
-  if (!appUser) {
-    redirect("/start");
-  }
+  const { appUserId, snapshots, discoverySummary, hasGoogleCalendarConnection } = data;
 
-  const userId = appUser.id;
-
-  const [snapshots, discoverySummary, hasGoogleCalendarConnection] =
-    await Promise.all([
-      getDashboardProvidersForUser(userId),
-      getDashboardDiscoverySummaryForUser(userId),
-      getGoogleCalendarConnectionForUser(userId),
-    ]);
-
-  const doctors = snapshots.filter(
-    (s) => classifyProvider(s.provider.name) === "doctor"
-  );
-  const labs = snapshots.filter(
-    (s) => classifyProvider(s.provider.name) === "lab"
-  );
-  const pharmacies = snapshots.filter(
-    (s) => classifyProvider(s.provider.name) === "pharmacy"
-  );
+  const doctors = snapshots.filter((s) => classifyProvider(s.provider.name) === "doctor");
+  const labs = snapshots.filter((s) => classifyProvider(s.provider.name) === "lab");
+  const pharmacies = snapshots.filter((s) => classifyProvider(s.provider.name) === "pharmacy");
 
   const actionableProviders = snapshots
     .filter((s) => isHandleAllEligible(s))
-    .map((s) => ({
-      providerId: s.provider.id,
-      providerName: s.provider.name,
-    }));
+    .map((s) => ({ providerId: s.provider.id, providerName: s.provider.name }));
 
   const followUps = snapshots.filter((s) => s.followUpNeeded).length;
   const upcoming = snapshots.filter((s) => hasConfirmedBooking(s)).length;
@@ -276,25 +245,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const broken = snapshots.filter((s) => hasBrokenSchedulingState(s)).length;
 
   const stats: DashboardStat[] = [
-    {
-      label: "Providers",
-      value: String(snapshots.length),
-    },
-    {
-      label: "Charges",
-      value: String(discoverySummary.chargesAnalyzed),
-    },
-    {
-      label: "Upcoming",
-      value: String(upcoming),
-    },
-    {
-      label: "Follow-ups",
-      value: String(followUps),
-    },
+    { label: "Providers", value: String(snapshots.length) },
+    { label: "Charges", value: String(discoverySummary.chargesAnalyzed) },
+    { label: "Upcoming", value: String(upcoming) },
+    { label: "Follow-ups", value: String(followUps) },
   ];
 
-  const showAnalyzer = Boolean(userId) && isAnalyzing;
+  const showAnalyzer = Boolean(appUserId) && isAnalyzing;
 
   return (
     <main className="min-h-screen bg-[#F5F1E8] px-6 py-10">
@@ -303,13 +260,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           <h1 className="font-serif text-4xl tracking-tight text-slate-900">
             Quarterback
           </h1>
-
-          <p className="mt-2 text-sm text-slate-600">
-            Your care, organized.
-          </p>
+          <p className="mt-2 text-sm text-slate-600">Your care, organized.</p>
         </header>
 
-        <DashboardAnalyzer userId={userId} enabled={showAnalyzer} />
+        <DashboardAnalyzer userId={appUserId} enabled={showAnalyzer} />
 
         {!showAnalyzer ? (
           <>
@@ -318,7 +272,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             <TopNav />
 
             <CalendarConnectionBanner
-              userId={userId}
+              userId={appUserId}
               isConnected={hasGoogleCalendarConnection}
             />
 
@@ -326,11 +280,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
             <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
               {stats.map((stat) => (
-                <StatCard
-                  key={stat.label}
-                  label={stat.label}
-                  value={stat.value}
-                />
+                <StatCard key={stat.label} label={stat.label} value={stat.value} />
               ))}
             </section>
 
@@ -340,14 +290,12 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                   <h2 className="font-serif text-2xl tracking-tight text-slate-900">
                     Providers
                   </h2>
-
                   <p className="mt-2 text-sm text-slate-600">
                     Discovered from your healthcare spending and tracked here.
                   </p>
                 </div>
-
                 <DashboardHandleAllButton
-                  userId={userId}
+                  userId={appUserId}
                   providers={actionableProviders}
                   hasGoogleCalendarConnection={hasGoogleCalendarConnection}
                 />
@@ -357,21 +305,19 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             <div id="provider-cards" className="mt-8 space-y-10">
               <ProviderGroupSection
                 title="Doctors"
-                userId={userId}
+                userId={appUserId}
                 hasGoogleCalendarConnection={hasGoogleCalendarConnection}
                 snapshots={doctors}
               />
-
               <ProviderGroupSection
                 title="Labs"
-                userId={userId}
+                userId={appUserId}
                 hasGoogleCalendarConnection={hasGoogleCalendarConnection}
                 snapshots={labs}
               />
-
               <ProviderGroupSection
                 title="Pharmacies"
-                userId={userId}
+                userId={appUserId}
                 hasGoogleCalendarConnection={hasGoogleCalendarConnection}
                 snapshots={pharmacies}
               />
@@ -380,5 +326,13 @@ export default async function DashboardPage({ searchParams }: PageProps) {
         ) : null}
       </div>
     </main>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#F5F1E8]" />}>
+      <DashboardInner />
+    </Suspense>
   );
 }

@@ -3,38 +3,27 @@ import { plaidClient } from "../../../../lib/plaid";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { buildProviderRegistry } from "../../../../lib/qbh/discovery/build-provider-registry";
 import { writeDiscoveredProviders } from "../../../../lib/qbh/discovery/write-discovered-providers";
-
-async function requireAppUser(appUserId: string): Promise<void> {
-  const cleaned = String(appUserId || "").trim();
-
-  if (!cleaned) {
-    throw new Error("Missing app_user_id");
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from("app_users")
-    .select("id")
-    .eq("id", cleaned)
-    .single();
-
-  if (error || !data?.id) {
-    throw new Error("Invalid app_user_id");
-  }
-}
+import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const appUserId = String(body?.app_user_id || "").trim();
+    // Session-first: authenticated users.
+    // Onboarding fallback: pre-auth users supply a body UUID.
+    let appUserId = await getSessionAppUserId();
 
     if (!appUserId) {
-      return NextResponse.json(
-        { ok: false, error: "Missing app_user_id" },
-        { status: 400 }
-      );
-    }
+      const body = await req.json().catch(() => ({}));
+      const bodyUserId = String(body?.app_user_id || "").trim();
 
-    await requireAppUser(appUserId);
+      if (!bodyUserId) {
+        return NextResponse.json(
+          { ok: false, error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+
+      appUserId = bodyUserId;
+    }
 
     const { data: items, error: itemError } = await supabaseAdmin
       .from("plaid_items")

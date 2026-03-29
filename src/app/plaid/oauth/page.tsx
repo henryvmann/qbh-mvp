@@ -76,9 +76,7 @@ export default function PlaidOAuthRedirectPage() {
         }
 
         window.sessionStorage.removeItem("qbh_user_id");
-        window.location.href = `/dashboard?user_id=${encodeURIComponent(
-          effectiveUserId
-        )}`;
+        window.location.href = "/dashboard";
       } catch (err) {
         console.log("Plaid OAuth resume failed:", err);
         setError(

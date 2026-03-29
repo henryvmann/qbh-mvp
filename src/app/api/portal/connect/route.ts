@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 
 type ConnectBody = {
   provider_id?: string;
@@ -78,24 +79,6 @@ function getEpicPortalConfig(portalTenant?: string | null): EpicPortalConfig {
   };
 }
 
-async function requireAppUser(appUserId: string): Promise<void> {
-  const cleanedAppUserId = String(appUserId || "").trim();
-
-  if (!cleanedAppUserId) {
-    throw new Error("Missing app_user_id");
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from("app_users")
-    .select("id")
-    .eq("id", cleanedAppUserId)
-    .single();
-
-  if (error || !data?.id) {
-    throw new Error("Invalid app_user_id");
-  }
-}
-
 async function ensurePortalIntegration(appUserId: string) {
   const { data: existing, error: existingError } = await supabaseAdmin
     .from("integrations")
@@ -133,6 +116,15 @@ async function ensurePortalIntegration(appUserId: string) {
 }
 
 export async function POST(req: Request) {
+  const appUserId = await getSessionAppUserId();
+
+  if (!appUserId) {
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
   const body = (await req.json().catch(() => ({}))) as ConnectBody;
   const { provider_id, portal_brand, portal_tenant, mode } = body ?? {};
 
@@ -143,16 +135,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const appUserId = (process.env.QBH_DEMO_USER_ID || "").trim();
-  if (!appUserId) {
-    return NextResponse.json(
-      { ok: false, error: "QBH_DEMO_USER_ID not set" },
-      { status: 500 }
-    );
-  }
-
   try {
-    await requireAppUser(appUserId);
     const integration = await ensurePortalIntegration(appUserId);
 
     if (mode === "mock") {

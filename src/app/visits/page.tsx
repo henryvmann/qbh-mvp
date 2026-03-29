@@ -1,16 +1,10 @@
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { getDashboardProvidersForUser } from "../../lib/qbh/queries/dashboard";
 import { formatDateRange } from "../../app/lib/QBH/format";
-
-export const metadata = {
-  title: "Visits • QBH",
-  description:
-    "View upcoming appointments in a calendar-style layout plus follow-ups and visit previews across your providers.",
-};
-
-type SearchParams = { [key: string]: string | string[] | undefined };
-type PageProps = { searchParams?: Promise<SearchParams> };
 
 type DemoVisit = {
   date: string;
@@ -34,11 +28,6 @@ type CalendarDay = {
   labelBottom: string;
   visits: CalendarVisit[];
 };
-
-function firstString(v: string | string[] | undefined): string {
-  if (!v) return "";
-  return Array.isArray(v) ? String(v[0] ?? "") : String(v);
-}
 
 function startOfDayInTimezone(date: Date, timezone?: string | null): Date {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -71,7 +60,6 @@ function buildWeekDays(
 ): CalendarDay[] {
   const baseDate =
     visits.length > 0 ? new Date(visits[0].startAt) : new Date();
-
   const weekStart = startOfDayInTimezone(baseDate, timezone);
 
   return Array.from({ length: 7 }, (_, index) => {
@@ -88,9 +76,7 @@ function buildWeekDays(
 
     return {
       key,
-      labelTop: day.toLocaleDateString("en-US", {
-        weekday: "short",
-      }),
+      labelTop: day.toLocaleDateString("en-US", { weekday: "short" }),
       labelBottom: day.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -194,7 +180,6 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
                   )}
                 </div>
               </div>
-
               <span className="inline-flex items-center rounded-full bg-[#F7FAF6] px-3 py-1 text-xs font-semibold text-[#6F8168] ring-1 ring-slate-200">
                 Live booking
               </span>
@@ -206,62 +191,79 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
   );
 }
 
-export default async function VisitsPage({ searchParams }: PageProps) {
-  const sp = (await searchParams) ?? {};
-  const userIdFromQuery = firstString(sp.user_id);
-  const userIdFromEnv = (process.env.QBH_DEMO_USER_ID || "").trim();
-  const userId = (userIdFromQuery || userIdFromEnv || "").trim();
+const pastVisits: DemoVisit[] = [
+  {
+    date: "February 20",
+    title: "Routine lab work completed",
+    provider: "Quest Diagnostics",
+    detail: "Blood panel completed and added to your health record timeline.",
+    tag: "Completed",
+  },
+  {
+    date: "January 14",
+    title: "Annual dermatology visit",
+    provider: "NYU Dermatology",
+    detail: "Skin check completed with recommendation for future follow-up.",
+    tag: "Completed",
+  },
+];
 
-  const snapshots = await getDashboardProvidersForUser(userId);
+const visitSummaries: DemoVisit[] = [
+  {
+    date: "Preview",
+    title: "Transcript-backed visit summaries",
+    provider: "Future QBH capability",
+    detail:
+      "QBH will summarize what happened during each appointment and connect it to next steps.",
+    tag: "Future",
+  },
+  {
+    date: "Preview",
+    title: "Automatic follow-up detection",
+    provider: "Future QBH capability",
+    detail:
+      "Recommended labs, referrals, and check-ins can roll directly into scheduling workflows.",
+    tag: "Future",
+  },
+];
+
+function VisitsInner() {
+  const router = useRouter();
+
+  const [snapshots, setSnapshots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/dashboard/data")
+      .then((res) => {
+        if (res.status === 401) {
+          router.push("/login");
+          return null;
+        }
+        return res.json();
+      })
+      .then((json) => {
+        if (json?.ok) setSnapshots(json.snapshots);
+      })
+      .finally(() => setLoading(false));
+  }, [router]);
+
+  if (loading) {
+    return <main className="min-h-screen bg-[#F5F1E8]" />;
+  }
 
   const upcomingVisits: CalendarVisit[] = snapshots
     .filter((s) => Boolean(s.futureConfirmedEvent))
     .map((s) => ({
       providerName: s.provider.name,
-      eventId: s.futureConfirmedEvent!.id,
-      startAt: s.futureConfirmedEvent!.start_at,
-      endAt: s.futureConfirmedEvent!.end_at,
-      timezone: s.futureConfirmedEvent!.timezone ?? undefined,
+      eventId: s.futureConfirmedEvent.id,
+      startAt: s.futureConfirmedEvent.start_at,
+      endAt: s.futureConfirmedEvent.end_at,
+      timezone: s.futureConfirmedEvent.timezone ?? undefined,
     }))
     .sort((a, b) => a.startAt.localeCompare(b.startAt));
 
   const followUpNeeded = snapshots.filter((s) => s.followUpNeeded);
-
-  const pastVisits: DemoVisit[] = [
-    {
-      date: "February 20",
-      title: "Routine lab work completed",
-      provider: "Quest Diagnostics",
-      detail: "Blood panel completed and added to your health record timeline.",
-      tag: "Completed",
-    },
-    {
-      date: "January 14",
-      title: "Annual dermatology visit",
-      provider: "NYU Dermatology",
-      detail: "Skin check completed with recommendation for future follow-up.",
-      tag: "Completed",
-    },
-  ];
-
-  const visitSummaries: DemoVisit[] = [
-    {
-      date: "Preview",
-      title: "Transcript-backed visit summaries",
-      provider: "Future QBH capability",
-      detail:
-        "QBH will summarize what happened during each appointment and connect it to next steps.",
-      tag: "Future",
-    },
-    {
-      date: "Preview",
-      title: "Automatic follow-up detection",
-      provider: "Future QBH capability",
-      detail:
-        "Recommended labs, referrals, and check-ins can roll directly into scheduling workflows.",
-      tag: "Future",
-    },
-  ];
 
   return (
     <main className="min-h-screen bg-[#F5F1E8]">
@@ -272,14 +274,14 @@ export default async function VisitsPage({ searchParams }: PageProps) {
               Visits
             </h1>
             <p className="mt-2 max-w-2xl text-base text-slate-600">
-              Upcoming appointments are grounded in QBH’s live scheduling system.
+              Upcoming appointments are grounded in QBH's live scheduling system.
               Past visits and summaries below are a demo preview of how the full
               Visits layer will evolve.
             </p>
           </div>
 
           <Link
-            href={`/dashboard${userId ? `?user_id=${encodeURIComponent(userId)}` : ""}`}
+            href="/dashboard"
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
           >
             Back to Dashboard
@@ -296,12 +298,10 @@ export default async function VisitsPage({ searchParams }: PageProps) {
                 Upcoming confirmed appointments from the live QBH booking system.
               </p>
             </div>
-
             <span className="text-sm font-medium text-slate-600">
               {upcomingVisits.length} upcoming
             </span>
           </div>
-
           <WeekCalendar visits={upcomingVisits} />
         </section>
 
@@ -316,7 +316,6 @@ export default async function VisitsPage({ searchParams }: PageProps) {
                   Providers currently needing another scheduling push.
                 </p>
               </div>
-
               <span className="text-sm font-medium text-slate-600">
                 {followUpNeeded.length} open
               </span>
@@ -333,12 +332,10 @@ export default async function VisitsPage({ searchParams }: PageProps) {
                       <div className="font-semibold text-slate-900">
                         {snapshot.provider.name}
                       </div>
-
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#8A7458] ring-1 ring-slate-200">
                         Follow-up needed
                       </span>
                     </div>
-
                     <p className="mt-2 text-sm text-slate-600">
                       QBH can continue outreach and move this provider toward a
                       confirmed appointment.
@@ -370,7 +367,6 @@ export default async function VisitsPage({ searchParams }: PageProps) {
                   time.
                 </p>
               </div>
-
               <span className="rounded-full bg-[#F7FAF6] px-3 py-1 text-xs font-semibold text-[#6F8168] ring-1 ring-slate-200">
                 Demo preview
               </span>
@@ -386,20 +382,16 @@ export default async function VisitsPage({ searchParams }: PageProps) {
                     <div className="text-sm font-semibold text-slate-500">
                       {visit.date}
                     </div>
-
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
                       {visit.tag}
                     </span>
                   </div>
-
                   <div className="mt-2 font-semibold text-slate-900">
                     {visit.title}
                   </div>
-
                   <div className="mt-1 text-sm text-slate-600">
                     {visit.provider}
                   </div>
-
                   <p className="mt-3 text-sm text-slate-600">{visit.detail}</p>
                 </div>
               ))}
@@ -418,7 +410,6 @@ export default async function VisitsPage({ searchParams }: PageProps) {
                 and recommended next steps.
               </p>
             </div>
-
             <span className="rounded-full bg-[#F7FAF6] px-3 py-1 text-xs font-semibold text-[#6F8168] ring-1 ring-slate-200">
               Future layer
             </span>
@@ -439,5 +430,13 @@ export default async function VisitsPage({ searchParams }: PageProps) {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function VisitsPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#F5F1E8]" />}>
+      <VisitsInner />
+    </Suspense>
   );
 }

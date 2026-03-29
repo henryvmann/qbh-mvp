@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CountryCode, Products } from "plaid";
 import { plaidClient } from "../../../../lib/plaid";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 
 function parseProducts(value: string | undefined): Products[] {
   return (value || "transactions")
@@ -21,35 +22,37 @@ function parseCountryCodes(value: string | undefined): CountryCode[] {
     .map((item) => item as CountryCode);
 }
 
-async function requireAppUser(appUserId: string): Promise<void> {
-  const cleanedAppUserId = String(appUserId || "").trim();
-
-  if (!cleanedAppUserId) {
-    throw new Error("Missing app_user_id");
-  }
-
-  const { error } = await supabaseAdmin
-    .from("app_users")
-    .upsert({ id: cleanedAppUserId }, { onConflict: "id", ignoreDuplicates: true });
-
-  if (error) {
-    throw new Error("Failed to resolve app_user_id");
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const appUserId = String(body?.app_user_id || "").trim();
+    // Session-first: authenticated users (e.g. reconnecting from settings).
+    // Onboarding fallback: pre-auth users supply a body UUID; we upsert
+    // the app_users row so the rest of the onboarding flow can proceed.
+    let appUserId = await getSessionAppUserId();
 
     if (!appUserId) {
-      return NextResponse.json(
-        { ok: false, error: "Missing app_user_id" },
-        { status: 400 }
-      );
-    }
+      const body = await req.json().catch(() => ({}));
+      const bodyUserId = String(body?.app_user_id || "").trim();
 
-    await requireAppUser(appUserId);
+      if (!bodyUserId) {
+        return NextResponse.json(
+          { ok: false, error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+
+      const { error } = await supabaseAdmin
+        .from("app_users")
+        .upsert({ id: bodyUserId }, { onConflict: "id", ignoreDuplicates: true });
+
+      if (error) {
+        return NextResponse.json(
+          { ok: false, error: "Failed to resolve user" },
+          { status: 500 }
+        );
+      }
+
+      appUserId = bodyUserId;
+    }
 
     const products = parseProducts(process.env.PLAID_PRODUCTS);
     const countryCodes = parseCountryCodes(process.env.PLAID_COUNTRY_CODES);

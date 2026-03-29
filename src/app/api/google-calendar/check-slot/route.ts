@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAvailabilityContext } from "../../../../lib/availability";
+import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 
 type CheckSlotRequestBody = {
-  app_user_id?: string;
   slot_start?: string;
   slot_end?: string;
   time_zone?: string;
@@ -10,22 +10,20 @@ type CheckSlotRequestBody = {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json().catch(() => ({}))) as CheckSlotRequestBody;
-
-    const appUserId = String(body.app_user_id || "").trim();
-    const slotStart = String(body.slot_start || "").trim();
-    const slotEnd = String(body.slot_end || "").trim();
-    const timeZone = String(body.time_zone || "America/New_York").trim();
+    const appUserId = await getSessionAppUserId();
 
     if (!appUserId) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing app_user_id",
-        },
-        { status: 400 }
+        { ok: false, error: "Unauthorized" },
+        { status: 401 }
       );
     }
+
+    const body = (await req.json().catch(() => ({}))) as CheckSlotRequestBody;
+
+    const slotStart = String(body.slot_start || "").trim();
+    const slotEnd = String(body.slot_end || "").trim();
+    const timeZone = String(body.time_zone || "America/New_York").trim();
 
     if (!slotStart || !slotEnd) {
       return NextResponse.json(

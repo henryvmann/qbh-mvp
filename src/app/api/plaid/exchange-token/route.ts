@@ -1,31 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { plaidClient } from "../../../../lib/plaid";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
-
-async function requireAppUser(appUserId: string): Promise<void> {
-  const cleanedAppUserId = String(appUserId || "").trim();
-
-  if (!cleanedAppUserId) {
-    throw new Error("Missing app_user_id");
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from("app_users")
-    .select("id")
-    .eq("id", cleanedAppUserId)
-    .single();
-
-  if (error || !data?.id) {
-    throw new Error("Invalid app_user_id");
-  }
-}
+import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-
     const publicToken = String(body?.public_token || "").trim();
-    const appUserId = String(body?.app_user_id || "").trim();
 
     if (!publicToken) {
       return NextResponse.json(
@@ -34,14 +15,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!appUserId) {
-      return NextResponse.json(
-        { ok: false, error: "Missing app_user_id" },
-        { status: 400 }
-      );
-    }
+    // Session-first: authenticated users.
+    // Onboarding fallback: pre-auth users supply a body UUID.
+    let appUserId = await getSessionAppUserId();
 
-    await requireAppUser(appUserId);
+    if (!appUserId) {
+      const bodyUserId = String(body?.app_user_id || "").trim();
+
+      if (!bodyUserId) {
+        return NextResponse.json(
+          { ok: false, error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+
+      appUserId = bodyUserId;
+    }
 
     const exchangeResponse = await plaidClient.itemPublicTokenExchange({
       public_token: publicToken,

@@ -2,19 +2,16 @@
 
 import { NextResponse } from "next/server";
 import { buildGoogleCalendarAuthUrl } from "../../../../lib/google-calendar";
+import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const appUserId = String(body?.app_user_id || "").trim();
+    const appUserId = await getSessionAppUserId();
 
     if (!appUserId) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Missing app_user_id",
-        },
-        { status: 400 }
+        { ok: false, error: "Unauthorized" },
+        { status: 401 }
       );
     }
 

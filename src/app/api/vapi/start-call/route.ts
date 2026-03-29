@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { getAvailabilityContext } from "../../../../lib/availability";
+import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -183,11 +184,13 @@ export async function POST(req: Request) {
   const demo_autoconfirm =
     typeof body?.demo_autoconfirm === "boolean" ? body.demo_autoconfirm : true;
 
-  const app_user_id = String(
-    body?.app_user_id || process.env.QBH_DEMO_USER_ID || ""
-  ).trim();
-
   const mode = getStartCallMode(body?.mode);
+
+  const app_user_id = await getSessionAppUserId();
+
+  if (!app_user_id) {
+    return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
 
   if (!office_number) {
     return Response.json(
@@ -199,13 +202,6 @@ export async function POST(req: Request) {
   if (!provider_id) {
     return Response.json(
       { ok: false, error: "provider_id is required" },
-      { status: 400 }
-    );
-  }
-
-  if (!app_user_id) {
-    return Response.json(
-      { ok: false, error: "app_user_id is required" },
       { status: 400 }
     );
   }

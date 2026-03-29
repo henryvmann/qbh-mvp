@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import { createClient } from "../../lib/supabase/client";
 
-function ConnectPageInner() {
-  const searchParams = useSearchParams();
-
+export default function ConnectPage() {
   const [userId, setUserId] = useState("");
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [loadingToken, setLoadingToken] = useState(false);
@@ -24,34 +21,10 @@ function ConnectPageInner() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    const fromQuery = (searchParams.get("user_id") || "").trim();
-
-    if (fromQuery) {
-      window.localStorage.setItem("qbh_user_id", fromQuery);
-      setUserId(fromQuery);
-      return;
-    }
-
-    const existing = window.localStorage.getItem("qbh_user_id");
-
-    if (existing) {
-      setUserId(existing);
-      return;
-    }
-
     const newId = crypto.randomUUID();
-    window.localStorage.setItem("qbh_user_id", newId);
     setUserId(newId);
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    if (userId) {
-      window.sessionStorage.setItem("qbh_user_id", userId);
-    }
-  }, [userId]);
+    window.sessionStorage.setItem("qbh_user_id", newId);
+  }, []);
 
   useEffect(() => {
     if (!analyzing) return;
@@ -153,6 +126,12 @@ function ConnectPageInner() {
         }
 
         window.sessionStorage.removeItem("qbh_plaid_link_token");
+
+        await fetch("/api/discovery/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_user_id: effectiveUserId }),
+        });
 
         setCapturedUserId(effectiveUserId);
         setAnalyzing(false);
@@ -409,10 +388,3 @@ function ConnectPageInner() {
   );
 }
 
-export default function ConnectPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F5F1E8]" />}>
-      <ConnectPageInner />
-    </Suspense>
-  );
-}

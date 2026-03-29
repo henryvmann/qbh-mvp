@@ -39,6 +39,26 @@ export async function GET(request: Request) {
       console.error("AUTH_LINK_ERROR:", linkError.message);
     }
 
+    // Retry discovery in the background — Plaid transactions are often not
+    // ready at the time of initial connection (PRODUCT_NOT_READY), so we
+    // re-run here after the user clicks the magic link. Fire-and-forget so
+    // the redirect is immediate.
+    supabaseAdmin
+      .from("plaid_items")
+      .select("access_token")
+      .eq("app_user_id", appUserId)
+      .limit(1)
+      .then(({ data: items }) => {
+        if (items?.[0]?.access_token) {
+          fetch(`${origin}/api/discovery/run`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ app_user_id: appUserId }),
+          }).catch((err) => console.error("AUTH_CALLBACK_DISCOVERY_ERROR:", err));
+        }
+      })
+      .catch((err) => console.error("AUTH_CALLBACK_PLAID_ITEM_ERROR:", err));
+
     return NextResponse.redirect(`${origin}/dashboard`);
   }
 
