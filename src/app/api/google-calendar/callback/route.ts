@@ -125,7 +125,7 @@ export async function GET(req: Request) {
           .insert({
             app_user_id: parsedState.app_user_id,
             integration_type: "calendar",
-            status: "connected",
+            status: "active",
           })
           .select("id")
           .single();
@@ -148,7 +148,7 @@ export async function GET(req: Request) {
       const { error: updateIntegrationError } = await supabaseAdmin
         .from("integrations")
         .update({
-          status: "connected",
+          status: "active",
           updated_at: nowIso,
         })
         .eq("id", integrationId);
