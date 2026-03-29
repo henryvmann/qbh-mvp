@@ -49,13 +49,30 @@ export async function POST(req: NextRequest) {
     let transactions: any[] = [];
 
     try {
-      const plaidResponse = await plaidClient.transactionsGet({
+      const startDateStr = startDate.toISOString().slice(0, 10);
+      const endDateStr = endDate.toISOString().slice(0, 10);
+      const pageSize = 500;
+
+      const firstPage = await plaidClient.transactionsGet({
         access_token: item.access_token,
-        start_date: startDate.toISOString().slice(0, 10),
-        end_date: endDate.toISOString().slice(0, 10),
+        start_date: startDateStr,
+        end_date: endDateStr,
+        options: { count: pageSize, offset: 0 },
       });
 
-      transactions = plaidResponse.data.transactions;
+      transactions = firstPage.data.transactions;
+      const total = firstPage.data.total_transactions;
+
+      while (transactions.length < total) {
+        const page = await plaidClient.transactionsGet({
+          access_token: item.access_token,
+          start_date: startDateStr,
+          end_date: endDateStr,
+          options: { count: pageSize, offset: transactions.length },
+        });
+        transactions.push(...page.data.transactions);
+        if (page.data.transactions.length === 0) break;
+      }
     } catch (error: any) {
       const errorCode = error?.response?.data?.error_code;
 
