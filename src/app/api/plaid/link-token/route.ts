@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 // src/app/api/plaid/link-token/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     // Session-first: authenticated users (e.g. reconnecting from settings).
     // Onboarding fallback: pre-auth users supply a body UUID; we upsert
     // the app_users row so the rest of the onboarding flow can proceed.
-    let appUserId = await getSessionAppUserId();
+    let appUserId = await getSessionAppUserId(req);
 
     if (!appUserId) {
       const body = await req.json().catch(() => ({}));

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { apiFetch } from "../../lib/api";
 import type {
   ProviderDashboardSnapshot,
   BookingHistoryEvent,
@@ -217,7 +218,7 @@ export default function ProviderCard({
       setIsSubmitting(true);
       setError(null);
 
-      const response = await fetch("/api/vapi/start-call", {
+      const response = await apiFetch("/api/vapi/start-call", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

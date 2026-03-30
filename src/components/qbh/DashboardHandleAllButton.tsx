@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { apiFetch } from "../../lib/api";
 
 type ActionableProvider = {
   providerId: string;
@@ -39,7 +40,7 @@ export default function DashboardHandleAllButton({
       setError(null);
 
       for (const provider of actionableProviders) {
-        const response = await fetch("/api/vapi/start-call", {
+        const response = await apiFetch("/api/vapi/start-call", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

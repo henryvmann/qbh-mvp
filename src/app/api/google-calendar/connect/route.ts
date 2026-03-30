@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 // src/app/api/google-calendar/connect/route.ts
 
 import { NextResponse } from "next/server";
@@ -6,7 +7,7 @@ import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-i
 
 export async function POST(req: Request) {
   try {
-    const appUserId = await getSessionAppUserId();
+    const appUserId = await getSessionAppUserId(req);
 
     if (!appUserId) {
       return NextResponse.json(

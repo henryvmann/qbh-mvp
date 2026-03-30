@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { getAvailabilityContext } from "../../../../lib/availability";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
@@ -186,7 +187,7 @@ export async function POST(req: Request) {
 
   const mode = getStartCallMode(body?.mode);
 
-  const app_user_id = await getSessionAppUserId();
+  const app_user_id = await getSessionAppUserId(req);
 
   if (!app_user_id) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });

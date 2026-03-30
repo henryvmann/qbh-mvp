@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { getAvailabilityContext } from "../../../../lib/availability";
 import { generateSlots } from "../../../../lib/availability/generate-slots";

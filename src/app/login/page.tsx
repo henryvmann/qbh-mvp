@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../lib/supabase/client";
+import { Capacitor } from "@capacitor/core";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"magic" | "password">("magic");
+  const isNative = Capacitor.isNativePlatform();
+  const [mode, setMode] = useState<"magic" | "password">(isNative ? "password" : "magic");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -169,13 +171,15 @@ export default function LoginPage() {
                 ) : null}
               </form>
 
-              <button
-                type="button"
-                onClick={() => { setMode("magic"); setError(null); }}
-                className="mt-6 text-sm text-neutral-500 underline underline-offset-4 hover:text-neutral-700"
-              >
-                Send a magic link instead
-              </button>
+              {!isNative ? (
+                <button
+                  type="button"
+                  onClick={() => { setMode("magic"); setError(null); }}
+                  className="mt-6 text-sm text-neutral-500 underline underline-offset-4 hover:text-neutral-700"
+                >
+                  Send a magic link instead
+                </button>
+              ) : null}
             </>
           )}
         </div>

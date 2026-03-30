@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { buildRetryQueueItems } from "../../../../lib/qbh/build-retry-queue-item";

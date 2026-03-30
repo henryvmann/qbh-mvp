@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 import {
@@ -6,8 +7,8 @@ import {
   getGoogleCalendarConnectionForUser,
 } from "../../../../lib/qbh/queries/dashboard";
 
-export async function GET() {
-  const appUserId = await getSessionAppUserId();
+export async function GET(req: Request) {
+  const appUserId = await getSessionAppUserId(req);
 
   if (!appUserId) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });

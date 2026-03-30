@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { plaidClient } from "../../../../lib/plaid";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     // Session-first: authenticated users.
     // Onboarding fallback: pre-auth users supply a body UUID.
-    let appUserId = await getSessionAppUserId();
+    let appUserId = await getSessionAppUserId(req);
 
     if (!appUserId) {
       const bodyUserId = String(body?.app_user_id || "").trim();

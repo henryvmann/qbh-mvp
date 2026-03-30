@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "../../lib/api";
 
 type DashboardAnalyzerProps = {
   userId: string;
@@ -63,7 +64,7 @@ export default function DashboardAnalyzer({
             await new Promise((resolve) => setTimeout(resolve, 3000));
           }
 
-          const response = await fetch("/api/discovery/run", {
+          const response = await apiFetch("/api/discovery/run", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ app_user_id: userId }),

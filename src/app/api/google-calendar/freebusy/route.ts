@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { getAvailabilityContext } from "../../../../lib/availability";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
@@ -10,7 +11,7 @@ type FreeBusyRequestBody = {
 
 export async function POST(req: Request) {
   try {
-    const appUserId = await getSessionAppUserId();
+    const appUserId = await getSessionAppUserId(req);
 
     if (!appUserId) {
       return NextResponse.json(

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 
 type JsonRecord = Record<string, unknown>;

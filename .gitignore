@@ -43,6 +43,10 @@ next-env.d.ts
 # allow env template
 !.env.example
 
+# capacitor native projects (regenerated via npm run build:capacitor)
+/ios/
+/android/
+
 # local docs and assets
 *.pdf
 *.png

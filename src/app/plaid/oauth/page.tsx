@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
+import { apiFetch } from "../../../lib/api";
 
 export default function PlaidOAuthRedirectPage() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export default function PlaidOAuthRedirectPage() {
           throw new Error("Missing user_id");
         }
 
-        const exchangeResponse = await fetch("/api/plaid/exchange-token", {
+        const exchangeResponse = await apiFetch("/api/plaid/exchange-token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -59,7 +60,7 @@ export default function PlaidOAuthRedirectPage() {
 
         window.sessionStorage.removeItem("qbh_plaid_link_token");
 
-        const discoveryResponse = await fetch("/api/discovery/run", {
+        const discoveryResponse = await apiFetch("/api/discovery/run", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

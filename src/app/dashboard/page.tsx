@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { apiFetch } from "../../lib/api";
 
 import ProviderCard from "../../components/qbh/ProviderCard";
 import DailyBrief from "../../components/qbh/DailyBrief";
@@ -209,7 +210,7 @@ function DashboardInner() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/dashboard/data")
+    apiFetch("/api/dashboard/data")
       .then((res) => {
         if (res.status === 401) {
           router.push("/login");

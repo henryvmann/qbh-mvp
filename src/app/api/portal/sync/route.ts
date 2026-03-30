@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
@@ -44,7 +45,7 @@ async function ensurePortalIntegration(appUserId: string) {
 }
 
 export async function POST(req: Request) {
-  const appUserId = await getSessionAppUserId();
+  const appUserId = await getSessionAppUserId(req);
 
   if (!appUserId) {
     return NextResponse.json(

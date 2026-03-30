@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { apiFetch } from "../../lib/api";
 
 function CalendarConnectPageInner() {
   const searchParams = useSearchParams();
@@ -52,7 +53,7 @@ function CalendarConnectPageInner() {
       setSubmitting(true);
       setError(null);
 
-      const response = await fetch("/api/google-calendar/connect", {
+      const response = await apiFetch("/api/google-calendar/connect", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

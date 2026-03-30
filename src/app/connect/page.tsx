@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import { createClient } from "../../lib/supabase/client";
+import { apiFetch } from "../../lib/api";
 
 export default function ConnectPage() {
   const [userId, setUserId] = useState("");
@@ -57,7 +58,7 @@ export default function ConnectPage() {
         setLoadingToken(true);
         setError(null);
 
-        const response = await fetch("/api/plaid/link-token", {
+        const response = await apiFetch("/api/plaid/link-token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -108,7 +109,7 @@ export default function ConnectPage() {
           throw new Error("Missing user_id");
         }
 
-        const exchangeResponse = await fetch("/api/plaid/exchange-token", {
+        const exchangeResponse = await apiFetch("/api/plaid/exchange-token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -127,7 +128,7 @@ export default function ConnectPage() {
 
         window.sessionStorage.removeItem("qbh_plaid_link_token");
 
-        await fetch("/api/discovery/run", {
+        await apiFetch("/api/discovery/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ app_user_id: effectiveUserId }),

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { createHash, randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
@@ -116,7 +117,7 @@ async function ensurePortalIntegration(appUserId: string) {
 }
 
 export async function POST(req: Request) {
-  const appUserId = await getSessionAppUserId();
+  const appUserId = await getSessionAppUserId(req);
 
   if (!appUserId) {
     return NextResponse.json(

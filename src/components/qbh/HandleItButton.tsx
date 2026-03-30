@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from "react";
+import { apiFetch } from "../../lib/api";
 
 type Props = {
   userId?: string | null;
@@ -11,12 +12,6 @@ type Props = {
   label?: string;
 };
 
-function getEndpoint(): string {
-  return (
-    (process.env.NEXT_PUBLIC_QBH_HANDLE_IT_ENDPOINT || "").trim() ||
-    "/api/vapi/start-call"
-  );
-}
 
 export default function HandleItButton({
   userId,
@@ -44,7 +39,7 @@ export default function HandleItButton({
         ...(attemptId ? { attempt_id: attemptId } : {}),
       };
 
-      const res = await fetch(getEndpoint(), {
+      const res = await apiFetch("/api/vapi/start-call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
