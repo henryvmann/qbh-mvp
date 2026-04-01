@@ -13,6 +13,7 @@ export default function ConnectPage() {
   const [submitting, setSubmitting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
+  const [oauthExpired, setOauthExpired] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [email, setEmail] = useState("");
@@ -22,6 +23,8 @@ export default function ConnectPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("oauth_expired")) setOauthExpired(true);
     const newId = crypto.randomUUID();
     setUserId(newId);
     window.sessionStorage.setItem("qbh_user_id", newId);
@@ -370,6 +373,12 @@ export default function ConnectPage() {
               Plaid-secured connection • Real transaction discovery
             </div>
           </div>
+
+          {oauthExpired ? (
+            <div className="mt-6 rounded-xl bg-amber-500/15 px-4 py-3 text-sm text-amber-400 ring-1 ring-amber-500/30">
+              Your bank session expired. Please connect again to continue.
+            </div>
+          ) : null}
 
           {error ? (
             <div className="mt-6 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">

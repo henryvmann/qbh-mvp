@@ -34,7 +34,8 @@ export default function PlaidOAuthRedirectPage() {
       window.sessionStorage.getItem("qbh_plaid_link_token");
 
     if (!storedLinkToken) {
-      setError("Missing stored Plaid link token for OAuth resume.");
+      // Session expired or was cleared — send back to connect to restart
+      window.location.href = "/connect?oauth_expired=1";
       return;
     }
 
