@@ -29,9 +29,19 @@ export default function PlaidOAuthRedirectPage() {
     const deepLinkUri = window.localStorage.getItem("qbh_plaid_redirect_uri");
     setReceivedRedirectUri(deepLinkUri || window.location.href);
 
-    const storedLinkToken =
+    let storedLinkToken =
       window.localStorage.getItem("qbh_plaid_link_token") ||
       window.sessionStorage.getItem("qbh_plaid_link_token");
+
+    if (!storedLinkToken) {
+      try {
+        const { Preferences } = await import("@capacitor/preferences");
+        const result = await Preferences.get({ key: "qbh_plaid_link_token" });
+        if (result.value) storedLinkToken = result.value;
+      } catch {
+        // ignore
+      }
+    }
 
     if (!storedLinkToken) {
       setError("Session expired. Please go back and reconnect your bank account.");

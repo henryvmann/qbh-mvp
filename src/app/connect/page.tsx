@@ -81,6 +81,14 @@ export default function ConnectPage() {
         setLinkToken(data.link_token);
         window.sessionStorage.setItem("qbh_plaid_link_token", data.link_token);
         window.localStorage.setItem("qbh_plaid_link_token", data.link_token);
+        // Also persist to native storage (survives WKWebView process kills)
+        try {
+          const { Preferences } = await import("@capacitor/preferences");
+          await Preferences.set({ key: "qbh_plaid_link_token", value: data.link_token });
+          await Preferences.set({ key: "qbh_user_id", value: userId });
+        } catch {
+          // Non-native env — ignore
+        }
       } catch (err) {
         console.log("Link token creation failed:", err);
         setError(

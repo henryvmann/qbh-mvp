@@ -15,10 +15,27 @@ export default function CapacitorInit() {
     async function setup() {
       const { App } = await import("@capacitor/app");
 
-      function handleUrl(url: string) {
+      async function handleUrl(url: string) {
         if (url.startsWith("com.getquarterback.app://plaid")) {
-          const hasLinkToken = !!window.localStorage.getItem("qbh_plaid_link_token");
-          if (!hasLinkToken) {
+          // Check localStorage first, then native preferences
+          let linkToken = window.localStorage.getItem("qbh_plaid_link_token");
+          if (!linkToken) {
+            try {
+              const { Preferences } = await import("@capacitor/preferences");
+              const result = await Preferences.get({ key: "qbh_plaid_link_token" });
+              if (result.value) {
+                linkToken = result.value;
+                // Restore to localStorage so plaid/oauth page can read it
+                window.localStorage.setItem("qbh_plaid_link_token", result.value);
+                const uid = await Preferences.get({ key: "qbh_user_id" });
+                if (uid.value) window.localStorage.setItem("qbh_user_id", uid.value);
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          if (!linkToken) {
             // Stale deep link from a previous session — ignore it
             return;
           }
@@ -32,11 +49,11 @@ export default function CapacitorInit() {
       // Check if the app was cold-launched via deep link (event fires before listener registers)
       const launchUrl = await App.getLaunchUrl();
       if (launchUrl?.url) {
-        handleUrl(launchUrl.url);
+        await handleUrl(launchUrl.url);
       }
 
       const listener = await App.addListener("appUrlOpen", (event) => {
-        if (event.url) handleUrl(event.url);
+        if (event.url) void handleUrl(event.url);
       });
 
       cleanup = () => listener.remove();
