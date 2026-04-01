@@ -78,13 +78,13 @@ function TopNav() {
   ];
 
   return (
-    <nav className="mt-5 rounded-2xl bg-white px-3 py-2 shadow-sm ring-1 ring-slate-200">
+    <nav className="mt-5 rounded-2xl bg-[#0F1520] px-3 py-2 ring-1 ring-white/8">
       <div className="flex flex-wrap items-center gap-2">
         {items.map((it) => (
           <Link
             key={it.href}
             href={it.href}
-            className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-xl px-3 py-2 text-sm font-medium text-[#6B85A8] hover:bg-[#162030] hover:text-[#EFF4FF]"
           >
             {it.label}
           </Link>
@@ -96,9 +96,9 @@ function TopNav() {
 
 function StatCard(props: DashboardStat) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-      <div className="text-sm font-medium text-slate-600">{props.label}</div>
-      <div className="mt-2 font-serif text-3xl tracking-tight text-slate-900">
+    <div className="rounded-2xl bg-[#0F1520] p-5 ring-1 ring-white/8">
+      <div className="text-sm font-medium text-[#6B85A8]">{props.label}</div>
+      <div className="mt-2 font-serif text-3xl tracking-tight text-[#EFF4FF]">
         {props.value}
       </div>
     </div>
@@ -113,20 +113,20 @@ function CalendarConnectionBanner(props: {
 
   if (props.isConnected) {
     return (
-      <section className="mt-8 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <section className="mt-8 rounded-2xl bg-[#0F1520] p-5 ring-1 ring-white/8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="text-sm font-medium text-slate-900">
+            <div className="text-sm font-medium text-[#EFF4FF]">
               Google Calendar connected
             </div>
-            <div className="mt-1 text-sm text-slate-600">
+            <div className="mt-1 text-sm text-[#6B85A8]">
               QBH can use your real availability to protect your schedule before
               booking starts.
             </div>
           </div>
           <Link
             href={href}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#6B85A8] hover:bg-[#162030] hover:text-[#EFF4FF]"
           >
             Manage calendar
           </Link>
@@ -136,20 +136,20 @@ function CalendarConnectionBanner(props: {
   }
 
   return (
-    <section className="mt-8 rounded-2xl bg-[#FCFBF8] p-5 shadow-sm ring-1 ring-[#DDD6C8]">
+    <section className="mt-8 rounded-2xl bg-[#0F1520] p-5 ring-1 ring-white/8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-sm font-medium text-slate-900">
+          <div className="text-sm font-medium text-[#EFF4FF]">
             Connect Google Calendar for better booking
           </div>
-          <div className="mt-1 text-sm text-slate-600">
+          <div className="mt-1 text-sm text-[#6B85A8]">
             QBH works better with your real availability, but you can still
             continue without connecting it right now.
           </div>
         </div>
         <Link
           href={href}
-          className="inline-flex items-center justify-center rounded-xl bg-[#8B9D83] px-4 py-2 text-sm font-medium text-white hover:brightness-95"
+          className="inline-flex items-center justify-center rounded-xl bg-[#5DE8C5] px-4 py-2 text-sm font-medium text-[#080C14] hover:brightness-95"
         >
           Connect calendar
         </Link>
@@ -161,11 +161,11 @@ function CalendarConnectionBanner(props: {
 function IntegrityBanner(props: { brokenCount: number }) {
   if (props.brokenCount <= 0) return null;
   return (
-    <section className="mt-8 rounded-2xl bg-red-50 p-5 shadow-sm ring-1 ring-red-200">
-      <div className="text-sm font-medium text-red-900">
+    <section className="mt-8 rounded-2xl bg-red-500/15 p-5 ring-1 ring-red-500/30">
+      <div className="text-sm font-medium text-red-400">
         Scheduling integrity issue detected
       </div>
-      <div className="mt-1 text-sm text-red-700">
+      <div className="mt-1 text-sm text-red-400/80">
         QBH found {props.brokenCount} provider
         {props.brokenCount === 1 ? "" : "s"} with multiple future confirmed
         appointments. Those cards are being held out of normal booking actions
@@ -184,7 +184,7 @@ function ProviderGroupSection(props: {
   if (props.snapshots.length === 0) return null;
   return (
     <section>
-      <h2 className="mb-4 text-lg font-semibold text-slate-900">
+      <h2 className="mb-4 text-lg font-semibold text-[#EFF4FF]">
         {props.title}
       </h2>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -225,7 +225,7 @@ function DashboardInner() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#F5F1E8]" />;
+    return <main className="min-h-screen bg-[#080C14]" />;
   }
 
   if (!data) return null;
@@ -255,13 +255,13 @@ function DashboardInner() {
   const showAnalyzer = Boolean(appUserId) && isAnalyzing;
 
   return (
-    <main className="min-h-screen bg-[#F5F1E8] px-6 py-10">
+    <main className="min-h-screen bg-[#080C14] px-6 py-10">
       <div className="mx-auto max-w-7xl">
         <header>
-          <h1 className="font-serif text-4xl tracking-tight text-slate-900">
+          <h1 className="font-serif text-4xl tracking-tight text-[#EFF4FF]">
             Quarterback
           </h1>
-          <p className="mt-2 text-sm text-slate-600">Your care, organized.</p>
+          <p className="mt-2 text-sm text-[#6B85A8]">Your care, organized.</p>
         </header>
 
         <DashboardAnalyzer userId={appUserId} enabled={showAnalyzer} />
@@ -285,13 +285,13 @@ function DashboardInner() {
               ))}
             </section>
 
-            <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h2 className="font-serif text-2xl tracking-tight text-slate-900">
+                  <h2 className="font-serif text-2xl tracking-tight text-[#EFF4FF]">
                     Providers
                   </h2>
-                  <p className="mt-2 text-sm text-slate-600">
+                  <p className="mt-2 text-sm text-[#6B85A8]">
                     Discovered from your healthcare spending and tracked here.
                   </p>
                 </div>
@@ -332,7 +332,7 @@ function DashboardInner() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#F5F1E8]" />}>
+    <Suspense fallback={<main className="min-h-screen bg-[#080C14]" />}>
       <DashboardInner />
     </Suspense>
   );

@@ -64,34 +64,31 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
+    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
       <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
-          <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#8B9D83]">
+          <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5DE8C5]">
             Quarterback AI
           </div>
 
-          <h1
-            className="mt-4 text-4xl tracking-tight"
-            style={{ fontFamily: "Playfair Display, ui-serif, serif" }}
-          >
+          <h1 className="mt-4 text-4xl tracking-tight">
             Welcome back
           </h1>
 
           {mode === "magic" ? (
             sent ? (
-              <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-                <div className="text-sm font-medium text-neutral-900">
+              <div className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+                <div className="text-sm font-medium text-[#EFF4FF]">
                   Check your email
                 </div>
-                <div className="mt-1 text-sm text-neutral-600">
-                  We sent a sign-in link to <strong>{email}</strong>. Click the
+                <div className="mt-1 text-sm text-[#6B85A8]">
+                  We sent a sign-in link to <strong className="text-[#EFF4FF]">{email}</strong>. Click the
                   link to access your dashboard.
                 </div>
               </div>
             ) : (
               <>
-                <p className="mt-3 text-base text-neutral-600">
+                <p className="mt-3 text-base text-[#6B85A8]">
                   Enter your email and we'll send you a sign-in link.
                 </p>
 
@@ -103,19 +100,19 @@ export default function LoginPage() {
                     placeholder="you@example.com"
                     required
                     autoFocus
-                    className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#8B9D83] focus:outline-none focus:ring-1 focus:ring-[#8B9D83]"
+                    className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:border-[#5DE8C5] focus:outline-none focus:ring-1 focus:ring-[#5DE8C5]"
                   />
 
                   <button
                     type="submit"
                     disabled={submitting || !email.trim()}
-                    className="w-full rounded-2xl bg-[#8B9D83] px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-2xl bg-[#5DE8C5] px-6 py-3 text-sm font-medium text-[#080C14] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting ? "Sending..." : "Send sign-in link"}
                   </button>
 
                   {error ? (
-                    <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+                    <div className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
                       {error}
                     </div>
                   ) : null}
@@ -124,7 +121,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setMode("password"); setError(null); }}
-                  className="mt-6 text-sm text-neutral-500 underline underline-offset-4 hover:text-neutral-700"
+                  className="mt-6 text-sm text-[#4D6480] underline underline-offset-4 hover:text-[#6B85A8]"
                 >
                   Sign in with password instead
                 </button>
@@ -132,7 +129,7 @@ export default function LoginPage() {
             )
           ) : (
             <>
-              <p className="mt-3 text-base text-neutral-600">
+              <p className="mt-3 text-base text-[#6B85A8]">
                 Sign in with your email and password.
               </p>
 
@@ -144,7 +141,7 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                   required
                   autoFocus
-                  className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#8B9D83] focus:outline-none focus:ring-1 focus:ring-[#8B9D83]"
+                  className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:border-[#5DE8C5] focus:outline-none focus:ring-1 focus:ring-[#5DE8C5]"
                 />
 
                 <input
@@ -153,19 +150,19 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Password"
                   required
-                  className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#8B9D83] focus:outline-none focus:ring-1 focus:ring-[#8B9D83]"
+                  className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:border-[#5DE8C5] focus:outline-none focus:ring-1 focus:ring-[#5DE8C5]"
                 />
 
                 <button
                   type="submit"
                   disabled={submitting || !email.trim() || !password.trim()}
-                  className="w-full rounded-2xl bg-[#8B9D83] px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-2xl bg-[#5DE8C5] px-6 py-3 text-sm font-medium text-[#080C14] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting ? "Signing in..." : "Sign in"}
                 </button>
 
                 {error ? (
-                  <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+                  <div className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
                     {error}
                   </div>
                 ) : null}
@@ -175,7 +172,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setMode("magic"); setError(null); }}
-                  className="mt-6 text-sm text-neutral-500 underline underline-offset-4 hover:text-neutral-700"
+                  className="mt-6 text-sm text-[#4D6480] underline underline-offset-4 hover:text-[#6B85A8]"
                 >
                   Send a magic link instead
                 </button>

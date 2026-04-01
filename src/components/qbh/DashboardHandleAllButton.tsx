@@ -92,7 +92,7 @@ export default function DashboardHandleAllButton({
       <button
         onClick={handleAll}
         disabled={disabled}
-        className="inline-flex items-center justify-center rounded-xl bg-[#8B9D83] px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center justify-center rounded-xl bg-[#5DE8C5] px-4 py-2 text-sm font-medium text-[#080C14] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting
           ? "Starting booking..."
@@ -102,12 +102,12 @@ export default function DashboardHandleAllButton({
       </button>
 
       {showCalendarPrompt ? (
-        <div className="max-w-xl rounded-2xl bg-[#FCFBF8] p-4 ring-1 ring-[#DDD6C8]">
-          <div className="text-sm font-medium text-slate-900">
+        <div className="max-w-xl rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8">
+          <div className="text-sm font-medium text-[#EFF4FF]">
             Connect Google Calendar for a better booking experience
           </div>
 
-          <div className="mt-1 text-sm text-slate-600">
+          <div className="mt-1 text-sm text-[#6B85A8]">
             QBH can avoid conflicts and use your real availability before it
             places booking calls. You can skip this for now and continue
             anyway.
@@ -116,7 +116,7 @@ export default function DashboardHandleAllButton({
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={calendarConnectHref}
-              className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#6B85A8] hover:bg-[#1E2D45]"
             >
               Connect Google Calendar
             </Link>
@@ -124,7 +124,7 @@ export default function DashboardHandleAllButton({
             <button
               onClick={startHandleAll}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#8B9D83] px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl bg-[#5DE8C5] px-4 py-2 text-sm font-medium text-[#080C14] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting
                 ? "Starting booking..."
@@ -134,7 +134,7 @@ export default function DashboardHandleAllButton({
             <button
               onClick={() => setShowCalendarPrompt(false)}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#4D6480] hover:bg-[#162030]"
             >
               Cancel
             </button>
@@ -143,7 +143,7 @@ export default function DashboardHandleAllButton({
       ) : null}
 
       {error ? (
-        <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+        <div className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
           {error}
         </div>
       ) : null}

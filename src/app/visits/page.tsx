@@ -98,11 +98,11 @@ function formatVisitTime(startAt: string, timezone?: string | null): string {
 function WeekCalendar(props: { visits: CalendarVisit[] }) {
   if (props.visits.length === 0) {
     return (
-      <div className="mt-6 rounded-2xl bg-[#FBFBF9] p-5 ring-1 ring-slate-200">
-        <div className="font-semibold text-slate-900">
+      <div className="mt-6 rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8">
+        <div className="font-semibold text-[#EFF4FF]">
           No confirmed upcoming appointments yet
         </div>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-[#6B85A8]">
           As QBH books care through the live scheduling loop, upcoming visits
           will appear here automatically.
         </p>
@@ -120,12 +120,12 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
           {days.map((day) => (
             <div
               key={day.key}
-              className="rounded-2xl bg-[#FBFBF9] p-4 ring-1 ring-slate-200"
+              className="rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8"
             >
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <div className="text-xs font-semibold uppercase tracking-wide text-[#4D6480]">
                 {day.labelTop}
               </div>
-              <div className="mt-1 text-sm font-medium text-slate-900">
+              <div className="mt-1 text-sm font-medium text-[#EFF4FF]">
                 {day.labelBottom}
               </div>
 
@@ -134,21 +134,21 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
                   day.visits.map((visit) => (
                     <div
                       key={visit.eventId}
-                      className="rounded-xl bg-[#E7EFE5] p-3 ring-1 ring-slate-200"
+                      className="rounded-xl bg-[#5DE8C5]/15 p-3 ring-1 ring-[#5DE8C5]/30"
                     >
-                      <div className="text-xs font-semibold uppercase tracking-wide text-[#5E7A52]">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-[#5DE8C5]">
                         {formatVisitTime(visit.startAt, visit.timezone)}
                       </div>
-                      <div className="mt-1 text-sm font-semibold text-slate-900">
+                      <div className="mt-1 text-sm font-semibold text-[#EFF4FF]">
                         {visit.providerName}
                       </div>
-                      <div className="mt-1 text-xs text-slate-600">
+                      <div className="mt-1 text-xs text-[#6B85A8]">
                         Confirmed
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-xl border border-dashed border-slate-200 p-3 text-xs text-slate-400">
+                  <div className="rounded-xl border border-dashed border-white/10 p-3 text-xs text-[#3D526B]">
                     No appointments
                   </div>
                 )}
@@ -158,8 +158,8 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
         </div>
       </div>
 
-      <div className="rounded-2xl bg-[#FBFBF9] p-5 ring-1 ring-slate-200">
-        <div className="text-sm font-semibold text-slate-900">
+      <div className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8">
+        <div className="text-sm font-semibold text-[#EFF4FF]">
           Upcoming care agenda
         </div>
 
@@ -167,13 +167,13 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
           {props.visits.map((visit) => (
             <div
               key={`${visit.eventId}-agenda`}
-              className="flex flex-col gap-2 rounded-2xl bg-white p-4 ring-1 ring-slate-200 md:flex-row md:items-center md:justify-between"
+              className="flex flex-col gap-2 rounded-2xl bg-[#0F1520] p-4 ring-1 ring-white/8 md:flex-row md:items-center md:justify-between"
             >
               <div>
-                <div className="font-semibold text-slate-900">
+                <div className="font-semibold text-[#EFF4FF]">
                   {visit.providerName}
                 </div>
-                <div className="mt-1 text-sm text-slate-600">
+                <div className="mt-1 text-sm text-[#6B85A8]">
                   {formatDateRange(
                     visit.startAt,
                     visit.endAt,
@@ -181,7 +181,7 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
                   )}
                 </div>
               </div>
-              <span className="inline-flex items-center rounded-full bg-[#F7FAF6] px-3 py-1 text-xs font-semibold text-[#6F8168] ring-1 ring-slate-200">
+              <span className="inline-flex items-center rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
                 Live booking
               </span>
             </div>
@@ -250,7 +250,7 @@ function VisitsInner() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#F5F1E8]" />;
+    return <main className="min-h-screen bg-[#080C14]" />;
   }
 
   const upcomingVisits: CalendarVisit[] = snapshots
@@ -267,14 +267,14 @@ function VisitsInner() {
   const followUpNeeded = snapshots.filter((s) => s.followUpNeeded);
 
   return (
-    <main className="min-h-screen bg-[#F5F1E8]">
+    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
       <div className="mx-auto max-w-6xl px-6 pb-16 pt-10">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-slate-900">
+            <h1 className="font-serif text-3xl tracking-tight text-[#EFF4FF]">
               Visits
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-slate-600">
+            <p className="mt-2 max-w-2xl text-base text-[#6B85A8]">
               Upcoming appointments are grounded in QBH's live scheduling system.
               Past visits and summaries below are a demo preview of how the full
               Visits layer will evolve.
@@ -283,23 +283,23 @@ function VisitsInner() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+            className="rounded-xl border border-white/10 bg-[#0F1520] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
-        <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-xl text-slate-900">
+              <h2 className="font-serif text-xl text-[#EFF4FF]">
                 Calendar view
               </h2>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-[#6B85A8]">
                 Upcoming confirmed appointments from the live QBH booking system.
               </p>
             </div>
-            <span className="text-sm font-medium text-slate-600">
+            <span className="text-sm font-medium text-[#6B85A8]">
               {upcomingVisits.length} upcoming
             </span>
           </div>
@@ -307,17 +307,17 @@ function VisitsInner() {
         </section>
 
         <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <div className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-xl text-slate-900">
+                <h2 className="font-serif text-xl text-[#EFF4FF]">
                   Follow-ups to schedule
                 </h2>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-[#6B85A8]">
                   Providers currently needing another scheduling push.
                 </p>
               </div>
-              <span className="text-sm font-medium text-slate-600">
+              <span className="text-sm font-medium text-[#6B85A8]">
                 {followUpNeeded.length} open
               </span>
             </div>
@@ -327,17 +327,17 @@ function VisitsInner() {
                 {followUpNeeded.map((snapshot) => (
                   <div
                     key={snapshot.provider.id}
-                    className="rounded-2xl bg-[#FBFBF9] p-5 ring-1 ring-slate-200"
+                    className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8"
                   >
                     <div className="flex items-center justify-between gap-4">
-                      <div className="font-semibold text-slate-900">
+                      <div className="font-semibold text-[#EFF4FF]">
                         {snapshot.provider.name}
                       </div>
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#8A7458] ring-1 ring-slate-200">
+                      <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-400 ring-1 ring-amber-500/30">
                         Follow-up needed
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-slate-600">
+                    <p className="mt-2 text-sm text-[#6B85A8]">
                       QBH can continue outreach and move this provider toward a
                       confirmed appointment.
                     </p>
@@ -345,11 +345,11 @@ function VisitsInner() {
                 ))}
               </div>
             ) : (
-              <div className="mt-6 rounded-2xl bg-[#FBFBF9] p-5 ring-1 ring-slate-200">
-                <div className="font-semibold text-slate-900">
+              <div className="mt-6 rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8">
+                <div className="font-semibold text-[#EFF4FF]">
                   No open follow-ups right now
                 </div>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-[#6B85A8]">
                   Current providers are either booked already or not yet marked
                   for another scheduling attempt.
                 </p>
@@ -357,18 +357,18 @@ function VisitsInner() {
             )}
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <div className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-xl text-slate-900">
+                <h2 className="font-serif text-xl text-[#EFF4FF]">
                   Past visits preview
                 </h2>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-[#6B85A8]">
                   Seeded demo data showing how completed visits can look over
                   time.
                 </p>
               </div>
-              <span className="rounded-full bg-[#F7FAF6] px-3 py-1 text-xs font-semibold text-[#6F8168] ring-1 ring-slate-200">
+              <span className="rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
                 Demo preview
               </span>
             </div>
@@ -377,41 +377,41 @@ function VisitsInner() {
               {pastVisits.map((visit) => (
                 <div
                   key={`${visit.date}-${visit.title}`}
-                  className="rounded-2xl bg-[#F7FAF6] p-5 ring-1 ring-slate-200"
+                  className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8"
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <div className="text-sm font-semibold text-slate-500">
+                    <div className="text-sm font-semibold text-[#4D6480]">
                       {visit.date}
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                    <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#6B85A8] ring-1 ring-white/10">
                       {visit.tag}
                     </span>
                   </div>
-                  <div className="mt-2 font-semibold text-slate-900">
+                  <div className="mt-2 font-semibold text-[#EFF4FF]">
                     {visit.title}
                   </div>
-                  <div className="mt-1 text-sm text-slate-600">
+                  <div className="mt-1 text-sm text-[#6B85A8]">
                     {visit.provider}
                   </div>
-                  <p className="mt-3 text-sm text-slate-600">{visit.detail}</p>
+                  <p className="mt-3 text-sm text-[#6B85A8]">{visit.detail}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-xl text-slate-900">
+              <h2 className="font-serif text-xl text-[#EFF4FF]">
                 Visit summaries preview
               </h2>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-[#6B85A8]">
                 Future QBH layer connecting scheduling, transcripts, outcomes,
                 and recommended next steps.
               </p>
             </div>
-            <span className="rounded-full bg-[#F7FAF6] px-3 py-1 text-xs font-semibold text-[#6F8168] ring-1 ring-slate-200">
+            <span className="rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
               Future layer
             </span>
           </div>
@@ -420,11 +420,11 @@ function VisitsInner() {
             {visitSummaries.map((item) => (
               <div
                 key={item.title}
-                className="rounded-2xl bg-[#FBFBF9] p-5 ring-1 ring-slate-200"
+                className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8"
               >
-                <div className="font-semibold text-slate-900">{item.title}</div>
-                <div className="mt-1 text-sm text-slate-600">{item.provider}</div>
-                <p className="mt-3 text-sm text-slate-600">{item.detail}</p>
+                <div className="font-semibold text-[#EFF4FF]">{item.title}</div>
+                <div className="mt-1 text-sm text-[#6B85A8]">{item.provider}</div>
+                <p className="mt-3 text-sm text-[#6B85A8]">{item.detail}</p>
               </div>
             ))}
           </div>
@@ -436,7 +436,7 @@ function VisitsInner() {
 
 export default function VisitsPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#F5F1E8]" />}>
+    <Suspense fallback={<main className="min-h-screen bg-[#080C14]" />}>
       <VisitsInner />
     </Suspense>
   );

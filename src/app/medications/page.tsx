@@ -67,14 +67,14 @@ export default function MedicationsPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#F5F1E8]">
+    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-slate-900">
+            <h1 className="font-serif text-3xl tracking-tight text-[#EFF4FF]">
               Medications
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-slate-600">
+            <p className="mt-2 max-w-2xl text-base text-[#6B85A8]">
               Medications give QBH a structured view of what you are taking, what
               changed, and how prescriptions connect to visits, follow-ups, and
               long-term care planning.
@@ -83,25 +83,25 @@ export default function MedicationsPage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+            className="rounded-xl border border-white/10 bg-[#0F1520] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
-        <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-xl text-slate-900">
+              <h2 className="font-serif text-xl text-[#EFF4FF]">
                 Active medications
               </h2>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-[#6B85A8]">
                 Seeded demo medications showing how QBH can organize an active
                 medication list.
               </p>
             </div>
 
-            <span className="rounded-full bg-[#F7FAF6] px-3 py-1 text-xs font-semibold text-[#6F8168] ring-1 ring-slate-200">
+            <span className="rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
               Demo preview
             </span>
           </div>
@@ -110,32 +110,32 @@ export default function MedicationsPage() {
             {activeMedications.map((med) => (
               <div
                 key={med.name}
-                className="rounded-2xl bg-[#F7FAF6] p-5 ring-1 ring-slate-200"
+                className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <div className="font-semibold text-slate-900">
+                  <div className="font-semibold text-[#EFF4FF]">
                     {med.name} {med.dose}
                   </div>
 
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                  <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#6B85A8] ring-1 ring-white/10">
                     {med.status}
                   </span>
                 </div>
 
-                <div className="mt-3 text-sm text-slate-700">{med.schedule}</div>
-                <div className="mt-1 text-sm text-slate-600">{med.started}</div>
-                <div className="mt-3 text-sm text-slate-600">{med.purpose}</div>
+                <div className="mt-3 text-sm text-[#9AB0CC]">{med.schedule}</div>
+                <div className="mt-1 text-sm text-[#6B85A8]">{med.started}</div>
+                <div className="mt-3 text-sm text-[#6B85A8]">{med.purpose}</div>
               </div>
             ))}
           </div>
         </section>
 
         <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="font-serif text-xl text-slate-900">
+          <div className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+            <h2 className="font-serif text-xl text-[#EFF4FF]">
               Medication history
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-[#6B85A8]">
               Seeded demo history showing how medication changes can be tracked
               over time.
             </p>
@@ -144,33 +144,33 @@ export default function MedicationsPage() {
               {medicationHistory.map((item) => (
                 <div
                   key={`${item.date}-${item.title}`}
-                  className="rounded-2xl bg-[#FBFBF9] p-5 ring-1 ring-slate-200"
+                  className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8"
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <div className="text-sm font-semibold text-slate-500">
+                    <div className="text-sm font-semibold text-[#4D6480]">
                       {item.date}
                     </div>
 
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                    <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#6B85A8] ring-1 ring-white/10">
                       {item.tag}
                     </span>
                   </div>
 
-                  <div className="mt-2 font-semibold text-slate-900">
+                  <div className="mt-2 font-semibold text-[#EFF4FF]">
                     {item.title}
                   </div>
 
-                  <p className="mt-3 text-sm text-slate-600">{item.detail}</p>
+                  <p className="mt-3 text-sm text-[#6B85A8]">{item.detail}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="font-serif text-xl text-slate-900">
+          <div className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+            <h2 className="font-serif text-xl text-[#EFF4FF]">
               Future medication system
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-[#6B85A8]">
               In the full QBH platform, medications become a connected layer
               across visits, goals, timeline memory, and household care.
             </p>
@@ -179,9 +179,9 @@ export default function MedicationsPage() {
               {futureConnections.map((item) => (
                 <div
                   key={item}
-                  className="rounded-2xl bg-[#FBFBF9] p-4 ring-1 ring-slate-200"
+                  className="rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8"
                 >
-                  <div className="text-sm font-medium text-slate-700">{item}</div>
+                  <div className="text-sm font-medium text-[#9AB0CC]">{item}</div>
                 </div>
               ))}
             </div>

@@ -46,17 +46,15 @@ export default function TimelinePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#F5F1E8]">
+    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
-        {/* Header */}
-
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-slate-900">
+            <h1 className="font-serif text-3xl tracking-tight text-[#EFF4FF]">
               Health Timeline
             </h1>
 
-            <p className="mt-2 max-w-2xl text-base text-slate-600">
+            <p className="mt-2 max-w-2xl text-base text-[#6B85A8]">
               A chronological record of visits, medications, labs, and key
               health milestones. Over time QBH builds a medical memory so you
               never have to reconstruct your care history across portals.
@@ -65,47 +63,43 @@ export default function TimelinePage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+            className="rounded-xl border border-white/10 bg-[#0F1520] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
-        {/* Timeline */}
-
         <div className="mt-10 space-y-6">
           {events.map((event, i) => (
             <div
               key={i}
-              className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+              className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8"
             >
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-slate-500">
+                <div className="text-sm font-semibold text-[#4D6480]">
                   {event.date}
                 </div>
 
-                <span className="rounded-full bg-[#F7FAF6] px-3 py-1 text-xs font-semibold text-[#6F8168] ring-1 ring-slate-200">
+                <span className="rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
                   {event.tag}
                 </span>
               </div>
 
-              <div className="mt-2 font-serif text-lg text-slate-900">
+              <div className="mt-2 font-serif text-lg text-[#EFF4FF]">
                 {event.title}
               </div>
 
-              <p className="mt-2 text-sm text-slate-600">{event.detail}</p>
+              <p className="mt-2 text-sm text-[#6B85A8]">{event.detail}</p>
             </div>
           ))}
         </div>
 
-        {/* Future Architecture Note */}
-
-        <div className="mt-12 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <div className="mt-12 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+          <div className="text-sm font-semibold uppercase tracking-wide text-[#4D6480]">
             Future architecture
           </div>
 
-          <p className="mt-3 text-sm text-slate-600">
+          <p className="mt-3 text-sm text-[#6B85A8]">
             In the full QBH platform this timeline will be generated
             automatically from visit transcripts, medical records,
             medications, and care coordination activity. The system will

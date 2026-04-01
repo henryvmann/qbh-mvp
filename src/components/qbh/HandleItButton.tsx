@@ -77,7 +77,7 @@ export default function HandleItButton({
         type="button"
         onClick={onClick}
         disabled={loading}
-        className="group relative w-full overflow-hidden rounded-2xl bg-[#7B9D83] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.98] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+        className="group relative w-full overflow-hidden rounded-2xl bg-[#5DE8C5] px-4 py-2.5 text-sm font-semibold text-[#080C14] shadow-sm transition hover:brightness-[0.98] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
       >
         <span className="relative z-10">{loading ? "One moment…" : label}</span>
         <span className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100">
@@ -90,8 +90,8 @@ export default function HandleItButton({
           className={
             "mt-2 rounded-xl px-3 py-2 text-xs shadow-sm " +
             (toast.kind === "ok"
-              ? "bg-[#E7EFE5] text-[#2F3A2B]"
-              : "bg-[#F3EBDD] text-[#4A3B22]")
+              ? "bg-[#5DE8C5]/15 text-[#5DE8C5]"
+              : "bg-red-500/15 text-red-400")
           }
         >
           {toast.text}

@@ -9,10 +9,10 @@ function badge(kind: "good" | "warn" | "neutral") {
   const base =
     "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset";
   if (kind === "good")
-    return `${base} bg-[#E7EFE5] text-[#2F3A2B] ring-black/5`;
+    return `${base} bg-emerald-500/15 text-emerald-400 ring-emerald-500/30`;
   if (kind === "warn")
-    return `${base} bg-[#F3EBDD] text-[#4A3B22] ring-black/5`;
-  return `${base} bg-white/70 text-slate-700 ring-black/5`;
+    return `${base} bg-amber-500/15 text-amber-400 ring-amber-500/30`;
+  return `${base} bg-white/8 text-[#6B85A8] ring-white/10`;
 }
 
 function labelForAttemptStatus(status: string): string {
@@ -46,11 +46,11 @@ export default function BookingStatusPanel({ snapshot }: Props) {
     : { kind: "neutral" as const, text: "In progress" };
 
   return (
-    <div className="mt-4 rounded-2xl bg-white/70 p-4 ring-1 ring-black/5">
+    <div className="mt-4 rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-slate-900">{headline}</div>
-          <div className="mt-1 text-sm text-slate-700">
+          <div className="text-sm font-semibold text-[#EFF4FF]">{headline}</div>
+          <div className="mt-1 text-sm text-[#6B85A8]">
             {ev ? (
               <span>
                 {formatDateRange(ev.start_at, ev.end_at, ev.timezone ?? undefined)}
@@ -58,7 +58,7 @@ export default function BookingStatusPanel({ snapshot }: Props) {
             ) : attempt ? (
               <span>
                 Latest attempt:{" "}
-                <span className="font-medium text-slate-900">
+                <span className="font-medium text-[#EFF4FF]">
                   {labelForAttemptStatus(attempt.status)}
                 </span>
               </span>
@@ -71,7 +71,7 @@ export default function BookingStatusPanel({ snapshot }: Props) {
         <span className={badge(pill.kind)}>{pill.text}</span>
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
+      <div className="mt-3 flex items-center justify-between text-xs text-[#4D6480]">
         <div>{attempt ? <span>Attempt #{attempt.id}</span> : <span>—</span>}</div>
         <div>{ev ? <span>Calendar updated</span> : <span>System of record: Supabase</span>}</div>
       </div>

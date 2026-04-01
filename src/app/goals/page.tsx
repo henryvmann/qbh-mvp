@@ -61,14 +61,14 @@ export default function GoalsPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#F5F1E8]">
+    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-slate-900">
+            <h1 className="font-serif text-3xl tracking-tight text-[#EFF4FF]">
               Goals
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-slate-600">
+            <p className="mt-2 max-w-2xl text-base text-[#6B85A8]">
               Goals help QBH prioritize what matters most, then connect those
               priorities to scheduling, follow-ups, medications, and household
               coordination over time.
@@ -77,23 +77,23 @@ export default function GoalsPage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+            className="rounded-xl border border-white/10 bg-[#0F1520] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
-        <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-xl text-slate-900">Active goals</h2>
-              <p className="mt-2 text-sm text-slate-600">
+              <h2 className="font-serif text-xl text-[#EFF4FF]">Active goals</h2>
+              <p className="mt-2 text-sm text-[#6B85A8]">
                 Seeded demo goals showing how QBH can connect priorities to
                 concrete actions.
               </p>
             </div>
 
-            <span className="rounded-full bg-[#F7FAF6] px-3 py-1 text-xs font-semibold text-[#6F8168] ring-1 ring-slate-200">
+            <span className="rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
               Demo preview
             </span>
           </div>
@@ -102,19 +102,19 @@ export default function GoalsPage() {
             {activeGoals.map((goal) => (
               <div
                 key={goal.title}
-                className="rounded-2xl bg-[#F7FAF6] p-5 ring-1 ring-slate-200"
+                className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <div className="font-semibold text-slate-900">{goal.title}</div>
+                  <div className="font-semibold text-[#EFF4FF]">{goal.title}</div>
 
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                  <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#6B85A8] ring-1 ring-white/10">
                     {goal.status}
                   </span>
                 </div>
 
-                <p className="mt-3 text-sm text-slate-600">{goal.detail}</p>
+                <p className="mt-3 text-sm text-[#6B85A8]">{goal.detail}</p>
 
-                <div className="mt-3 text-sm text-slate-700">{goal.nextStep}</div>
+                <div className="mt-3 text-sm text-[#9AB0CC]">{goal.nextStep}</div>
               </div>
             ))}
           </div>
@@ -124,20 +124,20 @@ export default function GoalsPage() {
           {goalCategories.map((item) => (
             <div
               key={item.title}
-              className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
+              className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8"
             >
-              <h2 className="font-serif text-xl text-slate-900">{item.title}</h2>
-              <p className="mt-3 text-sm text-slate-600">{item.detail}</p>
+              <h2 className="font-serif text-xl text-[#EFF4FF]">{item.title}</h2>
+              <p className="mt-3 text-sm text-[#6B85A8]">{item.detail}</p>
             </div>
           ))}
         </section>
 
-        <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+          <div className="text-sm font-semibold uppercase tracking-wide text-[#4D6480]">
             Future system connections
           </div>
 
-          <p className="mt-3 text-sm text-slate-600">
+          <p className="mt-3 text-sm text-[#6B85A8]">
             In the full QBH platform, goals become a planning layer that ties
             together care coordination, timeline memory, medications, and shared
             household workflows.
@@ -147,9 +147,9 @@ export default function GoalsPage() {
             {futureSystemLinks.map((item) => (
               <div
                 key={item}
-                className="rounded-2xl bg-[#FBFBF9] p-4 ring-1 ring-slate-200"
+                className="rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8"
               >
-                <div className="text-sm font-medium text-slate-700">{item}</div>
+                <div className="text-sm font-medium text-[#9AB0CC]">{item}</div>
               </div>
             ))}
           </div>

@@ -201,28 +201,25 @@ export default function ConnectPage() {
 
   if (showEmailCapture) {
     return (
-      <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
+      <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
         <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
-          <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow-sm ring-1 ring-black/5">
-            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#8B9D83]">
+          <div className="w-full max-w-md rounded-3xl bg-[#0F1520] p-10 ring-1 ring-white/8">
+            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5DE8C5]">
               Quarterback AI
             </div>
 
-            <h1
-              className="mt-4 text-3xl tracking-tight"
-              style={{ fontFamily: "Playfair Display, ui-serif, serif" }}
-            >
+            <h1 className="mt-4 text-3xl tracking-tight">
               {magicLinkSent ? "Check your email" : "Save your account"}
             </h1>
 
             {magicLinkSent ? (
-              <div className="mt-4 text-base text-neutral-600">
-                We sent a sign-in link to <strong>{email}</strong>. Click the
+              <div className="mt-4 text-base text-[#6B85A8]">
+                We sent a sign-in link to <strong className="text-[#EFF4FF]">{email}</strong>. Click the
                 link to access your dashboard.
               </div>
             ) : (
               <>
-                <p className="mt-3 text-base text-neutral-600">
+                <p className="mt-3 text-base text-[#6B85A8]">
                   Your providers have been found. Enter your email to save your
                   account and access your dashboard.
                 </p>
@@ -235,19 +232,19 @@ export default function ConnectPage() {
                     placeholder="you@example.com"
                     required
                     autoFocus
-                    className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-[#8B9D83] focus:outline-none focus:ring-1 focus:ring-[#8B9D83]"
+                    className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:border-[#5DE8C5] focus:outline-none focus:ring-1 focus:ring-[#5DE8C5]"
                   />
 
                   <button
                     type="submit"
                     disabled={sendingMagicLink || !email.trim()}
-                    className="w-full rounded-2xl bg-[#8B9D83] px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-2xl bg-[#5DE8C5] px-6 py-3 text-sm font-medium text-[#080C14] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {sendingMagicLink ? "Sending..." : "Save and continue"}
                   </button>
 
                   {error ? (
-                    <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+                    <div className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
                       {error}
                     </div>
                   ) : null}
@@ -262,27 +259,24 @@ export default function ConnectPage() {
 
   if (analyzing) {
     return (
-      <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
+      <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
         <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
-          <div className="w-full max-w-2xl rounded-3xl bg-white p-10 shadow-sm ring-1 ring-black/5">
-            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#8B9D83]">
+          <div className="w-full max-w-2xl rounded-3xl bg-[#0F1520] p-10 ring-1 ring-white/8">
+            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5DE8C5]">
               Quarterback AI
             </div>
 
-            <h1
-              className="mt-4 text-4xl tracking-tight sm:text-5xl"
-              style={{ fontFamily: "Playfair Display, serif" }}
-            >
+            <h1 className="mt-4 text-4xl tracking-tight sm:text-5xl">
               Analyzing your healthcare spending
             </h1>
 
-            <p className="mt-4 text-lg text-neutral-700">
-              We’re securely reviewing your recent transactions, identifying
+            <p className="mt-4 text-lg text-[#6B85A8]">
+              We're securely reviewing your recent transactions, identifying
               providers, and preparing your dashboard.
             </p>
 
-            <div className="mt-8 h-3 w-full overflow-hidden rounded-full bg-neutral-200">
-              <div className="h-full w-1/2 animate-pulse rounded-full bg-[#8B9D83]" />
+            <div className="mt-8 h-3 w-full overflow-hidden rounded-full bg-white/8">
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-[#5DE8C5]" />
             </div>
 
             <div className="mt-8 space-y-3">
@@ -295,14 +289,14 @@ export default function ConnectPage() {
                     className={[
                       "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition",
                       isActive
-                        ? "bg-[#F3F7F1] text-neutral-900"
-                        : "bg-neutral-50 text-neutral-400",
+                        ? "bg-[#0D2825] text-[#EFF4FF]"
+                        : "bg-[#162030] text-[#4D6480]",
                     ].join(" ")}
                   >
                     <div
                       className={[
                         "h-2.5 w-2.5 rounded-full",
-                        isActive ? "bg-[#8B9D83]" : "bg-neutral-300",
+                        isActive ? "bg-[#5DE8C5]" : "bg-white/15",
                       ].join(" ")}
                     />
                     <span>{message}</span>
@@ -311,7 +305,7 @@ export default function ConnectPage() {
               })}
             </div>
 
-            <div className="mt-8 text-sm text-neutral-500">
+            <div className="mt-8 text-sm text-[#4D6480]">
               This usually takes a few seconds.
             </div>
           </div>
@@ -321,39 +315,36 @@ export default function ConnectPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
+    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
       <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
         <header className="flex items-center justify-between">
           <Link
             href="/start"
-            className="text-sm text-neutral-700 underline underline-offset-4"
+            className="text-sm text-[#6B85A8] underline underline-offset-4"
           >
             Back
           </Link>
 
-          <div className="text-xs text-neutral-500">Step 2 of 3</div>
+          <div className="text-xs text-[#4D6480]">Step 2 of 3</div>
         </header>
 
         <section className="mt-12">
-          <h1
-            className="text-4xl tracking-tight sm:text-5xl"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
+          <h1 className="text-4xl tracking-tight sm:text-5xl">
             Connect your health spending
           </h1>
 
-          <p className="mt-4 max-w-2xl text-lg text-neutral-700">
+          <p className="mt-4 max-w-2xl text-lg text-[#6B85A8]">
             Quarterback uses Plaid to identify real healthcare providers from
             real transactions and build the care picture that powers your
             dashboard.
           </p>
 
-          <div className="mt-10 max-w-2xl rounded-2xl bg-white p-8 shadow-sm ring-1 ring-black/5">
+          <div className="mt-10 max-w-2xl rounded-2xl bg-[#0F1520] p-8 ring-1 ring-white/8">
             <div>
-              <div className="text-sm font-medium text-neutral-900">
+              <div className="text-sm font-medium text-[#EFF4FF]">
                 Secure account connection
               </div>
-              <div className="mt-1 text-sm text-neutral-600">
+              <div className="mt-1 text-sm text-[#6B85A8]">
                 Your account is connected through Plaid. QBH never asks for your
                 banking username or password directly.
               </div>
@@ -363,7 +354,7 @@ export default function ConnectPage() {
               <button
                 onClick={() => open()}
                 disabled={!ready || !linkToken || loadingToken || submitting}
-                className="w-full rounded-2xl bg-[#8B9D83] px-6 py-3 text-white shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-2xl bg-[#5DE8C5] px-6 py-3 text-[#080C14] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loadingToken
                   ? "Preparing secure connection..."
@@ -373,13 +364,13 @@ export default function ConnectPage() {
               </button>
             </div>
 
-            <div className="mt-4 text-center text-xs text-neutral-500">
+            <div className="mt-4 text-center text-xs text-[#4D6480]">
               Plaid-secured connection • Real transaction discovery
             </div>
           </div>
 
           {error ? (
-            <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+            <div className="mt-6 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
               {error}
             </div>
           ) : null}
@@ -388,4 +379,3 @@ export default function ConnectPage() {
     </main>
   );
 }
-

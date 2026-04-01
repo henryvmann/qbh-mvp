@@ -111,26 +111,23 @@ export default function PlaidOAuthRedirectPage() {
   }, [ready, linkToken, receivedRedirectUri, open, submitting]);
 
   return (
-    <main className="min-h-screen bg-[#F5F1E8] text-neutral-900">
+    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
       <div className="mx-auto max-w-3xl px-6 pt-16 pb-16">
-        <h1
-          className="text-4xl tracking-tight sm:text-5xl"
-          style={{ fontFamily: "Playfair Display, serif" }}
-        >
+        <h1 className="text-4xl tracking-tight sm:text-5xl">
           Returning to Quarterback
         </h1>
 
-        <p className="mt-4 max-w-xl text-lg text-neutral-700">
-          We’re securely completing your bank connection.
+        <p className="mt-4 max-w-xl text-lg text-[#6B85A8]">
+          We're securely completing your bank connection.
         </p>
 
-        <div className="mt-8 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-black/5">
-          <div className="text-sm text-neutral-700">
+        <div className="mt-8 rounded-2xl bg-[#0F1520] p-8 ring-1 ring-white/8">
+          <div className="text-sm text-[#6B85A8]">
             {submitting ? "Finishing connection..." : "Resuming secure sign-in..."}
           </div>
 
           {error ? (
-            <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
+            <div className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
               {error}
             </div>
           ) : null}
