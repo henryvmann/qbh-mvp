@@ -9,13 +9,28 @@ export default function PlaidOAuthRedirectPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const receivedRedirectUri =
-    typeof window !== "undefined" ? window.location.href : undefined;
+  const [receivedRedirectUri, setReceivedRedirectUri] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const params = new URLSearchParams(window.location.search);
+    const oauthStateId = params.get("oauth_state_id");
+
+    // If this page was opened in Safari as the Plaid OAuth redirect,
+    // bounce to the custom URL scheme so iOS opens the native app.
+    if (oauthStateId && !window.localStorage.getItem("qbh_plaid_redirect_uri")) {
+      window.location.href = `com.getquarterback.app://plaid/oauth${window.location.search}`;
+      return;
+    }
+
+    // On native, CapacitorInit stores the deep link URL in localStorage.
+    // On web, fall back to the current page URL.
+    const deepLinkUri = window.localStorage.getItem("qbh_plaid_redirect_uri");
+    setReceivedRedirectUri(deepLinkUri || window.location.href);
+
     const storedLinkToken =
+      window.localStorage.getItem("qbh_plaid_link_token") ||
       window.sessionStorage.getItem("qbh_plaid_link_token");
 
     if (!storedLinkToken) {
@@ -35,6 +50,7 @@ export default function PlaidOAuthRedirectPage() {
         setError(null);
 
         const effectiveUserId =
+          window.localStorage.getItem("qbh_user_id") ||
           window.sessionStorage.getItem("qbh_user_id") || "";
 
         if (!effectiveUserId) {
@@ -77,6 +93,8 @@ export default function PlaidOAuthRedirectPage() {
         }
 
         window.sessionStorage.removeItem("qbh_user_id");
+        window.localStorage.removeItem("qbh_plaid_redirect_uri");
+        window.localStorage.removeItem("qbh_plaid_link_token");
         window.location.href = "/dashboard";
       } catch (err) {
         console.log("Plaid OAuth resume failed:", err);

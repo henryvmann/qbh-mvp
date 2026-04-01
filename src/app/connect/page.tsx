@@ -25,6 +25,7 @@ export default function ConnectPage() {
     const newId = crypto.randomUUID();
     setUserId(newId);
     window.sessionStorage.setItem("qbh_user_id", newId);
+    window.localStorage.setItem("qbh_user_id", newId);
   }, []);
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function ConnectPage() {
 
         setLinkToken(data.link_token);
         window.sessionStorage.setItem("qbh_plaid_link_token", data.link_token);
+        window.localStorage.setItem("qbh_plaid_link_token", data.link_token);
       } catch (err) {
         console.log("Link token creation failed:", err);
         setError(

@@ -37,8 +37,8 @@ function checkBasicAuth(request: NextRequest): NextResponse | null {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Apply Basic Auth to all web pages (skip API routes — native app uses those)
-  if (!pathname.startsWith("/api/")) {
+  // Apply Basic Auth to all web pages (skip API routes and /plaid/oauth — native OAuth redirect must reach the page)
+  if (!pathname.startsWith("/api/") && !pathname.startsWith("/plaid/oauth")) {
     const authResult = checkBasicAuth(request);
     if (authResult) return authResult;
   }
