@@ -12,6 +12,7 @@ export default function PlaidOAuthRedirectPage() {
   const [receivedRedirectUri, setReceivedRedirectUri] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    async function init() {
     if (typeof window === "undefined") return;
 
     const params = new URLSearchParams(window.location.search);
@@ -49,6 +50,8 @@ export default function PlaidOAuthRedirectPage() {
     }
 
     setLinkToken(storedLinkToken);
+    }
+    void init();
   }, []);
 
   const { open, ready } = usePlaidLink({
