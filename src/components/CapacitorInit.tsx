@@ -17,9 +17,14 @@ export default function CapacitorInit() {
 
       function handleUrl(url: string) {
         if (url.startsWith("com.getquarterback.app://plaid")) {
+          const hasLinkToken = !!window.localStorage.getItem("qbh_plaid_link_token");
+          if (!hasLinkToken) {
+            // Stale deep link from a previous session — ignore it
+            return;
+          }
           window.localStorage.setItem("qbh_plaid_redirect_uri", url);
           if (!window.location.pathname.includes("/plaid/oauth")) {
-            router.push("/plaid/oauth");
+            window.location.href = "/plaid/oauth";
           }
         }
       }

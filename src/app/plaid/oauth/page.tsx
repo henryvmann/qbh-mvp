@@ -34,8 +34,7 @@ export default function PlaidOAuthRedirectPage() {
       window.sessionStorage.getItem("qbh_plaid_link_token");
 
     if (!storedLinkToken) {
-      // Session expired or was cleared — send back to connect to restart
-      window.location.href = "/connect?oauth_expired=1";
+      setError("Session expired. Please go back and reconnect your bank account.");
       return;
     }
 
