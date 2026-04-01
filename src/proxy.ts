@@ -34,7 +34,7 @@ function checkBasicAuth(request: NextRequest): NextResponse | null {
   });
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Apply Basic Auth to all web pages (skip API routes and /plaid/oauth — native OAuth redirect must reach the page)
