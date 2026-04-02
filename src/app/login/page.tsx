@@ -99,13 +99,13 @@ export default function LoginPage() {
 
           <div className="mt-8 text-center text-sm text-[#4D6480]">
             New here?{" "}
-            <Link
+            <a
               href="/onboarding"
               className="underline underline-offset-4 hover:text-[#6B85A8]"
               style={{ color: "#D4A843" }}
             >
               Get started
-            </Link>
+            </a>
           </div>
         </div>
       </div>
