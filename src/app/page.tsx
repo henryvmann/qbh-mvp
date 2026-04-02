@@ -1,6 +1,35 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "../lib/supabase/client";
 
 export default function HomePage() {
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          router.replace("/dashboard");
+          return;
+        }
+      } catch {
+        // Not authenticated — show landing
+      }
+      setChecking(false);
+    }
+    checkAuth();
+  }, [router]);
+
+  if (checking) {
+    return <main className="min-h-screen bg-[#0B1120]" />;
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0B1120] text-[#EFF4FF]">
       {/* Decorative circle */}
@@ -36,10 +65,10 @@ export default function HomePage() {
           </Link>
 
           <Link
-            href="/dashboard"
+            href="/login"
             className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-[#131B2E] px-8 py-3.5 text-sm font-medium text-[#EFF4FF] shadow-sm"
           >
-            View dashboard
+            Sign in
           </Link>
         </div>
       </div>

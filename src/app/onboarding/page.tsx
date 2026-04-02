@@ -209,6 +209,7 @@ export default function OnboardingPage() {
   });
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [userId, setUserId] = useState("");
   const [plaidConnected, setPlaidConnected] = useState(false);
   const [calendarConnected] = useState(false); // deferred to after auth
@@ -222,6 +223,18 @@ export default function OnboardingPage() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
 
   const plaidHandlerRef = useRef<{ open: () => void } | null>(null);
+
+  /* ---- redirect if already authenticated ---- */
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push("/dashboard");
+      }
+    }
+    checkAuth();
+  }, [router]);
 
   /* ---- initialise user id ---- */
   useEffect(() => {
@@ -323,38 +336,44 @@ export default function OnboardingPage() {
 
   /* ---- Step 5 continue: create user ---- */
   const handleStep5Continue = useCallback(async () => {
-    if (!name.trim() || !email.trim()) return;
+    if (!name.trim() || !email.trim() || password.length < 6) return;
     setError(null);
 
     try {
-      // Save name/email locally — skip magic link for now so user sees the WOW moment
-      window.localStorage.setItem("qbh_user_name", name.trim());
-      window.localStorage.setItem("qbh_user_email", email.trim());
-      window.localStorage.setItem("qbh_survey", JSON.stringify(survey));
+      const supabase = createClient();
 
-      // Send magic link in background (non-blocking) so they can verify later
-      try {
-        const supabase = createClient();
-        await supabase.auth.signInWithOtp({
-          email: email.trim(),
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?app_user_id=${encodeURIComponent(userId)}`,
-            data: {
-              name: name.trim(),
-              app_user_id: userId,
-              survey_answers: JSON.stringify(survey),
-            },
+      // Sign up with email + password
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            name: name.trim(),
+            app_user_id: userId,
+            survey_answers: JSON.stringify(survey),
           },
+        },
+      });
+
+      if (signUpError) throw signUpError;
+
+      // Link the auth user to the app_users row
+      if (signUpData.user) {
+        await apiFetch("/api/auth/link-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            app_user_id: userId,
+            auth_user_id: signUpData.user.id,
+          }),
         });
-      } catch {
-        // Non-critical — user can auth later
       }
 
       setStep(6);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to continue.");
+      setError(err instanceof Error ? err.message : "Failed to create account.");
     }
-  }, [name, email, userId, survey]);
+  }, [name, email, password, userId, survey]);
 
   /* ---- Step 6: run discovery ---- */
   useEffect(() => {
@@ -585,7 +604,7 @@ export default function OnboardingPage() {
 
   // Step 5: Let's get you set up
   if (step === 5) {
-    const canContinue = name.trim().length > 0 && email.trim().length > 0;
+    const canContinue = name.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
     return (
       <Shell>
         <StepCounter current={5} total={8} />
@@ -613,6 +632,18 @@ export default function OnboardingPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
+            className="w-full rounded-xl border px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:outline-none focus:ring-1"
+            style={{
+              backgroundColor: CARD_BG,
+              borderColor: CARD_BORDER,
+            }}
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Create a password"
+            minLength={6}
             className="w-full rounded-xl border px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:outline-none focus:ring-1"
             style={{
               backgroundColor: CARD_BG,
@@ -828,7 +859,7 @@ export default function OnboardingPage() {
             <span>Health history secured ✓</span>
           </div>
 
-          <GoldButton onClick={() => router.push(`/dashboard?app_user_id=${encodeURIComponent(userId)}`)}>
+          <GoldButton onClick={() => router.push("/dashboard")}>
             Enter QB &rarr;
           </GoldButton>
         </div>

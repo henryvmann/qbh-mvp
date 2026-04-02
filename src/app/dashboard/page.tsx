@@ -210,11 +210,7 @@ function DashboardInner() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Support unauthenticated access via app_user_id query param (onboarding flow)
-    const appUserId = searchParams.get("app_user_id") || window.localStorage.getItem("qbh_user_id") || "";
-    const suffix = appUserId ? `?app_user_id=${encodeURIComponent(appUserId)}` : "";
-
-    apiFetch(`/api/dashboard/data${suffix}`)
+    apiFetch("/api/dashboard/data")
       .then((res) => {
         if (res.status === 401) {
           router.push("/login");
@@ -226,7 +222,7 @@ function DashboardInner() {
         if (json?.ok) setData(json);
       })
       .finally(() => setLoading(false));
-  }, [router, searchParams]);
+  }, [router]);
 
   if (loading) {
     return <main className="min-h-screen bg-[#080C14]" />;
