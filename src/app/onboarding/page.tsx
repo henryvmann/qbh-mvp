@@ -224,17 +224,8 @@ export default function OnboardingPage() {
 
   const plaidHandlerRef = useRef<{ open: () => void } | null>(null);
 
-  /* ---- redirect if already authenticated ---- */
-  useEffect(() => {
-    async function checkAuth() {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        router.push("/dashboard");
-      }
-    }
-    checkAuth();
-  }, [router]);
+  // No auth guard here — if someone explicitly navigates to /onboarding,
+  // let them through. The home page handles the "authenticated → dashboard" redirect.
 
   /* ---- initialise user id ---- */
   useEffect(() => {
