@@ -96,6 +96,31 @@ function classifyProvider(
     "PT",
     "CHIROPRACTIC",
     "PEDS",
+    "SURG",
+    "NEURO",
+    "GASTRO",
+    "PHYSI",
+    "PSYCH",
+    "ENDO",
+    "ALLERG",
+    "ANESTH",
+    "ONCOL",
+    "RHEUM",
+    "UROL",
+    "PULMON",
+    "REHAB",
+    "WELLNESS",
+    "NURSE",
+    "MIDWI",
+    "PATHOL",
+    "DIAGNOS",
+    "INFUSION",
+    "DIALYSIS",
+    "HOSPICE",
+    "URGENT",
+    "AMBUL",
+    "WOMEN",
+    "EYE",
   ];
 
   const ignoreHints = [
@@ -131,9 +156,9 @@ function classifyProvider(
     "DEEL",
   ];
 
-  const pharmacyHealthcareHints = ["CVS", "WALGREENS"];
+  const pharmacyHealthcareHints = ["CVS", "WALGREENS", "RITE AID", "DUANE READE"];
 
-  const pharmacyReviewHints = ["RITE AID", "DUANE READE"];
+  const pharmacyReviewHints: string[] = [];
 
   const hasHint = (hint: string): boolean => {
     if (hint.includes(" ")) {

@@ -218,6 +218,8 @@ export default function OnboardingPage() {
   const [discoveryResults, setDiscoveryResults] = useState<DiscoveryResult[]>(
     []
   );
+  const [pendingProviders, setPendingProviders] = useState<Array<{ id: string; name: string; visit_count: number }>>([]);
+  const [reviewingProviders, setReviewingProviders] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingDiscovery, setLoadingDiscovery] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -430,6 +432,20 @@ export default function OnboardingPage() {
         await new Promise((r) => setTimeout(r, 1200));
 
         if (!cancelled) {
+          // Fetch providers needing review
+          const effectiveId = effectiveUserId || window.localStorage.getItem("qbh_user_id") || "";
+          try {
+            const pendingRes = await apiFetch(`/api/providers/pending?app_user_id=${encodeURIComponent(effectiveId)}`);
+            const pendingData = await pendingRes.json();
+            if (pendingRes.ok && pendingData?.providers?.length > 0) {
+              setPendingProviders(pendingData.providers);
+              setReviewingProviders(true);
+              setLoadingDiscovery(false);
+              return; // show review step instead of advancing
+            }
+          } catch {
+            // If pending fetch fails, just skip review
+          }
           setLoadingDiscovery(false);
           setStep(7);
         }
@@ -733,6 +749,75 @@ export default function OnboardingPage() {
             ))}
           </div>
         </div>
+      </Shell>
+    );
+  }
+
+  // Provider review step (between step 6 and 7)
+  if (step === 6 && reviewingProviders && pendingProviders.length > 0) {
+    async function handleProviderReview(providerId: string, action: "approve" | "dismiss") {
+      const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
+      try {
+        await apiFetch("/api/providers/review", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider_id: providerId, action, app_user_id: effectiveUserId }),
+        });
+      } catch {
+        // Best-effort
+      }
+      setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
+    }
+
+    const remaining = pendingProviders.length;
+
+    return (
+      <Shell>
+        <StepCounter current={6} total={8} />
+        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
+          We found these — are they your healthcare providers?
+        </h1>
+        <p className="mt-2 text-sm text-[#6B85A8]">
+          {remaining} provider{remaining !== 1 ? "s" : ""} to review
+        </p>
+
+        <div className="mt-6 flex flex-col gap-3">
+          {pendingProviders.map((provider) => (
+            <div
+              key={provider.id}
+              className="flex items-center justify-between rounded-xl border px-4 py-3"
+              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+            >
+              <div>
+                <div className="text-sm font-medium text-[#EFF4FF]">{provider.name}</div>
+                <div className="text-xs text-[#6B85A8]">
+                  {provider.visit_count} transaction{provider.visit_count !== 1 ? "s" : ""}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleProviderReview(provider.id, "approve")}
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+                  style={{ backgroundColor: GOLD, color: NAVY }}
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => handleProviderReview(provider.id, "dismiss")}
+                  className="rounded-lg border border-white/10 bg-[#1A2336] px-3 py-1.5 text-xs text-[#6B85A8]"
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {pendingProviders.length === 0 && (
+          <GoldButton onClick={() => { setReviewingProviders(false); setStep(7); }}>
+            Continue &rarr;
+          </GoldButton>
+        )}
       </Shell>
     );
   }

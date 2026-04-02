@@ -19,8 +19,8 @@ export async function writeDiscoveredProviders({
   providers,
   transactions,
 }: WriteDiscoveryParams) {
-  const healthcareProviders = providers.filter(
-    (provider) => provider.bucket === "HEALTHCARE"
+  const writableProviders = providers.filter(
+    (provider) => provider.bucket === "HEALTHCARE" || provider.bucket === "REVIEW_NEEDED"
   );
 
   const txById = new Map(
@@ -54,7 +54,7 @@ export async function writeDiscoveredProviders({
 
   const seenInsertNames = new Set<string>();
 
-  const providersToInsert = healthcareProviders
+  const providersToInsert = writableProviders
     .filter((provider) => {
       const key = cleanName(provider.provider_name);
       if (!key) return false;
@@ -66,7 +66,7 @@ export async function writeDiscoveredProviders({
     .map((provider) => ({
       app_user_id: userId,
       name: provider.provider_name.trim(),
-      status: "active",
+      status: provider.bucket === "HEALTHCARE" ? "active" : "review_needed",
       guessed_portal_brand: null,
       guessed_portal_confidence: null,
     }));
@@ -117,7 +117,7 @@ export async function writeDiscoveredProviders({
 
   const seenVisitTransactionIds = new Set<string>();
 
-  for (const provider of healthcareProviders) {
+  for (const provider of writableProviders) {
     const cleanProviderName = cleanName(provider.provider_name);
     const providerId = providerIdByName.get(cleanProviderName);
 
