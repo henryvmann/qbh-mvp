@@ -78,6 +78,7 @@ export default function ConnectPage() {
           throw new Error(data?.error || "Failed to create Plaid Link token.");
         }
 
+        console.log("[Connect] Created link token:", data.link_token.slice(0, 20));
         setLinkToken(data.link_token);
         window.sessionStorage.setItem("qbh_plaid_link_token", data.link_token);
         window.localStorage.setItem("qbh_plaid_link_token", data.link_token);

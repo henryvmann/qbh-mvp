@@ -8,7 +8,13 @@ import {
 } from "../../../../lib/qbh/queries/dashboard";
 
 export async function GET(req: Request) {
-  const appUserId = await getSessionAppUserId(req);
+  // Try session auth first, fall back to query param for onboarding flow
+  let appUserId = await getSessionAppUserId(req);
+
+  if (!appUserId) {
+    const url = new URL(req.url);
+    appUserId = url.searchParams.get("app_user_id") || null;
+  }
 
   if (!appUserId) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });

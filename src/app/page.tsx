@@ -2,59 +2,46 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
-      <div className="mx-auto max-w-5xl px-6 pt-16 pb-20">
+    <main className="relative min-h-screen overflow-hidden bg-[#0B1120] text-[#EFF4FF]">
+      {/* Decorative circle */}
+      <div
+        className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-white/10"
+        aria-hidden
+      />
 
-        <header className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-[#0F1520] ring-1 ring-white/8 grid place-items-center">
-              <span className="text-sm font-semibold text-[#5DE8C5]">
-                QB
-              </span>
-            </div>
+      <div className="relative mx-auto max-w-3xl px-6 pt-20 pb-20">
+        <div
+          className="text-xs font-semibold uppercase tracking-[0.25em]"
+          style={{ color: "#D4A843" }}
+        >
+          QBH &#10022; Your Health Ally
+        </div>
 
-            <div>
-              <div className="text-sm text-[#6B85A8]">
-                Quarterback Health
-              </div>
-            </div>
-          </div>
+        <h1 className="mt-6 text-4xl font-light tracking-tight sm:text-5xl">
+          Your healthcare, handled.
+        </h1>
+
+        <p className="mt-4 max-w-xl text-lg text-[#6B85A8]">
+          You don&apos;t have to manage this alone. QB keeps track, follows up,
+          and handles the details so you don&apos;t have to.
+        </p>
+
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <Link
+            href="/onboarding"
+            className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-semibold shadow-sm"
+            style={{ backgroundColor: "#D4A843", color: "#0B1120" }}
+          >
+            Get started &rarr;
+          </Link>
 
           <Link
             href="/dashboard"
-            className="text-sm underline underline-offset-4 text-[#6B85A8] hover:text-[#EFF4FF]"
+            className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-[#131B2E] px-8 py-3.5 text-sm font-medium text-[#EFF4FF] shadow-sm"
           >
-            Dashboard
+            View dashboard
           </Link>
-        </header>
-
-        <section className="mt-16">
-          <h1 className="text-5xl tracking-tight">
-            Your healthcare, handled.
-          </h1>
-
-          <p className="mt-4 max-w-2xl text-lg text-[#6B85A8]">
-            Quarterback tracks your providers, surfaces what's overdue,
-            and schedules appointments on your behalf.
-          </p>
-
-          <div className="mt-8 flex gap-4">
-            <Link
-              href="/connect"
-              className="rounded-2xl bg-[#5DE8C5] px-6 py-3 text-[#080C14] font-medium shadow-sm"
-            >
-              Connect your account
-            </Link>
-
-            <Link
-              href="/dashboard"
-              className="rounded-2xl bg-[#0F1520] px-6 py-3 ring-1 ring-white/8 shadow-sm text-[#EFF4FF]"
-            >
-              View dashboard
-            </Link>
-          </div>
-        </section>
-
+        </div>
       </div>
     </main>
   );

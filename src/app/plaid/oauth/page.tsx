@@ -17,38 +17,46 @@ export default function PlaidOAuthRedirectPage() {
 
     const params = new URLSearchParams(window.location.search);
     const oauthStateId = params.get("oauth_state_id");
+    console.log("[PlaidOAuth] init — oauthStateId:", oauthStateId, "pathname:", window.location.pathname);
 
     // If this page was opened in Safari as the Plaid OAuth redirect,
     // bounce to the custom URL scheme so iOS opens the native app.
     if (oauthStateId && !window.localStorage.getItem("qbh_plaid_redirect_uri")) {
+      console.log("[PlaidOAuth] In Safari — bouncing to custom scheme");
       window.location.href = `com.getquarterback.app://plaid/oauth${window.location.search}`;
       return;
     }
 
-    // On native, CapacitorInit stores the deep link URL in localStorage.
+    // CapacitorInit stores the HTTPS redirect URI (what Plaid needs for receivedRedirectUri).
     // On web, fall back to the current page URL.
-    const deepLinkUri = window.localStorage.getItem("qbh_plaid_redirect_uri");
-    setReceivedRedirectUri(deepLinkUri || window.location.href);
+    const storedRedirectUri = window.localStorage.getItem("qbh_plaid_redirect_uri");
+    console.log("[PlaidOAuth] storedRedirectUri:", storedRedirectUri);
+    setReceivedRedirectUri(storedRedirectUri || window.location.href);
 
     let storedLinkToken =
       window.localStorage.getItem("qbh_plaid_link_token") ||
       window.sessionStorage.getItem("qbh_plaid_link_token");
 
+    console.log("[PlaidOAuth] localStorage link token:", storedLinkToken ? storedLinkToken.slice(0, 20) : "missing");
+
     if (!storedLinkToken) {
       try {
         const { Preferences } = await import("@capacitor/preferences");
         const result = await Preferences.get({ key: "qbh_plaid_link_token" });
+        console.log("[PlaidOAuth] Preferences link token:", result.value ? "found" : "missing");
         if (result.value) storedLinkToken = result.value;
-      } catch {
-        // ignore
+      } catch (e) {
+        console.error("[PlaidOAuth] Preferences error:", e);
       }
     }
 
     if (!storedLinkToken) {
+      console.log("[PlaidOAuth] No link token found — showing session expired error");
       setError("Session expired. Please go back and reconnect your bank account.");
       return;
     }
 
+    console.log("[PlaidOAuth] Link token found — initializing Plaid Link");
     setLinkToken(storedLinkToken);
     }
     void init();
