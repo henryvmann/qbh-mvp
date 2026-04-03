@@ -661,12 +661,6 @@ export default function OnboardingPage() {
         </div>
 
         <div className="mt-6 flex flex-col gap-3">
-          <ConnectionRow
-            label="Connect Billing"
-            connected={plaidConnected}
-            pending={false}
-            onClick={openPlaidLink}
-          />
           <OptionRow
             label="Connect Gmail Calendar after setup"
             selected={calendarPending}
@@ -686,9 +680,15 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        <GoldButton onClick={handleStep5Continue} disabled={!canContinue}>
-          Continue &rarr;
-        </GoldButton>
+        {plaidConnected ? (
+          <GoldButton onClick={handleStep5Continue} disabled={!canContinue}>
+            Continue &rarr;
+          </GoldButton>
+        ) : (
+          <GoldButton onClick={() => { if (canContinue) openPlaidLink(); }} disabled={!canContinue}>
+            Connect your bank &rarr;
+          </GoldButton>
+        )}
       </Shell>
     );
   }
