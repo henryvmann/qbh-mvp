@@ -447,13 +447,14 @@ export default function OnboardingPage() {
             // If pending fetch fails, just skip review
           }
           setLoadingDiscovery(false);
-          setStep(7);
+          // Only show results steps if we have data, otherwise skip to final
+          setStep(plaidConnected || plaidPublicToken ? 7 : 9);
         }
       } catch (err) {
         if (!cancelled) {
           console.error("Discovery failed:", err);
           setLoadingDiscovery(false);
-          setStep(7); // advance anyway with generic items
+          setStep(9); // skip to final on error
         }
       }
     }
