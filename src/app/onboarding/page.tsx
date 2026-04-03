@@ -333,41 +333,30 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      const supabase = createClient();
-
-      // Sign up with email + password
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            name: name.trim(),
-            app_user_id: userId,
-            survey_answers: JSON.stringify(survey),
-          },
-        },
+      // Create account via server API (auto-confirms email)
+      const signupRes = await apiFetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          app_user_id: userId,
+          name: name.trim(),
+          survey_answers: JSON.stringify(survey),
+        }),
       });
+      const signupData = await signupRes.json();
+      if (!signupRes.ok || !signupData?.ok) {
+        throw new Error(signupData?.error || "Failed to create account.");
+      }
 
-      if (signUpError) throw signUpError;
-
-      // Sign in immediately to create a session (signUp may not if email confirmation is on)
+      // Sign in to create client session
+      const supabase = createClient();
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (signInError) throw signInError;
-
-      // Link the auth user to the app_users row
-      if (signUpData.user) {
-        await apiFetch("/api/auth/link-user", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            app_user_id: userId,
-            auth_user_id: signUpData.user.id,
-          }),
-        });
-      }
 
       setStep(6);
     } catch (err) {
