@@ -350,6 +350,13 @@ export default function OnboardingPage() {
 
       if (signUpError) throw signUpError;
 
+      // Sign in immediately to create a session (signUp may not if email confirmation is on)
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (signInError) throw signInError;
+
       // Link the auth user to the app_users row
       if (signUpData.user) {
         await apiFetch("/api/auth/link-user", {
@@ -447,14 +454,14 @@ export default function OnboardingPage() {
             // If pending fetch fails, just skip review
           }
           setLoadingDiscovery(false);
-          // Only show results steps if we have data, otherwise skip to final
-          setStep(plaidConnected || plaidPublicToken ? 7 : 9);
+          // Go to dashboard — user is authenticated, discovery is done
+          router.push("/dashboard");
         }
       } catch (err) {
         if (!cancelled) {
           console.error("Discovery failed:", err);
           setLoadingDiscovery(false);
-          setStep(9); // skip to final on error
+          router.push("/dashboard"); // go to dashboard even on error
         }
       }
     }
@@ -815,8 +822,8 @@ export default function OnboardingPage() {
         </div>
 
         {pendingProviders.length === 0 && (
-          <GoldButton onClick={() => { setReviewingProviders(false); setStep(7); }}>
-            Continue &rarr;
+          <GoldButton onClick={() => router.push("/dashboard")}>
+            Enter QB &rarr;
           </GoldButton>
         )}
       </Shell>
