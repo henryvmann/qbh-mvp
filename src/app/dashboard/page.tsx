@@ -17,6 +17,7 @@ type DashboardStat = {
 
 type DashboardData = {
   appUserId: string;
+  userName: string | null;
   snapshots: any[];
   discoverySummary: { chargesAnalyzed: number };
   hasGoogleCalendarConnection: boolean;
@@ -78,17 +79,19 @@ function TopNav() {
   ];
 
   return (
-    <nav className="mt-5 rounded-2xl bg-[#131B2E] px-3 py-2 ring-1 ring-white/8">
-      <div className="flex flex-wrap items-center gap-2">
-        {items.map((it) => (
-          <Link
-            key={it.href}
-            href={it.href}
-            className="rounded-xl px-3 py-2 text-sm font-medium text-[#6B85A8] hover:bg-[#162030] hover:text-[#EFF4FF]"
-          >
-            {it.label}
-          </Link>
-        ))}
+    <nav className="sticky top-0 z-10 bg-[#0B1120] py-2">
+      <div className="rounded-2xl bg-[#131B2E] px-3 py-2 ring-1 ring-white/8">
+        <div className="flex flex-wrap items-center gap-2">
+          {items.map((it) => (
+            <Link
+              key={it.href}
+              href={it.href}
+              className="rounded-xl px-3 py-2 text-base font-medium text-[#6B85A8] hover:bg-[#162030] hover:text-[#EFF4FF]"
+            >
+              {it.label}
+            </Link>
+          ))}
+        </div>
       </div>
     </nav>
   );
@@ -230,7 +233,7 @@ function DashboardInner() {
 
   if (!data) return null;
 
-  const { appUserId, snapshots, discoverySummary, hasGoogleCalendarConnection } = data;
+  const { appUserId, userName, snapshots, discoverySummary, hasGoogleCalendarConnection } = data;
 
   const doctors = snapshots.filter((s) => classifyProvider(s.provider.name) === "doctor");
   const labs = snapshots.filter((s) => classifyProvider(s.provider.name) === "lab");
@@ -268,9 +271,14 @@ function DashboardInner() {
 
         {!showAnalyzer ? (
           <>
-            <DailyBrief upcoming={upcoming} followUps={followUps} name="Henry" />
-
             <TopNav />
+
+            <DailyBrief
+              upcoming={upcoming}
+              followUps={followUps}
+              name={userName ?? undefined}
+              hasCalendar={hasGoogleCalendarConnection}
+            />
 
             <CalendarConnectionBanner
               userId={appUserId}
