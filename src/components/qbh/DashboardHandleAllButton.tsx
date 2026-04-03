@@ -92,7 +92,7 @@ export default function DashboardHandleAllButton({
       <button
         onClick={handleAll}
         disabled={disabled}
-        className="inline-flex items-center justify-center rounded-xl bg-[#5DE8C5] px-4 py-2 text-sm font-medium text-[#080C14] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting
           ? "Starting booking..."
@@ -124,7 +124,7 @@ export default function DashboardHandleAllButton({
             <button
               onClick={startHandleAll}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#5DE8C5] px-4 py-2 text-sm font-medium text-[#080C14] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting
                 ? "Starting booking..."

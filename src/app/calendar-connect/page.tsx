@@ -85,7 +85,7 @@ function CalendarConnectPageInner() {
   }
 
   return (
-    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
+    <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
       <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
         <header className="flex items-center justify-between">
           <Link
@@ -108,7 +108,7 @@ function CalendarConnectPageInner() {
             your real availability, and schedule safely on your behalf.
           </p>
 
-          <div className="mt-10 rounded-2xl bg-[#0F1520] p-8 ring-1 ring-white/8">
+          <div className="mt-10 rounded-2xl bg-[#131B2E] p-8 ring-1 ring-white/8">
             <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr]">
               <div>
                 <div className="text-sm font-medium text-[#EFF4FF]">
@@ -147,7 +147,7 @@ function CalendarConnectPageInner() {
                   <button
                     onClick={startGoogleCalendarConnect}
                     disabled={!userId || submitting}
-                    className="w-full rounded-2xl bg-[#5DE8C5] px-6 py-3 text-[#080C14] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-2xl bg-[#D4A843] px-6 py-3 text-[#0B1120] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting
                       ? "Redirecting to Google..."
@@ -178,7 +178,7 @@ function CalendarConnectPageInner() {
 
 export default function CalendarConnectPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#080C14]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#0B1120]" />}>
       <CalendarConnectPageInner />
     </Suspense>
   );

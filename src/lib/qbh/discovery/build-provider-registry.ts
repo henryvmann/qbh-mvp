@@ -160,6 +160,8 @@ function classifyProvider(
     "AMC", "REGAL", "CINEMA", "MOVIE", "TICKETMASTER", "STUBHUB",
     // Pet
     "PETCO", "PETSMART", "VET",
+    // Crafts / Misc retail
+    "MICHAELS", "JOANN", "HOBBY LOBBY", "FIVE BELOW", "BATH AND BODY",
   ];
 
   const pharmacyHealthcareHints = ["CVS", "WALGREENS", "RITE AID", "DUANE READE"];

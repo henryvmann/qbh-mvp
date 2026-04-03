@@ -67,7 +67,7 @@ export default function MedicationsPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
+    <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
@@ -83,13 +83,13 @@ export default function MedicationsPage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/10 bg-[#0F1520] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-white/10 bg-[#131B2E] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
-        <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+        <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-serif text-xl text-[#EFF4FF]">
@@ -101,7 +101,7 @@ export default function MedicationsPage() {
               </p>
             </div>
 
-            <span className="rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
+            <span className="rounded-full bg-[#D4A843]/15 px-3 py-1 text-xs font-semibold text-[#D4A843] ring-1 ring-[#D4A843]/30">
               Demo preview
             </span>
           </div>
@@ -131,7 +131,7 @@ export default function MedicationsPage() {
         </section>
 
         <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+          <div className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
             <h2 className="font-serif text-xl text-[#EFF4FF]">
               Medication history
             </h2>
@@ -166,7 +166,7 @@ export default function MedicationsPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+          <div className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
             <h2 className="font-serif text-xl text-[#EFF4FF]">
               Future medication system
             </h2>

@@ -78,7 +78,7 @@ function TopNav() {
   ];
 
   return (
-    <nav className="mt-5 rounded-2xl bg-[#0F1520] px-3 py-2 ring-1 ring-white/8">
+    <nav className="mt-5 rounded-2xl bg-[#131B2E] px-3 py-2 ring-1 ring-white/8">
       <div className="flex flex-wrap items-center gap-2">
         {items.map((it) => (
           <Link
@@ -96,7 +96,7 @@ function TopNav() {
 
 function StatCard(props: DashboardStat) {
   return (
-    <div className="rounded-2xl bg-[#0F1520] p-5 ring-1 ring-white/8">
+    <div className="rounded-2xl bg-[#131B2E] p-5 ring-1 ring-white/8">
       <div className="text-sm font-medium text-[#6B85A8]">{props.label}</div>
       <div className="mt-2 font-serif text-3xl tracking-tight text-[#EFF4FF]">
         {props.value}
@@ -113,7 +113,7 @@ function CalendarConnectionBanner(props: {
 
   if (props.isConnected) {
     return (
-      <section className="mt-8 rounded-2xl bg-[#0F1520] p-5 ring-1 ring-white/8">
+      <section className="mt-8 rounded-2xl bg-[#131B2E] p-5 ring-1 ring-white/8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-sm font-medium text-[#EFF4FF]">
@@ -136,7 +136,7 @@ function CalendarConnectionBanner(props: {
   }
 
   return (
-    <section className="mt-8 rounded-2xl bg-[#0F1520] p-5 ring-1 ring-white/8">
+    <section className="mt-8 rounded-2xl bg-[#131B2E] p-5 ring-1 ring-white/8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-medium text-[#EFF4FF]">
@@ -149,7 +149,7 @@ function CalendarConnectionBanner(props: {
         </div>
         <Link
           href={href}
-          className="inline-flex items-center justify-center rounded-xl bg-[#5DE8C5] px-4 py-2 text-sm font-medium text-[#080C14] hover:brightness-95"
+          className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95"
         >
           Connect calendar
         </Link>
@@ -225,7 +225,7 @@ function DashboardInner() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#080C14]" />;
+    return <main className="min-h-screen bg-[#0B1120]" />;
   }
 
   if (!data) return null;
@@ -255,7 +255,7 @@ function DashboardInner() {
   const showAnalyzer = Boolean(appUserId) && isAnalyzing;
 
   return (
-    <main className="min-h-screen bg-[#080C14] px-6 py-10">
+    <main className="min-h-screen bg-[#0B1120] px-6 py-10">
       <div className="mx-auto max-w-7xl">
         <header>
           <h1 className="font-serif text-4xl tracking-tight text-[#EFF4FF]">
@@ -285,7 +285,7 @@ function DashboardInner() {
               ))}
             </section>
 
-            <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+            <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="font-serif text-2xl tracking-tight text-[#EFF4FF]">
@@ -332,7 +332,7 @@ function DashboardInner() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#080C14]" />}>
+    <Suspense fallback={<main className="min-h-screen bg-[#0B1120]" />}>
       <DashboardInner />
     </Suspense>
   );

@@ -288,7 +288,7 @@ export default function ProviderCard({
     snapshot.latestAttempt;
 
   return (
-    <article className="rounded-2xl bg-[#0F1520] p-5 ring-1 ring-white/8">
+    <article className="rounded-2xl bg-[#131B2E] p-5 ring-1 ring-white/8">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-[#EFF4FF]">
@@ -379,7 +379,7 @@ export default function ProviderCard({
           <button
             onClick={handleIt}
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-xl bg-[#5DE8C5] px-4 py-2 text-sm font-medium text-[#080C14] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Starting..." : "Handle it"}
           </button>
@@ -417,7 +417,7 @@ export default function ProviderCard({
             {history.map((event, index) => (
               <div
                 key={event.id}
-                className="rounded-xl bg-[#0F1520] px-4 py-3 ring-1 ring-white/8"
+                className="rounded-xl bg-[#131B2E] px-4 py-3 ring-1 ring-white/8"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -477,7 +477,7 @@ export default function ProviderCard({
                 startCall(state.key === "upcoming" ? "ADJUST" : "BOOK")
               }
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#5DE8C5] px-4 py-2 text-sm font-medium text-[#080C14] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting
                 ? "Starting..."

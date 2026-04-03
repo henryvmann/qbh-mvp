@@ -8,7 +8,7 @@ export default function DailyBrief({ upcoming, followUps, name }: Props) {
   const greetingName = name ? `, ${name}` : "";
 
   return (
-    <div className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8 mb-6">
+    <div className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8 mb-6">
       <div className="text-xs font-medium tracking-wide text-[#4D6480]">
         Daily Brief
       </div>

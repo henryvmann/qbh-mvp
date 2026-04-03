@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function CaregiversPage() {
   return (
-    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
+    <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
       <div className="mx-auto max-w-5xl px-6 pt-10">
         <div className="flex items-center justify-between">
           <div>
@@ -24,13 +24,13 @@ export default function CaregiversPage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/10 bg-[#0F1520] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-white/10 bg-[#131B2E] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
-        <div className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+        <div className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
           <h2 className="font-serif text-xl text-[#EFF4FF]">Coming soon</h2>
           <p className="mt-2 text-[#6B85A8]">
             QBH will support shared care workflows—so a partner, family member, or

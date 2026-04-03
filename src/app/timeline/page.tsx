@@ -46,7 +46,7 @@ export default function TimelinePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
+    <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
@@ -63,7 +63,7 @@ export default function TimelinePage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/10 bg-[#0F1520] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-white/10 bg-[#131B2E] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
@@ -73,14 +73,14 @@ export default function TimelinePage() {
           {events.map((event, i) => (
             <div
               key={i}
-              className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8"
+              className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8"
             >
               <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-[#4D6480]">
                   {event.date}
                 </div>
 
-                <span className="rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
+                <span className="rounded-full bg-[#D4A843]/15 px-3 py-1 text-xs font-semibold text-[#D4A843] ring-1 ring-[#D4A843]/30">
                   {event.tag}
                 </span>
               </div>
@@ -94,7 +94,7 @@ export default function TimelinePage() {
           ))}
         </div>
 
-        <div className="mt-12 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+        <div className="mt-12 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
           <div className="text-sm font-semibold uppercase tracking-wide text-[#4D6480]">
             Future architecture
           </div>

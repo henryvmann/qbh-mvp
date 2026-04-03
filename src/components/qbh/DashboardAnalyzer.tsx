@@ -96,7 +96,7 @@ export default function DashboardAnalyzer({
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="w-full max-w-lg">
-        <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5DE8C5]">
+        <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#D4A843]">
           Quarterback AI
         </div>
 
@@ -111,11 +111,11 @@ export default function DashboardAnalyzer({
             </p>
 
             <div className="mt-8 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-2/3 animate-pulse rounded-full bg-[#5DE8C5]" />
+              <div className="h-full w-2/3 animate-pulse rounded-full bg-[#D4A843]" />
             </div>
 
-            <div className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
-              <div className="text-xs font-semibold uppercase tracking-widest text-[#5DE8C5]">
+            <div className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
+              <div className="text-xs font-semibold uppercase tracking-widest text-[#D4A843]">
                 Did you know
               </div>
               <p className="mt-3 text-sm leading-relaxed text-[#9AB0CC] transition-all">
@@ -134,7 +134,7 @@ export default function DashboardAnalyzer({
                 setStatus("idle");
                 setError(null);
               }}
-              className="mt-4 rounded-xl bg-[#5DE8C5] px-5 py-2.5 text-sm font-medium text-[#080C14] hover:brightness-95"
+              className="mt-4 rounded-xl bg-[#D4A843] px-5 py-2.5 text-sm font-medium text-[#0B1120] hover:brightness-95"
             >
               Try again
             </button>

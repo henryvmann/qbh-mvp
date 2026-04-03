@@ -134,9 +134,9 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
                   day.visits.map((visit) => (
                     <div
                       key={visit.eventId}
-                      className="rounded-xl bg-[#5DE8C5]/15 p-3 ring-1 ring-[#5DE8C5]/30"
+                      className="rounded-xl bg-[#D4A843]/15 p-3 ring-1 ring-[#D4A843]/30"
                     >
-                      <div className="text-xs font-semibold uppercase tracking-wide text-[#5DE8C5]">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-[#D4A843]">
                         {formatVisitTime(visit.startAt, visit.timezone)}
                       </div>
                       <div className="mt-1 text-sm font-semibold text-[#EFF4FF]">
@@ -167,7 +167,7 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
           {props.visits.map((visit) => (
             <div
               key={`${visit.eventId}-agenda`}
-              className="flex flex-col gap-2 rounded-2xl bg-[#0F1520] p-4 ring-1 ring-white/8 md:flex-row md:items-center md:justify-between"
+              className="flex flex-col gap-2 rounded-2xl bg-[#131B2E] p-4 ring-1 ring-white/8 md:flex-row md:items-center md:justify-between"
             >
               <div>
                 <div className="font-semibold text-[#EFF4FF]">
@@ -181,7 +181,7 @@ function WeekCalendar(props: { visits: CalendarVisit[] }) {
                   )}
                 </div>
               </div>
-              <span className="inline-flex items-center rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
+              <span className="inline-flex items-center rounded-full bg-[#D4A843]/15 px-3 py-1 text-xs font-semibold text-[#D4A843] ring-1 ring-[#D4A843]/30">
                 Live booking
               </span>
             </div>
@@ -250,7 +250,7 @@ function VisitsInner() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#080C14]" />;
+    return <main className="min-h-screen bg-[#0B1120]" />;
   }
 
   const upcomingVisits: CalendarVisit[] = snapshots
@@ -267,7 +267,7 @@ function VisitsInner() {
   const followUpNeeded = snapshots.filter((s) => s.followUpNeeded);
 
   return (
-    <main className="min-h-screen bg-[#080C14] text-[#EFF4FF]">
+    <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
       <div className="mx-auto max-w-6xl px-6 pb-16 pt-10">
         <div className="flex items-center justify-between">
           <div>
@@ -283,13 +283,13 @@ function VisitsInner() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/10 bg-[#0F1520] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-white/10 bg-[#131B2E] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
-        <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+        <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-serif text-xl text-[#EFF4FF]">
@@ -307,7 +307,7 @@ function VisitsInner() {
         </section>
 
         <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+          <div className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-serif text-xl text-[#EFF4FF]">
@@ -357,7 +357,7 @@ function VisitsInner() {
             )}
           </div>
 
-          <div className="rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+          <div className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-serif text-xl text-[#EFF4FF]">
@@ -368,7 +368,7 @@ function VisitsInner() {
                   time.
                 </p>
               </div>
-              <span className="rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
+              <span className="rounded-full bg-[#D4A843]/15 px-3 py-1 text-xs font-semibold text-[#D4A843] ring-1 ring-[#D4A843]/30">
                 Demo preview
               </span>
             </div>
@@ -400,7 +400,7 @@ function VisitsInner() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-2xl bg-[#0F1520] p-6 ring-1 ring-white/8">
+        <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-serif text-xl text-[#EFF4FF]">
@@ -411,7 +411,7 @@ function VisitsInner() {
                 and recommended next steps.
               </p>
             </div>
-            <span className="rounded-full bg-[#5DE8C5]/15 px-3 py-1 text-xs font-semibold text-[#5DE8C5] ring-1 ring-[#5DE8C5]/30">
+            <span className="rounded-full bg-[#D4A843]/15 px-3 py-1 text-xs font-semibold text-[#D4A843] ring-1 ring-[#D4A843]/30">
               Future layer
             </span>
           </div>
@@ -436,7 +436,7 @@ function VisitsInner() {
 
 export default function VisitsPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#080C14]" />}>
+    <Suspense fallback={<main className="min-h-screen bg-[#0B1120]" />}>
       <VisitsInner />
     </Suspense>
   );
