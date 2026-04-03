@@ -47,12 +47,15 @@ Healthcare providers include: doctors, dentists, specialists, hospitals, clinics
 
 NOT healthcare: restaurants, retail stores, grocery stores, gas stations, gyms/fitness, beauty/salons, insurance companies (paying premiums is not a provider visit), utilities, subscriptions, payroll, transfer apps, automotive, entertainment, education, pet services, or general services.
 
-Edge cases:
+IMPORTANT edge cases:
 - CVS, Walgreens, Rite Aid = healthcare (pharmacy)
 - "Wellness" in name could be healthcare OR spa — use context (amount, frequency)
 - Insurance premium payments are NOT healthcare providers
 - Copay/coinsurance payments TO a provider ARE healthcare
 - "Associates" or "Group" alone isn't enough — needs medical context
+- THERAPISTS AND MENTAL HEALTH: Many therapists, psychologists, psychiatrists, counselors, and social workers bill under their PERSONAL NAME (e.g., "Jane Smith", "John Doe"). If you see recurring payments to a person's name (first + last) with amounts in the $100-$500 range and regular frequency (2+ visits), this is VERY LIKELY a therapist or healthcare provider. Classify as healthcare with medium confidence and provider_type "mental_health".
+- Platforms like SimplePractice, TherapyNotes, Headway, Alma, BetterHelp, Talkspace, Cerebral = healthcare (mental health platforms)
+- When in doubt about a person's name with therapy-like payment patterns, classify as healthcare with medium confidence rather than dismissing it
 
 Respond with JSON: { "classifications": [ { "index": 1, "is_healthcare": true/false, "confidence": "high"/"medium"/"low", "provider_type": "doctor"/"lab"/"pharmacy"/"hospital"/"dentist"/"specialist"/"urgent_care"/"mental_health"/"other_healthcare"/null, "reasoning": "brief explanation" } ] }`,
       },

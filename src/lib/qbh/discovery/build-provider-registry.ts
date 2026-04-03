@@ -1,6 +1,7 @@
 // src/lib/qbh/discovery/build-provider-registry.ts
 
 import { classifyTransactionsWithAI } from "../../openai/classify-transactions";
+import { batchNpiLookup } from "../../npi/lookup";
 
 type DiscoveryBucket = "HEALTHCARE" | "REVIEW_NEEDED" | "IGNORE";
 
@@ -130,7 +131,37 @@ export async function buildProviderRegistry(
     // AI failed — fall through to empty map, everything becomes REVIEW_NEEDED or IGNORE via fallback
   }
 
-  // Step 4: Build provider list using AI results
+  // Step 4: NPI registry check for merchants AI classified as "not healthcare"
+  // Person-name merchants (2+ words, recurring, $100-500 avg) might be therapists
+  const npiCandidates: Array<{ normalized_name: string; original_name: string }> = [];
+
+  for (const input of merchantInputs) {
+    const aiResult = aiClassifications.get(input.normalized_name);
+    const words = input.normalized_name.split(" ").filter(Boolean);
+    const looksLikePersonName = words.length >= 2 && words.length <= 4 && words.every(w => /^[A-Z]+$/.test(w));
+
+    // Check NPI for: person-name merchants that AI said "not healthcare" or had no result
+    if (looksLikePersonName && (!aiResult || !aiResult.is_healthcare)) {
+      npiCandidates.push({
+        normalized_name: input.normalized_name,
+        original_name: input.name,
+      });
+    }
+  }
+
+  let npiResults = new Map<string, { found: boolean; provider_type: string | null }>();
+  if (npiCandidates.length > 0) {
+    try {
+      console.log(`[buildProviderRegistry] Checking ${npiCandidates.length} person-name merchants against NPI registry...`);
+      npiResults = await batchNpiLookup(npiCandidates);
+      const npiHits = Array.from(npiResults.values()).filter(r => r.found).length;
+      console.log(`[buildProviderRegistry] NPI found ${npiHits} licensed providers`);
+    } catch (err) {
+      console.error("[buildProviderRegistry] NPI lookup failed:", err);
+    }
+  }
+
+  // Step 5: Build provider list using AI results + NPI verification
   const providers: DiscoveredProvider[] = [];
 
   for (const entry of grouped.values()) {
@@ -141,11 +172,17 @@ export async function buildProviderRegistry(
     }
 
     const aiResult = aiClassifications.get(entry.normalized_name);
+    const npiResult = npiResults.get(entry.normalized_name);
 
     let bucket: DiscoveryBucket;
     let care_action_type: string | null;
 
-    if (aiResult) {
+    // NPI registry match overrides AI — if they have a license, they're healthcare
+    if (npiResult?.found) {
+      bucket = "HEALTHCARE";
+      care_action_type = "CHECK_APPOINTMENT_STATUS";
+      console.log(`[buildProviderRegistry] NPI override: "${entry.provider_name}" → HEALTHCARE (${npiResult.provider_type})`);
+    } else if (aiResult) {
       if (aiResult.is_healthcare && aiResult.confidence === "high") {
         bucket = "HEALTHCARE";
         care_action_type = "CHECK_APPOINTMENT_STATUS";
