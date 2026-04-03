@@ -452,7 +452,7 @@ export default function OnboardingPage() {
           }
 
           setLoadingDiscovery(false);
-          router.push("/dashboard");
+          router.push("/handle-first");
         }
       } catch (err) {
         if (!cancelled) {
@@ -793,7 +793,7 @@ export default function OnboardingPage() {
         )}
 
         {allReviewed && (
-          <GoldButton onClick={() => router.push("/dashboard")}>
+          <GoldButton onClick={() => router.push("/handle-first")}>
             Enter QB &rarr;
           </GoldButton>
         )}
@@ -813,7 +813,7 @@ export default function OnboardingPage() {
           <div className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
             {error}
           </div>
-          <GoldButton onClick={() => router.push("/dashboard")}>
+          <GoldButton onClick={() => router.push("/handle-first")}>
             Continue to dashboard &rarr;
           </GoldButton>
         </Shell>
@@ -992,7 +992,7 @@ export default function OnboardingPage() {
             <span>Health history secured ✓</span>
           </div>
 
-          <GoldButton onClick={() => router.push("/dashboard")}>
+          <GoldButton onClick={() => router.push("/handle-first")}>
             Enter QB &rarr;
           </GoldButton>
         </div>

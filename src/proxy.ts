@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Pages that do not require authentication.
 // Everything else redirects to /login if unauthenticated.
 // /connect and /plaid/oauth are pre-auth onboarding — no session exists yet
-const PUBLIC_PATHS = ["/", "/login", "/start", "/auth", "/connect", "/plaid/oauth", "/onboarding"];
+const PUBLIC_PATHS = ["/", "/login", "/start", "/auth", "/connect", "/plaid/oauth", "/onboarding", "/handle-first"];
 
 function checkBasicAuth(request: NextRequest): NextResponse | null {
   const users: Record<string, string> = {
