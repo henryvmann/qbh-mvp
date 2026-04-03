@@ -388,8 +388,13 @@ export default function OnboardingPage() {
         const effectiveUserId =
           userId || window.localStorage.getItem("qbh_user_id") || "";
 
+        console.log("[Onboarding] Starting discovery for:", effectiveUserId);
+        console.log("[Onboarding] plaidPublicToken:", plaidPublicToken ? "yes" : "no");
+        console.log("[Onboarding] plaidConnected:", plaidConnected);
+
         // Exchange Plaid token if we have one (web flow)
         if (plaidPublicToken) {
+          console.log("[Onboarding] Exchanging Plaid token...");
           const exchangeRes = await apiFetch("/api/plaid/exchange-token", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -399,6 +404,7 @@ export default function OnboardingPage() {
             }),
           });
           const exchangeData = await exchangeRes.json();
+          console.log("[Onboarding] Exchange result:", exchangeData);
           if (!exchangeRes.ok || !exchangeData?.ok) {
             throw new Error(
               exchangeData?.error || "Failed to exchange Plaid token."
@@ -406,51 +412,61 @@ export default function OnboardingPage() {
           }
         }
 
-        // Run discovery if Plaid was connected at all
-        if (plaidConnected || plaidPublicToken) {
-          const discRes = await apiFetch("/api/discovery/run", {
+        // Run discovery
+        console.log("[Onboarding] Running discovery...");
+        const discRes = await apiFetch("/api/discovery/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_user_id: effectiveUserId }),
+        });
+        const discData = await discRes.json();
+        console.log("[Onboarding] Discovery result:", {
+          ok: discData.ok,
+          transaction_count: discData.transaction_count,
+          provider_count: discData.provider_count,
+          inserted_provider_count: discData.inserted_provider_count,
+          error: discData.error,
+          pending: discData.pending,
+        });
+
+        // If transactions not ready yet, wait and retry once
+        if (discData.pending) {
+          console.log("[Onboarding] Transactions not ready, retrying in 5s...");
+          await new Promise((r) => setTimeout(r, 5000));
+          const retryRes = await apiFetch("/api/discovery/run", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              app_user_id:
-                effectiveUserId ||
-                window.localStorage.getItem("qbh_user_id") ||
-                "",
-            }),
+            body: JSON.stringify({ app_user_id: effectiveUserId }),
           });
-          const discData = await discRes.json();
-          if (discRes.ok && discData?.results) {
-            if (!cancelled) setDiscoveryResults(discData.results);
-          }
+          const retryData = await retryRes.json();
+          console.log("[Onboarding] Retry result:", retryData);
         }
 
         // Small delay so animation feels natural
         await new Promise((r) => setTimeout(r, 1200));
 
         if (!cancelled) {
-          // Fetch providers needing review
-          const effectiveId = effectiveUserId || window.localStorage.getItem("qbh_user_id") || "";
-          try {
-            const pendingRes = await apiFetch(`/api/providers/pending?app_user_id=${encodeURIComponent(effectiveId)}`);
-            const pendingData = await pendingRes.json();
-            if (pendingRes.ok && pendingData?.providers?.length > 0) {
-              setPendingProviders(pendingData.providers);
-              setReviewingProviders(true);
-              setLoadingDiscovery(false);
-              return; // show review step instead of advancing
-            }
-          } catch {
-            // If pending fetch fails, just skip review
+          // Fetch review_needed providers
+          const pendingRes = await apiFetch(`/api/providers/pending?app_user_id=${encodeURIComponent(effectiveUserId)}`);
+          const pendingData = await pendingRes.json();
+          console.log("[Onboarding] Pending providers:", pendingData);
+
+          if (pendingRes.ok && pendingData?.providers?.length > 0) {
+            setPendingProviders(pendingData.providers);
+            setReviewingProviders(true);
+            setLoadingDiscovery(false);
+            return;
           }
+
           setLoadingDiscovery(false);
-          // Go to dashboard — user is authenticated, discovery is done
           router.push("/dashboard");
         }
       } catch (err) {
         if (!cancelled) {
-          console.error("Discovery failed:", err);
+          console.error("[Onboarding] Discovery failed:", err);
+          setError(err instanceof Error ? err.message : "Discovery failed");
           setLoadingDiscovery(false);
-          router.push("/dashboard"); // go to dashboard even on error
+          // Don't auto-navigate — show the error
         }
       }
     }
@@ -689,8 +705,94 @@ export default function OnboardingPage() {
     );
   }
 
-  // Step 6: QB is getting started
+  // Step 6 — Provider review (shows after discovery finds providers to review)
+  if (step === 6 && reviewingProviders) {
+    async function handleProviderReview(providerId: string, action: "approve" | "dismiss") {
+      const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
+      try {
+        await apiFetch("/api/providers/review", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider_id: providerId, action, app_user_id: effectiveUserId }),
+        });
+      } catch {
+        // Best-effort
+      }
+      setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
+    }
+
+    const remaining = pendingProviders.length;
+
+    if (remaining === 0) {
+      // All reviewed — go to dashboard
+      router.push("/dashboard");
+      return null;
+    }
+
+    return (
+      <Shell>
+        <StepCounter current={6} total={8} />
+        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
+          We found these — are they your healthcare providers?
+        </h1>
+        <p className="mt-2 text-sm text-[#6B85A8]">
+          {remaining} provider{remaining !== 1 ? "s" : ""} to review
+        </p>
+
+        <div className="mt-6 flex flex-col gap-3">
+          {pendingProviders.map((provider) => (
+            <div
+              key={provider.id}
+              className="flex items-center justify-between rounded-xl border px-4 py-3"
+              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+            >
+              <div>
+                <div className="text-sm font-medium text-[#EFF4FF]">{provider.name}</div>
+                <div className="text-xs text-[#6B85A8]">
+                  {provider.visit_count} transaction{provider.visit_count !== 1 ? "s" : ""}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleProviderReview(provider.id, "approve")}
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+                  style={{ backgroundColor: GOLD, color: NAVY }}
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => handleProviderReview(provider.id, "dismiss")}
+                  className="rounded-lg border border-white/10 bg-[#1A2336] px-3 py-1.5 text-xs text-[#6B85A8]"
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Shell>
+    );
+  }
+
+  // Step 6 — Discovery loading spinner (shows error if discovery failed)
   if (step === 6) {
+    if (error) {
+      return (
+        <Shell>
+          <StepCounter current={6} total={8} />
+          <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
+            Something went wrong
+          </h1>
+          <div className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+            {error}
+          </div>
+          <GoldButton onClick={() => router.push("/dashboard")}>
+            Continue to dashboard &rarr;
+          </GoldButton>
+        </Shell>
+      );
+    }
+
     const progressLabels = [
       "Organizing",
       "Identifying",
@@ -746,75 +848,6 @@ export default function OnboardingPage() {
             ))}
           </div>
         </div>
-      </Shell>
-    );
-  }
-
-  // Provider review step (between step 6 and 7)
-  if (step === 6 && reviewingProviders && pendingProviders.length > 0) {
-    async function handleProviderReview(providerId: string, action: "approve" | "dismiss") {
-      const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
-      try {
-        await apiFetch("/api/providers/review", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ provider_id: providerId, action, app_user_id: effectiveUserId }),
-        });
-      } catch {
-        // Best-effort
-      }
-      setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
-    }
-
-    const remaining = pendingProviders.length;
-
-    return (
-      <Shell>
-        <StepCounter current={6} total={8} />
-        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
-          We found these — are they your healthcare providers?
-        </h1>
-        <p className="mt-2 text-sm text-[#6B85A8]">
-          {remaining} provider{remaining !== 1 ? "s" : ""} to review
-        </p>
-
-        <div className="mt-6 flex flex-col gap-3">
-          {pendingProviders.map((provider) => (
-            <div
-              key={provider.id}
-              className="flex items-center justify-between rounded-xl border px-4 py-3"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            >
-              <div>
-                <div className="text-sm font-medium text-[#EFF4FF]">{provider.name}</div>
-                <div className="text-xs text-[#6B85A8]">
-                  {provider.visit_count} transaction{provider.visit_count !== 1 ? "s" : ""}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleProviderReview(provider.id, "approve")}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold"
-                  style={{ backgroundColor: GOLD, color: NAVY }}
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => handleProviderReview(provider.id, "dismiss")}
-                  className="rounded-lg border border-white/10 bg-[#1A2336] px-3 py-1.5 text-xs text-[#6B85A8]"
-                >
-                  No
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {pendingProviders.length === 0 && (
-          <GoldButton onClick={() => router.push("/dashboard")}>
-            Enter QB &rarr;
-          </GoldButton>
-        )}
       </Shell>
     );
   }
