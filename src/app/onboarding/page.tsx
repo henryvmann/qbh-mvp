@@ -412,35 +412,28 @@ export default function OnboardingPage() {
           }
         }
 
-        // Run discovery
-        console.log("[Onboarding] Running discovery...");
-        const discRes = await apiFetch("/api/discovery/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ app_user_id: effectiveUserId }),
-        });
-        const discData = await discRes.json();
-        console.log("[Onboarding] Discovery result:", {
-          ok: discData.ok,
-          transaction_count: discData.transaction_count,
-          provider_count: discData.provider_count,
-          inserted_provider_count: discData.inserted_provider_count,
-          error: discData.error,
-          pending: discData.pending,
-        });
-
-        // If transactions not ready yet, wait and retry once
-        if (discData.pending) {
-          console.log("[Onboarding] Transactions not ready, retrying in 5s...");
-          await new Promise((r) => setTimeout(r, 5000));
-          const retryRes = await apiFetch("/api/discovery/run", {
+        // Run discovery with retry logic (fresh Plaid connections often need time)
+        async function tryDiscovery(attempt: number): Promise<any> {
+          console.log(`[Onboarding] Running discovery (attempt ${attempt})...`);
+          const res = await apiFetch("/api/discovery/run", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ app_user_id: effectiveUserId }),
           });
-          const retryData = await retryRes.json();
-          console.log("[Onboarding] Retry result:", retryData);
+          const data = await res.json();
+          console.log(`[Onboarding] Discovery attempt ${attempt}:`, JSON.stringify(data));
+
+          // Retry on PRODUCT_NOT_READY or 500 (up to 3 attempts)
+          if ((data.pending || !res.ok) && attempt < 3) {
+            const delay = attempt * 5000; // 5s, 10s
+            console.log(`[Onboarding] Retrying in ${delay / 1000}s...`);
+            await new Promise((r) => setTimeout(r, delay));
+            return tryDiscovery(attempt + 1);
+          }
+          return data;
         }
+
+        const discData = await tryDiscovery(1);
 
         // Small delay so animation feels natural
         await new Promise((r) => setTimeout(r, 1200));
