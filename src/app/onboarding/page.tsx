@@ -218,7 +218,7 @@ export default function OnboardingPage() {
   const [discoveryResults, setDiscoveryResults] = useState<DiscoveryResult[]>(
     []
   );
-  const [pendingProviders, setPendingProviders] = useState<Array<{ id: string; name: string; visit_count: number }>>([]);
+  const [pendingProviders, setPendingProviders] = useState<Array<{ id: string; name: string; status: string; visit_count: number }>>([]);
   const [reviewingProviders, setReviewingProviders] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingDiscovery, setLoadingDiscovery] = useState(false);
@@ -714,55 +714,89 @@ export default function OnboardingPage() {
       setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
     }
 
-    const remaining = pendingProviders.length;
-
-    if (remaining === 0) {
-      // All reviewed — go to dashboard
-      router.push("/dashboard");
-      return null;
-    }
+    const confirmedProviders = pendingProviders.filter((p) => p.status === "active");
+    const needsReview = pendingProviders.filter((p) => p.status === "review_needed");
+    const allReviewed = needsReview.length === 0;
 
     return (
       <Shell>
         <StepCounter current={6} total={8} />
         <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
-          We found these — are they your healthcare providers?
+          We found your healthcare providers
         </h1>
         <p className="mt-2 text-sm text-[#6B85A8]">
-          {remaining} provider{remaining !== 1 ? "s" : ""} to review
+          Confirm the ones we identified automatically, and review the rest.
         </p>
 
-        <div className="mt-6 flex flex-col gap-3">
-          {pendingProviders.map((provider) => (
-            <div
-              key={provider.id}
-              className="flex items-center justify-between rounded-xl border px-4 py-3"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            >
-              <div>
-                <div className="text-sm font-medium text-[#EFF4FF]">{provider.name}</div>
-                <div className="text-xs text-[#6B85A8]">
-                  {provider.visit_count} transaction{provider.visit_count !== 1 ? "s" : ""}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleProviderReview(provider.id, "approve")}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold"
-                  style={{ backgroundColor: GOLD, color: NAVY }}
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => handleProviderReview(provider.id, "dismiss")}
-                  className="rounded-lg border border-white/10 bg-[#1A2336] px-3 py-1.5 text-xs text-[#6B85A8]"
-                >
-                  No
-                </button>
-              </div>
+        {confirmedProviders.length > 0 && (
+          <div className="mt-6">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-400">
+              Confirmed providers
             </div>
-          ))}
-        </div>
+            <div className="flex flex-col gap-2">
+              {confirmedProviders.map((provider) => (
+                <div
+                  key={provider.id}
+                  className="flex items-center justify-between rounded-xl border px-4 py-3"
+                  style={{ backgroundColor: CARD_BG, borderColor: "#1A3A2A" }}
+                >
+                  <div>
+                    <div className="text-sm font-medium text-[#EFF4FF]">{provider.name}</div>
+                    <div className="text-xs text-[#6B85A8]">
+                      {provider.visit_count} visit{provider.visit_count !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                  <span className="text-xs text-emerald-400">&#10003;</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {needsReview.length > 0 && (
+          <div className="mt-6">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: GOLD }}>
+              Is this a healthcare provider? ({needsReview.length} remaining)
+            </div>
+            <div className="flex flex-col gap-2">
+              {needsReview.map((provider) => (
+                <div
+                  key={provider.id}
+                  className="flex items-center justify-between rounded-xl border px-4 py-3"
+                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+                >
+                  <div>
+                    <div className="text-sm font-medium text-[#EFF4FF]">{provider.name}</div>
+                    <div className="text-xs text-[#6B85A8]">
+                      {provider.visit_count} transaction{provider.visit_count !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleProviderReview(provider.id, "approve")}
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+                      style={{ backgroundColor: GOLD, color: NAVY }}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => handleProviderReview(provider.id, "dismiss")}
+                      className="rounded-lg border border-white/10 bg-[#1A2336] px-3 py-1.5 text-xs text-[#6B85A8]"
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {allReviewed && (
+          <GoldButton onClick={() => router.push("/dashboard")}>
+            Enter QB &rarr;
+          </GoldButton>
+        )}
       </Shell>
     );
   }

@@ -124,36 +124,42 @@ function classifyProvider(
   ];
 
   const ignoreHints = [
-    "AMAZON",
-    "UBER",
-    "LYFT",
-    "SHELL",
-    "EXXON",
-    "CHEVRON",
-    "MCDONALD",
-    "STARBUCKS",
-    "TARGET",
-    "WALMART",
-    "COSTCO",
-    "WHOLE FOODS",
-    "TRADER JOE",
-    "VENMO",
-    "ZELLE",
-    "GOOGLE",
-    "APPLE",
-    "MICROSOFT",
-    "NETFLIX",
-    "SPOTIFY",
-    "GUSTO",
-    "PAYROLL",
-    "ADP",
-    "PAYCHEX",
-    "INTUIT PAYROLL",
-    "QUICKBOOKS PAYROLL",
-    "RIPPLING",
-    "TRINET",
-    "JUSTWORKS",
-    "DEEL",
+    // Retail / Shopping
+    "AMAZON", "TARGET", "WALMART", "COSTCO", "WHOLE FOODS", "TRADER JOE",
+    "DOLLAR TREE", "DOLLAR GENERAL", "HOME DEPOT", "LOWES", "IKEA", "BED BATH",
+    "BEST BUY", "NORDSTROM", "MACYS", "TJ MAXX", "MARSHALLS", "ROSS",
+    "OLD NAVY", "GAP", "ZARA", "H&M", "SEPHORA", "ULTA",
+    // Food & Drink
+    "MCDONALD", "STARBUCKS", "CHIPOTLE", "CHICK-FIL-A", "SUBWAY", "WENDY",
+    "BURGER KING", "TACO BELL", "DUNKIN", "PANERA", "DOMINO", "PIZZA HUT",
+    "PANDA EXPRESS", "FIVE GUYS", "IN-N-OUT", "POPEYES", "KFC", "SONIC",
+    "GRUBHUB", "DOORDASH", "UBER EATS", "POSTMATES", "SEAMLESS",
+    // Transport
+    "UBER", "LYFT", "SHELL", "EXXON", "CHEVRON", "BP ", "TEXACO", "SUNOCO",
+    "CITGO", "SPEEDWAY", "WAWA", "SHEETZ", "PARKING", "TOLL", "METRO",
+    // Tech / Subscriptions
+    "GOOGLE", "APPLE", "MICROSOFT", "NETFLIX", "SPOTIFY", "HULU", "DISNEY",
+    "HBO", "YOUTUBE", "ADOBE", "DROPBOX", "ZOOM", "SLACK",
+    // Finance / Payments
+    "VENMO", "ZELLE", "CASHAPP", "PAYPAL", "SQUARE", "STRIPE",
+    // Payroll
+    "GUSTO", "PAYROLL", "ADP", "PAYCHEX", "INTUIT PAYROLL",
+    "QUICKBOOKS PAYROLL", "RIPPLING", "TRINET", "JUSTWORKS", "DEEL",
+    // Fitness / Beauty / Personal care
+    "GYM", "FITNESS", "PLANET FITNESS", "EQUINOX", "ORANGETHEORY", "CROSSFIT",
+    "YOGA", "PILATES", "SALON", "BARBER", "NAILS", "SPA ", "MASSAGE",
+    "BEAUTY", "HAIR", "WAXING", "LASH",
+    // Insurance / Utilities (not providers)
+    "INSURANCE", "GEICO", "STATE FARM", "PROGRESSIVE", "ALLSTATE",
+    "ELECTRIC", "GAS BILL", "WATER BILL", "INTERNET", "COMCAST", "VERIZON",
+    "AT&T", "T-MOBILE", "SPRINT",
+    // Groceries
+    "KROGER", "SAFEWAY", "ALBERTSONS", "PUBLIX", "ALDI", "LIDL",
+    "FOOD LION", "STOP AND SHOP", "GIANT", "WEGMANS", "HEB",
+    // Entertainment
+    "AMC", "REGAL", "CINEMA", "MOVIE", "TICKETMASTER", "STUBHUB",
+    // Pet
+    "PETCO", "PETSMART", "VET",
   ];
 
   const pharmacyHealthcareHints = ["CVS", "WALGREENS", "RITE AID", "DUANE READE"];
@@ -206,13 +212,40 @@ function classifyProvider(
     };
   }
 
+  // Use Plaid categories to aggressively exclude non-healthcare
+  // If Plaid categorized it as food, shopping, travel, etc. → definitely not healthcare
+  const nonHealthcareCategories = [
+    "FOOD", "RESTAURANT", "COFFEE", "BAR",
+    "SHOP", "CLOTHING", "ELECTRONICS", "DEPARTMENT STORE", "SUPERMARKET", "GROCERY",
+    "TRAVEL", "AIRLINE", "HOTEL", "LODGING", "CAR RENTAL",
+    "RECREATION", "GYM", "FITNESS", "SPORT", "ENTERTAINMENT", "MUSIC", "GAME",
+    "PERSONAL CARE", "SALON", "BARBER", "BEAUTY",
+    "AUTOMOTIVE", "GAS STATION", "PARKING",
+    "UTILITIES", "PHONE", "INTERNET", "CABLE",
+    "INSURANCE",
+    "RENT", "MORTGAGE",
+    "TRANSFER", "DEPOSIT", "WITHDRAWAL", "ATM",
+    "TAX", "GOVERNMENT",
+    "EDUCATION", "TUITION",
+    "PET",
+    "SUBSCRIPTION",
+  ];
+
+  if (nonHealthcareCategories.some((cat) => joinedCategories.includes(cat))) {
+    return { bucket: "IGNORE", care_action_type: null };
+  }
+
+  // Only flag as REVIEW_NEEDED if truly ambiguous:
+  // - No clear Plaid category excluding it
+  // - Multiple visits with meaningful amounts
+  // - Not already caught by ignore or healthcare hints
   const avgAmount =
     amountSamples.length > 0
       ? amountSamples.reduce((sum, value) => sum + value, 0) /
         amountSamples.length
       : 0;
 
-  if (visitCount >= 2 && avgAmount > 40) {
+  if (visitCount >= 2 && avgAmount > 50) {
     return { bucket: "REVIEW_NEEDED", care_action_type: "REVIEW_PROVIDER" };
   }
 

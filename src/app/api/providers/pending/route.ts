@@ -15,11 +15,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Fetch ALL discovered providers (active + review_needed)
+    // so the user can see everything and confirm/dismiss
     const { data: providers, error } = await supabaseAdmin
       .from("providers")
       .select("id, name, status")
       .eq("app_user_id", appUserId)
-      .eq("status", "review_needed")
+      .in("status", ["active", "review_needed"])
+      .order("status", { ascending: true }) // active first, then review_needed
       .order("name");
 
     if (error) {
@@ -30,7 +33,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Also get visit counts for each provider
+    // Get visit counts for each provider
     const providerIds = (providers || []).map(p => p.id);
 
     let visitCounts: Record<string, number> = {};
