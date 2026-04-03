@@ -1,5 +1,7 @@
 // src/lib/qbh/discovery/build-provider-registry.ts
 
+import { classifyTransactionsWithAI } from "../../openai/classify-transactions";
+
 type DiscoveryBucket = "HEALTHCARE" | "REVIEW_NEEDED" | "IGNORE";
 
 export type PlaidDiscoveryTransaction = {
@@ -49,214 +51,22 @@ function daysBetween(a: string, b: string): number {
 
 function median(values: number[]): number | null {
   if (!values.length) return null;
-
   const sorted = [...values].sort((x, y) => x - y);
   const mid = Math.floor(sorted.length / 2);
-
   if (sorted.length % 2 === 0) {
     return (sorted[mid - 1] + sorted[mid]) / 2;
   }
-
   return sorted[mid];
 }
 
-function classifyProvider(
-  normalizedName: string,
-  visitCount: number,
-  amountSamples: number[],
-  categories: string[]
-): { bucket: DiscoveryBucket; care_action_type: string | null } {
-  const joined = normalizedName;
-  const words = new Set(normalizedName.split(" ").filter(Boolean));
-  const joinedCategories = categories.join(" ").toUpperCase();
-
-  const healthcareHints = [
-    "MD",
-    "DR",
-    "DENTAL",
-    "ORTHO",
-    "PEDIATRIC",
-    "CARDIO",
-    "MEDICAL",
-    "HOSPITAL",
-    "HEALTH",
-    "CLINIC",
-    "RADIOLOGY",
-    "IMAGING",
-    "LAB",
-    "LABCORP",
-    "QUEST",
-    "PHARMACY",
-    "URGENT CARE",
-    "DERM",
-    "OBGYN",
-    "VISION",
-    "OPTICAL",
-    "THERAPY",
-    "PT",
-    "CHIROPRACTIC",
-    "PEDS",
-    "SURG",
-    "NEURO",
-    "GASTRO",
-    "PHYSI",
-    "PSYCH",
-    "ENDO",
-    "ALLERG",
-    "ANESTH",
-    "ONCOL",
-    "RHEUM",
-    "UROL",
-    "PULMON",
-    "REHAB",
-    "WELLNESS",
-    "NURSE",
-    "MIDWI",
-    "PATHOL",
-    "DIAGNOS",
-    "INFUSION",
-    "DIALYSIS",
-    "HOSPICE",
-    "URGENT",
-    "AMBUL",
-    "WOMEN",
-    "EYE",
-  ];
-
-  const ignoreHints = [
-    // Retail / Shopping
-    "AMAZON", "TARGET", "WALMART", "COSTCO", "WHOLE FOODS", "TRADER JOE",
-    "DOLLAR TREE", "DOLLAR GENERAL", "HOME DEPOT", "LOWES", "IKEA", "BED BATH",
-    "BEST BUY", "NORDSTROM", "MACYS", "TJ MAXX", "MARSHALLS", "ROSS",
-    "OLD NAVY", "GAP", "ZARA", "H&M", "SEPHORA", "ULTA",
-    // Food & Drink
-    "MCDONALD", "STARBUCKS", "CHIPOTLE", "CHICK-FIL-A", "SUBWAY", "WENDY",
-    "BURGER KING", "TACO BELL", "DUNKIN", "PANERA", "DOMINO", "PIZZA HUT",
-    "PANDA EXPRESS", "FIVE GUYS", "IN-N-OUT", "POPEYES", "KFC", "SONIC",
-    "GRUBHUB", "DOORDASH", "UBER EATS", "POSTMATES", "SEAMLESS",
-    // Transport
-    "UBER", "LYFT", "SHELL", "EXXON", "CHEVRON", "BP ", "TEXACO", "SUNOCO",
-    "CITGO", "SPEEDWAY", "WAWA", "SHEETZ", "PARKING", "TOLL", "METRO",
-    // Tech / Subscriptions
-    "GOOGLE", "APPLE", "MICROSOFT", "NETFLIX", "SPOTIFY", "HULU", "DISNEY",
-    "HBO", "YOUTUBE", "ADOBE", "DROPBOX", "ZOOM", "SLACK",
-    // Finance / Payments
-    "VENMO", "ZELLE", "CASHAPP", "PAYPAL", "SQUARE", "STRIPE",
-    // Payroll
-    "GUSTO", "PAYROLL", "ADP", "PAYCHEX", "INTUIT PAYROLL",
-    "QUICKBOOKS PAYROLL", "RIPPLING", "TRINET", "JUSTWORKS", "DEEL",
-    // Fitness / Beauty / Personal care
-    "GYM", "FITNESS", "PLANET FITNESS", "EQUINOX", "ORANGETHEORY", "CROSSFIT",
-    "YOGA", "PILATES", "SALON", "BARBER", "NAILS", "SPA ", "MASSAGE",
-    "BEAUTY", "HAIR", "WAXING", "LASH",
-    // Insurance / Utilities (not providers)
-    "INSURANCE", "GEICO", "STATE FARM", "PROGRESSIVE", "ALLSTATE",
-    "ELECTRIC", "GAS BILL", "WATER BILL", "INTERNET", "COMCAST", "VERIZON",
-    "AT&T", "T-MOBILE", "SPRINT",
-    // Groceries
-    "KROGER", "SAFEWAY", "ALBERTSONS", "PUBLIX", "ALDI", "LIDL",
-    "FOOD LION", "STOP AND SHOP", "GIANT", "WEGMANS", "HEB",
-    // Entertainment
-    "AMC", "REGAL", "CINEMA", "MOVIE", "TICKETMASTER", "STUBHUB",
-    // Pet
-    "PETCO", "PETSMART", "VET",
-    // Crafts / Misc retail
-    "MICHAELS", "JOANN", "HOBBY LOBBY", "FIVE BELOW", "BATH AND BODY",
-  ];
-
-  const pharmacyHealthcareHints = ["CVS", "WALGREENS", "RITE AID", "DUANE READE"];
-
-  const pharmacyReviewHints: string[] = [];
-
-  const hasHint = (hint: string): boolean => {
-    if (hint.includes(" ")) {
-      return joined.includes(hint);
-    }
-
-    return words.has(hint);
-  };
-
-  if (ignoreHints.some(hasHint)) {
-    return { bucket: "IGNORE", care_action_type: null };
-  }
-
-  if (
-    joinedCategories.includes("DOCTOR") ||
-    joinedCategories.includes("HOSPITAL") ||
-    joinedCategories.includes("PHARMACY") ||
-    joinedCategories.includes("MEDICAL") ||
-    joinedCategories.includes("HEALTHCARE")
-  ) {
-    return {
-      bucket: "HEALTHCARE",
-      care_action_type: "CHECK_APPOINTMENT_STATUS",
-    };
-  }
-
-  if (pharmacyHealthcareHints.some(hasHint)) {
-    return {
-      bucket: "HEALTHCARE",
-      care_action_type: "CHECK_APPOINTMENT_STATUS",
-    };
-  }
-
-  if (healthcareHints.some(hasHint)) {
-    return {
-      bucket: "HEALTHCARE",
-      care_action_type: "CHECK_APPOINTMENT_STATUS",
-    };
-  }
-
-  if (pharmacyReviewHints.some(hasHint)) {
-    return {
-      bucket: "REVIEW_NEEDED",
-      care_action_type: "REVIEW_PROVIDER",
-    };
-  }
-
-  // Use Plaid categories to aggressively exclude non-healthcare
-  // If Plaid categorized it as food, shopping, travel, etc. → definitely not healthcare
-  const nonHealthcareCategories = [
-    "FOOD", "RESTAURANT", "COFFEE", "BAR",
-    "SHOP", "CLOTHING", "ELECTRONICS", "DEPARTMENT STORE", "SUPERMARKET", "GROCERY",
-    "TRAVEL", "AIRLINE", "HOTEL", "LODGING", "CAR RENTAL",
-    "RECREATION", "GYM", "FITNESS", "SPORT", "ENTERTAINMENT", "MUSIC", "GAME",
-    "PERSONAL CARE", "SALON", "BARBER", "BEAUTY",
-    "AUTOMOTIVE", "GAS STATION", "PARKING",
-    "UTILITIES", "PHONE", "INTERNET", "CABLE",
-    "INSURANCE",
-    "RENT", "MORTGAGE",
-    "TRANSFER", "DEPOSIT", "WITHDRAWAL", "ATM",
-    "TAX", "GOVERNMENT",
-    "EDUCATION", "TUITION",
-    "PET",
-    "SUBSCRIPTION",
-  ];
-
-  if (nonHealthcareCategories.some((cat) => joinedCategories.includes(cat))) {
-    return { bucket: "IGNORE", care_action_type: null };
-  }
-
-  // Only flag as REVIEW_NEEDED if truly ambiguous:
-  // - No clear Plaid category excluding it
-  // - Multiple visits with meaningful amounts
-  // - Not already caught by ignore or healthcare hints
-  const avgAmount =
-    amountSamples.length > 0
-      ? amountSamples.reduce((sum, value) => sum + value, 0) /
-        amountSamples.length
-      : 0;
-
-  if (visitCount >= 2 && avgAmount > 50) {
-    return { bucket: "REVIEW_NEEDED", care_action_type: "REVIEW_PROVIDER" };
-  }
-
-  return { bucket: "IGNORE", care_action_type: null };
-}
-
-export function buildProviderRegistry(
+/**
+ * Groups transactions by merchant, then uses OpenAI to classify each
+ * as healthcare or not. Falls back to keyword matching if AI fails.
+ */
+export async function buildProviderRegistry(
   transactions: PlaidDiscoveryTransaction[]
-): DiscoveredProvider[] {
+): Promise<DiscoveredProvider[]> {
+  // Step 1: Group transactions by normalized merchant name
   const grouped = new Map<
     string,
     {
@@ -272,7 +82,6 @@ export function buildProviderRegistry(
   for (const tx of transactions) {
     const providerName = pickProviderName(tx);
     const normalizedName = normalizeProviderName(providerName);
-
     if (!normalizedName) continue;
 
     const txCategories = Array.isArray(tx.category) ? tx.category : [];
@@ -296,22 +105,64 @@ export function buildProviderRegistry(
     });
   }
 
+  // Step 2: Prepare merchant list for AI classification
+  const merchantInputs = Array.from(grouped.values()).map((entry) => ({
+    name: entry.provider_name,
+    normalized_name: entry.normalized_name,
+    plaid_categories: [...new Set(entry.categories)],
+    visit_count: entry.transaction_ids.length,
+    avg_amount:
+      entry.amounts.length > 0
+        ? entry.amounts.reduce((s, v) => s + v, 0) / entry.amounts.length
+        : 0,
+  }));
+
+  // Step 3: Classify with AI (batched — gpt-4o-mini handles up to ~100 merchants easily)
+  let aiClassifications = new Map<string, { is_healthcare: boolean; confidence: string; provider_type: string | null }>();
+
+  try {
+    console.log(`[buildProviderRegistry] Classifying ${merchantInputs.length} merchants with AI...`);
+    const results = await classifyTransactionsWithAI(merchantInputs);
+    aiClassifications = results;
+    console.log(`[buildProviderRegistry] AI classified ${results.size} merchants`);
+  } catch (err) {
+    console.error("[buildProviderRegistry] AI classification failed, using fallback:", err);
+    // AI failed — fall through to empty map, everything becomes REVIEW_NEEDED or IGNORE via fallback
+  }
+
+  // Step 4: Build provider list using AI results
   const providers: DiscoveredProvider[] = [];
 
   for (const entry of grouped.values()) {
     const sortedDates = [...entry.dates].sort();
     const gaps: number[] = [];
-
     for (let i = 1; i < sortedDates.length; i += 1) {
       gaps.push(daysBetween(sortedDates[i - 1], sortedDates[i]));
     }
 
-    const { bucket, care_action_type } = classifyProvider(
-      entry.normalized_name,
-      entry.transaction_ids.length,
-      entry.amounts,
-      entry.categories
-    );
+    const aiResult = aiClassifications.get(entry.normalized_name);
+
+    let bucket: DiscoveryBucket;
+    let care_action_type: string | null;
+
+    if (aiResult) {
+      if (aiResult.is_healthcare && aiResult.confidence === "high") {
+        bucket = "HEALTHCARE";
+        care_action_type = "CHECK_APPOINTMENT_STATUS";
+      } else if (aiResult.is_healthcare) {
+        // Medium/low confidence healthcare — let user confirm
+        bucket = "REVIEW_NEEDED";
+        care_action_type = "REVIEW_PROVIDER";
+      } else {
+        // AI says not healthcare
+        bucket = "IGNORE";
+        care_action_type = null;
+      }
+    } else {
+      // No AI result (fallback) — use simple heuristic
+      bucket = "IGNORE";
+      care_action_type = null;
+    }
 
     if (bucket === "IGNORE") continue;
 
@@ -334,6 +185,8 @@ export function buildProviderRegistry(
     const bTime = b.last_seen_at ? new Date(b.last_seen_at).getTime() : 0;
     return bTime - aTime;
   });
+
+  console.log(`[buildProviderRegistry] Result: ${providers.filter(p => p.bucket === "HEALTHCARE").length} healthcare, ${providers.filter(p => p.bucket === "REVIEW_NEEDED").length} review_needed`);
 
   return providers;
 }

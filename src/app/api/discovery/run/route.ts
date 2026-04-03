@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
       category: tx.category ?? null,
     }));
 
-    const providers = buildProviderRegistry(normalizedTransactions);
+    const providers = await buildProviderRegistry(normalizedTransactions);
 
     const writeResult = await writeDiscoveredProviders({
       userId: appUserId, // internal helper still uses userId naming but maps to app_user_id
