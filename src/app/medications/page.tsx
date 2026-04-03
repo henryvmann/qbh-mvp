@@ -1,70 +1,52 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { apiFetch } from "../../lib/api";
 
-export const metadata = {
-  title: "Medications • QBH",
-  description:
-    "Track active medications, changes over time, and future medication coordination across your household.",
+type PharmacyVisit = {
+  provider_name: string;
+  visit_date: string | null;
+  amount_cents: number | null;
 };
 
-type MedicationCard = {
-  name: string;
-  dose: string;
-  schedule: string;
-  started: string;
-  purpose: string;
-  status: string;
-};
+function formatDate(iso: string | null): string {
+  if (!iso) return "Unknown date";
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
-type MedicationHistoryItem = {
-  date: string;
-  title: string;
-  detail: string;
-  tag: string;
-};
+function formatAmount(cents: number | null): string | null {
+  if (cents == null) return null;
+  return `$${(cents / 100).toFixed(2)}`;
+}
 
 export default function MedicationsPage() {
-  const activeMedications: MedicationCard[] = [
-    {
-      name: "Lisinopril",
-      dose: "10 mg",
-      schedule: "Daily",
-      started: "Started February 1",
-      purpose: "Blood pressure support",
-      status: "Active",
-    },
-    {
-      name: "Vitamin D",
-      dose: "2000 IU",
-      schedule: "Weekly",
-      started: "Started January 10",
-      purpose: "Supplement routine",
-      status: "Active",
-    },
-  ];
+  const router = useRouter();
+  const [pharmacyVisits, setPharmacyVisits] = useState<PharmacyVisit[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const medicationHistory: MedicationHistoryItem[] = [
-    {
-      date: "February 1",
-      title: "Lisinopril dosage increased",
-      detail:
-        "Dose updated after a primary care review and added to the health record timeline.",
-      tag: "Dose change",
-    },
-    {
-      date: "January 10",
-      title: "Vitamin D added",
-      detail:
-        "Supplement routine started and tracked as part of ongoing care planning.",
-      tag: "Started",
-    },
-  ];
-
-  const futureConnections = [
-    "Medication adherence tied to care goals",
-    "Refill reminders connected to upcoming visits",
-    "Visit instructions linked to medication changes",
-    "Caregiver visibility and permissions where appropriate",
-  ];
+  useEffect(() => {
+    apiFetch("/api/medications/data")
+      .then((res) => {
+        if (res.status === 401) {
+          router.replace("/login");
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.ok) {
+          setPharmacyVisits(data.pharmacyVisits ?? []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [router]);
 
   return (
     <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
@@ -75,9 +57,8 @@ export default function MedicationsPage() {
               Medications
             </h1>
             <p className="mt-2 max-w-2xl text-base text-[#6B85A8]">
-              Medications give QBH a structured view of what you are taking, what
-              changed, and how prescriptions connect to visits, follow-ups, and
-              long-term care planning.
+              View your detected pharmacy visits and track medications as part of
+              your care plan.
             </p>
           </div>
 
@@ -89,101 +70,116 @@ export default function MedicationsPage() {
           </Link>
         </div>
 
-        <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
+        {/* Pharmacy Visits Section */}
+        <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-[#1E2B45]">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-serif text-xl text-[#EFF4FF]">
-                Active medications
-              </h2>
-              <p className="mt-2 text-sm text-[#6B85A8]">
-                Seeded demo medications showing how QBH can organize an active
-                medication list.
+            <h2 className="font-serif text-xl text-[#EFF4FF]">
+              Pharmacy visits
+            </h2>
+            <span className="rounded-full bg-[#D4A843]/15 px-3 py-1 text-xs font-semibold text-[#D4A843] ring-1 ring-[#D4A843]/30">
+              From bank data
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-[#6B85A8]">
+            Pharmacy transactions detected from your connected financial
+            accounts.
+          </p>
+
+          {loading ? (
+            <div className="mt-6 flex items-center gap-2 text-sm text-[#6B85A8]">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#D4A843] border-t-transparent" />
+              Loading pharmacy visits...
+            </div>
+          ) : pharmacyVisits.length === 0 ? (
+            <div className="mt-6 rounded-2xl bg-[#162030] p-5 ring-1 ring-[#1E2B45]">
+              <p className="text-sm text-[#6B85A8]">
+                No pharmacy visits detected yet. Once you connect a financial
+                account, transactions at pharmacies like CVS, Walgreens, and
+                Rite Aid will appear here automatically.
               </p>
             </div>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {pharmacyVisits.map((visit, i) => (
+                <div
+                  key={`${visit.provider_name}-${visit.visit_date}-${i}`}
+                  className="flex items-center justify-between rounded-2xl bg-[#162030] px-5 py-4 ring-1 ring-[#1E2B45]"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D4A843]/15">
+                      <svg
+                        className="h-4 w-4 text-[#D4A843]"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-[#EFF4FF]">
+                        {visit.provider_name}
+                      </div>
+                      <div className="text-xs text-[#6B85A8]">
+                        {formatDate(visit.visit_date)}
+                      </div>
+                    </div>
+                  </div>
+                  {visit.amount_cents != null && (
+                    <div className="text-sm font-medium text-[#EFF4FF]">
+                      {formatAmount(visit.amount_cents)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-            <span className="rounded-full bg-[#D4A843]/15 px-3 py-1 text-xs font-semibold text-[#D4A843] ring-1 ring-[#D4A843]/30">
-              Demo preview
+        {/* Your Medications Section */}
+        <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-[#1E2B45]">
+          <div className="flex items-center justify-between">
+            <h2 className="font-serif text-xl text-[#EFF4FF]">
+              Your medications
+            </h2>
+            <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#6B85A8] ring-1 ring-white/10">
+              Coming soon
             </span>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {activeMedications.map((med) => (
-              <div
-                key={med.name}
-                className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="font-semibold text-[#EFF4FF]">
-                    {med.name} {med.dose}
-                  </div>
-
-                  <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#6B85A8] ring-1 ring-white/10">
-                    {med.status}
-                  </span>
-                </div>
-
-                <div className="mt-3 text-sm text-[#9AB0CC]">{med.schedule}</div>
-                <div className="mt-1 text-sm text-[#6B85A8]">{med.started}</div>
-                <div className="mt-3 text-sm text-[#6B85A8]">{med.purpose}</div>
+          <div className="mt-4 rounded-2xl bg-[#162030] p-5 ring-1 ring-[#1E2B45]">
+            <div className="flex items-start gap-4">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D4A843]/15">
+                <svg
+                  className="h-4 w-4 text-[#D4A843]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
+                  />
+                </svg>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
-            <h2 className="font-serif text-xl text-[#EFF4FF]">
-              Medication history
-            </h2>
-            <p className="mt-2 text-sm text-[#6B85A8]">
-              Seeded demo history showing how medication changes can be tracked
-              over time.
-            </p>
-
-            <div className="mt-6 space-y-4">
-              {medicationHistory.map((item) => (
-                <div
-                  key={`${item.date}-${item.title}`}
-                  className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="text-sm font-semibold text-[#4D6480]">
-                      {item.date}
-                    </div>
-
-                    <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#6B85A8] ring-1 ring-white/10">
-                      {item.tag}
-                    </span>
-                  </div>
-
-                  <div className="mt-2 font-semibold text-[#EFF4FF]">
-                    {item.title}
-                  </div>
-
-                  <p className="mt-3 text-sm text-[#6B85A8]">{item.detail}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
-            <h2 className="font-serif text-xl text-[#EFF4FF]">
-              Future medication system
-            </h2>
-            <p className="mt-2 text-sm text-[#6B85A8]">
-              In the full QBH platform, medications become a connected layer
-              across visits, goals, timeline memory, and household care.
-            </p>
-
-            <div className="mt-6 space-y-4">
-              {futureConnections.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8"
-                >
-                  <div className="text-sm font-medium text-[#9AB0CC]">{item}</div>
-                </div>
-              ))}
+              <div>
+                <p className="text-sm text-[#EFF4FF] font-medium">
+                  Track your medications here
+                </p>
+                <p className="mt-2 text-sm text-[#6B85A8] leading-relaxed">
+                  This feature is coming soon — we are working on connecting
+                  with health portals to automatically detect your
+                  prescriptions. In the meantime, pharmacy visits from your
+                  financial data are shown above.
+                </p>
+              </div>
             </div>
           </div>
         </section>
