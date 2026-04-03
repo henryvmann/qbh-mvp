@@ -8,6 +8,7 @@ type Props = {
   userId?: string | null;
   providerId: string;
   providerName?: string | null;
+  phoneNumber?: string | null;
   attemptId?: number | null;
   label?: string;
 };
@@ -17,6 +18,7 @@ export default function HandleItButton({
   userId,
   providerId,
   providerName,
+  phoneNumber,
   attemptId,
   label = "Handle It",
 }: Props) {
@@ -36,6 +38,7 @@ export default function HandleItButton({
         ...(userId ? { app_user_id: userId } : {}),
         provider_id: providerId,
         ...(providerName ? { provider_name: providerName } : {}),
+        ...(phoneNumber ? { office_number: phoneNumber } : {}),
         ...(attemptId ? { attempt_id: attemptId } : {}),
       };
 

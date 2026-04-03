@@ -2,6 +2,7 @@
 
 import { classifyTransactionsWithAI } from "../../openai/classify-transactions";
 import { batchNpiLookup } from "../../npi/lookup";
+import { lookupPlacePhone } from "../../google/places-lookup";
 
 type DiscoveryBucket = "HEALTHCARE" | "REVIEW_NEEDED" | "IGNORE";
 
@@ -25,6 +26,7 @@ export type DiscoveredProvider = {
   visit_count: number;
   median_gap_days: number | null;
   source_transaction_ids: string[];
+  phone_number: string | null;
 };
 
 function normalizeProviderName(input: string): string {
@@ -149,7 +151,7 @@ export async function buildProviderRegistry(
     }
   }
 
-  let npiResults = new Map<string, { found: boolean; provider_type: string | null }>();
+  let npiResults = new Map<string, { found: boolean; provider_type: string | null; phone_number: string | null }>();
   if (npiCandidates.length > 0) {
     try {
       console.log(`[buildProviderRegistry] Checking ${npiCandidates.length} person-name merchants against NPI registry...`);
@@ -161,7 +163,43 @@ export async function buildProviderRegistry(
     }
   }
 
-  // Step 5: Build provider list using AI results + NPI verification
+  // Step 5: Google Places phone lookup for healthcare providers not found in NPI
+  const placesPhoneByName = new Map<string, string | null>();
+  const placesCandidates: Array<{ normalized_name: string; provider_name: string }> = [];
+
+  for (const input of merchantInputs) {
+    const aiResult = aiClassifications.get(input.normalized_name);
+    const npiResult = npiResults.get(input.normalized_name);
+
+    // If AI says healthcare but NPI didn't find them (or NPI found but no phone), try Google Places
+    if (aiResult?.is_healthcare && (!npiResult?.found || !npiResult?.phone_number)) {
+      placesCandidates.push({
+        normalized_name: input.normalized_name,
+        provider_name: input.name,
+      });
+    }
+  }
+
+  if (placesCandidates.length > 0) {
+    console.log(`[buildProviderRegistry] Looking up ${placesCandidates.length} providers via Google Places...`);
+    const PLACES_CONCURRENCY = 3;
+    for (let i = 0; i < placesCandidates.length; i += PLACES_CONCURRENCY) {
+      const batch = placesCandidates.slice(i, i + PLACES_CONCURRENCY);
+      const results = await Promise.all(
+        batch.map(async (c) => ({
+          key: c.normalized_name,
+          phone: await lookupPlacePhone(c.provider_name).catch(() => null),
+        }))
+      );
+      for (const { key, phone } of results) {
+        placesPhoneByName.set(key, phone);
+      }
+    }
+    const placesHits = Array.from(placesPhoneByName.values()).filter(Boolean).length;
+    console.log(`[buildProviderRegistry] Google Places found ${placesHits} phone numbers`);
+  }
+
+  // Step 6: Build provider list using AI results + NPI verification
   const providers: DiscoveredProvider[] = [];
 
   for (const entry of grouped.values()) {
@@ -203,6 +241,12 @@ export async function buildProviderRegistry(
 
     if (bucket === "IGNORE") continue;
 
+    // Phone number: prefer NPI, then Google Places
+    const phoneNumber =
+      npiResult?.phone_number ||
+      placesPhoneByName.get(entry.normalized_name) ||
+      null;
+
     providers.push({
       provider_key: entry.normalized_name.toLowerCase().replace(/\s+/g, "_"),
       provider_name: entry.provider_name,
@@ -214,6 +258,7 @@ export async function buildProviderRegistry(
       visit_count: entry.transaction_ids.length,
       median_gap_days: median(gaps),
       source_transaction_ids: entry.transaction_ids,
+      phone_number: phoneNumber,
     });
   }
 

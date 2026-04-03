@@ -8,7 +8,40 @@ type NpiResult = {
   found: boolean;
   provider_type: string | null;
   npi: string | null;
+  phone_number: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
 };
+
+function formatPhoneE164(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return null;
+}
+
+function extractLocationAddress(addresses: Array<{ address_purpose?: string; telephone_number?: string; address_1?: string; city?: string; state?: string; postal_code?: string }> | undefined): {
+  phone_number: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+} {
+  if (!addresses || !Array.isArray(addresses)) {
+    return { phone_number: null, address: null, city: null, state: null };
+  }
+  const location = addresses.find((a) => a.address_purpose === "LOCATION");
+  const fallback = addresses.find((a) => a.address_purpose === "MAILING");
+  const addr = location || fallback;
+  if (!addr) return { phone_number: null, address: null, city: null, state: null };
+  return {
+    phone_number: formatPhoneE164(addr.telephone_number),
+    address: addr.address_1 || null,
+    city: addr.city || null,
+    state: addr.state || null,
+  };
+}
 
 /**
  * Searches the NPI registry for a name. Works best with person names
@@ -17,7 +50,7 @@ type NpiResult = {
 export async function lookupNpi(name: string): Promise<NpiResult> {
   const cleaned = name.trim();
   if (!cleaned || cleaned.split(" ").length < 2) {
-    return { found: false, provider_type: null, npi: null };
+    return { found: false, provider_type: null, npi: null, phone_number: null, address: null, city: null, state: null };
   }
 
   try {
@@ -30,41 +63,45 @@ export async function lookupNpi(name: string): Promise<NpiResult> {
     const individualUrl = `https://npiregistry.cms.hhs.gov/api/?version=2.1&first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}&limit=1`;
 
     const res = await fetch(individualUrl, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) return { found: false, provider_type: null, npi: null };
+    if (!res.ok) return { found: false, provider_type: null, npi: null, phone_number: null, address: null, city: null, state: null };
 
     const data = await res.json();
 
     if (data.result_count > 0) {
       const result = data.results[0];
       const taxonomy = result.taxonomies?.[0]?.desc || null;
+      const loc = extractLocationAddress(result.addresses);
       return {
         found: true,
         provider_type: taxonomy,
         npi: result.number || null,
+        ...loc,
       };
     }
 
     // Try organization name
     const orgUrl = `https://npiregistry.cms.hhs.gov/api/?version=2.1&organization_name=${encodeURIComponent(cleaned)}&limit=1`;
     const orgRes = await fetch(orgUrl, { signal: AbortSignal.timeout(5000) });
-    if (!orgRes.ok) return { found: false, provider_type: null, npi: null };
+    if (!orgRes.ok) return { found: false, provider_type: null, npi: null, phone_number: null, address: null, city: null, state: null };
 
     const orgData = await orgRes.json();
 
     if (orgData.result_count > 0) {
       const result = orgData.results[0];
       const taxonomy = result.taxonomies?.[0]?.desc || null;
+      const loc = extractLocationAddress(result.addresses);
       return {
         found: true,
         provider_type: taxonomy,
         npi: result.number || null,
+        ...loc,
       };
     }
 
-    return { found: false, provider_type: null, npi: null };
+    return { found: false, provider_type: null, npi: null, phone_number: null, address: null, city: null, state: null };
   } catch {
     // Timeout or network error — don't block classification
-    return { found: false, provider_type: null, npi: null };
+    return { found: false, provider_type: null, npi: null, phone_number: null, address: null, city: null, state: null };
   }
 }
 

@@ -29,6 +29,7 @@ type ProviderRow = {
   name: string;
   status: string;
   created_at: string;
+  phone_number: string | null;
 };
 
 type AttemptRow = {
@@ -526,7 +527,7 @@ export async function getDashboardProvidersForUser(
 
   const { data: providers, error: providersError } = await supabaseAdmin
     .from("providers")
-    .select("id,name,status,created_at,app_user_id")
+    .select("id,name,status,created_at,app_user_id,phone_number")
     .eq("app_user_id", cleanedUserId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
@@ -669,7 +670,7 @@ export async function getDashboardProvidersForUser(
     const provider: Provider = {
       id: pRow.id,
       name: pRow.name,
-      phone: null,
+      phone: pRow.phone_number || null,
       specialty: null,
       location: null,
     };

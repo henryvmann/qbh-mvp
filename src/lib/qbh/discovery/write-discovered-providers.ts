@@ -69,6 +69,7 @@ export async function writeDiscoveredProviders({
       status: provider.bucket === "HEALTHCARE" ? "active" : "review_needed",
       guessed_portal_brand: null,
       guessed_portal_confidence: null,
+      phone_number: provider.phone_number || null,
     }));
 
   let insertedProviders: Array<{ id: string; name: string }> = [];
