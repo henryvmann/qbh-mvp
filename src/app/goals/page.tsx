@@ -1,64 +1,90 @@
-import Link from "next/link";
+"use client";
 
-export const metadata = {
-  title: "Goals • QBH",
-  description:
-    "Set health goals and track progress across preventive care, ongoing care, and household coordination.",
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { apiFetch } from "../../lib/api";
+
+type Goal = {
+  id: string;
+  title: string;
+  status: "overdue" | "needs_attention" | "upcoming" | "pending";
+  detail: string;
+  category: string;
 };
 
-type GoalCard = {
-  title: string;
-  status: string;
-  detail: string;
-  nextStep: string;
+const statusConfig: Record<
+  Goal["status"],
+  { label: string; bgClass: string; textClass: string; ringClass: string }
+> = {
+  overdue: {
+    label: "Overdue",
+    bgClass: "bg-red-500/15",
+    textClass: "text-red-400",
+    ringClass: "ring-red-500/30",
+  },
+  needs_attention: {
+    label: "Needs attention",
+    bgClass: "bg-amber-500/15",
+    textClass: "text-amber-400",
+    ringClass: "ring-amber-500/30",
+  },
+  upcoming: {
+    label: "Upcoming",
+    bgClass: "bg-[#D4A843]/15",
+    textClass: "text-[#D4A843]",
+    ringClass: "ring-[#D4A843]/30",
+  },
+  pending: {
+    label: "Pending",
+    bgClass: "bg-white/8",
+    textClass: "text-[#6B85A8]",
+    ringClass: "ring-white/10",
+  },
 };
 
 export default function GoalsPage() {
-  const activeGoals: GoalCard[] = [
-    {
-      title: "Stay current on preventive care",
-      status: "In progress",
-      detail:
-        "Keep annual physicals, routine labs, and specialist check-ins from slipping.",
-      nextStep: "Next step: maintain scheduled primary care visit and queue other annual follow-ups.",
-    },
-    {
-      title: "Close open follow-ups",
-      status: "Needs attention",
-      detail:
-        "Turn provider recommendations into concrete scheduling actions before they get lost.",
-      nextStep: "Next step: continue outreach for dermatology and diagnostics.",
-    },
-    {
-      title: "Build a household care system",
-      status: "Future platform",
-      detail:
-        "Coordinate care across solo, couple, family, or caregiving setups from one place.",
-      nextStep: "Next step: connect goals to household profiles, permissions, and shared workflows.",
-    },
-  ];
+  const router = useRouter();
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const goalCategories = [
-    {
-      title: "Preventive care",
-      detail: "Annual physicals, screenings, vaccinations, routine follow-ups.",
-    },
-    {
-      title: "Ongoing care",
-      detail: "Plans tied to medications, labs, chronic care, and recurring visits.",
-    },
-    {
-      title: "Household goals",
-      detail: "Shared priorities across a couple, family, or caregiving setup.",
-    },
-  ];
+  useEffect(() => {
+    apiFetch("/api/goals/data")
+      .then((res) => {
+        if (res.status === 401) {
+          router.push("/login");
+          return null;
+        }
+        return res.json();
+      })
+      .then((json) => {
+        if (json?.ok) setGoals(json.goals);
+      })
+      .finally(() => setLoading(false));
+  }, [router]);
 
-  const futureSystemLinks = [
-    "Goals connected to scheduled visits",
-    "Goals informed by timeline and medical memory",
-    "Goals tied to medications and adherence",
-    "Goals shared with caregivers where appropriate",
+  if (loading) {
+    return <main className="min-h-screen bg-[#0B1120]" />;
+  }
+
+  const grouped = {
+    overdue: goals.filter((g) => g.status === "overdue"),
+    needs_attention: goals.filter((g) => g.status === "needs_attention"),
+    upcoming: goals.filter((g) => g.status === "upcoming"),
+    pending: goals.filter((g) => g.status === "pending"),
+  };
+
+  const allSections: { key: Goal["status"]; title: string; items: Goal[] }[] = [
+    { key: "overdue", title: "Overdue", items: grouped.overdue },
+    {
+      key: "needs_attention",
+      title: "Needs Attention",
+      items: grouped.needs_attention,
+    },
+    { key: "upcoming", title: "Upcoming", items: grouped.upcoming },
+    { key: "pending", title: "Pending", items: grouped.pending },
   ];
+  const sections = allSections.filter((s) => s.items.length > 0);
 
   return (
     <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
@@ -70,90 +96,64 @@ export default function GoalsPage() {
             </h1>
             <p className="mt-2 max-w-2xl text-base text-[#6B85A8]">
               Goals help QBH prioritize what matters most, then connect those
-              priorities to scheduling, follow-ups, medications, and household
-              coordination over time.
+              priorities to scheduling, follow-ups, and care coordination.
             </p>
           </div>
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/10 bg-[#131B2E] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
-        <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-serif text-xl text-[#EFF4FF]">Active goals</h2>
-              <p className="mt-2 text-sm text-[#6B85A8]">
-                Seeded demo goals showing how QBH can connect priorities to
-                concrete actions.
-              </p>
+        {goals.length === 0 ? (
+          <div className="mt-10 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-[#1E2B45]">
+            <div className="font-semibold text-[#EFF4FF]">
+              No goals right now
             </div>
-
-            <span className="rounded-full bg-[#D4A843]/15 px-3 py-1 text-xs font-semibold text-[#D4A843] ring-1 ring-[#D4A843]/30">
-              Demo preview
-            </span>
+            <p className="mt-2 text-sm text-[#6B85A8]">
+              As QBH discovers providers and tracks visits, goals will appear
+              here automatically.
+            </p>
           </div>
-
-          <div className="mt-6 space-y-4">
-            {activeGoals.map((goal) => (
-              <div
-                key={goal.title}
-                className="rounded-2xl bg-[#162030] p-5 ring-1 ring-white/8"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="font-semibold text-[#EFF4FF]">{goal.title}</div>
-
-                  <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#6B85A8] ring-1 ring-white/10">
-                    {goal.status}
-                  </span>
+        ) : (
+          <div className="mt-8 space-y-8">
+            {sections.map((section) => (
+              <section key={section.key}>
+                <h2 className="mb-4 font-serif text-xl text-[#EFF4FF]">
+                  {section.title}
+                </h2>
+                <div className="space-y-4">
+                  {section.items.map((goal) => {
+                    const cfg = statusConfig[goal.status];
+                    return (
+                      <div
+                        key={goal.id}
+                        className="rounded-2xl bg-[#131B2E] p-5 ring-1 ring-[#1E2B45]"
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="font-semibold text-[#EFF4FF]">
+                            {goal.title}
+                          </div>
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${cfg.bgClass} ${cfg.textClass} ${cfg.ringClass}`}
+                          >
+                            {cfg.label}
+                          </span>
+                        </div>
+                        <p className="mt-3 text-sm text-[#6B85A8]">
+                          {goal.detail}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
-
-                <p className="mt-3 text-sm text-[#6B85A8]">{goal.detail}</p>
-
-                <div className="mt-3 text-sm text-[#9AB0CC]">{goal.nextStep}</div>
-              </div>
+              </section>
             ))}
           </div>
-        </section>
-
-        <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-          {goalCategories.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8"
-            >
-              <h2 className="font-serif text-xl text-[#EFF4FF]">{item.title}</h2>
-              <p className="mt-3 text-sm text-[#6B85A8]">{item.detail}</p>
-            </div>
-          ))}
-        </section>
-
-        <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
-          <div className="text-sm font-semibold uppercase tracking-wide text-[#4D6480]">
-            Future system connections
-          </div>
-
-          <p className="mt-3 text-sm text-[#6B85A8]">
-            In the full QBH platform, goals become a planning layer that ties
-            together care coordination, timeline memory, medications, and shared
-            household workflows.
-          </p>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {futureSystemLinks.map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8"
-              >
-                <div className="text-sm font-medium text-[#9AB0CC]">{item}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+        )}
       </div>
     </main>
   );
