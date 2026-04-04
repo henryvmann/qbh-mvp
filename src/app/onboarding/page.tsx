@@ -64,6 +64,9 @@ const NAVY = "#0B1120";
 const CARD_BG = "#131B2E";
 const CARD_BORDER = "#1E2B45";
 
+/* Survey step mapping: step 1 -> survey 1, step 3 -> survey 2, step 4 -> survey 3, step 5 -> survey 4 */
+const SURVEY_STEP_MAP: Record<number, number> = { 1: 1, 3: 2, 4: 3, 5: 4 };
+
 /* ------------------------------------------------------------------ */
 /*  Shared UI pieces                                                   */
 /* ------------------------------------------------------------------ */
@@ -180,7 +183,7 @@ function ConnectionRow({
     >
       <span className="text-[#EFF4FF]">{label}</span>
       {connected ? (
-        <span className="text-emerald-400 text-xs font-medium">Connected ✓</span>
+        <span className="text-emerald-400 text-xs font-medium">Connected &#10003;</span>
       ) : pending ? (
         <span className="text-amber-400 text-xs font-medium">Pending...</span>
       ) : (
@@ -219,6 +222,8 @@ export default function OnboardingPage() {
     []
   );
   const [pendingProviders, setPendingProviders] = useState<Array<{ id: string; name: string; status: string; visit_count: number }>>([]);
+  const [approvedCount, setApprovedCount] = useState(0);
+  const [followUpCount, setFollowUpCount] = useState(0);
   const [reviewingProviders, setReviewingProviders] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingDiscovery, setLoadingDiscovery] = useState(false);
@@ -227,7 +232,7 @@ export default function OnboardingPage() {
   const plaidHandlerRef = useRef<{ open: () => void } | null>(null);
 
   // No auth guard here — if someone explicitly navigates to /onboarding,
-  // let them through. The home page handles the "authenticated → dashboard" redirect.
+  // let them through. The home page handles the "authenticated -> dashboard" redirect.
 
   /* ---- initialise user id ---- */
   useEffect(() => {
@@ -239,7 +244,7 @@ export default function OnboardingPage() {
       setPlaidConnected(true);
       const savedId = window.localStorage.getItem("qbh_user_id") || "";
       if (savedId) setUserId(savedId);
-      setStep(6); // jump to discovery
+      setStep(8); // jump to discovery
       window.localStorage.removeItem("qbh_plaid_connected");
       return;
     }
@@ -325,10 +330,10 @@ export default function OnboardingPage() {
     }
   }, [userId]);
 
-  // Calendar connect deferred to after auth — just a toggle at step 5
+  // Calendar connect deferred to after auth — just a toggle at step 7
 
-  /* ---- Step 5 continue: create user ---- */
-  const handleStep5Continue = useCallback(async () => {
+  /* ---- Step 7 continue: create user ---- */
+  const handleStep7Continue = useCallback(async () => {
     if (!name.trim() || !email.trim() || password.length < 6) return;
     setError(null);
 
@@ -358,30 +363,30 @@ export default function OnboardingPage() {
       });
       if (signInError) throw signInError;
 
-      setStep(6);
+      setStep(8);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
     }
   }, [name, email, password, userId, survey]);
 
-  /* ---- Step 6: run discovery ---- */
+  /* ---- Step 8: run discovery ---- */
   useEffect(() => {
-    if (step !== 6) return;
+    if (step !== 8) return;
     let cancelled = false;
 
     setLoadingDiscovery(true);
     setAnalysisProgress(0);
 
-    // Animate progress
-    const progressInterval = window.setInterval(() => {
-      setAnalysisProgress((p) => {
-        if (p >= 2) {
-          window.clearInterval(progressInterval);
-          return 2;
-        }
-        return p + 1;
-      });
-    }, 1500);
+    // Animate progress items in sequence
+    const timer1 = window.setTimeout(() => {
+      if (!cancelled) setAnalysisProgress(1);
+    }, 1000);
+    const timer2 = window.setTimeout(() => {
+      if (!cancelled) setAnalysisProgress(2);
+    }, 3000);
+    const timer3 = window.setTimeout(() => {
+      if (!cancelled) setAnalysisProgress(3);
+    }, 5000);
 
     async function runDiscovery() {
       try {
@@ -446,13 +451,18 @@ export default function OnboardingPage() {
 
           if (pendingRes.ok && pendingData?.providers?.length > 0) {
             setPendingProviders(pendingData.providers);
+            // Track counts for celebration screen
+            const active = pendingData.providers.filter((p: { status: string }) => p.status === "active");
+            setApprovedCount(active.length);
+            setFollowUpCount(pendingData.providers.filter((p: { status: string }) => p.status === "review_needed").length);
             setReviewingProviders(true);
             setLoadingDiscovery(false);
             return;
           }
 
           setLoadingDiscovery(false);
-          router.push("/handle-first");
+          // Go to celebration screen instead of directly to dashboard
+          setStep(9);
         }
       } catch (err) {
         if (!cancelled) {
@@ -468,13 +478,15 @@ export default function OnboardingPage() {
 
     return () => {
       cancelled = true;
-      window.clearInterval(progressInterval);
+      window.clearTimeout(timer1);
+      window.clearTimeout(timer2);
+      window.clearTimeout(timer3);
     };
   }, [step, plaidPublicToken, plaidConnected, userId]);
 
   /* ---- render per step ---- */
 
-  // Step 0: Splash
+  // Step 0: Enhanced Splash
   if (step === 0) {
     return (
       <Shell>
@@ -483,7 +495,7 @@ export default function OnboardingPage() {
             className="text-xs font-semibold uppercase tracking-[0.3em]"
             style={{ color: GOLD }}
           >
-            QBH ✦ Your Health Ally
+            QBH &#10022; Your Health Ally
           </p>
           <h1 className="mt-6 max-w-md text-3xl font-light leading-snug text-[#EFF4FF] sm:text-4xl">
             You don&apos;t have to manage this alone.
@@ -492,6 +504,31 @@ export default function OnboardingPage() {
             QB keeps track, follows up, and handles the details so you
             don&apos;t have to.
           </p>
+
+          {/* Preview cards */}
+          <div className="mt-8 flex gap-3">
+            {[
+              { icon: "\u25C9", label: "Find providers" },
+              { icon: "\u25C9", label: "Book appointments" },
+              { icon: "\u2713", label: "Stay on track" },
+            ].map((card) => (
+              <div
+                key={card.label}
+                className="flex flex-col items-center gap-2 rounded-xl px-4 py-3"
+                style={{
+                  backgroundColor: CARD_BG,
+                  borderWidth: 1,
+                  borderStyle: "solid",
+                  borderColor: CARD_BORDER,
+                  minWidth: 96,
+                }}
+              >
+                <span className="text-lg" style={{ color: GOLD }}>{card.icon}</span>
+                <span className="text-xs text-[#EFF4FF]">{card.label}</span>
+              </div>
+            ))}
+          </div>
+
           <GoldButton onClick={() => setStep(1)}>Continue &rarr;</GoldButton>
         </div>
       </Shell>
@@ -502,7 +539,7 @@ export default function OnboardingPage() {
   if (step === 1) {
     return (
       <Shell>
-        <StepCounter current={1} total={8} />
+        <StepCounter current={SURVEY_STEP_MAP[1]} total={4} />
         <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
           What do you want help staying on top of?
         </h1>
@@ -527,11 +564,18 @@ export default function OnboardingPage() {
     );
   }
 
-  // Step 2: What's hardest to manage today?
+  // Step 2: NEW — Social Proof / Trust interstitial
   if (step === 2) {
     return (
+      <SocialProofScreen onContinue={() => setStep(3)} />
+    );
+  }
+
+  // Step 3: What's hardest to manage today? (was step 2)
+  if (step === 3) {
+    return (
       <Shell>
-        <StepCounter current={2} total={8} />
+        <StepCounter current={SURVEY_STEP_MAP[3]} total={4} />
         <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
           What&apos;s hardest to manage today?
         </h1>
@@ -547,7 +591,7 @@ export default function OnboardingPage() {
           ))}
         </div>
         <GoldButton
-          onClick={() => setStep(3)}
+          onClick={() => setStep(4)}
           disabled={survey.step2.length === 0}
         >
           Continue &rarr;
@@ -556,11 +600,11 @@ export default function OnboardingPage() {
     );
   }
 
-  // Step 3: Who are you managing care for? (multi-select)
-  if (step === 3) {
+  // Step 4: Who are you managing care for? (was step 3)
+  if (step === 4) {
     return (
       <Shell>
-        <StepCounter current={3} total={8} />
+        <StepCounter current={SURVEY_STEP_MAP[4]} total={4} />
         <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
           Who are you managing care for?
         </h1>
@@ -577,7 +621,7 @@ export default function OnboardingPage() {
           ))}
         </div>
         <GoldButton
-          onClick={() => setStep(4)}
+          onClick={() => setStep(5)}
           disabled={survey.step3.length === 0}
         >
           Continue &rarr;
@@ -586,11 +630,11 @@ export default function OnboardingPage() {
     );
   }
 
-  // Step 4: What would you want QB to handle?
-  if (step === 4) {
+  // Step 5: What would you want QB to handle? (was step 4)
+  if (step === 5) {
     return (
       <Shell>
-        <StepCounter current={4} total={8} />
+        <StepCounter current={SURVEY_STEP_MAP[5]} total={4} />
         <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
           What would you want QB to handle?
         </h1>
@@ -606,7 +650,7 @@ export default function OnboardingPage() {
           ))}
         </div>
         <GoldButton
-          onClick={() => setStep(5)}
+          onClick={() => setStep(6)}
           disabled={survey.step4.length === 0}
         >
           Continue &rarr;
@@ -615,12 +659,59 @@ export default function OnboardingPage() {
     );
   }
 
-  // Step 5: Let's get you set up
-  if (step === 5) {
+  // Step 6: NEW — "Here's what happens next" explainer
+  if (step === 6) {
+    const steps = [
+      {
+        num: 1,
+        title: "Connect your bank",
+        desc: "We\u2019ll scan your transactions to find healthcare providers. Read-only \u2014 we can\u2019t move money.",
+      },
+      {
+        num: 2,
+        title: "Review your providers",
+        desc: "You\u2019ll see everyone we found and choose which ones to keep.",
+      },
+      {
+        num: 3,
+        title: "QB gets to work",
+        desc: "We\u2019ll check what\u2019s overdue, find phone numbers, and start booking.",
+      },
+    ];
+
+    return (
+      <Shell>
+        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
+          Here&apos;s what happens next
+        </h1>
+
+        <div className="mt-8 flex flex-col gap-5">
+          {steps.map((s) => (
+            <div key={s.num} className="flex gap-4">
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                style={{ backgroundColor: GOLD, color: NAVY }}
+              >
+                {s.num}
+              </span>
+              <div>
+                <div className="text-sm font-medium text-[#EFF4FF]">{s.title}</div>
+                <div className="mt-1 text-xs text-[#6B85A8] leading-relaxed">{s.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <GoldButton onClick={() => setStep(7)}>Let&apos;s do it &rarr;</GoldButton>
+      </Shell>
+    );
+  }
+
+  // Step 7: Account setup + Plaid connection (was step 5)
+  if (step === 7) {
     const canContinue = name.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
     return (
       <Shell>
-        <StepCounter current={5} total={8} />
         <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
           Let&apos;s get you set up
         </h1>
@@ -686,7 +777,7 @@ export default function OnboardingPage() {
         )}
 
         {plaidConnected ? (
-          <GoldButton onClick={handleStep5Continue} disabled={!canContinue}>
+          <GoldButton onClick={handleStep7Continue} disabled={!canContinue}>
             Continue &rarr;
           </GoldButton>
         ) : (
@@ -698,8 +789,8 @@ export default function OnboardingPage() {
     );
   }
 
-  // Step 6 — Provider review (shows after discovery finds providers to review)
-  if (step === 6 && reviewingProviders) {
+  // Step 8 — Provider review (shows after discovery finds providers to review)
+  if (step === 8 && reviewingProviders) {
     // Build person options from step 3 survey answers
     const personLabelMap: Record<string, string> = {
       "Myself": "Me",
@@ -731,6 +822,7 @@ export default function OnboardingPage() {
       } catch {
         // Best-effort
       }
+      setApprovedCount((c) => c + 1);
       setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
     }
 
@@ -754,7 +846,6 @@ export default function OnboardingPage() {
 
     return (
       <Shell>
-        <StepCounter current={6} total={8} />
         <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
           We found your healthcare providers
         </h1>
@@ -849,21 +940,20 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {allReviewed && confirmedProviders.length === 0 && (
-          <GoldButton onClick={() => router.push("/handle-first")}>
-            Enter QB &rarr;
+        {allReviewed && (
+          <GoldButton onClick={() => setStep(9)}>
+            Continue &rarr;
           </GoldButton>
         )}
       </Shell>
     );
   }
 
-  // Step 6 — Discovery loading spinner (shows error if discovery failed)
-  if (step === 6) {
+  // Step 8 — Discovery processing with animated checkmarks
+  if (step === 8) {
     if (error) {
       return (
         <Shell>
-          <StepCounter current={6} total={8} />
           <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
             Something went wrong
           </h1>
@@ -877,188 +967,219 @@ export default function OnboardingPage() {
       );
     }
 
-    const progressLabels = [
-      "Organizing",
-      "Identifying",
-      "Preparing",
+    const progressItems = [
+      "Finding your healthcare providers",
+      "Building your care timeline",
+      "Checking for overdue care",
     ];
+
     return (
       <Shell>
-        <StepCounter current={6} total={8} />
-        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
-          QB is getting started
-        </h1>
-        <p className="mt-2 text-sm text-[#6B85A8]">
-          {progressLabels.join(" \u2022 ")}
-        </p>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+          <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
+            QB is getting started
+          </h1>
+          <p className="mt-2 text-sm text-[#6B85A8]">
+            This usually takes a few seconds
+          </p>
 
-        <div className="mt-10 flex flex-col items-center gap-6">
-          {/* animated spinner */}
-          <div className="relative h-24 w-24">
-            <div
-              className="absolute inset-0 animate-spin rounded-full border-2 border-transparent"
-              style={{
-                borderTopColor: GOLD,
-                borderRightColor: GOLD,
-                animationDuration: "1.2s",
-              }}
-            />
-            <div
-              className="absolute inset-3 animate-spin rounded-full border-2 border-transparent"
-              style={{
-                borderBottomColor: "#6B85A8",
-                animationDuration: "2s",
-                animationDirection: "reverse",
-              }}
-            />
-          </div>
-
-          <div className="mt-4 flex flex-col gap-2">
-            {progressLabels.map((label, i) => (
-              <div
-                key={label}
-                className="flex items-center gap-3 text-sm transition-opacity duration-500"
-                style={{ opacity: i <= analysisProgress ? 1 : 0.3 }}
-              >
-                <span
-                  className="h-2 w-2 rounded-full"
+          <div className="mt-10 flex flex-col gap-4 text-left w-full max-w-sm">
+            {progressItems.map((label, i) => {
+              const done = analysisProgress >= i + 1;
+              return (
+                <div
+                  key={label}
+                  className="flex items-center gap-3 rounded-xl px-5 py-4 transition-all duration-500"
                   style={{
-                    backgroundColor:
-                      i <= analysisProgress ? GOLD : "#3A4A66",
+                    backgroundColor: CARD_BG,
+                    borderWidth: 1,
+                    borderStyle: "solid",
+                    borderColor: done ? GOLD : CARD_BORDER,
+                    opacity: analysisProgress >= i ? 1 : 0.3,
                   }}
-                />
-                <span className="text-[#EFF4FF]">{label}</span>
-              </div>
-            ))}
+                >
+                  <span
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors duration-500"
+                    style={{
+                      backgroundColor: done ? GOLD : "transparent",
+                      color: done ? NAVY : "#3A4A66",
+                      borderWidth: done ? 0 : 2,
+                      borderStyle: "solid",
+                      borderColor: "#3A4A66",
+                    }}
+                  >
+                    {done ? "\u2713" : ""}
+                  </span>
+                  <span
+                    className="text-sm transition-colors duration-500"
+                    style={{ color: done ? "#EFF4FF" : "#6B85A8" }}
+                  >
+                    {label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </Shell>
     );
   }
 
-  // Step 7: Here's what QB can help with
-  if (step === 7) {
-    const items: DiscoveryResult[] =
-      discoveryResults.length > 0
-        ? discoveryResults
-        : [
-            { label: "Health timeline created" },
-            { label: "Upcoming checkups identified" },
-            { label: "Care history organized" },
-          ];
-    return (
-      <Shell>
-        <StepCounter current={7} total={8} />
-        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
-          Here&apos;s what QB can help with
-        </h1>
-
-        <div className="mt-6 flex flex-col gap-3">
-          {items.map((item, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
-              style={{
-                backgroundColor: CARD_BG,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderColor: CARD_BORDER,
-              }}
-            >
-              <span
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                style={{ backgroundColor: GOLD, color: NAVY }}
-              >
-                {i + 1}
-              </span>
-              <div>
-                <div className="text-[#EFF4FF]">{item.label}</div>
-                {item.detail && (
-                  <div className="mt-0.5 text-xs text-[#6B85A8]">
-                    {item.detail}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <GoldButton onClick={() => setStep(8)}>Continue &rarr;</GoldButton>
-      </Shell>
-    );
-  }
-
-  // Step 8: Let's test this out
-  if (step === 8) {
-    const actions =
-      discoveryResults.length > 0
-        ? discoveryResults.slice(0, 3).map((r) => r.label)
-        : [
-            "Book with your primary doctor",
-            "Sync MyChart / Aetna / Epic",
-            "View timeline",
-          ];
-    return (
-      <Shell>
-        <StepCounter current={8} total={8} />
-        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
-          Let&apos;s test this out
-        </h1>
-
-        <div className="mt-6 flex flex-col gap-3">
-          {actions.map((action, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
-              style={{
-                backgroundColor: CARD_BG,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderColor: CARD_BORDER,
-              }}
-            >
-              <span
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border"
-                style={{ borderColor: GOLD }}
-              />
-              <span className="text-[#EFF4FF]">{action}</span>
-            </div>
-          ))}
-        </div>
-
-        <GoldButton onClick={() => setStep(9)}>Continue &rarr;</GoldButton>
-      </Shell>
-    );
-  }
-
-  // Step 9: Final
+  // Step 9: NEW — Celebration + summary screen
   if (step === 9) {
     return (
       <Shell>
         <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
-          <h1 className="max-w-md text-2xl font-light leading-snug text-[#EFF4FF] sm:text-3xl">
-            You don&apos;t have to manage this alone anymore
+          {/* Celebratory symbol */}
+          <span className="text-5xl" style={{ color: GOLD }}>&#10022;</span>
+
+          <h1 className="mt-6 max-w-md text-2xl font-light leading-snug text-[#EFF4FF] sm:text-3xl">
+            You&apos;re all set!
           </h1>
-          <p className="mt-4 max-w-sm text-base text-[#6B85A8]">
-            QB keeps track, follows up, and handles the details — so you
-            don&apos;t have to.
+          <p className="mt-2 text-base text-[#6B85A8]">
+            Here&apos;s what QB found for you
           </p>
 
-          <div className="mt-8 flex flex-col gap-2 text-sm text-emerald-400">
-            {plaidConnected && <span>First appointment reminder set ✓</span>}
-            <span>Health history secured ✓</span>
+          {/* Summary cards */}
+          <div className="mt-8 flex flex-col gap-3 w-full max-w-sm">
+            <div
+              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
+              style={{
+                backgroundColor: CARD_BG,
+                borderWidth: 1,
+                borderStyle: "solid",
+                borderColor: CARD_BORDER,
+              }}
+            >
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                style={{ backgroundColor: GOLD, color: NAVY }}
+              >
+                {approvedCount}
+              </span>
+              <span className="text-[#EFF4FF]">providers identified</span>
+            </div>
+
+            <div
+              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
+              style={{
+                backgroundColor: CARD_BG,
+                borderWidth: 1,
+                borderStyle: "solid",
+                borderColor: CARD_BORDER,
+              }}
+            >
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                style={{ backgroundColor: GOLD, color: NAVY }}
+              >
+                {followUpCount}
+              </span>
+              <span className="text-[#EFF4FF]">may need follow-up</span>
+            </div>
+
+            <div
+              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
+              style={{
+                backgroundColor: CARD_BG,
+                borderWidth: 1,
+                borderStyle: "solid",
+                borderColor: CARD_BORDER,
+              }}
+            >
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                style={{ backgroundColor: GOLD, color: NAVY }}
+              >
+                &#10003;
+              </span>
+              <span className="text-[#EFF4FF]">Health timeline started</span>
+            </div>
           </div>
 
           <GoldButton onClick={() => router.push("/handle-first")}>
-            Enter QB &rarr;
+            See your dashboard &rarr;
           </GoldButton>
         </div>
       </Shell>
     );
   }
 
+  // Step 10: Dashboard redirect (fallback)
+  if (step === 10) {
+    router.push("/handle-first");
+    return null;
+  }
+
   // Fallback (should never render)
   return null;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Social Proof Screen (Step 2) — auto-advances after 4s             */
+/* ------------------------------------------------------------------ */
+
+function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
+  const hasFired = useRef(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (!hasFired.current) {
+        hasFired.current = true;
+        onContinue();
+      }
+    }, 4000);
+    return () => window.clearTimeout(timer);
+  }, [onContinue]);
+
+  function handleClick() {
+    if (!hasFired.current) {
+      hasFired.current = true;
+      onContinue();
+    }
+  }
+
+  return (
+    <Shell>
+      <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
+        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
+          You&apos;re in good hands
+        </h1>
+
+        {/* Testimonial */}
+        <div
+          className="mt-8 rounded-xl px-6 py-5"
+          style={{
+            backgroundColor: CARD_BG,
+            borderWidth: 1,
+            borderStyle: "solid",
+            borderColor: CARD_BORDER,
+          }}
+        >
+          <p className="text-sm italic leading-relaxed text-[#EFF4FF]">
+            &ldquo;QB found three providers I&apos;d completely forgotten about and booked my overdue physical in minutes.&rdquo;
+          </p>
+          <p className="mt-3 text-xs text-[#6B85A8]">&mdash; Early QB member</p>
+        </div>
+
+        {/* Trust points */}
+        <div className="mt-8 flex gap-4">
+          {[
+            { icon: "\uD83D\uDD12", label: "Bank-level security" },
+            { icon: "\uD83D\uDC41", label: "Read-only access" },
+            { icon: "\uD83D\uDEE1", label: "No data sold" },
+          ].map((item) => (
+            <div key={item.label} className="flex flex-col items-center gap-2" style={{ minWidth: 88 }}>
+              <span className="text-lg">{item.icon}</span>
+              <span className="text-xs text-[#6B85A8]">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <GoldButton onClick={handleClick}>Continue &rarr;</GoldButton>
+      </div>
+    </Shell>
+  );
 }
 
 /* ------------------------------------------------------------------ */
