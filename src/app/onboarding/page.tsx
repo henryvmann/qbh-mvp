@@ -1473,9 +1473,9 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
       {/* Trust points */}
       <div className="mt-8 flex justify-center gap-4">
         {[
-          { icon: "\uD83D\uDD12", label: "Bank-level security" },
-          { icon: "\uD83D\uDC41", label: "Read-only access" },
-          { icon: "\uD83D\uDEE1", label: "No data sold" },
+          { icon: "\u25C9", label: "Bank-level security" },
+          { icon: "\u25C9", label: "Read-only access" },
+          { icon: "\u25C9", label: "No data sold" },
         ].map((item) => (
           <div key={item.label} className="flex flex-col items-center gap-2" style={{ minWidth: 88 }}>
             <span className="text-lg">{item.icon}</span>
