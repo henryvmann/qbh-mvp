@@ -238,6 +238,15 @@ export async function POST(req: Request) {
 
   console.log("qbh start-call using assistant:", assistantId);
 
+  // Check if this is a manually-added provider (no visit history)
+  const { data: providerRow } = await supabaseAdmin
+    .from("providers")
+    .select("source")
+    .eq("id", provider_id)
+    .single();
+
+  const isManualProvider = providerRow?.source === "manual";
+
   const availabilityContext = await buildStartCallAvailabilityContext(
     app_user_id
   );
@@ -339,6 +348,8 @@ export async function POST(req: Request) {
           preferred_timeframe,
           demo_autoconfirm,
           mode,
+          call_purpose: isManualProvider ? "INQUIRY" : mode,
+          is_manual_provider: isManualProvider,
           patient_date_of_birth: patientProfile.date_of_birth || null,
           patient_insurance_provider: patientProfile.insurance_provider || null,
           patient_insurance_member_id: patientProfile.insurance_member_id || null,

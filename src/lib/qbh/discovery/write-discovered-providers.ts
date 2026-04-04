@@ -70,6 +70,7 @@ export async function writeDiscoveredProviders({
       guessed_portal_brand: null,
       guessed_portal_confidence: null,
       phone_number: provider.phone_number || null,
+      source: "plaid",
     }));
 
   let insertedProviders: Array<{ id: string; name: string }> = [];

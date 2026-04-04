@@ -24,12 +24,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const careRecipient = String(body?.care_recipient || "").trim() || null;
+    const careRecipients = Array.isArray(body?.care_recipients) ? body.care_recipients :
+      body?.care_recipient ? [body.care_recipient] : [];
     const newStatus = action === "approve" ? "active" : "dismissed";
 
     const updateData: Record<string, string | null> = { status: newStatus };
-    if (careRecipient && action === "approve") {
-      updateData.care_recipient = careRecipient;
+    if (careRecipients.length > 0 && action === "approve") {
+      updateData.care_recipient = JSON.stringify(careRecipients);
     }
 
     const { error } = await supabaseAdmin

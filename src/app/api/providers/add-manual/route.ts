@@ -10,7 +10,8 @@ export async function POST(req: NextRequest) {
     const name = String(body?.name || "").trim();
     const phone = String(body?.phone_number || "").trim() || null;
     const specialty = String(body?.specialty || "").trim() || null;
-    const careRecipient = String(body?.care_recipient || "").trim() || null;
+    const careRecipients = Array.isArray(body?.care_recipients) ? body.care_recipients :
+      body?.care_recipient ? [body.care_recipient] : [];
 
     if (!appUserId || !name) {
       return NextResponse.json({ ok: false, error: "Missing app_user_id or name" }, { status: 400 });
@@ -35,7 +36,8 @@ export async function POST(req: NextRequest) {
         name,
         phone_number: phone,
         status: "active",
-        care_recipient: careRecipient,
+        care_recipient: careRecipients.length > 0 ? JSON.stringify(careRecipients) : null,
+        source: "manual",
       })
       .select("id")
       .single();

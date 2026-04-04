@@ -229,14 +229,16 @@ export default function OnboardingPage() {
   const [approvedCount, setApprovedCount] = useState(0);
   const [followUpCount, setFollowUpCount] = useState(0);
   const [reviewingProviders, setReviewingProviders] = useState(false);
+  const [providerPeople, setProviderPeople] = useState<Record<string, Set<string>>>({});
   const [error, setError] = useState<string | null>(null);
   const [loadingDiscovery, setLoadingDiscovery] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [manualPath, setManualPath] = useState(false);
-  const [manualProviders, setManualProviders] = useState<Array<{ name: string; specialty: string | null; phone: string | null; careRecipient: string }>>([]);
+  const [manualProviders, setManualProviders] = useState<Array<{ name: string; specialty: string | null; phone: string | null; careRecipients: string[] }>>([]);
   const [npiSearchQuery, setNpiSearchQuery] = useState("");
   const [npiSearchResults, setNpiSearchResults] = useState<Array<{ npi: string; name: string; specialty: string | null; phone: string | null; city: string | null; state: string | null }>>([]);
   const [npiSearching, setNpiSearching] = useState(false);
+  const [npiResultPeople, setNpiResultPeople] = useState<Record<string, Set<string>>>({});
 
   const plaidHandlerRef = useRef<{ open: () => void } | null>(null);
 
@@ -559,7 +561,7 @@ export default function OnboardingPage() {
             name: prov.name,
             phone_number: prov.phone,
             specialty: prov.specialty,
-            care_recipient: prov.careRecipient,
+            care_recipients: prov.careRecipients,
           }),
         });
       }
@@ -817,15 +819,28 @@ export default function OnboardingPage() {
     const singlePerson = personOptions.length === 1;
     const defaultCareRecipient = singlePerson ? personOptions[0].value : "";
 
-    function addManualProvider(result: { name: string; specialty: string | null; phone: string | null }, careRecipient?: string) {
-      const cr = careRecipient || defaultCareRecipient;
-      if (!singlePerson && !cr) return; // need assignment
+    function toggleNpiResultPerson(npi: string, personValue: string) {
+      setNpiResultPeople((prev) => {
+        const current = new Set(prev[npi] || []);
+        if (current.has(personValue)) {
+          current.delete(personValue);
+        } else {
+          current.add(personValue);
+        }
+        return { ...prev, [npi]: current };
+      });
+    }
+
+    function addManualProvider(result: { name: string; specialty: string | null; phone: string | null; npi?: string }, careRecipients?: string[]) {
+      const crs = careRecipients || (singlePerson ? [defaultCareRecipient] : []);
+      if (crs.length === 0) return; // need assignment
       setManualProviders((prev) => {
         if (prev.some((p) => p.name === result.name)) return prev;
-        return [...prev, { ...result, careRecipient: cr }];
+        return [...prev, { name: result.name, specialty: result.specialty, phone: result.phone, careRecipients: crs }];
       });
       setNpiSearchQuery("");
       setNpiSearchResults([]);
+      setNpiResultPeople({});
     }
 
     return (
@@ -891,7 +906,9 @@ export default function OnboardingPage() {
               className="mt-1 max-h-64 overflow-y-auto rounded-xl border"
               style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
             >
-              {npiSearchResults.map((result) => (
+              {npiSearchResults.map((result) => {
+                const selected = npiResultPeople[result.npi] || new Set<string>();
+                return (
                 <div key={result.npi}>
                   {singlePerson ? (
                     <button
@@ -915,18 +932,33 @@ export default function OnboardingPage() {
                           <button
                             key={opt.value}
                             type="button"
-                            onClick={() => addManualProvider(result, opt.value)}
+                            onClick={() => toggleNpiResultPerson(result.npi, opt.value)}
                             className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                            style={{ backgroundColor: GOLD, color: NAVY }}
+                            style={{
+                              backgroundColor: selected.has(opt.value) ? GOLD : "transparent",
+                              color: selected.has(opt.value) ? NAVY : "#8A9BAE",
+                              border: selected.has(opt.value) ? "none" : "1px solid rgba(255,255,255,0.15)",
+                            }}
                           >
                             {opt.label}
                           </button>
                         ))}
+                        {selected.size > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => addManualProvider(result, Array.from(selected))}
+                            className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                            style={{ backgroundColor: "#22C55E", color: NAVY }}
+                          >
+                            Confirm
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -1089,7 +1121,19 @@ export default function OnboardingPage() {
     // If only "Myself" was selected, options are just "Me" and "Ignore"
     // Otherwise, show all selected people plus "Ignore"
 
-    async function handleProviderAssign(providerId: string, careRecipient: string) {
+    function toggleProviderPerson(providerId: string, personValue: string) {
+      setProviderPeople((prev) => {
+        const current = new Set(prev[providerId] || []);
+        if (current.has(personValue)) {
+          current.delete(personValue);
+        } else {
+          current.add(personValue);
+        }
+        return { ...prev, [providerId]: current };
+      });
+    }
+
+    async function handleProviderAssign(providerId: string, careRecipients: string[]) {
       const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
       try {
         await apiFetch("/api/providers/review", {
@@ -1099,7 +1143,7 @@ export default function OnboardingPage() {
             provider_id: providerId,
             action: "approve",
             app_user_id: effectiveUserId,
-            care_recipient: careRecipient,
+            care_recipients: careRecipients,
           }),
         });
       } catch {
@@ -1142,7 +1186,9 @@ export default function OnboardingPage() {
               Confirmed providers
             </div>
             <div className="flex flex-col gap-2">
-              {confirmedProviders.map((provider) => (
+              {confirmedProviders.map((provider) => {
+                const selected = providerPeople[provider.id] || new Set<string>();
+                return (
                 <div
                   key={provider.id}
                   className="rounded-xl border px-4 py-3"
@@ -1161,13 +1207,26 @@ export default function OnboardingPage() {
                     {personOptions.map((opt) => (
                       <button
                         key={opt.value}
-                        onClick={() => handleProviderAssign(provider.id, opt.value)}
+                        onClick={() => toggleProviderPerson(provider.id, opt.value)}
                         className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                        style={{ backgroundColor: GOLD, color: NAVY }}
+                        style={{
+                          backgroundColor: selected.has(opt.value) ? GOLD : "transparent",
+                          color: selected.has(opt.value) ? NAVY : "#8A9BAE",
+                          border: selected.has(opt.value) ? "none" : "1px solid rgba(255,255,255,0.15)",
+                        }}
                       >
                         {opt.label}
                       </button>
                     ))}
+                    {selected.size > 0 && (
+                      <button
+                        onClick={() => handleProviderAssign(provider.id, Array.from(selected))}
+                        className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                        style={{ backgroundColor: "#22C55E", color: NAVY }}
+                      >
+                        Confirm
+                      </button>
+                    )}
                     <button
                       onClick={() => handleProviderDismiss(provider.id)}
                       className="rounded-lg border border-white/10 bg-[#1A2336] px-2.5 py-1 text-xs text-[#8A9BAE]"
@@ -1176,7 +1235,8 @@ export default function OnboardingPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -1187,7 +1247,9 @@ export default function OnboardingPage() {
               Could be a provider ({needsReview.length} remaining)
             </div>
             <div className="flex flex-col gap-2">
-              {needsReview.map((provider) => (
+              {needsReview.map((provider) => {
+                const selected = providerPeople[provider.id] || new Set<string>();
+                return (
                 <div
                   key={provider.id}
                   className="rounded-xl border px-4 py-3"
@@ -1203,13 +1265,26 @@ export default function OnboardingPage() {
                     {personOptions.map((opt) => (
                       <button
                         key={opt.value}
-                        onClick={() => handleProviderAssign(provider.id, opt.value)}
+                        onClick={() => toggleProviderPerson(provider.id, opt.value)}
                         className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                        style={{ backgroundColor: GOLD, color: NAVY }}
+                        style={{
+                          backgroundColor: selected.has(opt.value) ? GOLD : "transparent",
+                          color: selected.has(opt.value) ? NAVY : "#8A9BAE",
+                          border: selected.has(opt.value) ? "none" : "1px solid rgba(255,255,255,0.15)",
+                        }}
                       >
                         {opt.label}
                       </button>
                     ))}
+                    {selected.size > 0 && (
+                      <button
+                        onClick={() => handleProviderAssign(provider.id, Array.from(selected))}
+                        className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                        style={{ backgroundColor: "#22C55E", color: NAVY }}
+                      >
+                        Confirm
+                      </button>
+                    )}
                     <button
                       onClick={() => handleProviderDismiss(provider.id)}
                       className="rounded-lg border border-white/10 bg-[#1A2336] px-2.5 py-1 text-xs text-[#8A9BAE]"
@@ -1218,7 +1293,8 @@ export default function OnboardingPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
