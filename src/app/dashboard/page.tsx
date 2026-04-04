@@ -9,6 +9,7 @@ import ProviderCard from "../../components/qbh/ProviderCard";
 import DailyBrief from "../../components/qbh/DailyBrief";
 import DashboardAnalyzer from "../../components/qbh/DashboardAnalyzer";
 import DashboardHandleAllButton from "../../components/qbh/DashboardHandleAllButton";
+import KateWidget from "../../components/qbh/KateWidget";
 
 type DashboardStat = {
   label: string;
@@ -334,6 +335,8 @@ function DashboardInner() {
           </>
         ) : null}
       </div>
+
+      <KateWidget userId={appUserId} />
     </main>
   );
 }
