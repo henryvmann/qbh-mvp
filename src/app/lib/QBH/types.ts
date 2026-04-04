@@ -173,4 +173,6 @@ export type ProviderDashboardSnapshot = {
   booking_state: BookingState;
   history: BookingHistoryEvent[];
   system_actions: SystemActionsState;
+  visitCount: number;
+  lastVisitDate: string | null;
 };

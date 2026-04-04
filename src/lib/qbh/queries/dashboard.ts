@@ -628,12 +628,17 @@ export async function getDashboardProvidersForUser(
   if (visitsError) throw visitsError;
 
   const visitCountByProvider = new Map<string, number>();
+  const latestVisitByProvider = new Map<string, string>();
 
   for (const row of (visits ?? []) as VisitRow[]) {
     visitCountByProvider.set(
       row.provider_id,
       (visitCountByProvider.get(row.provider_id) ?? 0) + 1
     );
+    // Visits are ordered by created_at desc, so first seen per provider is latest
+    if (!latestVisitByProvider.has(row.provider_id) && row.visit_date) {
+      latestVisitByProvider.set(row.provider_id, row.visit_date);
+    }
   }
 
   const latestAttemptIds = Array.from(
@@ -748,6 +753,8 @@ export async function getDashboardProvidersForUser(
       booking_state,
       history,
       system_actions,
+      visitCount,
+      lastVisitDate: latestVisitByProvider.get(pRow.id) ?? null,
     };
   });
 }
