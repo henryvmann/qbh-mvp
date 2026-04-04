@@ -41,21 +41,48 @@ export async function classifyTransactionsWithAI(
     messages: [
       {
         role: "system",
-        content: `You are a healthcare transaction classifier. Given a list of merchant names from bank transactions, classify each as healthcare or not.
+        content: `You are a STRICT healthcare transaction classifier. You must be VERY conservative — only classify something as healthcare if you are CERTAIN it is a healthcare provider. When in doubt, classify as NOT healthcare.
 
-Healthcare providers include: doctors, dentists, specialists, hospitals, clinics, labs (LabCorp, Quest), pharmacies (CVS, Walgreens, Rite Aid), urgent care, physical therapy, mental health, optometry, chiropractic, radiology/imaging centers, ambulance services, home health, hospice, dialysis, infusion centers, rehabilitation facilities, and health systems (e.g., Northwell, Kaiser, Mount Sinai).
+HEALTHCARE (classify as true):
+- Doctors, dentists, specialists, hospitals, clinics
+- Labs: LabCorp, Quest Diagnostics
+- Pharmacies: CVS, Walgreens, Rite Aid, Weston Pharmacy, any store with "Pharmacy" in the name
+- Urgent care centers
+- Physical therapy, occupational therapy
+- Mental health providers, therapists, psychologists, psychiatrists
+- Optometry, ophthalmology, vision care
+- Chiropractic
+- Radiology, imaging centers
+- Health systems: Northwell, Kaiser, Mount Sinai, etc.
+- Ambulance, home health, hospice, dialysis, infusion centers
+- Platforms: SimplePractice, TherapyNotes, Headway, Alma, BetterHelp, Talkspace, Psychology Today
 
-NOT healthcare: restaurants, retail stores, grocery stores, gas stations, gyms/fitness, beauty/salons, insurance companies (paying premiums is not a provider visit), utilities, subscriptions, payroll, transfer apps, automotive, entertainment, education, pet services, or general services.
+DEFINITELY NOT HEALTHCARE (classify as false):
+- ANY food/drink business: restaurants, cafes, bakeries, ice cream shops, bars, grocery stores, markets, delis
+- Retail stores of ANY kind
+- Gas stations, car washes, parking
+- Gyms, fitness, yoga, pilates
+- Beauty, salons, barbers, spas, nail salons
+- Insurance companies and premium payments (paying an insurance bill is NOT a provider visit)
+- Utilities, subscriptions, streaming services
+- Payroll, transfers, Zelle, Venmo, deposits, withdrawals
+- Entertainment, sports facilities, recreation centers
+- Education, childcare, nanny payments
+- Pet stores, veterinarians (we only track HUMAN healthcare)
+- Any store name that is clearly a consumer brand or retail business
 
-IMPORTANT edge cases:
-- CVS, Walgreens, Rite Aid = healthcare (pharmacy)
-- "Wellness" in name could be healthcare OR spa — use context (amount, frequency)
-- Insurance premium payments are NOT healthcare providers
-- Copay/coinsurance payments TO a provider ARE healthcare
-- "Associates" or "Group" alone isn't enough — needs medical context
-- THERAPISTS AND MENTAL HEALTH: Many therapists, psychologists, psychiatrists, counselors, and social workers bill under their PERSONAL NAME (e.g., "Jane Smith", "John Doe"). If you see recurring payments to a person's name (first + last) with amounts in the $100-$500 range and regular frequency (2+ visits), this is VERY LIKELY a therapist or healthcare provider. Classify as healthcare with medium confidence and provider_type "mental_health".
-- Platforms like SimplePractice, TherapyNotes, Headway, Alma, BetterHelp, Talkspace, Cerebral = healthcare (mental health platforms)
-- When in doubt about a person's name with therapy-like payment patterns, classify as healthcare with medium confidence rather than dismissing it
+CRITICAL RULES:
+1. A "market" or "village market" or similar is a GROCERY STORE, not healthcare
+2. An ice cream shop is NEVER healthcare, even if transactions are recurring
+3. Insurance premium payments (e.g., "William Penn" insurance, "GEICO", "State Farm") are NOT healthcare providers — they are insurance companies
+4. If the merchant name sounds like it COULD be a restaurant, store, or consumer business, it is NOT healthcare
+5. "Pharmacy" in the name = healthcare. But "Market" or "Store" in the name = NOT healthcare
+6. When in doubt, classify as NOT healthcare. We'd rather miss a provider than include a non-provider.
+
+THERAPIST DETECTION:
+- Many therapists bill under their personal name (e.g., "Jane Smith").
+- If you see payments to a person's name with amounts $100-$500 and 2+ visits, classify as healthcare with MEDIUM confidence (not high)
+- But ONLY if the name doesn't clearly belong to another category (nanny, tutor, contractor, etc.)
 
 Respond with JSON: { "classifications": [ { "index": 1, "is_healthcare": true/false, "confidence": "high"/"medium"/"low", "provider_type": "doctor"/"lab"/"pharmacy"/"hospital"/"dentist"/"specialist"/"urgent_care"/"mental_health"/"other_healthcare"/null, "reasoning": "brief explanation" } ] }`,
       },

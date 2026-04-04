@@ -96,14 +96,17 @@ function GoldButton({
   onClick,
   disabled,
   type = "button",
+  id,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   type?: "button" | "submit";
+  id?: string;
 }) {
   return (
     <button
+      id={id}
       type={type}
       onClick={onClick}
       disabled={disabled}
@@ -318,6 +321,13 @@ export default function OnboardingPage() {
         onSuccess: (publicToken: string) => {
           setPlaidPublicToken(publicToken);
           setPlaidConnected(true);
+          // Auto-advance: if account info is filled, trigger continue immediately
+          if (name.trim() && email.trim() && password.length >= 6) {
+            // Small delay so user sees the "connected" state briefly
+            setTimeout(() => {
+              document.getElementById("step7-continue-btn")?.click();
+            }, 800);
+          }
         },
         onExit: (err: unknown) => {
           if (err) {
@@ -1055,7 +1065,7 @@ export default function OnboardingPage() {
         )}
 
         {plaidConnected ? (
-          <GoldButton onClick={handleStep7Continue} disabled={!canContinue}>
+          <GoldButton id="step7-continue-btn" onClick={handleStep7Continue} disabled={!canContinue}>
             Continue &rarr;
           </GoldButton>
         ) : (
