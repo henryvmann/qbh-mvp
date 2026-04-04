@@ -101,10 +101,10 @@ function ProgressDots({
           key={i}
           className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
             i + 1 === active
-              ? "bg-[#D4A843]"
+              ? "bg-[#7BA59A]"
               : i + 1 < active
-              ? "bg-[#D4A843]/50"
-              : "border border-[#1E2B45] bg-transparent"
+              ? "bg-[#7BA59A]/50"
+              : "border border-white/8 bg-transparent"
           }`}
         />
       ))}
@@ -131,8 +131,8 @@ function GoldButton({
       onClick={onClick}
       className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-semibold transition ${
         secondary
-          ? "border border-[#1E2B45] bg-transparent text-[#6B85A8] hover:bg-[#131B2E]"
-          : "bg-[#D4A843] text-[#0B1120] hover:bg-[#D4A843]/90"
+          ? "border border-white/8 bg-transparent text-[#8A9BAE] hover:bg-white/5"
+          : "bg-[#7BA59A] text-[#1A1D23] hover:bg-[#7BA59A]/90"
       }`}
     >
       {children}
@@ -156,7 +156,7 @@ function TogglePill({
       type="button"
       onClick={onToggle}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-        active ? "bg-[#D4A843]" : "bg-[#1E2B45]"
+        active ? "bg-[#7BA59A]" : "bg-white/8"
       }`}
     >
       <span
@@ -295,7 +295,7 @@ export default function HandleFirstPage() {
 
   /* ---- Loading state ---- */
   if (loading || !data) {
-    return <div className="min-h-screen bg-[#0B1120]" />;
+    return <div className="min-h-screen bg-[#1A1D23]" />;
   }
 
   const { appUserId, userName, snapshots, hasGoogleCalendarConnection } = data;
@@ -338,12 +338,12 @@ export default function HandleFirstPage() {
               {snapshots.map((s) => (
                 <div
                   key={s.provider.id}
-                  className="flex items-center justify-between rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
                 >
-                  <span className="text-sm font-medium text-[#EFF4FF]">
+                  <span className="text-sm font-medium text-[#F0F2F5]">
                     {s.provider.name}
                   </span>
-                  <span className="rounded-full bg-[#1E2B45] px-2.5 py-0.5 text-xs text-[#6B85A8]">
+                  <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-xs text-[#8A9BAE]">
                     {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
                   </span>
                 </div>
@@ -367,17 +367,17 @@ export default function HandleFirstPage() {
               {snapshots.map((s) => (
                 <div
                   key={s.provider.id}
-                  className="flex items-center justify-between rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
                 >
                   <div>
-                    <p className="text-sm font-medium text-[#EFF4FF]">
+                    <p className="text-sm font-medium text-[#F0F2F5]">
                       {s.provider.name}
                     </p>
-                    <p className="text-xs text-[#6B85A8]">
+                    <p className="text-xs text-[#8A9BAE]">
                       {formatDate(s.lastVisitDate)}
                     </p>
                   </div>
-                  <span className="rounded-full bg-[#1E2B45] px-2.5 py-0.5 text-xs text-[#6B85A8]">
+                  <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-xs text-[#8A9BAE]">
                     {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
                   </span>
                 </div>
@@ -401,16 +401,16 @@ export default function HandleFirstPage() {
             <div className="mt-6 space-y-5">
               {hasOverdue && (
                 <div>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#D4A843]">
+                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#7BA59A]">
                     Might be overdue
                   </h3>
                   <div className="space-y-2">
                     {overdueProviders.map((s) => (
                       <div
                         key={s.provider.id}
-                        className="flex items-center justify-between rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-3"
+                        className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
                       >
-                        <span className="text-sm font-medium text-[#EFF4FF]">
+                        <span className="text-sm font-medium text-[#F0F2F5]">
                           {s.provider.name}
                         </span>
                         <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-400">
@@ -433,9 +433,9 @@ export default function HandleFirstPage() {
                     {currentProviders.map((s) => (
                       <div
                         key={s.provider.id}
-                        className="flex items-center justify-between rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-3"
+                        className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
                       >
-                        <span className="text-sm font-medium text-[#EFF4FF]">
+                        <span className="text-sm font-medium text-[#F0F2F5]">
                           {s.provider.name}
                         </span>
                         <span className="text-emerald-400">
@@ -479,9 +479,9 @@ export default function HandleFirstPage() {
               {overdueProviders.map((s) => (
                 <div
                   key={s.provider.id}
-                  className="flex items-center justify-between rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
                 >
-                  <span className="text-sm font-medium text-[#EFF4FF]">
+                  <span className="text-sm font-medium text-[#F0F2F5]">
                     {s.provider.name}
                   </span>
                   <TogglePill
@@ -507,8 +507,8 @@ export default function HandleFirstPage() {
               times.
             </CharacterWithBubble>
 
-            <div className="mt-6 rounded-xl border border-[#1E2B45] bg-[#131B2E] p-5">
-              <p className="text-sm text-[#6B85A8]">
+            <div className="mt-6 rounded-xl border border-white/8 bg-white/5 p-5">
+              <p className="text-sm text-[#8A9BAE]">
                 We&apos;ll check your Google Calendar for conflicts before
                 suggesting appointment times. Your calendar data stays private
                 and is only used for scheduling.
@@ -548,18 +548,18 @@ export default function HandleFirstPage() {
                 {currentProviders.map((s) => (
                   <div
                     key={s.provider.id}
-                    className="flex items-center justify-between rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-3"
+                    className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
                   >
-                    <span className="text-sm font-medium text-[#EFF4FF]">
+                    <span className="text-sm font-medium text-[#F0F2F5]">
                       {s.provider.name}
                     </span>
                     {selectedProviders.has(s.provider.id) ? (
-                      <span className="text-xs text-[#D4A843]">Added</span>
+                      <span className="text-xs text-[#7BA59A]">Added</span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => toggleProvider(s.provider.id)}
-                        className="rounded-full border border-[#D4A843] px-3 py-1 text-xs font-medium text-[#D4A843] transition hover:bg-[#D4A843]/10"
+                        className="rounded-full border border-[#7BA59A] px-3 py-1 text-xs font-medium text-[#7BA59A] transition hover:bg-[#7BA59A]/10"
                       >
                         Schedule this one too
                       </button>
@@ -591,9 +591,9 @@ export default function HandleFirstPage() {
                 {selectedSnaps.map((s) => (
                   <div
                     key={s.provider.id}
-                    className="flex items-center gap-3 rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-3"
+                    className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-4 py-3"
                   >
-                    <span className="text-[#D4A843]">
+                    <span className="text-[#7BA59A]">
                       <svg
                         width="16"
                         height="16"
@@ -609,7 +609,7 @@ export default function HandleFirstPage() {
                         />
                       </svg>
                     </span>
-                    <span className="text-sm font-medium text-[#EFF4FF]">
+                    <span className="text-sm font-medium text-[#F0F2F5]">
                       {s.provider.name}
                     </span>
                   </div>
@@ -617,7 +617,7 @@ export default function HandleFirstPage() {
               </div>
             )}
 
-            <p className="mt-4 text-sm text-[#6B85A8]">
+            <p className="mt-4 text-sm text-[#8A9BAE]">
               After these appointments are booked, we&apos;ll help you customize
               QB further.
             </p>
@@ -635,16 +635,16 @@ export default function HandleFirstPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#0B1120] text-white overflow-hidden">
+    <div className="relative min-h-screen bg-[#1A1D23] text-white overflow-hidden">
       {/* Decorative circle */}
-      <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#D4A843]/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#7BA59A]/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-lg px-5 py-10">
         {/* Progress dots */}
         <ProgressDots total={visibleSteps.length} active={activeIndex} />
 
         {/* Branding */}
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#D4A843] mb-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#7BA59A] mb-6">
           Quarterback AI
         </p>
 

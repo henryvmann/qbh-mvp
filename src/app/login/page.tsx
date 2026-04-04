@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#0B1120] text-[#EFF4FF]">
+    <main className="relative min-h-screen overflow-hidden bg-[#1A1D23] text-[#F0F2F5]">
       <div
         className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-white/10"
         aria-hidden
@@ -48,7 +48,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div
             className="text-xs font-semibold uppercase tracking-[0.25em]"
-            style={{ color: "#D4A843" }}
+            style={{ color: "#7BA59A" }}
           >
             Quarterback AI
           </div>
@@ -57,7 +57,7 @@ export default function LoginPage() {
             Welcome back
           </h1>
 
-          <p className="mt-3 text-base text-[#6B85A8]">
+          <p className="mt-3 text-base text-[#8A9BAE]">
             Sign in with your email and password.
           </p>
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
               placeholder="you@example.com"
               required
               autoFocus
-              className="w-full rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:border-[#D4A843] focus:outline-none focus:ring-1 focus:ring-[#D4A843]"
+              className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
             />
 
             <input
@@ -78,14 +78,14 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               required
-              className="w-full rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:border-[#D4A843] focus:outline-none focus:ring-1 focus:ring-[#D4A843]"
+              className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
             />
 
             <button
               type="submit"
               disabled={submitting || !email.trim() || !password.trim()}
               className="w-full rounded-xl px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ backgroundColor: "#D4A843", color: "#0B1120" }}
+              style={{ backgroundColor: "#7BA59A", color: "#1A1D23" }}
             >
               {submitting ? "Signing in..." : "Sign in"}
             </button>
@@ -101,8 +101,8 @@ export default function LoginPage() {
             New here?{" "}
             <a
               href="/onboarding"
-              className="underline underline-offset-4 hover:text-[#6B85A8]"
-              style={{ color: "#D4A843" }}
+              className="underline underline-offset-4 hover:text-[#8A9BAE]"
+              style={{ color: "#7BA59A" }}
             >
               Get started
             </a>

@@ -27,11 +27,11 @@ export default function HomePage() {
   }, [router]);
 
   if (checking) {
-    return <main className="min-h-screen bg-[#0B1120]" />;
+    return <main className="min-h-screen bg-[#1A1D23]" />;
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#0B1120] text-[#EFF4FF]">
+    <main className="relative min-h-screen overflow-hidden bg-[#1A1D23] text-[#F0F2F5]">
       {/* Decorative circle */}
       <div
         className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-white/10"
@@ -41,7 +41,7 @@ export default function HomePage() {
       <div className="relative mx-auto max-w-3xl px-6 pt-20 pb-20">
         <div
           className="text-xs font-semibold uppercase tracking-[0.25em]"
-          style={{ color: "#D4A843" }}
+          style={{ color: "#7BA59A" }}
         >
           QBH &#10022; Your Health Ally
         </div>
@@ -50,7 +50,7 @@ export default function HomePage() {
           Your healthcare, handled.
         </h1>
 
-        <p className="mt-4 max-w-xl text-lg text-[#6B85A8]">
+        <p className="mt-4 max-w-xl text-lg text-[#8A9BAE]">
           You don&apos;t have to manage this alone. QB keeps track, follows up,
           and handles the details so you don&apos;t have to.
         </p>
@@ -59,14 +59,14 @@ export default function HomePage() {
           <Link
             href="/onboarding"
             className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-semibold shadow-sm"
-            style={{ backgroundColor: "#D4A843", color: "#0B1120" }}
+            style={{ backgroundColor: "#7BA59A", color: "#1A1D23" }}
           >
             Get started &rarr;
           </Link>
 
           <Link
             href="/login"
-            className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-[#131B2E] px-8 py-3.5 text-sm font-medium text-[#EFF4FF] shadow-sm"
+            className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-8 py-3.5 text-sm font-medium text-[#F0F2F5] shadow-sm"
           >
             Sign in
           </Link>

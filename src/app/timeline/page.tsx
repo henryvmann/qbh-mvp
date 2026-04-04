@@ -31,10 +31,10 @@ const tagConfig: Record<
     dot: "#10b981",
   },
   discovered: {
-    bg: "bg-[#D4A843]/15",
-    text: "text-[#D4A843]",
-    ring: "ring-[#D4A843]/30",
-    dot: "#D4A843",
+    bg: "bg-[#7BA59A]/15",
+    text: "text-[#7BA59A]",
+    ring: "ring-[#7BA59A]/30",
+    dot: "#7BA59A",
   },
 };
 
@@ -68,18 +68,18 @@ export default function TimelinePage() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#0B1120]" />;
+    return <main className="min-h-screen bg-[#1A1D23]" />;
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
+    <main className="min-h-screen bg-[#1A1D23] text-[#F0F2F5]">
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#EFF4FF]">
+            <h1 className="font-serif text-3xl tracking-tight text-[#F0F2F5]">
               Health Timeline
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#6B85A8]">
+            <p className="mt-2 max-w-2xl text-base text-[#8A9BAE]">
               A chronological record of visits, bookings, and provider
               discoveries. QBH builds this from your real data so you never lose
               track of your care history.
@@ -88,23 +88,23 @@ export default function TimelinePage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-white/8 bg-white/5 px-4 py-2 text-sm font-medium text-[#8A9BAE] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
         {events.length === 0 ? (
-          <div className="mt-10 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-[#1E2B45]">
-            <div className="font-semibold text-[#EFF4FF]">No events yet</div>
-            <p className="mt-2 text-sm text-[#6B85A8]">
+          <div className="mt-10 rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+            <div className="font-semibold text-[#F0F2F5]">No events yet</div>
+            <p className="mt-2 text-sm text-[#8A9BAE]">
               Connect your bank account to start building your health timeline.
             </p>
           </div>
         ) : (
           <div className="relative mt-10">
             {/* Vertical timeline line */}
-            <div className="absolute left-4 top-0 bottom-0 w-px bg-[#1E2B45]" />
+            <div className="absolute left-4 top-0 bottom-0 w-px bg-white/8" />
 
             <div className="space-y-6">
               {events.map((event) => {
@@ -113,11 +113,11 @@ export default function TimelinePage() {
                   <div key={event.id} className="relative pl-12">
                     {/* Timeline dot */}
                     <div
-                      className="absolute left-2.5 top-6 h-3 w-3 rounded-full ring-2 ring-[#0B1120]"
+                      className="absolute left-2.5 top-6 h-3 w-3 rounded-full ring-2 ring-[#1A1D23]"
                       style={{ backgroundColor: cfg.dot }}
                     />
 
-                    <div className="rounded-2xl bg-[#131B2E] p-6 ring-1 ring-[#1E2B45]">
+                    <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
                       <div className="flex items-center justify-between">
                         <div className="text-sm font-semibold text-[#4D6480]">
                           {formatEventDate(event.date)}
@@ -129,11 +129,11 @@ export default function TimelinePage() {
                         </span>
                       </div>
 
-                      <div className="mt-2 font-serif text-lg text-[#EFF4FF]">
+                      <div className="mt-2 font-serif text-lg text-[#F0F2F5]">
                         {event.title}
                       </div>
 
-                      <p className="mt-2 text-sm text-[#6B85A8]">
+                      <p className="mt-2 text-sm text-[#8A9BAE]">
                         {event.detail}
                       </p>
                     </div>

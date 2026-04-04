@@ -2,9 +2,14 @@
 
 export type Pose = "waving" | "thinking" | "pointing" | "celebrating";
 
+/**
+ * Botanical-inspired character — abstract silhouette with leaf/organic accents.
+ * Colors from the Matisse-inspired palette: sage, teal, soft greens.
+ */
 export function Character({ pose }: { pose: Pose }) {
+  const armColor = "#5B8A7A"; // darker sage for limbs
   const armProps = {
-    stroke: "#1E2B45",
+    stroke: armColor,
     strokeWidth: 4,
     strokeLinecap: "round" as const,
     fill: "none",
@@ -38,11 +43,12 @@ export function Character({ pose }: { pose: Pose }) {
           <>
             <path d="M35 68 L15 42" {...armProps} />
             <path d="M65 68 L85 42" {...armProps} />
-            <circle cx="12" cy="35" r="2.5" fill="#D4A843" />
-            <circle cx="88" cy="35" r="2.5" fill="#D4A843" />
-            <circle cx="50" cy="18" r="2" fill="#D4A843" />
-            <circle cx="30" cy="25" r="1.5" fill="#D4A843" />
-            <circle cx="70" cy="25" r="1.5" fill="#D4A843" />
+            {/* Leaf-shaped sparkles */}
+            <ellipse cx="12" cy="35" rx="3" ry="5" fill="#8BC4A9" transform="rotate(-30 12 35)" />
+            <ellipse cx="88" cy="35" rx="3" ry="5" fill="#8BC4A9" transform="rotate(30 88 35)" />
+            <ellipse cx="50" cy="15" rx="2.5" ry="4" fill="#7BA59A" />
+            <ellipse cx="30" cy="22" rx="2" ry="3.5" fill="#A3D4BE" transform="rotate(-15 30 22)" />
+            <ellipse cx="70" cy="22" rx="2" ry="3.5" fill="#A3D4BE" transform="rotate(15 70 22)" />
           </>
         );
     }
@@ -57,12 +63,17 @@ export function Character({ pose }: { pose: Pose }) {
       xmlns="http://www.w3.org/2000/svg"
       className="shrink-0"
     >
-      <circle cx="50" cy="32" r="16" fill="#1E2B45" />
-      <rect x="32" y="55" width="36" height="50" rx="10" fill="#1E2B45" />
-      <circle cx="50" cy="70" r="4" fill="#D4A843" />
+      {/* Head */}
+      <circle cx="50" cy="32" r="16" fill="#7BA59A" />
+      {/* Body */}
+      <rect x="32" y="55" width="36" height="50" rx="10" fill="#5B8A7A" />
+      {/* Leaf badge on chest */}
+      <ellipse cx="50" cy="70" rx="4" ry="6" fill="#A3D4BE" transform="rotate(20 50 70)" />
+      {/* Arms */}
       {renderArms()}
-      <path d="M42 105 L38 130" stroke="#1E2B45" strokeWidth={4} strokeLinecap="round" />
-      <path d="M58 105 L62 130" stroke="#1E2B45" strokeWidth={4} strokeLinecap="round" />
+      {/* Legs */}
+      <path d="M42 105 L38 130" stroke={armColor} strokeWidth={4} strokeLinecap="round" />
+      <path d="M58 105 L62 130" stroke={armColor} strokeWidth={4} strokeLinecap="round" />
     </svg>
   );
 }
@@ -70,6 +81,7 @@ export function Character({ pose }: { pose: Pose }) {
 export function TalkBubble({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative flex-1">
+      {/* Tail pointing left */}
       <div
         className="absolute left-0 top-5 -translate-x-full hidden sm:block"
         style={{
@@ -77,11 +89,11 @@ export function TalkBubble({ children }: { children: React.ReactNode }) {
           height: 0,
           borderTop: "8px solid transparent",
           borderBottom: "8px solid transparent",
-          borderRight: "10px solid #1E2B45",
+          borderRight: "10px solid rgba(123, 165, 154, 0.15)",
         }}
       />
-      <div className="rounded-2xl border border-[#1E2B45] bg-[#131B2E] p-5">
-        <div className="text-base text-[#EFF4FF]">{children}</div>
+      <div className="rounded-2xl border border-white/8 bg-white/5 p-5 backdrop-blur-sm">
+        <div className="text-base text-[#F0F2F5]">{children}</div>
       </div>
     </div>
   );

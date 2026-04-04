@@ -92,7 +92,7 @@ export default function DashboardHandleAllButton({
       <button
         onClick={handleAll}
         disabled={disabled}
-        className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1A1D23] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting
           ? "Starting booking..."
@@ -103,11 +103,11 @@ export default function DashboardHandleAllButton({
 
       {showCalendarPrompt ? (
         <div className="max-w-xl rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8">
-          <div className="text-sm font-medium text-[#EFF4FF]">
+          <div className="text-sm font-medium text-[#F0F2F5]">
             Connect Google Calendar for a better booking experience
           </div>
 
-          <div className="mt-1 text-sm text-[#6B85A8]">
+          <div className="mt-1 text-sm text-[#8A9BAE]">
             QBH can avoid conflicts and use your real availability before it
             places booking calls. You can skip this for now and continue
             anyway.
@@ -116,7 +116,7 @@ export default function DashboardHandleAllButton({
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={calendarConnectHref}
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#6B85A8] hover:bg-[#1E2D45]"
+              className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#8A9BAE] hover:bg-[#1E2D45]"
             >
               Connect Google Calendar
             </Link>
@@ -124,7 +124,7 @@ export default function DashboardHandleAllButton({
             <button
               onClick={startHandleAll}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1A1D23] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting
                 ? "Starting booking..."

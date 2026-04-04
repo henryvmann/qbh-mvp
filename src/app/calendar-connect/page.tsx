@@ -85,12 +85,12 @@ function CalendarConnectPageInner() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
+    <main className="min-h-screen bg-[#1A1D23] text-[#F0F2F5]">
       <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
         <header className="flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="text-sm text-[#6B85A8] underline underline-offset-4"
+            className="text-sm text-[#8A9BAE] underline underline-offset-4"
           >
             Back
           </Link>
@@ -103,19 +103,19 @@ function CalendarConnectPageInner() {
             Connect Google Calendar
           </h1>
 
-          <p className="mt-4 max-w-2xl text-lg text-[#6B85A8]">
+          <p className="mt-4 max-w-2xl text-lg text-[#8A9BAE]">
             Connect your calendar so Quarterback can avoid conflicts, understand
             your real availability, and schedule safely on your behalf.
           </p>
 
-          <div className="mt-10 rounded-2xl bg-[#131B2E] p-8 ring-1 ring-white/8">
+          <div className="mt-10 rounded-2xl bg-white/5 p-8 ring-1 ring-white/8">
             <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr]">
               <div>
-                <div className="text-sm font-medium text-[#EFF4FF]">
+                <div className="text-sm font-medium text-[#F0F2F5]">
                   Why this matters
                 </div>
 
-                <div className="mt-4 space-y-4 text-sm text-[#6B85A8]">
+                <div className="mt-4 space-y-4 text-sm text-[#8A9BAE]">
                   <div className="rounded-2xl bg-[#162030] px-4 py-3">
                     QBH uses your calendar to avoid proposing or confirming
                     appointment times that conflict with your day.
@@ -135,10 +135,10 @@ function CalendarConnectPageInner() {
 
               <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#162030] p-6">
                 <div>
-                  <div className="text-sm font-medium text-[#EFF4FF]">
+                  <div className="text-sm font-medium text-[#F0F2F5]">
                     Google Calendar
                   </div>
-                  <div className="mt-2 text-sm text-[#6B85A8]">
+                  <div className="mt-2 text-sm text-[#8A9BAE]">
                     Read-only calendar access for conflict-aware scheduling.
                   </div>
                 </div>
@@ -147,7 +147,7 @@ function CalendarConnectPageInner() {
                   <button
                     onClick={startGoogleCalendarConnect}
                     disabled={!userId || submitting}
-                    className="w-full rounded-2xl bg-[#D4A843] px-6 py-3 text-[#0B1120] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-[#1A1D23] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {submitting
                       ? "Redirecting to Google..."
@@ -178,7 +178,7 @@ function CalendarConnectPageInner() {
 
 export default function CalendarConnectPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0B1120]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#1A1D23]" />}>
       <CalendarConnectPageInner />
     </Suspense>
   );

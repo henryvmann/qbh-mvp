@@ -79,14 +79,14 @@ function TopNav() {
   ];
 
   return (
-    <nav className="sticky top-0 z-10 bg-[#0B1120] py-2">
-      <div className="rounded-2xl bg-[#131B2E] px-3 py-2 ring-1 ring-white/8">
+    <nav className="sticky top-0 z-10 bg-[#1A1D23] py-2">
+      <div className="rounded-2xl bg-white/5 px-3 py-2 ring-1 ring-white/8">
         <div className="flex flex-wrap items-center gap-2">
           {items.map((it) => (
             <Link
               key={it.href}
               href={it.href}
-              className="rounded-xl px-3 py-2 text-base font-medium text-[#6B85A8] hover:bg-[#162030] hover:text-[#EFF4FF]"
+              className="rounded-xl px-3 py-2 text-base font-medium text-[#8A9BAE] hover:bg-[#162030] hover:text-[#F0F2F5]"
             >
               {it.label}
             </Link>
@@ -99,9 +99,9 @@ function TopNav() {
 
 function StatCard(props: DashboardStat) {
   return (
-    <div className="rounded-2xl bg-[#131B2E] p-5 ring-1 ring-white/8">
-      <div className="text-sm font-medium text-[#6B85A8]">{props.label}</div>
-      <div className="mt-2 font-serif text-3xl tracking-tight text-[#EFF4FF]">
+    <div className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/8">
+      <div className="text-sm font-medium text-[#8A9BAE]">{props.label}</div>
+      <div className="mt-2 font-serif text-3xl tracking-tight text-[#F0F2F5]">
         {props.value}
       </div>
     </div>
@@ -116,20 +116,20 @@ function CalendarConnectionBanner(props: {
 
   if (props.isConnected) {
     return (
-      <section className="mt-8 rounded-2xl bg-[#131B2E] p-5 ring-1 ring-white/8">
+      <section className="mt-8 rounded-2xl bg-white/5 p-5 ring-1 ring-white/8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="text-sm font-medium text-[#EFF4FF]">
+            <div className="text-sm font-medium text-[#F0F2F5]">
               Google Calendar connected
             </div>
-            <div className="mt-1 text-sm text-[#6B85A8]">
+            <div className="mt-1 text-sm text-[#8A9BAE]">
               QBH can use your real availability to protect your schedule before
               booking starts.
             </div>
           </div>
           <Link
             href={href}
-            className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#6B85A8] hover:bg-[#162030] hover:text-[#EFF4FF]"
+            className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#8A9BAE] hover:bg-[#162030] hover:text-[#F0F2F5]"
           >
             Manage calendar
           </Link>
@@ -139,20 +139,20 @@ function CalendarConnectionBanner(props: {
   }
 
   return (
-    <section className="mt-8 rounded-2xl bg-[#131B2E] p-5 ring-1 ring-white/8">
+    <section className="mt-8 rounded-2xl bg-white/5 p-5 ring-1 ring-white/8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-sm font-medium text-[#EFF4FF]">
+          <div className="text-sm font-medium text-[#F0F2F5]">
             Connect Google Calendar for better booking
           </div>
-          <div className="mt-1 text-sm text-[#6B85A8]">
+          <div className="mt-1 text-sm text-[#8A9BAE]">
             QBH works better with your real availability, but you can still
             continue without connecting it right now.
           </div>
         </div>
         <Link
           href={href}
-          className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95"
+          className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1A1D23] hover:brightness-95"
         >
           Connect calendar
         </Link>
@@ -187,7 +187,7 @@ function ProviderGroupSection(props: {
   if (props.snapshots.length === 0) return null;
   return (
     <section>
-      <h2 className="mb-4 text-lg font-semibold text-[#EFF4FF]">
+      <h2 className="mb-4 text-lg font-semibold text-[#F0F2F5]">
         {props.title}
       </h2>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -228,7 +228,7 @@ function DashboardInner() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#0B1120]" />;
+    return <main className="min-h-screen bg-[#1A1D23]" />;
   }
 
   if (!data) return null;
@@ -258,13 +258,13 @@ function DashboardInner() {
   const showAnalyzer = Boolean(appUserId) && isAnalyzing;
 
   return (
-    <main className="min-h-screen bg-[#0B1120] px-6 py-10">
+    <main className="min-h-screen bg-[#1A1D23] px-6 py-10">
       <div className="mx-auto max-w-7xl">
         <header>
-          <h1 className="font-serif text-4xl tracking-tight text-[#EFF4FF]">
+          <h1 className="font-serif text-4xl tracking-tight text-[#F0F2F5]">
             Quarterback
           </h1>
-          <p className="mt-2 text-sm text-[#6B85A8]">Your care, organized.</p>
+          <p className="mt-2 text-sm text-[#8A9BAE]">Your care, organized.</p>
         </header>
 
         <DashboardAnalyzer userId={appUserId} enabled={showAnalyzer} />
@@ -293,13 +293,13 @@ function DashboardInner() {
               ))}
             </section>
 
-            <section className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
+            <section className="mt-8 rounded-2xl bg-white/5 p-6 ring-1 ring-white/8">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h2 className="font-serif text-2xl tracking-tight text-[#EFF4FF]">
+                  <h2 className="font-serif text-2xl tracking-tight text-[#F0F2F5]">
                     Providers
                   </h2>
-                  <p className="mt-2 text-sm text-[#6B85A8]">
+                  <p className="mt-2 text-sm text-[#8A9BAE]">
                     Discovered from your healthcare spending and tracked here.
                   </p>
                 </div>
@@ -340,7 +340,7 @@ function DashboardInner() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#0B1120]" />}>
+    <Suspense fallback={<main className="min-h-screen bg-[#1A1D23]" />}>
       <DashboardInner />
     </Suspense>
   );

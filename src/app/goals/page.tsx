@@ -31,14 +31,14 @@ const statusConfig: Record<
   },
   upcoming: {
     label: "Upcoming",
-    bgClass: "bg-[#D4A843]/15",
-    textClass: "text-[#D4A843]",
-    ringClass: "ring-[#D4A843]/30",
+    bgClass: "bg-[#7BA59A]/15",
+    textClass: "text-[#7BA59A]",
+    ringClass: "ring-[#7BA59A]/30",
   },
   pending: {
     label: "Pending",
     bgClass: "bg-white/8",
-    textClass: "text-[#6B85A8]",
+    textClass: "text-[#8A9BAE]",
     ringClass: "ring-white/10",
   },
 };
@@ -64,7 +64,7 @@ export default function GoalsPage() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#0B1120]" />;
+    return <main className="min-h-screen bg-[#1A1D23]" />;
   }
 
   const grouped = {
@@ -87,14 +87,14 @@ export default function GoalsPage() {
   const sections = allSections.filter((s) => s.items.length > 0);
 
   return (
-    <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
+    <main className="min-h-screen bg-[#1A1D23] text-[#F0F2F5]">
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#EFF4FF]">
+            <h1 className="font-serif text-3xl tracking-tight text-[#F0F2F5]">
               Goals
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#6B85A8]">
+            <p className="mt-2 max-w-2xl text-base text-[#8A9BAE]">
               Goals help QBH prioritize what matters most, then connect those
               priorities to scheduling, follow-ups, and care coordination.
             </p>
@@ -102,18 +102,18 @@ export default function GoalsPage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-[#1E2B45] bg-[#131B2E] px-4 py-2 text-sm font-medium text-[#6B85A8] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-white/8 bg-white/5 px-4 py-2 text-sm font-medium text-[#8A9BAE] shadow-sm hover:bg-[#162030]"
           >
             Back to Dashboard
           </Link>
         </div>
 
         {goals.length === 0 ? (
-          <div className="mt-10 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-[#1E2B45]">
-            <div className="font-semibold text-[#EFF4FF]">
+          <div className="mt-10 rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+            <div className="font-semibold text-[#F0F2F5]">
               No goals right now
             </div>
-            <p className="mt-2 text-sm text-[#6B85A8]">
+            <p className="mt-2 text-sm text-[#8A9BAE]">
               As QBH discovers providers and tracks visits, goals will appear
               here automatically.
             </p>
@@ -122,7 +122,7 @@ export default function GoalsPage() {
           <div className="mt-8 space-y-8">
             {sections.map((section) => (
               <section key={section.key}>
-                <h2 className="mb-4 font-serif text-xl text-[#EFF4FF]">
+                <h2 className="mb-4 font-serif text-xl text-[#F0F2F5]">
                   {section.title}
                 </h2>
                 <div className="space-y-4">
@@ -131,10 +131,10 @@ export default function GoalsPage() {
                     return (
                       <div
                         key={goal.id}
-                        className="rounded-2xl bg-[#131B2E] p-5 ring-1 ring-[#1E2B45]"
+                        className="rounded-2xl bg-white/5 p-5 ring-1 ring-[rgba(255,255,255,0.08)]"
                       >
                         <div className="flex items-center justify-between gap-4">
-                          <div className="font-semibold text-[#EFF4FF]">
+                          <div className="font-semibold text-[#F0F2F5]">
                             {goal.title}
                           </div>
                           <span
@@ -143,7 +143,7 @@ export default function GoalsPage() {
                             {cfg.label}
                           </span>
                         </div>
-                        <p className="mt-3 text-sm text-[#6B85A8]">
+                        <p className="mt-3 text-sm text-[#8A9BAE]">
                           {goal.detail}
                         </p>
                       </div>

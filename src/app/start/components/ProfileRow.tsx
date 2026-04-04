@@ -14,12 +14,12 @@ export function ProfileRow({ name, onChange, onRemove, placeholder }: Props) {
         value={name}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? "Name"}
-        className="w-full rounded-2xl bg-[#162030] px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] ring-1 ring-white/8 outline-none focus:ring-2 focus:ring-[#D4A843]"
+        className="w-full rounded-2xl bg-[#162030] px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] ring-1 ring-white/8 outline-none focus:ring-2 focus:ring-[#7BA59A]"
       />
       <button
         type="button"
         onClick={onRemove}
-        className="rounded-2xl bg-[#131B2E] px-4 py-3 text-sm text-[#6B85A8] ring-1 ring-white/8 hover:bg-[#162030]"
+        className="rounded-2xl bg-white/5 px-4 py-3 text-sm text-[#8A9BAE] ring-1 ring-white/8 hover:bg-[#162030]"
       >
         Remove
       </button>

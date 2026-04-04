@@ -45,7 +45,7 @@ function Badge({ yes, label }: { yes: boolean; label: string }) {
         fontSize: 12,
         fontWeight: 600,
         backgroundColor: yes ? "rgba(212,168,67,0.2)" : "rgba(255,255,255,0.06)",
-        color: yes ? "#D4A843" : "#6B7280",
+        color: yes ? "#7BA59A" : "#6B7280",
         border: `1px solid ${yes ? "rgba(212,168,67,0.3)" : "rgba(255,255,255,0.08)"}`,
       }}
     >
@@ -85,15 +85,15 @@ function UserCard({ user }: { user: AdminUser }) {
     <div
       onClick={() => setExpanded(!expanded)}
       style={{
-        backgroundColor: "#131B2E",
-        border: "1px solid #1E2B45",
+        backgroundColor: "rgba(255,255,255,0.05)",
+        border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 8,
         padding: 16,
         cursor: "pointer",
         transition: "border-color 0.15s",
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#D4A843")}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#1E2B45")}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#7BA59A")}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
     >
       {/* Collapsed row */}
       <div
@@ -125,7 +125,7 @@ function UserCard({ user }: { user: AdminUser }) {
             <span style={{ color: "#9CA3AF", fontSize: 12 }}>
               Signed up {formatDate(user.created_at)}
             </span>
-            <span style={{ color: "#D4A843", fontSize: 13, fontWeight: 600 }}>
+            <span style={{ color: "#7BA59A", fontSize: 13, fontWeight: 600 }}>
               {user.providers_total} providers
             </span>
             <Badge yes={user.plaid_connected} label="Plaid" />
@@ -143,7 +143,7 @@ function UserCard({ user }: { user: AdminUser }) {
           style={{
             marginTop: 16,
             paddingTop: 16,
-            borderTop: "1px solid #1E2B45",
+            borderTop: "1px solid rgba(255,255,255,0.08)",
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
             gap: 16,
@@ -242,7 +242,7 @@ export default function AdminPage() {
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#0B1120",
+        backgroundColor: "#1A1D23",
         color: "#F9FAFB",
         padding: "24px 16px",
       }}
@@ -253,7 +253,7 @@ export default function AdminPage() {
           <Link
             href="/dashboard"
             style={{
-              color: "#D4A843",
+              color: "#7BA59A",
               textDecoration: "none",
               fontSize: 14,
               fontWeight: 500,
@@ -273,8 +273,8 @@ export default function AdminPage() {
               style={{
                 width: 32,
                 height: 32,
-                border: "3px solid #1E2B45",
-                borderTopColor: "#D4A843",
+                border: "3px solid rgba(255,255,255,0.08)",
+                borderTopColor: "#7BA59A",
                 borderRadius: "50%",
                 animation: "spin 0.8s linear infinite",
                 margin: "0 auto 12px",
@@ -322,14 +322,14 @@ export default function AdminPage() {
                 <div
                   key={stat.label}
                   style={{
-                    backgroundColor: "#131B2E",
-                    border: "1px solid #1E2B45",
+                    backgroundColor: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 8,
                     padding: "16px 20px",
                     textAlign: "center",
                   }}
                 >
-                  <div style={{ color: "#D4A843", fontSize: 28, fontWeight: 700 }}>
+                  <div style={{ color: "#7BA59A", fontSize: 28, fontWeight: 700 }}>
                     {stat.value}
                   </div>
                   <div style={{ color: "#9CA3AF", fontSize: 13, marginTop: 4 }}>

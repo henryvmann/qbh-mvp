@@ -44,16 +44,16 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1120] text-[#EFF4FF]">
+    <main className="min-h-screen bg-[#1A1D23] text-[#F0F2F5]">
       <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#D4A843]">
+            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#7BA59A]">
               Quarterback AI
             </div>
             <Link
               href="/dashboard"
-              className="text-sm text-[#4D6480] underline underline-offset-4 hover:text-[#6B85A8]"
+              className="text-sm text-[#4D6480] underline underline-offset-4 hover:text-[#8A9BAE]"
             >
               Back to dashboard
             </Link>
@@ -63,17 +63,17 @@ export default function AccountPage() {
             Set a password
           </h1>
 
-          <p className="mt-3 text-base text-[#6B85A8]">
+          <p className="mt-3 text-base text-[#8A9BAE]">
             Once set, you can sign in with your email and password instead of a
             magic link.
           </p>
 
           {done ? (
-            <div className="mt-8 rounded-2xl bg-[#131B2E] p-6 ring-1 ring-white/8">
-              <div className="text-sm font-medium text-[#EFF4FF]">
+            <div className="mt-8 rounded-2xl bg-white/5 p-6 ring-1 ring-white/8">
+              <div className="text-sm font-medium text-[#F0F2F5]">
                 Password set
               </div>
-              <div className="mt-1 text-sm text-[#6B85A8]">
+              <div className="mt-1 text-sm text-[#8A9BAE]">
                 You can now sign in with your email and password.
               </div>
             </div>
@@ -86,7 +86,7 @@ export default function AccountPage() {
                 placeholder="New password"
                 required
                 autoFocus
-                className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:border-[#D4A843] focus:outline-none focus:ring-1 focus:ring-[#D4A843]"
+                className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
               />
 
               <input
@@ -95,13 +95,13 @@ export default function AccountPage() {
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="Confirm password"
                 required
-                className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#EFF4FF] placeholder:text-[#3D526B] focus:border-[#D4A843] focus:outline-none focus:ring-1 focus:ring-[#D4A843]"
+                className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
               />
 
               <button
                 type="submit"
                 disabled={submitting || !password.trim() || !confirm.trim()}
-                className="w-full rounded-2xl bg-[#D4A843] px-6 py-3 text-sm font-medium text-[#0B1120] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-sm font-medium text-[#1A1D23] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? "Saving..." : "Set password"}
               </button>

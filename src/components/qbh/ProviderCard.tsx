@@ -69,7 +69,7 @@ function getHistoryBadgeClassName(event: BookingHistoryEvent): string {
   }
 
   if (event.event_type === "cancelled") {
-    return "bg-white/8 text-[#6B85A8] ring-1 ring-white/10";
+    return "bg-white/8 text-[#8A9BAE] ring-1 ring-white/10";
   }
 
   if (event.event_type === "failed") {
@@ -104,7 +104,7 @@ function getActionLabel(action: SystemActionItem | null): string {
 
 function getActionBadgeClassName(action: SystemActionItem | null): string {
   if (!action) {
-    return "bg-white/8 text-[#6B85A8] ring-1 ring-white/10";
+    return "bg-white/8 text-[#8A9BAE] ring-1 ring-white/10";
   }
 
   if (action.type === "REVIEW_BROKEN_STATE" || action.status === "BLOCKED") {
@@ -123,7 +123,7 @@ function getActionBadgeClassName(action: SystemActionItem | null): string {
     return "bg-sky-500/15 text-sky-400 ring-1 ring-sky-500/30";
   }
 
-  return "bg-white/8 text-[#6B85A8] ring-1 ring-white/10";
+  return "bg-white/8 text-[#8A9BAE] ring-1 ring-white/10";
 }
 
 function getState(snapshot: ProviderDashboardSnapshot) {
@@ -288,14 +288,14 @@ export default function ProviderCard({
     snapshot.latestAttempt;
 
   return (
-    <article className="rounded-2xl bg-[#131B2E] p-5 ring-1 ring-white/8">
+    <article className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-[#EFF4FF]">
+          <h3 className="text-lg font-semibold text-[#F0F2F5]">
             {provider.name}
           </h3>
 
-          <div className="mt-1 text-sm text-[#6B85A8]">
+          <div className="mt-1 text-sm text-[#8A9BAE]">
             {provider.specialty || "Provider"}
           </div>
         </div>
@@ -307,16 +307,16 @@ export default function ProviderCard({
         </div>
       </div>
 
-      <p className="mt-4 text-sm text-[#6B85A8]">{state.description}</p>
+      <p className="mt-4 text-sm text-[#8A9BAE]">{state.description}</p>
 
       {currentAction ? (
         <div className="mt-4 rounded-xl bg-[#162030] px-4 py-3 ring-1 ring-white/8">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-sm font-medium text-[#EFF4FF]">
+              <div className="text-sm font-medium text-[#F0F2F5]">
                 Current system action
               </div>
-              <div className="mt-1 text-sm text-[#6B85A8]">
+              <div className="mt-1 text-sm text-[#8A9BAE]">
                 {currentActionLabel}
                 {currentAction.status === "BLOCKED"
                   ? currentAction.userInputRequired
@@ -347,8 +347,8 @@ export default function ProviderCard({
 
       {nextAction ? (
         <div className="mt-4 rounded-xl bg-[#162030] px-4 py-3 ring-1 ring-white/8">
-          <div className="text-sm font-medium text-[#EFF4FF]">Next action</div>
-          <div className="mt-1 text-sm text-[#6B85A8]">
+          <div className="text-sm font-medium text-[#F0F2F5]">Next action</div>
+          <div className="mt-1 text-sm text-[#8A9BAE]">
             {getActionLabel(nextAction)}
             {nextAction.userInputRequired
               ? " — this requires a user-triggered step."
@@ -379,21 +379,21 @@ export default function ProviderCard({
           <button
             onClick={handleIt}
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1A1D23] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Starting..." : "Handle it"}
           </button>
         ) : null}
 
         {showAttemptId ? (
-          <div className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm text-[#6B85A8]">
+          <div className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm text-[#8A9BAE]">
             Attempt #{snapshot.latestAttempt.id}
           </div>
         ) : null}
 
         {showAdjustButton ? (
           <>
-            <div className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm text-[#6B85A8]">
+            <div className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm text-[#8A9BAE]">
               {bs.displayTime ||
                 formatEventDateTime(bs.appointmentStart!, bs.timezone)}
             </div>
@@ -401,7 +401,7 @@ export default function ProviderCard({
             <button
               onClick={handleAdjust}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#6B85A8] hover:bg-[#162030] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#8A9BAE] hover:bg-[#162030] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? "Starting..." : "Adjust"}
             </button>
@@ -411,21 +411,21 @@ export default function ProviderCard({
 
       {history.length > 0 ? (
         <div className="mt-5 rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8">
-          <div className="text-sm font-medium text-[#EFF4FF]">History</div>
+          <div className="text-sm font-medium text-[#F0F2F5]">History</div>
 
           <div className="mt-3 space-y-3">
             {history.map((event, index) => (
               <div
                 key={event.id}
-                className="rounded-xl bg-[#131B2E] px-4 py-3 ring-1 ring-white/8"
+                className="rounded-xl bg-white/5 px-4 py-3 ring-1 ring-white/8"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium text-[#EFF4FF]">
+                    <div className="text-sm font-medium text-[#F0F2F5]">
                       {getHistoryLabel(event)}
                     </div>
 
-                    <div className="mt-1 text-sm text-[#6B85A8]">
+                    <div className="mt-1 text-sm text-[#8A9BAE]">
                       {event.event_type === "failed" &&
                       index === 0 &&
                       snapshot.latestNote?.summary
@@ -455,11 +455,11 @@ export default function ProviderCard({
 
       {showCalendarPrompt ? (
         <div className="mt-4 rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8">
-          <div className="text-sm font-medium text-[#EFF4FF]">
+          <div className="text-sm font-medium text-[#F0F2F5]">
             Connect Google Calendar for a better booking experience
           </div>
 
-          <div className="mt-1 text-sm text-[#6B85A8]">
+          <div className="mt-1 text-sm text-[#8A9BAE]">
             QBH can avoid conflicts and use your real availability before it
             places booking calls. You can also skip this for now and continue.
           </div>
@@ -467,7 +467,7 @@ export default function ProviderCard({
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={calendarConnectHref}
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#6B85A8] hover:bg-[#1E2D45]"
+              className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#8A9BAE] hover:bg-[#1E2D45]"
             >
               Connect Google Calendar
             </Link>
@@ -477,7 +477,7 @@ export default function ProviderCard({
                 startCall(state.key === "upcoming" ? "ADJUST" : "BOOK")
               }
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#D4A843] px-4 py-2 text-sm font-medium text-[#0B1120] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1A1D23] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting
                 ? "Starting..."
