@@ -3,45 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Pages that do not require authentication.
 // Everything else redirects to /login if unauthenticated.
-// /connect and /plaid/oauth are pre-auth onboarding — no session exists yet
 const PUBLIC_PATHS = ["/", "/login", "/start", "/auth", "/connect", "/plaid/oauth", "/onboarding", "/handle-first"];
-
-function checkBasicAuth(request: NextRequest): NextResponse | null {
-  const users: Record<string, string> = {
-    henry: process.env.SITE_PASSWORD_HENRY ?? "",
-    jenny: process.env.SITE_PASSWORD_JENNY ?? "",
-  };
-
-  const authHeader = request.headers.get("authorization");
-
-  if (authHeader?.startsWith("Basic ")) {
-    const base64 = authHeader.slice(6);
-    const decoded = atob(base64);
-    const colon = decoded.indexOf(":");
-    const username = decoded.slice(0, colon).toLowerCase();
-    const password = decoded.slice(colon + 1);
-
-    if (users[username] && users[username] === password) {
-      return null; // valid — let through
-    }
-  }
-
-  return new NextResponse("Unauthorized", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Quarterback Health"',
-    },
-  });
-}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Apply Basic Auth to all web pages (skip API routes and /plaid/oauth — native OAuth redirect must reach the page)
-  if (!pathname.startsWith("/api/") && !pathname.startsWith("/plaid/oauth")) {
-    const authResult = checkBasicAuth(request);
-    if (authResult) return authResult;
-  }
 
   const isPublic = PUBLIC_PATHS.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
