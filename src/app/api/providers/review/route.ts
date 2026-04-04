@@ -24,11 +24,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const careRecipient = String(body?.care_recipient || "").trim() || null;
     const newStatus = action === "approve" ? "active" : "dismissed";
+
+    const updateData: Record<string, string | null> = { status: newStatus };
+    if (careRecipient && action === "approve") {
+      updateData.care_recipient = careRecipient;
+    }
 
     const { error } = await supabaseAdmin
       .from("providers")
-      .update({ status: newStatus })
+      .update(updateData)
       .eq("id", providerId)
       .eq("app_user_id", appUserId);
 

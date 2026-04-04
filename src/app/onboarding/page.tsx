@@ -700,13 +700,47 @@ export default function OnboardingPage() {
 
   // Step 6 — Provider review (shows after discovery finds providers to review)
   if (step === 6 && reviewingProviders) {
-    async function handleProviderReview(providerId: string, action: "approve" | "dismiss") {
+    // Build person options from step 3 survey answers
+    const personLabelMap: Record<string, string> = {
+      "Myself": "Me",
+      "My partner / spouse": "Partner",
+      "My child(ren)": "Child",
+      "My parent(s)": "Parent",
+      "Someone else": "Other",
+    };
+    const personOptions = survey.step3
+      .map((s) => ({ value: s.toLowerCase().replace(/[^a-z]/g, "_"), label: personLabelMap[s] || s }))
+      .filter((o) => o.label);
+
+    // If only "Myself" was selected, options are just "Me" and "Ignore"
+    // Otherwise, show all selected people plus "Ignore"
+
+    async function handleProviderAssign(providerId: string, careRecipient: string) {
       const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
       try {
         await apiFetch("/api/providers/review", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ provider_id: providerId, action, app_user_id: effectiveUserId }),
+          body: JSON.stringify({
+            provider_id: providerId,
+            action: "approve",
+            app_user_id: effectiveUserId,
+            care_recipient: careRecipient,
+          }),
+        });
+      } catch {
+        // Best-effort
+      }
+      setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
+    }
+
+    async function handleProviderDismiss(providerId: string) {
+      const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
+      try {
+        await apiFetch("/api/providers/review", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider_id: providerId, action: "dismiss", app_user_id: effectiveUserId }),
         });
       } catch {
         // Best-effort
@@ -725,7 +759,7 @@ export default function OnboardingPage() {
           We found your healthcare providers
         </h1>
         <p className="mt-2 text-sm text-[#6B85A8]">
-          Confirm the ones we identified automatically, and review the rest.
+          Who is each provider for? Tap to assign or ignore.
         </p>
 
         {confirmedProviders.length > 0 && (
@@ -737,16 +771,36 @@ export default function OnboardingPage() {
               {confirmedProviders.map((provider) => (
                 <div
                   key={provider.id}
-                  className="flex items-center justify-between rounded-xl border px-4 py-3"
+                  className="rounded-xl border px-4 py-3"
                   style={{ backgroundColor: CARD_BG, borderColor: "#1A3A2A" }}
                 >
-                  <div>
-                    <div className="text-sm font-medium text-[#EFF4FF]">{provider.name}</div>
-                    <div className="text-xs text-[#6B85A8]">
-                      {provider.visit_count} visit{provider.visit_count !== 1 ? "s" : ""}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-[#EFF4FF]">{provider.name}</div>
+                      <div className="text-xs text-[#6B85A8]">
+                        {provider.visit_count} visit{provider.visit_count !== 1 ? "s" : ""}
+                      </div>
                     </div>
+                    <span className="text-xs text-emerald-400">&#10003;</span>
                   </div>
-                  <span className="text-xs text-emerald-400">&#10003;</span>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {personOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleProviderAssign(provider.id, opt.value)}
+                        className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                        style={{ backgroundColor: GOLD, color: NAVY }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => handleProviderDismiss(provider.id)}
+                      className="rounded-lg border border-white/10 bg-[#1A2336] px-2.5 py-1 text-xs text-[#6B85A8]"
+                    >
+                      Ignore
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -756,13 +810,13 @@ export default function OnboardingPage() {
         {needsReview.length > 0 && (
           <div className="mt-6">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: GOLD }}>
-              Is this a healthcare provider? ({needsReview.length} remaining)
+              Could be a provider ({needsReview.length} remaining)
             </div>
             <div className="flex flex-col gap-2">
               {needsReview.map((provider) => (
                 <div
                   key={provider.id}
-                  className="flex items-center justify-between rounded-xl border px-4 py-3"
+                  className="rounded-xl border px-4 py-3"
                   style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
                 >
                   <div>
@@ -771,19 +825,22 @@ export default function OnboardingPage() {
                       {provider.visit_count} transaction{provider.visit_count !== 1 ? "s" : ""}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {personOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleProviderAssign(provider.id, opt.value)}
+                        className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                        style={{ backgroundColor: GOLD, color: NAVY }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
                     <button
-                      onClick={() => handleProviderReview(provider.id, "approve")}
-                      className="rounded-lg px-3 py-1.5 text-xs font-semibold"
-                      style={{ backgroundColor: GOLD, color: NAVY }}
+                      onClick={() => handleProviderDismiss(provider.id)}
+                      className="rounded-lg border border-white/10 bg-[#1A2336] px-2.5 py-1 text-xs text-[#6B85A8]"
                     >
-                      Yes
-                    </button>
-                    <button
-                      onClick={() => handleProviderReview(provider.id, "dismiss")}
-                      className="rounded-lg border border-white/10 bg-[#1A2336] px-3 py-1.5 text-xs text-[#6B85A8]"
-                    >
-                      No
+                      Ignore
                     </button>
                   </div>
                 </div>
@@ -792,7 +849,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {allReviewed && (
+        {allReviewed && confirmedProviders.length === 0 && (
           <GoldButton onClick={() => router.push("/handle-first")}>
             Enter QB &rarr;
           </GoldButton>
