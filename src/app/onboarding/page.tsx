@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../lib/supabase/client";
 import { apiFetch } from "../../lib/api";
+import { CharacterWithBubble } from "../../components/qbh/CharacterBubble";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -578,47 +579,39 @@ export default function OnboardingPage() {
   if (step === 0) {
     return (
       <Shell>
-        <div className="flex min-h-[80vh] flex-col items-center justify-center text-center">
-          <p
-            className="text-xs font-semibold uppercase tracking-[0.3em]"
-            style={{ color: GOLD }}
-          >
-            QBH &#10022; Your Health Ally
-          </p>
-          <h1 className="mt-6 max-w-md text-3xl font-light leading-snug text-[#EFF4FF] sm:text-4xl">
-            You don&apos;t have to manage this alone.
-          </h1>
-          <p className="mt-4 max-w-sm text-base text-[#6B85A8]">
-            QB keeps track, follows up, and handles the details so you
-            don&apos;t have to.
-          </p>
-
-          {/* Preview cards */}
-          <div className="mt-8 flex gap-3">
-            {[
-              { icon: "\u25C9", label: "Find providers" },
-              { icon: "\u25C9", label: "Book appointments" },
-              { icon: "\u2713", label: "Stay on track" },
-            ].map((card) => (
-              <div
-                key={card.label}
-                className="flex flex-col items-center gap-2 rounded-xl px-4 py-3"
-                style={{
-                  backgroundColor: CARD_BG,
-                  borderWidth: 1,
-                  borderStyle: "solid",
-                  borderColor: CARD_BORDER,
-                  minWidth: 96,
-                }}
-              >
-                <span className="text-lg" style={{ color: GOLD }}>{card.icon}</span>
-                <span className="text-xs text-[#EFF4FF]">{card.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <GoldButton onClick={() => setStep(1)}>Continue &rarr;</GoldButton>
+        <div className="mt-8">
+          <CharacterWithBubble pose="waving">
+            You don&apos;t have to manage this alone. I&apos;m QB — I keep track
+            of your healthcare, follow up with your providers, and handle the
+            details so you don&apos;t have to.
+          </CharacterWithBubble>
         </div>
+
+        {/* Preview cards */}
+        <div className="mt-8 flex gap-3">
+          {[
+            { icon: "\u25C9", label: "Find providers" },
+            { icon: "\u25C9", label: "Book appointments" },
+            { icon: "\u2713", label: "Stay on track" },
+          ].map((card) => (
+            <div
+              key={card.label}
+              className="flex flex-col items-center gap-2 rounded-xl px-4 py-3"
+              style={{
+                backgroundColor: CARD_BG,
+                borderWidth: 1,
+                borderStyle: "solid",
+                borderColor: CARD_BORDER,
+                minWidth: 96,
+              }}
+            >
+              <span className="text-lg" style={{ color: GOLD }}>{card.icon}</span>
+              <span className="text-xs text-[#EFF4FF]">{card.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <GoldButton onClick={() => setStep(1)}>Let&apos;s get started &rarr;</GoldButton>
       </Shell>
     );
   }
@@ -769,9 +762,11 @@ export default function OnboardingPage() {
 
     return (
       <Shell>
-        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
-          Here&apos;s what happens next
-        </h1>
+        <div className="mt-4">
+          <CharacterWithBubble pose="pointing">
+            Here&apos;s what happens next. Three quick steps and you&apos;re all set.
+          </CharacterWithBubble>
+        </div>
 
         <div className="mt-8 flex flex-col gap-5">
           {steps.map((s) => (
@@ -1317,78 +1312,39 @@ export default function OnboardingPage() {
   if (step === 9) {
     return (
       <Shell>
-        <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
-          {/* Celebratory symbol */}
-          <span className="text-5xl" style={{ color: GOLD }}>&#10022;</span>
-
-          <h1 className="mt-6 max-w-md text-2xl font-light leading-snug text-[#EFF4FF] sm:text-3xl">
-            You&apos;re all set!
-          </h1>
-          <p className="mt-2 text-base text-[#6B85A8]">
-            Here&apos;s what QB found for you
-          </p>
-
-          {/* Summary cards */}
-          <div className="mt-8 flex flex-col gap-3 w-full max-w-sm">
-            <div
-              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
-              style={{
-                backgroundColor: CARD_BG,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderColor: CARD_BORDER,
-              }}
-            >
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                style={{ backgroundColor: GOLD, color: NAVY }}
-              >
-                {approvedCount}
-              </span>
-              <span className="text-[#EFF4FF]">providers identified</span>
-            </div>
-
-            <div
-              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
-              style={{
-                backgroundColor: CARD_BG,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderColor: CARD_BORDER,
-              }}
-            >
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                style={{ backgroundColor: GOLD, color: NAVY }}
-              >
-                {followUpCount}
-              </span>
-              <span className="text-[#EFF4FF]">may need follow-up</span>
-            </div>
-
-            <div
-              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
-              style={{
-                backgroundColor: CARD_BG,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderColor: CARD_BORDER,
-              }}
-            >
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                style={{ backgroundColor: GOLD, color: NAVY }}
-              >
-                &#10003;
-              </span>
-              <span className="text-[#EFF4FF]">Health timeline started</span>
-            </div>
-          </div>
-
-          <GoldButton onClick={() => router.push("/handle-first")}>
-            See your dashboard &rarr;
-          </GoldButton>
+        <div className="mt-8">
+          <CharacterWithBubble pose="celebrating">
+            You&apos;re all set! Here&apos;s what I found for you. Let&apos;s
+            get your healthcare on track.
+          </CharacterWithBubble>
         </div>
+
+        {/* Summary cards */}
+        <div className="mt-8 flex flex-col gap-3">
+          {[
+            { value: String(approvedCount), label: "providers identified" },
+            { value: String(followUpCount), label: "may need follow-up" },
+            { value: "\u2713", label: "Health timeline started" },
+          ].map((card) => (
+            <div
+              key={card.label}
+              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
+              style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
+            >
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                style={{ backgroundColor: GOLD, color: NAVY }}
+              >
+                {card.value}
+              </span>
+              <span className="text-[#EFF4FF]">{card.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <GoldButton onClick={() => router.push("/handle-first")}>
+          See your dashboard &rarr;
+        </GoldButton>
       </Shell>
     );
   }
@@ -1429,43 +1385,30 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
 
   return (
     <Shell>
-      <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
-        <h1 className="text-2xl font-light text-[#EFF4FF] sm:text-3xl">
-          You&apos;re in good hands
-        </h1>
-
-        {/* Testimonial */}
-        <div
-          className="mt-8 rounded-xl px-6 py-5"
-          style={{
-            backgroundColor: CARD_BG,
-            borderWidth: 1,
-            borderStyle: "solid",
-            borderColor: CARD_BORDER,
-          }}
-        >
-          <p className="text-sm italic leading-relaxed text-[#EFF4FF]">
-            &ldquo;QB found three providers I&apos;d completely forgotten about and booked my overdue physical in minutes.&rdquo;
-          </p>
-          <p className="mt-3 text-xs text-[#6B85A8]">&mdash; Early QB member</p>
-        </div>
-
-        {/* Trust points */}
-        <div className="mt-8 flex gap-4">
-          {[
-            { icon: "\uD83D\uDD12", label: "Bank-level security" },
-            { icon: "\uD83D\uDC41", label: "Read-only access" },
-            { icon: "\uD83D\uDEE1", label: "No data sold" },
-          ].map((item) => (
-            <div key={item.label} className="flex flex-col items-center gap-2" style={{ minWidth: 88 }}>
-              <span className="text-lg">{item.icon}</span>
-              <span className="text-xs text-[#6B85A8]">{item.label}</span>
-            </div>
-          ))}
-        </div>
-
-        <GoldButton onClick={handleClick}>Continue &rarr;</GoldButton>
+      <div className="mt-8">
+        <CharacterWithBubble pose="thinking">
+          QB found three providers I&apos;d completely forgotten about and booked
+          my overdue physical in minutes. You&apos;re in good hands.
+        </CharacterWithBubble>
       </div>
+
+      <p className="mt-4 text-center text-xs text-[#6B85A8]">&mdash; Early QB member</p>
+
+      {/* Trust points */}
+      <div className="mt-8 flex justify-center gap-4">
+        {[
+          { icon: "\uD83D\uDD12", label: "Bank-level security" },
+          { icon: "\uD83D\uDC41", label: "Read-only access" },
+          { icon: "\uD83D\uDEE1", label: "No data sold" },
+        ].map((item) => (
+          <div key={item.label} className="flex flex-col items-center gap-2" style={{ minWidth: 88 }}>
+            <span className="text-lg">{item.icon}</span>
+            <span className="text-xs text-[#6B85A8]">{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <GoldButton onClick={handleClick}>Continue &rarr;</GoldButton>
     </Shell>
   );
 }
