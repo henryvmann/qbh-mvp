@@ -108,8 +108,98 @@ export async function buildProviderRegistry(
     });
   }
 
-  // Step 2: Prepare merchant list for AI classification
-  const merchantInputs = Array.from(grouped.values()).map((entry) => ({
+  // Step 1.5: Pre-filter obvious non-healthcare by name and Plaid category
+  // These never need AI — saves cost and prevents false positives
+  const OBVIOUS_NOT_HEALTHCARE = [
+    // Food & drink
+    "ICE CREAM", "PIZZA", "BURGER", "TACO", "SUSHI", "BAKERY", "CAFE", "COFFEE",
+    "RESTAURANT", "GRILL", "DINER", "BISTRO", "BAR ", "PUB ", "BREWERY", "DONUT",
+    "BAGEL", "SANDWICH", "WING", "BBQ", "BUFFET", "NOODLE", "RAMEN",
+    // Retail / grocery
+    "MARKET", "GROCERY", "SUPERMARKET", "DELI", "LIQUOR", "WINE", "BEER",
+    // Transport
+    "GAS STATION", "CAR WASH", "AUTO ", "PARKING", "TOLL ", "TAXI",
+    // Beauty / personal
+    "SALON", "BARBER", "NAIL", "SPA ", "BEAUTY", "HAIR", "WAXING", "LASH", "TATTOO",
+    // Fitness
+    "GYM", "FITNESS", "CROSSFIT", "YOGA", "PILATES",
+    // Entertainment
+    "CINEMA", "MOVIE", "THEATER", "THEATRE", "ARCADE", "BOWLING",
+    // Finance / transfers
+    "TRANSFER", "DEPOSIT", "WITHDRAWAL", "ZELLE", "VENMO", "PAYROLL", "PAYCHECK",
+    "LATE FEE", "INTEREST ", "PREMIUM",
+    // Insurance (not a provider)
+    "INSURANCE", "INSUR ",
+    // Misc
+    "PET ", "VET ", "VETERINA", "LANDSCAP", "CLEANING", "LAUNDRY", "DRY CLEAN",
+  ];
+
+  const OBVIOUS_HEALTHCARE = [
+    "PHARMACY", "CVS", "WALGREENS", "RITE AID", "DUANE READE",
+    "HOSPITAL", "MEDICAL", "CLINIC", "HEALTH", "DENTAL", "DENTIST",
+    "DOCTOR", " MD", "DR ", "PEDIATRIC", "CARDIO", "ORTHO", "DERMA",
+    "RADIOLOGY", "IMAGING", "LABCORP", "QUEST DIAG", "URGENT CARE",
+    "CHIROPRACTIC", "PHYSICAL THERAPY", "MENTAL HEALTH", "PSYCH",
+    "SIMPLEPRACTICE", "THERAPYNOTES", "HEADWAY",
+  ];
+
+  const NON_HEALTHCARE_PLAID_CATEGORIES = [
+    "FOOD", "RESTAURANT", "COFFEE", "BAR",
+    "SHOP", "CLOTHING", "ELECTRONICS", "DEPARTMENT STORE", "SUPERMARKET", "GROCERY",
+    "TRAVEL", "AIRLINE", "HOTEL", "LODGING", "CAR RENTAL",
+    "RECREATION", "GYM", "FITNESS", "SPORT", "ENTERTAINMENT", "MUSIC", "GAME",
+    "PERSONAL CARE", "SALON", "BARBER", "BEAUTY",
+    "AUTOMOTIVE", "GAS STATION", "PARKING",
+    "UTILITIES", "PHONE", "INTERNET", "CABLE",
+    "INSURANCE",
+    "RENT", "MORTGAGE",
+    "TRANSFER", "DEPOSIT", "WITHDRAWAL", "ATM",
+    "TAX", "GOVERNMENT",
+    "EDUCATION", "TUITION",
+    "PET",
+    "SUBSCRIPTION",
+  ];
+
+  // Pre-classify: split merchants into definite buckets vs ambiguous (needs AI)
+  const preClassified = new Map<string, "HEALTHCARE" | "IGNORE">();
+
+  for (const entry of grouped.values()) {
+    const n = entry.normalized_name;
+    const cats = entry.categories.join(" ").toUpperCase();
+
+    // Check obvious non-healthcare by name
+    if (OBVIOUS_NOT_HEALTHCARE.some((hint) => n.includes(hint))) {
+      preClassified.set(n, "IGNORE");
+      continue;
+    }
+
+    // Check obvious non-healthcare by Plaid category
+    if (NON_HEALTHCARE_PLAID_CATEGORIES.some((cat) => cats.includes(cat))) {
+      preClassified.set(n, "IGNORE");
+      continue;
+    }
+
+    // Check obvious healthcare by name
+    if (OBVIOUS_HEALTHCARE.some((hint) => n.includes(hint))) {
+      preClassified.set(n, "HEALTHCARE");
+      continue;
+    }
+
+    // Check healthcare by Plaid category
+    if (["DOCTOR", "HOSPITAL", "PHARMACY", "MEDICAL", "HEALTHCARE"].some((cat) => cats.includes(cat))) {
+      preClassified.set(n, "HEALTHCARE");
+      continue;
+    }
+
+    // Ambiguous — will go to AI
+  }
+
+  console.log(`[buildProviderRegistry] Pre-filter: ${Array.from(preClassified.values()).filter(v => v === "IGNORE").length} ignored, ${Array.from(preClassified.values()).filter(v => v === "HEALTHCARE").length} healthcare, ${grouped.size - preClassified.size} need AI`);
+
+  // Step 2: Prepare ONLY ambiguous merchants for AI classification
+  const merchantInputs = Array.from(grouped.values())
+    .filter((entry) => !preClassified.has(entry.normalized_name))
+    .map((entry) => ({
     name: entry.provider_name,
     normalized_name: entry.normalized_name,
     plaid_categories: [...new Set(entry.categories)],
@@ -209,14 +299,21 @@ export async function buildProviderRegistry(
       gaps.push(daysBetween(sortedDates[i - 1], sortedDates[i]));
     }
 
+    const preResult = preClassified.get(entry.normalized_name);
     const aiResult = aiClassifications.get(entry.normalized_name);
     const npiResult = npiResults.get(entry.normalized_name);
 
     let bucket: DiscoveryBucket;
     let care_action_type: string | null;
 
-    // NPI registry match overrides AI — if they have a license, they're healthcare
-    if (npiResult?.found) {
+    // Priority: pre-filter → NPI → AI → ignore
+    if (preResult === "IGNORE") {
+      bucket = "IGNORE";
+      care_action_type = null;
+    } else if (preResult === "HEALTHCARE") {
+      bucket = "HEALTHCARE";
+      care_action_type = "CHECK_APPOINTMENT_STATUS";
+    } else if (npiResult?.found) {
       bucket = "HEALTHCARE";
       care_action_type = "CHECK_APPOINTMENT_STATUS";
       console.log(`[buildProviderRegistry] NPI override: "${entry.provider_name}" → HEALTHCARE (${npiResult.provider_type})`);
@@ -225,16 +322,13 @@ export async function buildProviderRegistry(
         bucket = "HEALTHCARE";
         care_action_type = "CHECK_APPOINTMENT_STATUS";
       } else if (aiResult.is_healthcare) {
-        // Medium/low confidence healthcare — let user confirm
         bucket = "REVIEW_NEEDED";
         care_action_type = "REVIEW_PROVIDER";
       } else {
-        // AI says not healthcare
         bucket = "IGNORE";
         care_action_type = null;
       }
     } else {
-      // No AI result (fallback) — use simple heuristic
       bucket = "IGNORE";
       care_action_type = null;
     }
