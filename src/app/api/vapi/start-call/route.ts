@@ -193,6 +193,15 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
+  // Fetch patient profile for the call
+  const { data: userRow } = await supabaseAdmin
+    .from("app_users")
+    .select("patient_profile")
+    .eq("id", app_user_id)
+    .single();
+
+  const patientProfile = (userRow?.patient_profile || {}) as Record<string, string | null>;
+
   if (!office_number) {
     return Response.json(
       { ok: false, error: "office_number is required" },
@@ -325,11 +334,15 @@ export async function POST(req: Request) {
         variableValues: {
           attempt_id,
           provider_id,
-          patient_name,
+          patient_name: patient_name || patientProfile.full_name || null,
           provider_name,
           preferred_timeframe,
           demo_autoconfirm,
           mode,
+          patient_date_of_birth: patientProfile.date_of_birth || null,
+          patient_insurance_provider: patientProfile.insurance_provider || null,
+          patient_insurance_member_id: patientProfile.insurance_member_id || null,
+          patient_reason_for_visit: "routine checkup / follow-up",
         },
       },
     }),
