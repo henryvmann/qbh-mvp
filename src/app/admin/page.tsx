@@ -242,7 +242,7 @@ export default function AdminPage() {
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#1A1D23",
+        backgroundColor: "#1E2228",
         color: "#F9FAFB",
         padding: "24px 16px",
       }}

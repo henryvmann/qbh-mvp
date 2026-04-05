@@ -80,7 +80,7 @@ function TopNav() {
   ];
 
   return (
-    <nav className="sticky top-0 z-10 bg-[#1A1D23] py-2">
+    <nav className="sticky top-0 z-10 bg-[#1E2228] py-2">
       <div className="rounded-2xl bg-white/5 px-3 py-2 ring-1 ring-white/8">
         <div className="flex flex-wrap items-center gap-2">
           {items.map((it) => (
@@ -153,7 +153,7 @@ function CalendarConnectionBanner(props: {
         </div>
         <Link
           href={href}
-          className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1A1D23] hover:brightness-95"
+          className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1E2228] hover:brightness-95"
         >
           Connect calendar
         </Link>
@@ -229,7 +229,7 @@ function DashboardInner() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#1A1D23]" />;
+    return <main className="min-h-screen bg-[#1E2228]" />;
   }
 
   if (!data) return null;
@@ -259,7 +259,7 @@ function DashboardInner() {
   const showAnalyzer = Boolean(appUserId) && isAnalyzing;
 
   return (
-    <main className="min-h-screen bg-[#1A1D23] px-6 py-10">
+    <main className="min-h-screen bg-[#1E2228] px-6 py-10">
       <div className="mx-auto max-w-7xl">
         <header>
           <h1 className="font-serif text-4xl tracking-tight text-[#F0F2F5]">
@@ -343,7 +343,7 @@ function DashboardInner() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#1A1D23]" />}>
+    <Suspense fallback={<main className="min-h-screen bg-[#1E2228]" />}>
       <DashboardInner />
     </Suspense>
   );

@@ -49,7 +49,7 @@ export default function MedicationsPage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen bg-[#1A1D23] text-[#F0F2F5]">
+    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>

@@ -80,7 +80,7 @@ export default function HandleItButton({
         type="button"
         onClick={onClick}
         disabled={loading}
-        className="group relative w-full overflow-hidden rounded-2xl bg-[#7BA59A] px-4 py-2.5 text-sm font-semibold text-[#1A1D23] shadow-sm transition hover:brightness-[0.98] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+        className="group relative w-full overflow-hidden rounded-2xl bg-[#7BA59A] px-4 py-2.5 text-sm font-semibold text-[#1E2228] shadow-sm transition hover:brightness-[0.98] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
       >
         <span className="relative z-10">{loading ? "One moment…" : label}</span>
         <span className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100">

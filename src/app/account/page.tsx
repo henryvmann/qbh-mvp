@@ -44,7 +44,7 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#1A1D23] text-[#F0F2F5]">
+    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
       <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-between">
@@ -101,7 +101,7 @@ export default function AccountPage() {
               <button
                 type="submit"
                 disabled={submitting || !password.trim() || !confirm.trim()}
-                className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-sm font-medium text-[#1A1D23] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-sm font-medium text-[#1E2228] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? "Saving..." : "Set password"}
               </button>

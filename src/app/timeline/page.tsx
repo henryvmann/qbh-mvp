@@ -68,11 +68,11 @@ export default function TimelinePage() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#1A1D23]" />;
+    return <main className="min-h-screen bg-[#1E2228]" />;
   }
 
   return (
-    <main className="min-h-screen bg-[#1A1D23] text-[#F0F2F5]">
+    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
@@ -113,7 +113,7 @@ export default function TimelinePage() {
                   <div key={event.id} className="relative pl-12">
                     {/* Timeline dot */}
                     <div
-                      className="absolute left-2.5 top-6 h-3 w-3 rounded-full ring-2 ring-[#1A1D23]"
+                      className="absolute left-2.5 top-6 h-3 w-3 rounded-full ring-2 ring-[#1E2228]"
                       style={{ backgroundColor: cfg.dot }}
                     />
 

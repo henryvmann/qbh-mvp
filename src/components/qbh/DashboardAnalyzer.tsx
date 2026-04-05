@@ -134,7 +134,7 @@ export default function DashboardAnalyzer({
                 setStatus("idle");
                 setError(null);
               }}
-              className="mt-4 rounded-xl bg-[#7BA59A] px-5 py-2.5 text-sm font-medium text-[#1A1D23] hover:brightness-95"
+              className="mt-4 rounded-xl bg-[#7BA59A] px-5 py-2.5 text-sm font-medium text-[#1E2228] hover:brightness-95"
             >
               Try again
             </button>

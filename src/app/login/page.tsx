@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#1A1D23] text-[#F0F2F5]">
+    <main className="relative min-h-screen overflow-hidden bg-[#1E2228] text-[#F0F2F5]">
       <div
         className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-white/10"
         aria-hidden
@@ -85,7 +85,7 @@ export default function LoginPage() {
               type="submit"
               disabled={submitting || !email.trim() || !password.trim()}
               className="w-full rounded-xl px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ backgroundColor: "#7BA59A", color: "#1A1D23" }}
+              style={{ backgroundColor: "#7BA59A", color: "#1E2228" }}
             >
               {submitting ? "Signing in..." : "Sign in"}
             </button>

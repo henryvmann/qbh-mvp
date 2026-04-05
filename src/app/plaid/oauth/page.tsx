@@ -150,7 +150,7 @@ export default function PlaidOAuthRedirectPage() {
   }, [ready, linkToken, receivedRedirectUri, open, submitting]);
 
   return (
-    <main className="min-h-screen bg-[#1A1D23] text-[#F0F2F5]">
+    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
       <div className="mx-auto max-w-3xl px-6 pt-16 pb-16">
         <h1 className="text-4xl tracking-tight sm:text-5xl">
           Returning to Quarterback

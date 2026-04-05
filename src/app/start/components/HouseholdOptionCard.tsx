@@ -30,7 +30,7 @@ export function HouseholdOptionCard({ title, description, selected, onClick }: P
           ].join(" ")}
           aria-hidden
         >
-          {selected ? <div className="h-2 w-2 rounded-full bg-[#1A1D23]" /> : null}
+          {selected ? <div className="h-2 w-2 rounded-full bg-[#1E2228]" /> : null}
         </div>
       </div>
     </button>

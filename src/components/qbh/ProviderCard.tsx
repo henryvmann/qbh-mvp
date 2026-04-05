@@ -379,7 +379,7 @@ export default function ProviderCard({
           <button
             onClick={handleIt}
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1A1D23] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1E2228] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Starting..." : "Handle it"}
           </button>
@@ -477,7 +477,7 @@ export default function ProviderCard({
                 startCall(state.key === "upcoming" ? "ADJUST" : "BOOK")
               }
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1A1D23] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1E2228] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting
                 ? "Starting..."

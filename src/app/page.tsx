@@ -27,11 +27,11 @@ export default function HomePage() {
   }, [router]);
 
   if (checking) {
-    return <main className="min-h-screen bg-[#1A1D23]" />;
+    return <main className="min-h-screen bg-[#1E2228]" />;
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#1A1D23] text-[#F0F2F5]">
+    <main className="relative min-h-screen overflow-hidden bg-[#1E2228] text-[#F0F2F5]">
       {/* Decorative circle */}
       <div
         className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-white/10"
@@ -59,7 +59,7 @@ export default function HomePage() {
           <Link
             href="/onboarding"
             className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-semibold shadow-sm"
-            style={{ backgroundColor: "#7BA59A", color: "#1A1D23" }}
+            style={{ backgroundColor: "#7BA59A", color: "#1E2228" }}
           >
             Get started &rarr;
           </Link>

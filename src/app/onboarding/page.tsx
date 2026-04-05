@@ -61,7 +61,7 @@ const STEP4_OPTIONS = [
 ];
 
 const GOLD = "#7BA59A";
-const NAVY = "#1A1D23";
+const NAVY = "#1E2228";
 const CARD_BG = "rgba(255,255,255,0.05)";
 const CARD_BORDER = "rgba(255,255,255,0.08)";
 
@@ -1496,7 +1496,7 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main
-      className="relative min-h-screen overflow-hidden text-[#F0F2F5]"
+      className="relative min-h-screen overflow-x-hidden text-[#F0F2F5]"
       style={{ backgroundColor: NAVY }}
     >
       <DecorativeCircle />

@@ -132,7 +132,7 @@ function GoldButton({
       className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-semibold transition ${
         secondary
           ? "border border-white/8 bg-transparent text-[#8A9BAE] hover:bg-white/5"
-          : "bg-[#7BA59A] text-[#1A1D23] hover:bg-[#7BA59A]/90"
+          : "bg-[#7BA59A] text-[#1E2228] hover:bg-[#7BA59A]/90"
       }`}
     >
       {children}
@@ -295,7 +295,7 @@ export default function HandleFirstPage() {
 
   /* ---- Loading state ---- */
   if (loading || !data) {
-    return <div className="min-h-screen bg-[#1A1D23]" />;
+    return <div className="min-h-screen bg-[#1E2228]" />;
   }
 
   const { appUserId, userName, snapshots, hasGoogleCalendarConnection } = data;
@@ -635,7 +635,7 @@ export default function HandleFirstPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#1A1D23] text-white overflow-hidden">
+    <div className="relative min-h-screen bg-[#1E2228] text-white overflow-hidden">
       {/* Decorative circle */}
       <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#7BA59A]/10 blur-3xl" />
 
