@@ -10,6 +10,7 @@ function CalendarConnectPageInner() {
 
   const [userId, setUserId] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submittingOutlook, setSubmittingOutlook] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,6 +85,46 @@ function CalendarConnectPageInner() {
     }
   }
 
+  async function startOutlookCalendarConnect() {
+    try {
+      if (!userId) {
+        throw new Error("Missing user_id");
+      }
+
+      setSubmittingOutlook(true);
+      setError(null);
+
+      const response = await apiFetch("/api/outlook-calendar/connect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          app_user_id: userId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data?.ok || !data?.authorize_url) {
+        throw new Error(
+          data?.error || "Failed to start Outlook Calendar connection."
+        );
+      }
+
+      window.location.href = data.authorize_url;
+    } catch (err) {
+      console.log("Outlook Calendar connect failed:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to start Outlook Calendar connection."
+      );
+    } finally {
+      setSubmittingOutlook(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
       <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
@@ -100,7 +141,7 @@ function CalendarConnectPageInner() {
 
         <section className="mt-12">
           <h1 className="text-4xl tracking-tight sm:text-5xl">
-            Connect Google Calendar
+            Connect Your Calendar
           </h1>
 
           <p className="mt-4 max-w-2xl text-lg text-[#8A9BAE]">
@@ -133,34 +174,59 @@ function CalendarConnectPageInner() {
                 </div>
               </div>
 
-              <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#162030] p-6">
-                <div>
-                  <div className="text-sm font-medium text-[#F0F2F5]">
-                    Google Calendar
+              <div className="space-y-4">
+                <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#162030] p-6">
+                  <div>
+                    <div className="text-sm font-medium text-[#F0F2F5]">
+                      Google Calendar
+                    </div>
+                    <div className="mt-2 text-sm text-[#8A9BAE]">
+                      Read-only calendar access for conflict-aware scheduling.
+                    </div>
                   </div>
-                  <div className="mt-2 text-sm text-[#8A9BAE]">
-                    Read-only calendar access for conflict-aware scheduling.
+
+                  <div className="mt-6">
+                    <button
+                      onClick={startGoogleCalendarConnect}
+                      disabled={!userId || submitting || submittingOutlook}
+                      className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-[#1E2228] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {submitting
+                        ? "Redirecting to Google..."
+                        : "Connect Google Calendar"}
+                    </button>
                   </div>
                 </div>
 
-                <div className="mt-8 space-y-3">
-                  <button
-                    onClick={startGoogleCalendarConnect}
-                    disabled={!userId || submitting}
-                    className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-[#1E2228] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {submitting
-                      ? "Redirecting to Google..."
-                      : "Connect Google Calendar"}
-                  </button>
+                <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#162030] p-6">
+                  <div>
+                    <div className="text-sm font-medium text-[#F0F2F5]">
+                      Outlook Calendar
+                    </div>
+                    <div className="mt-2 text-sm text-[#8A9BAE]">
+                      Read-only calendar access for conflict-aware scheduling.
+                    </div>
+                  </div>
 
-                  <Link
-                    href="/dashboard"
-                    className="block text-center text-sm text-[#4D6480] underline underline-offset-4"
-                  >
-                    Return to dashboard
-                  </Link>
+                  <div className="mt-6">
+                    <button
+                      onClick={startOutlookCalendarConnect}
+                      disabled={!userId || submitting || submittingOutlook}
+                      className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-[#1E2228] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {submittingOutlook
+                        ? "Redirecting to Microsoft..."
+                        : "Connect Outlook Calendar"}
+                    </button>
+                  </div>
                 </div>
+
+                <Link
+                  href="/dashboard"
+                  className="block text-center text-sm text-[#4D6480] underline underline-offset-4"
+                >
+                  Return to dashboard
+                </Link>
               </div>
             </div>
           </div>

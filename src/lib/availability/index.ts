@@ -1,4 +1,5 @@
 import { googleCalendarAvailabilitySource } from "./sources/google-calendar";
+import { outlookCalendarAvailabilitySource } from "./sources/outlook-calendar";
 import type {
   AvailabilityBlock,
   AvailabilityContext,
@@ -69,7 +70,7 @@ function normalizeBlocks(blocks: AvailabilityBlock[]): AvailabilityBlock[] {
 }
 
 function getDefaultAdapters(): AvailabilitySourceAdapter[] {
-  return [googleCalendarAvailabilitySource];
+  return [googleCalendarAvailabilitySource, outlookCalendarAvailabilitySource];
 }
 
 function mapConflictReason(
@@ -77,6 +78,7 @@ function mapConflictReason(
 ): AvailabilityDecisionReasonCode {
   switch (source) {
     case "GOOGLE_CALENDAR":
+    case "OUTLOOK_CALENDAR":
       return "CALENDAR_CONFLICT";
     case "PORTAL_APPOINTMENT":
       return "PORTAL_CONFLICT";

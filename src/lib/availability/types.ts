@@ -1,5 +1,6 @@
 export type AvailabilitySourceKind =
   | "GOOGLE_CALENDAR"
+  | "OUTLOOK_CALENDAR"
   | "PORTAL_APPOINTMENT"
   | "OFFICE_CONSTRAINT"
   | "BOOKING_RULE";
