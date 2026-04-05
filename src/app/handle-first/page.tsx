@@ -76,8 +76,9 @@ function getNextStep(
   hasOverdue: boolean
 ): number {
   let next = current + 1;
-  if (next === 4 && !hasOverdue) next = 5;
-  if (next === 5 && hasCalendar) next = 6;
+  if (next === 4 && !hasOverdue) next = 5; // skip authorize if nothing overdue
+  // step 5 = patient info (always show)
+  if (next === 6 && hasCalendar) next = 7; // skip calendar if connected
   return next;
 }
 
@@ -184,6 +185,13 @@ export default function HandleFirstPage() {
   const [visible, setVisible] = useState(true);
   const calledRef = useRef(false);
 
+  // Patient info (optional, all skippable)
+  const [patientFullName, setPatientFullName] = useState("");
+  const [patientDob, setPatientDob] = useState("");
+  const [patientInsurance, setPatientInsurance] = useState("");
+  const [patientMemberId, setPatientMemberId] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+
   // Fetch data
   useEffect(() => {
     let cancelled = false;
@@ -204,6 +212,7 @@ export default function HandleFirstPage() {
             return;
           }
           setData(json);
+          if (json.userName) setPatientFullName(json.userName);
 
           // Restore session state (returning from calendar-connect)
           const savedStep = sessionStorage.getItem("guided-step");
@@ -268,9 +277,9 @@ export default function HandleFirstPage() {
     goToStep(next);
   }, [data, step, goToStep]);
 
-  // Fire calls when reaching step 7
+  // Fire calls when reaching step 8 (confirmation)
   useEffect(() => {
-    if (step !== 7 || !data || calledRef.current) return;
+    if (step !== 8 || !data || calledRef.current) return;
     calledRef.current = true;
 
     selectedProviders.forEach((providerId) => {
@@ -308,8 +317,9 @@ export default function HandleFirstPage() {
   // Count visible steps (skip 4 if no overdue, skip 5 if calendar connected)
   const visibleSteps: number[] = [1, 2, 3];
   if (hasOverdue) visibleSteps.push(4);
-  if (!hasGoogleCalendarConnection) visibleSteps.push(5);
-  visibleSteps.push(6, 7);
+  visibleSteps.push(5); // patient info (always show)
+  if (!hasGoogleCalendarConnection) visibleSteps.push(6);
+  visibleSteps.push(7, 8);
   const activeIndex = visibleSteps.indexOf(step) + 1;
 
   function toggleProvider(id: string) {
@@ -498,8 +508,90 @@ export default function HandleFirstPage() {
           </>
         );
 
-      /* ---- Screen 5: Calendar connect ---- */
+      /* ---- Screen 5: Patient info (all optional) ---- */
       case 5:
+        return (
+          <>
+            <CharacterWithBubble pose="thinking">
+              Before I start calling, a few details will help me book faster.
+              Fill in what you can — or skip anything you&apos;re not sure about.
+            </CharacterWithBubble>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="mb-1 block text-xs text-[#8A9BAE]">Full name</label>
+                <input
+                  type="text"
+                  value={patientFullName}
+                  onChange={(e) => setPatientFullName(e.target.value)}
+                  placeholder="First and Last"
+                  className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#4A5568] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-[#8A9BAE]">Date of birth</label>
+                <input
+                  type="date"
+                  value={patientDob}
+                  onChange={(e) => setPatientDob(e.target.value)}
+                  className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#4A5568] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-[#8A9BAE]">Insurance provider</label>
+                <input
+                  type="text"
+                  value={patientInsurance}
+                  onChange={(e) => setPatientInsurance(e.target.value)}
+                  placeholder="e.g., Aetna, Blue Cross, United"
+                  className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#4A5568] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-[#8A9BAE]">Member ID</label>
+                <input
+                  type="text"
+                  value={patientMemberId}
+                  onChange={(e) => setPatientMemberId(e.target.value)}
+                  placeholder="Found on your insurance card"
+                  className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#4A5568] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                />
+              </div>
+            </div>
+
+            <GoldButton
+              onClick={async () => {
+                // Save whatever they filled in
+                const profile: Record<string, string> = {};
+                if (patientFullName.trim()) profile.full_name = patientFullName.trim();
+                if (patientDob) profile.date_of_birth = patientDob;
+                if (patientInsurance.trim()) profile.insurance_provider = patientInsurance.trim();
+                if (patientMemberId.trim()) profile.insurance_member_id = patientMemberId.trim();
+
+                if (Object.keys(profile).length > 0) {
+                  setSavingProfile(true);
+                  try {
+                    await apiFetch("/api/patient-profile", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ profile, app_user_id: appUserId }),
+                    });
+                  } catch { /* non-critical */ }
+                  setSavingProfile(false);
+                }
+                advance();
+              }}
+            >
+              {savingProfile ? "Saving..." : "Continue →"}
+            </GoldButton>
+            <GoldButton onClick={advance} secondary>
+              Skip — I&apos;ll add this later
+            </GoldButton>
+          </>
+        );
+
+      /* ---- Screen 6: Calendar connect ---- */
+      case 6:
         return (
           <>
             <CharacterWithBubble pose="thinking">
@@ -533,8 +625,8 @@ export default function HandleFirstPage() {
           </>
         );
 
-      /* ---- Screen 6: Current providers ---- */
-      case 6:
+      /* ---- Screen 7: Current providers ---- */
+      case 7:
         return (
           <>
             <CharacterWithBubble pose="pointing">
@@ -573,8 +665,8 @@ export default function HandleFirstPage() {
           </>
         );
 
-      /* ---- Screen 7: Confirmation ---- */
-      case 7: {
+      /* ---- Screen 8: Confirmation ---- */
+      case 8: {
         const selectedSnaps = snapshots.filter((s) =>
           selectedProviders.has(s.provider.id)
         );
