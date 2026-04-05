@@ -196,11 +196,22 @@ export async function POST(req: Request) {
   // Fetch patient profile for the call
   const { data: userRow } = await supabaseAdmin
     .from("app_users")
-    .select("patient_profile")
+    .select("patient_profile, auth_user_id")
     .eq("id", app_user_id)
     .single();
 
   const patientProfile = (userRow?.patient_profile || {}) as Record<string, string | null>;
+
+  // Look up user's name from auth metadata if not in patient_profile
+  let resolvedPatientName = patient_name || patientProfile.full_name || null;
+  if (!resolvedPatientName && userRow?.auth_user_id) {
+    try {
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userRow.auth_user_id);
+      resolvedPatientName = authUser?.user?.user_metadata?.name || null;
+    } catch {
+      // Non-critical
+    }
+  }
 
   if (!office_number) {
     return Response.json(
@@ -343,17 +354,17 @@ export async function POST(req: Request) {
         variableValues: {
           attempt_id,
           provider_id,
-          patient_name: patient_name || patientProfile.full_name || null,
+          patient_name: resolvedPatientName,
           provider_name,
           preferred_timeframe,
           demo_autoconfirm,
           mode,
           call_purpose: isManualProvider ? "INQUIRY" : mode,
           is_manual_provider: isManualProvider,
-          patient_date_of_birth: patientProfile.date_of_birth || null,
-          patient_insurance_provider: patientProfile.insurance_provider || null,
-          patient_insurance_member_id: patientProfile.insurance_member_id || null,
-          patient_reason_for_visit: "routine checkup / follow-up",
+          patient_date_of_birth: patientProfile.date_of_birth || "not available — the patient will provide when they arrive",
+          patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
+          patient_insurance_member_id: patientProfile.insurance_member_id || "not available — the patient will provide when they arrive",
+          patient_reason_for_visit: patientProfile.reason_for_visit || "routine checkup / follow-up",
         },
       },
     }),
