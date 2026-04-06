@@ -1171,6 +1171,102 @@ export default function OnboardingPage() {
     const needsReview = pendingProviders.filter((p) => p.status === "review_needed");
     const allReviewed = needsReview.length === 0;
 
+    // Detect chain stores that could be retail OR pharmacy
+    const CHAIN_STORES = [
+      "CVS", "WALGREENS", "RITE AID", "DUANE READE", "WALMART",
+      "COSTCO", "SAM'S CLUB", "TARGET", "KROGER", "PUBLIX",
+      "SAFEWAY", "ALBERTSONS", "HEB", "MEIJER", "WESTON PHARMACY",
+    ];
+    function isChainStore(name: string): boolean {
+      const upper = name.toUpperCase();
+      return CHAIN_STORES.some((chain) => upper.includes(chain));
+    }
+
+    // Render a provider card with appropriate question
+    function renderProviderCard(provider: typeof pendingProviders[0], isConfirmed: boolean) {
+      const selected = providerPeople[provider.id] || new Set<string>();
+      const chain = isChainStore(provider.name);
+
+      return (
+        <div
+          key={provider.id}
+          className="rounded-xl border px-4 py-3"
+          style={{ backgroundColor: CARD_BG, borderColor: isConfirmed ? "#1A3A2A" : CARD_BORDER }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-[#F0F2F5]">{provider.name}</div>
+              <div className="text-xs text-[#8A9BAE]">
+                {provider.visit_count} {isConfirmed ? "visit" : "transaction"}{provider.visit_count !== 1 ? "s" : ""}
+              </div>
+            </div>
+            {isConfirmed && <span className="text-xs text-emerald-400">&#10003;</span>}
+          </div>
+
+          {chain ? (
+            <>
+              <p className="mt-2 text-xs text-[#8A9BAE] italic">
+                Do you use {provider.name} as a pharmacy?
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => {
+                    // Auto-assign to first person and approve
+                    const defaultPeople = personOptions.length === 1
+                      ? [personOptions[0].value]
+                      : Array.from(selected.size > 0 ? selected : new Set([personOptions[0]?.value || "myself"]));
+                    handleProviderAssign(provider.id, defaultPeople);
+                  }}
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+                  style={{ backgroundColor: GOLD, color: NAVY }}
+                >
+                  Yes, it&apos;s my pharmacy
+                </button>
+                <button
+                  onClick={() => handleProviderDismiss(provider.id)}
+                  className="rounded-lg border border-white/10 bg-[#1A2336] px-3 py-1.5 text-xs text-[#8A9BAE]"
+                >
+                  No, I just shop there
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {personOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => toggleProviderPerson(provider.id, opt.value)}
+                  className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor: selected.has(opt.value) ? GOLD : "transparent",
+                    color: selected.has(opt.value) ? NAVY : "#8A9BAE",
+                    border: selected.has(opt.value) ? "none" : "1px solid rgba(255,255,255,0.15)",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+              {selected.size > 0 && (
+                <button
+                  onClick={() => handleProviderAssign(provider.id, Array.from(selected))}
+                  className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                  style={{ backgroundColor: "#22C55E", color: NAVY }}
+                >
+                  Confirm
+                </button>
+              )}
+              <button
+                onClick={() => handleProviderDismiss(provider.id)}
+                className="rounded-lg border border-white/10 bg-[#1A2336] px-2.5 py-1 text-xs text-[#8A9BAE]"
+              >
+                Ignore
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <Shell>
         <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
@@ -1186,57 +1282,7 @@ export default function OnboardingPage() {
               Confirmed providers
             </div>
             <div className="flex flex-col gap-2">
-              {confirmedProviders.map((provider) => {
-                const selected = providerPeople[provider.id] || new Set<string>();
-                return (
-                <div
-                  key={provider.id}
-                  className="rounded-xl border px-4 py-3"
-                  style={{ backgroundColor: CARD_BG, borderColor: "#1A3A2A" }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-[#F0F2F5]">{provider.name}</div>
-                      <div className="text-xs text-[#8A9BAE]">
-                        {provider.visit_count} visit{provider.visit_count !== 1 ? "s" : ""}
-                      </div>
-                    </div>
-                    <span className="text-xs text-emerald-400">&#10003;</span>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {personOptions.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => toggleProviderPerson(provider.id, opt.value)}
-                        className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                        style={{
-                          backgroundColor: selected.has(opt.value) ? GOLD : "transparent",
-                          color: selected.has(opt.value) ? NAVY : "#8A9BAE",
-                          border: selected.has(opt.value) ? "none" : "1px solid rgba(255,255,255,0.15)",
-                        }}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                    {selected.size > 0 && (
-                      <button
-                        onClick={() => handleProviderAssign(provider.id, Array.from(selected))}
-                        className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                        style={{ backgroundColor: "#22C55E", color: NAVY }}
-                      >
-                        Confirm
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleProviderDismiss(provider.id)}
-                      className="rounded-lg border border-white/10 bg-[#1A2336] px-2.5 py-1 text-xs text-[#8A9BAE]"
-                    >
-                      Ignore
-                    </button>
-                  </div>
-                </div>
-                );
-              })}
+              {confirmedProviders.map((provider) => renderProviderCard(provider, true))}
             </div>
           </div>
         )}
@@ -1247,54 +1293,7 @@ export default function OnboardingPage() {
               Could be a provider ({needsReview.length} remaining)
             </div>
             <div className="flex flex-col gap-2">
-              {needsReview.map((provider) => {
-                const selected = providerPeople[provider.id] || new Set<string>();
-                return (
-                <div
-                  key={provider.id}
-                  className="rounded-xl border px-4 py-3"
-                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-                >
-                  <div>
-                    <div className="text-sm font-medium text-[#F0F2F5]">{provider.name}</div>
-                    <div className="text-xs text-[#8A9BAE]">
-                      {provider.visit_count} transaction{provider.visit_count !== 1 ? "s" : ""}
-                    </div>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {personOptions.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => toggleProviderPerson(provider.id, opt.value)}
-                        className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                        style={{
-                          backgroundColor: selected.has(opt.value) ? GOLD : "transparent",
-                          color: selected.has(opt.value) ? NAVY : "#8A9BAE",
-                          border: selected.has(opt.value) ? "none" : "1px solid rgba(255,255,255,0.15)",
-                        }}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                    {selected.size > 0 && (
-                      <button
-                        onClick={() => handleProviderAssign(provider.id, Array.from(selected))}
-                        className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                        style={{ backgroundColor: "#22C55E", color: NAVY }}
-                      >
-                        Confirm
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleProviderDismiss(provider.id)}
-                      className="rounded-lg border border-white/10 bg-[#1A2336] px-2.5 py-1 text-xs text-[#8A9BAE]"
-                    >
-                      Ignore
-                    </button>
-                  </div>
-                </div>
-                );
-              })}
+              {needsReview.map((provider) => renderProviderCard(provider, false))}
             </div>
           </div>
         )}
