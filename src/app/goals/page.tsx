@@ -175,6 +175,8 @@ export default function GoalsPage() {
   const [loading, setLoading] = useState(true);
   const [newGoalText, setNewGoalText] = useState("");
   const [addingGoal, setAddingGoal] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<Array<{ title: string; detail: string }>>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const fetchGoals = useCallback(() => {
     apiFetch("/api/goals/data")
@@ -216,6 +218,46 @@ export default function GoalsPage() {
       const json = await res.json();
       if (json?.ok) {
         setNewGoalText("");
+        fetchGoals();
+      }
+    } finally {
+      setAddingGoal(false);
+    }
+  }
+
+  async function handleGetSuggestions() {
+    const input = newGoalText.trim();
+    if (!input || loadingSuggestions) return;
+    setLoadingSuggestions(true);
+    setAiSuggestions([]);
+    try {
+      const res = await apiFetch("/api/goals/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input }),
+      });
+      const json = await res.json();
+      if (json?.ok && json.goals) {
+        setAiSuggestions(json.goals);
+      }
+    } catch {
+      // Non-critical
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }
+
+  async function handleAddSuggestion(title: string) {
+    setAddingGoal(true);
+    try {
+      const res = await apiFetch("/api/goals/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      const json = await res.json();
+      if (json?.ok) {
+        setAiSuggestions((prev) => prev.filter((s) => s.title !== title));
         fetchGoals();
       }
     } finally {
@@ -381,29 +423,68 @@ export default function GoalsPage() {
             What&apos;s important to you?
           </h3>
           <p className="text-sm text-[#8A9BAE] mb-4">
-            Add a personal health goal — like exercising more, reducing stress,
-            or getting better sleep.
+            Tell us what you want to work on and Kate will suggest specific goals.
           </p>
           <div className="flex gap-3">
             <input
               type="text"
               value={newGoalText}
-              onChange={(e) => setNewGoalText(e.target.value)}
+              onChange={(e) => { setNewGoalText(e.target.value); setAiSuggestions([]); }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleAddGoal();
+                if (e.key === "Enter") handleGetSuggestions();
               }}
-              placeholder="e.g., Start exercising 3x/week"
+              placeholder="e.g., I want to be more proactive about my health"
               className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-[#F0F2F5] placeholder:text-[#8A9BAE]/50 outline-none focus:border-[#7BA59A]/50 focus:ring-1 focus:ring-[#7BA59A]/30 transition"
             />
             <button
               type="button"
-              onClick={handleAddGoal}
-              disabled={addingGoal || !newGoalText.trim()}
+              onClick={handleGetSuggestions}
+              disabled={loadingSuggestions || !newGoalText.trim()}
               className="rounded-xl bg-[#7BA59A] px-5 py-2.5 text-sm font-semibold text-[#1E2228] shadow-sm transition hover:brightness-[0.95] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
-              {addingGoal ? "Adding..." : "Add goal"}
+              {loadingSuggestions ? "Thinking..." : "Get suggestions"}
             </button>
           </div>
+
+          {/* AI Suggestions */}
+          {aiSuggestions.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#7BA59A]">
+                Kate suggests
+              </p>
+              {aiSuggestions.map((s, i) => (
+                <div
+                  key={i}
+                  className="flex items-start justify-between gap-3 rounded-xl bg-white/5 p-4 ring-1 ring-white/[0.06]"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[#F0F2F5]">{s.title}</p>
+                    <p className="mt-1 text-xs text-[#8A9BAE]">{s.detail}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleAddSuggestion(s.title)}
+                    disabled={addingGoal}
+                    className="shrink-0 rounded-lg bg-[#7BA59A]/20 px-3 py-1.5 text-xs font-semibold text-[#7BA59A] transition hover:bg-[#7BA59A]/30 disabled:opacity-50"
+                  >
+                    + Add
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Quick add without AI */}
+          {aiSuggestions.length === 0 && newGoalText.trim() && !loadingSuggestions && (
+            <button
+              type="button"
+              onClick={handleAddGoal}
+              disabled={addingGoal}
+              className="mt-3 text-xs text-[#8A9BAE] underline underline-offset-4 hover:text-[#F0F2F5]"
+            >
+              Or just add &ldquo;{newGoalText.trim()}&rdquo; as a goal directly
+            </button>
+          )}
         </div>
       </div>
     </main>
