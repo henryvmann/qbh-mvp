@@ -1172,10 +1172,11 @@ export default function OnboardingPage() {
     const allReviewed = needsReview.length === 0;
 
     // Detect chain stores that could be retail OR pharmacy
+    // Only major retail chains that also have pharmacies — not standalone pharmacies
     const CHAIN_STORES = [
       "CVS", "WALGREENS", "RITE AID", "DUANE READE", "WALMART",
       "COSTCO", "SAM'S CLUB", "TARGET", "KROGER", "PUBLIX",
-      "SAFEWAY", "ALBERTSONS", "HEB", "MEIJER", "WESTON PHARMACY",
+      "SAFEWAY", "ALBERTSONS", "HEB", "MEIJER",
     ];
     function isChainStore(name: string): boolean {
       const upper = name.toUpperCase();
