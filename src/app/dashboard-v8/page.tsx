@@ -1039,10 +1039,11 @@ function LoadingSkeleton() {
       className="min-h-screen"
       style={{
         background: `linear-gradient(180deg,
-          #F0EDE8 0%,
-          #E8E5E0 30%,
-          rgba(92,107,92,0.15) 70%,
-          rgba(92,107,92,0.25) 100%)`,
+          rgba(176,212,240,0.35) 0%,
+          rgba(176,212,240,0.15) 20%,
+          #F0EDE8 45%,
+          #E8E5E0 70%,
+          rgba(92,107,92,0.12) 100%)`,
       }}
     >
       <div className="space-y-6 px-4 pt-32">
@@ -1176,10 +1177,11 @@ function DashboardV8Inner() {
       className="relative min-h-screen w-full overflow-hidden pb-24"
       style={{
         background: `linear-gradient(180deg,
-          #F0EDE8 0%,
-          #E8E5E0 30%,
-          rgba(92,107,92,0.15) 70%,
-          rgba(92,107,92,0.25) 100%)`,
+          rgba(176,212,240,0.35) 0%,
+          rgba(176,212,240,0.15) 20%,
+          #F0EDE8 45%,
+          #E8E5E0 70%,
+          rgba(92,107,92,0.12) 100%)`,
       }}
     >
       <style dangerouslySetInnerHTML={{ __html: globalStyles }} />
