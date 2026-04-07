@@ -121,7 +121,7 @@ function classifySnapshots(snapshots: Snapshot[]): ActionItem[] {
 const P = {
   olive: "#5C6B5C",
   cream: "#F0EDE8",
-  navy: "#1A1D2E",
+  navy: "#FFFFFF",
   lime: "#E2F0A0",
   skyBlue: "#B0D4F0",
   coral: "#E04030",
@@ -1039,11 +1039,11 @@ function LoadingSkeleton() {
       className="min-h-screen"
       style={{
         background: `linear-gradient(180deg,
-          rgba(176,212,240,0.35) 0%,
-          rgba(176,212,240,0.15) 20%,
-          #F0EDE8 45%,
-          #E8E5E0 70%,
-          rgba(92,107,92,0.12) 100%)`,
+          #B0D4F0 0%,
+          #C5DFF5 25%,
+          #E0ECF5 50%,
+          #F0EDE8 75%,
+          rgba(92,107,92,0.10) 100%)`,
       }}
     >
       <div className="space-y-6 px-4 pt-32">
@@ -1177,11 +1177,11 @@ function DashboardV8Inner() {
       className="relative min-h-screen w-full overflow-hidden pb-24"
       style={{
         background: `linear-gradient(180deg,
-          rgba(176,212,240,0.35) 0%,
-          rgba(176,212,240,0.15) 20%,
-          #F0EDE8 45%,
-          #E8E5E0 70%,
-          rgba(92,107,92,0.12) 100%)`,
+          #B0D4F0 0%,
+          #C5DFF5 25%,
+          #E0ECF5 50%,
+          #F0EDE8 75%,
+          rgba(92,107,92,0.10) 100%)`,
       }}
     >
       <style dangerouslySetInnerHTML={{ __html: globalStyles }} />
