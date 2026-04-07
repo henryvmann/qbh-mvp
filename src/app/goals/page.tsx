@@ -1,54 +1,182 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
+import HandleItButton from "../../components/qbh/HandleItButton";
+
+/* ---------- types ---------- */
+
+type GoalCategory =
+  | "overdue"
+  | "preventive"
+  | "medications"
+  | "upcoming"
+  | "setup";
 
 type Goal = {
   id: string;
   title: string;
-  status: "overdue" | "needs_attention" | "upcoming" | "pending";
+  category: GoalCategory;
+  progress: number;
   detail: string;
-  category: string;
+  providerName?: string;
+  providerId?: string;
 };
 
-const statusConfig: Record<
-  Goal["status"],
-  { label: string; bgClass: string; textClass: string; ringClass: string }
+type UserGoal = {
+  id: string;
+  title: string;
+  progress: number;
+};
+
+/* ---------- category config ---------- */
+
+const categoryConfig: Record<
+  GoalCategory,
+  { label: string; sectionTitle: string; color: string }
 > = {
   overdue: {
     label: "Overdue",
-    bgClass: "bg-red-500/15",
-    textClass: "text-red-400",
-    ringClass: "ring-red-500/30",
+    sectionTitle: "Overdue Care",
+    color: "#E04030",
   },
-  needs_attention: {
-    label: "Needs attention",
-    bgClass: "bg-amber-500/15",
-    textClass: "text-amber-400",
-    ringClass: "ring-amber-500/30",
+  preventive: {
+    label: "Preventive",
+    sectionTitle: "Preventive Care",
+    color: "#7BA59A",
+  },
+  medications: {
+    label: "Medications",
+    sectionTitle: "Medications",
+    color: "#9078C8",
   },
   upcoming: {
     label: "Upcoming",
-    bgClass: "bg-[#7BA59A]/15",
-    textClass: "text-[#7BA59A]",
-    ringClass: "ring-[#7BA59A]/30",
+    sectionTitle: "Upcoming",
+    color: "#E2F0A0",
   },
-  pending: {
-    label: "Pending",
-    bgClass: "bg-white/8",
-    textClass: "text-[#8A9BAE]",
-    ringClass: "ring-white/10",
+  setup: {
+    label: "Setup",
+    sectionTitle: "Setup",
+    color: "#B0D4F0",
   },
 };
+
+const categoryOrder: GoalCategory[] = [
+  "overdue",
+  "preventive",
+  "medications",
+  "upcoming",
+  "setup",
+];
+
+/* ---------- Mini arc gauge ---------- */
+
+function MiniGauge({ value, color }: { value: number; color: string }) {
+  const r = 30;
+  const circ = Math.PI * r;
+  const filled = (Math.min(Math.max(value, 0), 100) / 100) * circ;
+  return (
+    <svg width={80} height={45} viewBox="0 0 80 45">
+      <path
+        d="M 5 40 A 30 30 0 0 1 75 40"
+        fill="none"
+        stroke="rgba(255,255,255,0.1)"
+        strokeWidth={6}
+        strokeLinecap="round"
+      />
+      <path
+        d="M 5 40 A 30 30 0 0 1 75 40"
+        fill="none"
+        stroke={color}
+        strokeWidth={6}
+        strokeLinecap="round"
+        strokeDasharray={`${filled} ${circ}`}
+        className="transition-all duration-700"
+      />
+      <text
+        x={40}
+        y={35}
+        textAnchor="middle"
+        fill="#F0F2F5"
+        fontSize={14}
+        fontWeight="300"
+      >
+        {value}%
+      </text>
+    </svg>
+  );
+}
+
+/* ---------- Hero arc gauge ---------- */
+
+function HeroGauge({ score }: { score: number }) {
+  const r = 80;
+  const circ = Math.PI * r;
+  const filled = (Math.min(Math.max(score, 0), 100) / 100) * circ;
+
+  let color = "#7BA59A"; // sage (high)
+  if (score < 40) color = "#E04030"; // coral (low)
+  else if (score < 70) color = "#C8D84A"; // lime-ish (medium)
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg width={200} height={115} viewBox="0 0 200 115">
+        <path
+          d="M 10 105 A 80 80 0 0 1 190 105"
+          fill="none"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={12}
+          strokeLinecap="round"
+        />
+        <path
+          d="M 10 105 A 80 80 0 0 1 190 105"
+          fill="none"
+          stroke={color}
+          strokeWidth={12}
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${circ}`}
+          className="transition-all duration-1000"
+        />
+        <text
+          x={100}
+          y={85}
+          textAnchor="middle"
+          fill="#F0F2F5"
+          fontSize={40}
+          fontWeight="300"
+        >
+          {score}%
+        </text>
+        <text
+          x={100}
+          y={108}
+          textAnchor="middle"
+          fill="#8A9BAE"
+          fontSize={13}
+          fontWeight="400"
+        >
+          Health Score
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+/* ---------- page ---------- */
 
 export default function GoalsPage() {
   const router = useRouter();
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [userGoals, setUserGoals] = useState<UserGoal[]>([]);
+  const [healthScore, setHealthScore] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [newGoalText, setNewGoalText] = useState("");
+  const [addingGoal, setAddingGoal] = useState(false);
 
-  useEffect(() => {
+  const fetchGoals = useCallback(() => {
     apiFetch("/api/goals/data")
       .then((res) => {
         if (res.status === 401) {
@@ -58,58 +186,105 @@ export default function GoalsPage() {
         return res.json();
       })
       .then((json) => {
-        if (json?.ok) setGoals(json.goals);
+        if (json?.ok) {
+          setGoals(json.goals ?? []);
+          setUserGoals(json.userGoals ?? []);
+          setHealthScore(json.healthScore ?? 0);
+        }
       })
       .finally(() => setLoading(false));
   }, [router]);
+
+  useEffect(() => {
+    fetchGoals();
+  }, [fetchGoals]);
+
+  async function handleAddGoal() {
+    const title = newGoalText.trim();
+    if (!title || addingGoal) return;
+    setAddingGoal(true);
+    try {
+      const res = await apiFetch("/api/goals/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+      const json = await res.json();
+      if (json?.ok) {
+        setNewGoalText("");
+        fetchGoals();
+      }
+    } finally {
+      setAddingGoal(false);
+    }
+  }
 
   if (loading) {
     return <main className="min-h-screen bg-[#1E2228]" />;
   }
 
-  const grouped = {
-    overdue: goals.filter((g) => g.status === "overdue"),
-    needs_attention: goals.filter((g) => g.status === "needs_attention"),
-    upcoming: goals.filter((g) => g.status === "upcoming"),
-    pending: goals.filter((g) => g.status === "pending"),
-  };
+  // Group goals by category
+  const grouped = new Map<GoalCategory, Goal[]>();
+  for (const g of goals) {
+    const list = grouped.get(g.category) ?? [];
+    list.push(g);
+    grouped.set(g.category, list);
+  }
 
-  const allSections: { key: Goal["status"]; title: string; items: Goal[] }[] = [
-    { key: "overdue", title: "Overdue", items: grouped.overdue },
-    {
-      key: "needs_attention",
-      title: "Needs Attention",
-      items: grouped.needs_attention,
-    },
-    { key: "upcoming", title: "Upcoming", items: grouped.upcoming },
-    { key: "pending", title: "Pending", items: grouped.pending },
-  ];
-  const sections = allSections.filter((s) => s.items.length > 0);
+  const sections = categoryOrder
+    .filter((cat) => (grouped.get(cat)?.length ?? 0) > 0)
+    .map((cat) => ({
+      category: cat,
+      config: categoryConfig[cat],
+      items: grouped.get(cat)!,
+    }));
+
+  const onTrackCount = goals.filter((g) => g.progress >= 50).length;
 
   return (
     <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
-      <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#F0F2F5]">
-              Goals
-            </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#8A9BAE]">
-              Goals help QBH prioritize what matters most, then connect those
-              priorities to scheduling, follow-ups, and care coordination.
-            </p>
-          </div>
-
+      <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/8 bg-white/5 px-4 py-2 text-sm font-medium text-[#8A9BAE] shadow-sm hover:bg-[#162030]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-[#8A9BAE] hover:bg-white/10 transition"
           >
-            Back to Dashboard
+            <svg
+              width={18}
+              height={18}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
           </Link>
+          <h1 className="font-serif text-2xl tracking-tight text-[#F0F2F5]">
+            Goals
+          </h1>
         </div>
 
-        {goals.length === 0 ? (
-          <div className="mt-10 rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+        {/* Hero Health Score */}
+        <div className="rounded-2xl bg-white/5 backdrop-blur p-6 ring-1 ring-white/[0.08] mb-6">
+          <HeroGauge score={healthScore} />
+          <p className="text-center text-sm text-[#8A9BAE] mt-2">
+            {onTrackCount} of {goals.length} goals on track
+          </p>
+        </div>
+
+        {/* Goal sections */}
+        {goals.length === 0 && userGoals.length === 0 ? (
+          <div className="rounded-2xl bg-white/5 backdrop-blur p-6 ring-1 ring-white/[0.08]">
             <div className="font-semibold text-[#F0F2F5]">
               No goals right now
             </div>
@@ -119,41 +294,117 @@ export default function GoalsPage() {
             </p>
           </div>
         ) : (
-          <div className="mt-8 space-y-8">
+          <div className="space-y-8">
             {sections.map((section) => (
-              <section key={section.key}>
-                <h2 className="mb-4 font-serif text-xl text-[#F0F2F5]">
-                  {section.title}
+              <section key={section.category}>
+                <h2
+                  className="mb-3 text-sm font-semibold uppercase tracking-wider"
+                  style={{ color: section.config.color }}
+                >
+                  {section.config.sectionTitle}
                 </h2>
-                <div className="space-y-4">
-                  {section.items.map((goal) => {
-                    const cfg = statusConfig[goal.status];
-                    return (
-                      <div
-                        key={goal.id}
-                        className="rounded-2xl bg-white/5 p-5 ring-1 ring-[rgba(255,255,255,0.08)]"
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="font-semibold text-[#F0F2F5]">
-                            {goal.title}
+                <div className="space-y-3">
+                  {section.items.map((goal) => (
+                    <div
+                      key={goal.id}
+                      className="rounded-2xl bg-white/5 backdrop-blur p-5 ring-1 ring-white/[0.08]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-lg font-semibold text-[#F0F2F5]">
+                              {goal.title}
+                            </span>
+                            <span
+                              className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0"
+                              style={{
+                                backgroundColor: `${section.config.color}20`,
+                                color: section.config.color,
+                              }}
+                            >
+                              {section.config.label}
+                            </span>
                           </div>
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${cfg.bgClass} ${cfg.textClass} ${cfg.ringClass}`}
-                          >
-                            {cfg.label}
-                          </span>
+                          <p className="mt-1.5 text-sm text-[#8A9BAE]">
+                            {goal.detail}
+                          </p>
                         </div>
-                        <p className="mt-3 text-sm text-[#8A9BAE]">
-                          {goal.detail}
-                        </p>
+                        <div className="shrink-0">
+                          <MiniGauge
+                            value={goal.progress}
+                            color={section.config.color}
+                          />
+                        </div>
                       </div>
-                    );
-                  })}
+
+                      {/* Handle It button for overdue goals with no progress */}
+                      {goal.category === "overdue" &&
+                        goal.progress === 0 &&
+                        goal.providerId && (
+                          <HandleItButton
+                            providerId={goal.providerId}
+                            providerName={goal.providerName}
+                            label="Let Kate handle it"
+                          />
+                        )}
+                    </div>
+                  ))}
                 </div>
               </section>
             ))}
           </div>
         )}
+
+        {/* User goals */}
+        {userGoals.length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#8A9BAE]">
+              Your Goals
+            </h2>
+            <div className="space-y-3">
+              {userGoals.map((ug) => (
+                <div
+                  key={ug.id}
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-white/5 backdrop-blur p-5 ring-1 ring-white/[0.08]"
+                >
+                  <span className="text-[#F0F2F5] font-medium">{ug.title}</span>
+                  <MiniGauge value={ug.progress} color="#8A9BAE" />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Add custom goal */}
+        <div className="mt-8 rounded-2xl bg-white/5 backdrop-blur p-5 ring-1 ring-white/[0.08]">
+          <h3 className="text-base font-semibold text-[#F0F2F5] mb-1">
+            What&apos;s important to you?
+          </h3>
+          <p className="text-sm text-[#8A9BAE] mb-4">
+            Add a personal health goal — like exercising more, reducing stress,
+            or getting better sleep.
+          </p>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={newGoalText}
+              onChange={(e) => setNewGoalText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAddGoal();
+              }}
+              placeholder="e.g., Start exercising 3x/week"
+              className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-[#F0F2F5] placeholder:text-[#8A9BAE]/50 outline-none focus:border-[#7BA59A]/50 focus:ring-1 focus:ring-[#7BA59A]/30 transition"
+            />
+            <button
+              type="button"
+              onClick={handleAddGoal}
+              disabled={addingGoal || !newGoalText.trim()}
+              className="rounded-xl bg-[#7BA59A] px-5 py-2.5 text-sm font-semibold text-[#1E2228] shadow-sm transition hover:brightness-[0.95] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {addingGoal ? "Adding..." : "Add goal"}
+            </button>
+          </div>
+        </div>
       </div>
     </main>
   );
