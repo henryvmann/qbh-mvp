@@ -1223,7 +1223,7 @@ function DashboardV8Inner() {
         <ActionCards
           items={actionItems}
           userId={data.appUserId}
-          showCalendarNudge={!data.hasGoogleCalendarConnection}
+          showCalendarNudge={false}
         />
       </div>
 
