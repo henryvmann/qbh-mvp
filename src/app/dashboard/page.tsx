@@ -4,17 +4,9 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
+import HandleItButton from "../../components/qbh/HandleItButton";
 
-import ProviderCard from "../../components/qbh/ProviderCard";
-import DailyBrief from "../../components/qbh/DailyBrief";
-import DashboardAnalyzer from "../../components/qbh/DashboardAnalyzer";
-import DashboardHandleAllButton from "../../components/qbh/DashboardHandleAllButton";
-import KateWidget from "../../components/qbh/KateWidget";
-
-type DashboardStat = {
-  label: string;
-  value: string;
-};
+/* ── Types ── */
 
 type DashboardData = {
   appUserId: string;
@@ -24,191 +16,200 @@ type DashboardData = {
   hasGoogleCalendarConnection: boolean;
 };
 
-function hasConfirmedBooking(snapshot: any): boolean {
-  return snapshot.booking_state.status === "BOOKED";
-}
+/* ── Helpers ── */
 
-function hasActiveBookingState(snapshot: any): boolean {
-  return snapshot.booking_state.status === "IN_PROGRESS";
-}
-
-function hasBrokenSchedulingState(snapshot: any): boolean {
-  return snapshot.system_actions.integrity.hasMultipleFutureConfirmedEvents;
-}
-
-function isHandleAllEligible(snapshot: any): boolean {
-  if (hasBrokenSchedulingState(snapshot)) return false;
+function isOverdue(snapshot: any): boolean {
   return (
     snapshot.followUpNeeded &&
-    snapshot.system_actions.next?.type === "BOOK_APPOINTMENT" &&
-    snapshot.system_actions.next?.status === "PENDING"
+    snapshot.booking_state?.status !== "BOOKED" &&
+    snapshot.booking_state?.status !== "IN_PROGRESS"
   );
 }
 
-function classifyProvider(name: string): "doctor" | "lab" | "pharmacy" {
-  const n = name.toLowerCase();
-  if (
-    n.includes("quest") ||
-    n.includes("labcorp") ||
-    n.includes("diagnostic") ||
-    n.includes("lab") ||
-    n.includes("imaging") ||
-    n.includes("radiology") ||
-    n.includes("testing")
-  ) {
-    return "lab";
-  }
-  if (
-    n.includes("cvs") ||
-    n.includes("walgreens") ||
-    n.includes("rite aid") ||
-    n.includes("pharmacy")
-  ) {
-    return "pharmacy";
-  }
-  return "doctor";
+function hasConfirmedBooking(snapshot: any): boolean {
+  return snapshot.booking_state?.status === "BOOKED";
 }
 
-function TopNav() {
-  const items = [
-    { label: "Goals", href: "/goals" },
-    { label: "Visits", href: "/visits" },
-    { label: "Timeline", href: "/timeline" },
-    { label: "Medications", href: "/medications" },
-    { label: "Caregivers", href: "/caregivers" },
-    { label: "Account", href: "/account" },
-  ];
-
-  return (
-    <nav className="sticky top-0 z-10 bg-[#1E2228] py-2">
-      <div className="rounded-2xl bg-white/5 px-3 py-2 ring-1 ring-white/8">
-        <div className="flex flex-wrap items-center gap-2">
-          {items.map((it) => (
-            <Link
-              key={it.href}
-              href={it.href}
-              className="rounded-xl px-3 py-2 text-base font-medium text-[#8A9BAE] hover:bg-[#162030] hover:text-[#F0F2F5]"
-            >
-              {it.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </nav>
+function monthsSinceLastVisit(snapshot: any): number | null {
+  const last = snapshot.lastVisitDate || snapshot.last_visit_date;
+  if (!last) return null;
+  const d = new Date(last);
+  const now = new Date();
+  return Math.max(
+    1,
+    Math.round(
+      (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24 * 30)
+    )
   );
 }
 
-function StatCard(props: DashboardStat) {
+function computeHealthScore(snapshots: any[]): number {
+  if (snapshots.length === 0) return 100;
+  const current = snapshots.filter((s) => !isOverdue(s)).length;
+  return Math.round((current / snapshots.length) * 100);
+}
+
+/* ── Day helpers ── */
+
+const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
+
+function getTodayDayIndex(): number {
+  return new Date().getDay();
+}
+
+/* ── SVG Icons ── */
+
+function CheckmarkIcon({ className }: { className?: string }) {
   return (
-    <div className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/8">
-      <div className="text-sm font-medium text-[#8A9BAE]">{props.label}</div>
-      <div className="mt-2 font-serif text-3xl tracking-tight text-[#F0F2F5]">
-        {props.value}
-      </div>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
+function HomeIcon({ active }: { active?: boolean }) {
+  const color = active ? "#5C6B5C" : "#B0B4BC";
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  );
+}
+
+function CalendarIcon({ active }: { active?: boolean }) {
+  const color = active ? "#5C6B5C" : "#B0B4BC";
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+
+function ChatIcon({ active }: { active?: boolean }) {
+  const color = active ? "#5C6B5C" : "#B0B4BC";
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+    </svg>
+  );
+}
+
+function UserIcon({ active }: { active?: boolean }) {
+  const color = active ? "#5C6B5C" : "#B0B4BC";
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+/* ── Score Ring ── */
+
+function ScoreRing({ score }: { score: number }) {
+  const radius = 28;
+  const circumference = 2 * Math.PI * radius;
+  const progress = (score / 100) * circumference;
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: 72, height: 72 }}>
+      <svg width={72} height={72} viewBox="0 0 72 72">
+        <circle
+          cx={36}
+          cy={36}
+          r={radius}
+          fill="none"
+          stroke="#E0D8F0"
+          strokeWidth={5}
+        />
+        <circle
+          cx={36}
+          cy={36}
+          r={radius}
+          fill="none"
+          stroke="#5C6B5C"
+          strokeWidth={5}
+          strokeLinecap="round"
+          strokeDasharray={`${progress} ${circumference - progress}`}
+          strokeDashoffset={circumference * 0.25}
+          transform="rotate(-90 36 36)"
+        />
+      </svg>
+      <span className="absolute text-lg font-semibold text-[#9078C8]">
+        {score}
+      </span>
     </div>
   );
 }
 
-function CalendarConnectionBanner(props: {
-  userId: string;
-  isConnected: boolean;
-}) {
-  const href = `/calendar-connect?user_id=${encodeURIComponent(props.userId)}`;
+/* ── Bottom Tab Bar ── */
 
-  if (props.isConnected) {
-    return (
-      <section className="mt-8 rounded-2xl bg-white/5 p-5 ring-1 ring-white/8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-sm font-medium text-[#F0F2F5]">
-              Google Calendar connected
-            </div>
-            <div className="mt-1 text-sm text-[#8A9BAE]">
-              QBH can use your real availability to protect your schedule before
-              booking starts.
-            </div>
-          </div>
-          <Link
-            href={href}
-            className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#8A9BAE] hover:bg-[#162030] hover:text-[#F0F2F5]"
-          >
-            Manage calendar
-          </Link>
-        </div>
-      </section>
-    );
-  }
+function BottomTabBar() {
+  const tabs = [
+    { label: "Home", icon: HomeIcon, href: "/dashboard", active: true },
+    { label: "Visits", icon: CalendarIcon, href: "/visits", active: false },
+    { label: "Kate", icon: ChatIcon, href: "/kate", active: false },
+    { label: "Profile", icon: UserIcon, href: "/account", active: false },
+  ];
 
   return (
-    <section className="mt-8 rounded-2xl bg-white/5 p-5 ring-1 ring-white/8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="text-sm font-medium text-[#F0F2F5]">
-            Connect Google Calendar for better booking
-          </div>
-          <div className="mt-1 text-sm text-[#8A9BAE]">
-            QBH works better with your real availability, but you can still
-            continue without connecting it right now.
-          </div>
-        </div>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-20 items-center justify-around border-t border-[#EBEDF0] bg-white/95">
+      {tabs.map((tab) => (
         <Link
-          href={href}
-          className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1E2228] hover:brightness-95"
+          key={tab.label}
+          href={tab.href}
+          className="flex flex-col items-center gap-1"
         >
-          Connect calendar
+          <tab.icon active={tab.active} />
+          <span
+            className={`text-[11px] font-medium ${
+              tab.active ? "text-[#5C6B5C]" : "text-[#B0B4BC]"
+            }`}
+          >
+            {tab.label}
+          </span>
+          {tab.active && (
+            <span className="h-1 w-1 rounded-full bg-[#5C6B5C]" />
+          )}
         </Link>
-      </div>
-    </section>
+      ))}
+    </nav>
   );
 }
 
-function IntegrityBanner(props: { brokenCount: number }) {
-  if (props.brokenCount <= 0) return null;
-  return (
-    <section className="mt-8 rounded-2xl bg-red-500/15 p-5 ring-1 ring-red-500/30">
-      <div className="text-sm font-medium text-red-400">
-        Scheduling integrity issue detected
-      </div>
-      <div className="mt-1 text-sm text-red-400/80">
-        QBH found {props.brokenCount} provider
-        {props.brokenCount === 1 ? "" : "s"} with multiple future confirmed
-        appointments. Those cards are being held out of normal booking actions
-        until reviewed.
-      </div>
-    </section>
-  );
-}
-
-function ProviderGroupSection(props: {
-  title: string;
-  userId: string;
-  hasGoogleCalendarConnection: boolean;
-  snapshots: any[];
-}) {
-  if (props.snapshots.length === 0) return null;
-  return (
-    <section>
-      <h2 className="mb-4 text-lg font-semibold text-[#F0F2F5]">
-        {props.title}
-      </h2>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {props.snapshots.map((s) => (
-          <ProviderCard
-            key={s.provider.id}
-            snapshot={s}
-            userId={props.userId}
-            hasGoogleCalendarConnection={props.hasGoogleCalendarConnection}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
+/* ── Main Dashboard ── */
 
 function DashboardInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isAnalyzing = searchParams.get("analyzing") === "1";
 
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -229,121 +230,268 @@ function DashboardInner() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#1E2228]" />;
+    return (
+      <main
+        className="min-h-screen"
+        style={{
+          background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)",
+        }}
+      />
+    );
   }
 
   if (!data) return null;
 
-  const { appUserId, userName, snapshots, discoverySummary, hasGoogleCalendarConnection } = data;
+  const { appUserId, userName, snapshots } = data;
 
-  const doctors = snapshots.filter((s) => classifyProvider(s.provider.name) === "doctor");
-  const labs = snapshots.filter((s) => classifyProvider(s.provider.name) === "lab");
-  const pharmacies = snapshots.filter((s) => classifyProvider(s.provider.name) === "pharmacy");
+  const overdueSnapshots = snapshots.filter(isOverdue);
+  const overdueCount = overdueSnapshots.length;
+  const upcomingCount = snapshots.filter(hasConfirmedBooking).length;
+  const providerCount = snapshots.length;
+  const healthScore = computeHealthScore(snapshots);
 
-  const actionableProviders = snapshots
-    .filter((s) => isHandleAllEligible(s))
-    .map((s) => ({ providerId: s.provider.id, providerName: s.provider.name }));
+  const topOverdue = overdueSnapshots[0] ?? null;
+  const topOverdueMonths = topOverdue ? monthsSinceLastVisit(topOverdue) : null;
 
-  const followUps = snapshots.filter((s) => s.followUpNeeded).length;
-  const upcoming = snapshots.filter((s) => hasConfirmedBooking(s)).length;
-  const inProgress = snapshots.filter((s) => hasActiveBookingState(s)).length;
-  const broken = snapshots.filter((s) => hasBrokenSchedulingState(s)).length;
-
-  const stats: DashboardStat[] = [
-    { label: "Providers", value: String(snapshots.length) },
-    { label: "Charges", value: String(discoverySummary.chargesAnalyzed) },
-    { label: "Upcoming", value: String(upcoming) },
-    { label: "Follow-ups", value: String(followUps) },
-  ];
-
-  const showAnalyzer = Boolean(appUserId) && isAnalyzing;
+  const todayIndex = getTodayDayIndex();
 
   return (
-    <main className="min-h-screen bg-[#1E2228] px-6 py-10">
-      <div className="mx-auto max-w-7xl">
-        <header>
-          <h1 className="font-serif text-4xl tracking-tight text-[#F0F2F5]">
-            Quarterback
-          </h1>
-          <p className="mt-2 text-sm text-[#8A9BAE]">Your care, organized.</p>
-        </header>
-
-        <DashboardAnalyzer userId={appUserId} enabled={showAnalyzer} />
-
-        {!showAnalyzer ? (
-          <>
-            <TopNav />
-
-            <DailyBrief
-              upcoming={upcoming}
-              followUps={followUps}
-              name={userName ?? undefined}
-              hasCalendar={hasGoogleCalendarConnection}
-            />
-
-            <CalendarConnectionBanner
-              userId={appUserId}
-              isConnected={hasGoogleCalendarConnection}
-            />
-
-            <IntegrityBanner brokenCount={broken} />
-
-            <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {stats.map((stat) => (
-                <StatCard key={stat.label} label={stat.label} value={stat.value} />
-              ))}
-            </section>
-
-            <section className="mt-8 rounded-2xl bg-white/5 p-6 ring-1 ring-white/8">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="font-serif text-2xl tracking-tight text-[#F0F2F5]">
-                    Providers
-                  </h2>
-                  <p className="mt-2 text-sm text-[#8A9BAE]">
-                    Discovered from your healthcare spending and tracked here.
-                  </p>
-                </div>
-                <DashboardHandleAllButton
-                  userId={appUserId}
-                  providers={actionableProviders}
-                  hasGoogleCalendarConnection={hasGoogleCalendarConnection}
-                />
-              </div>
-            </section>
-
-            <div id="provider-cards" className="mt-8 space-y-10">
-              <ProviderGroupSection
-                title="Doctors"
-                userId={appUserId}
-                hasGoogleCalendarConnection={hasGoogleCalendarConnection}
-                snapshots={doctors}
-              />
-              <ProviderGroupSection
-                title="Labs"
-                userId={appUserId}
-                hasGoogleCalendarConnection={hasGoogleCalendarConnection}
-                snapshots={labs}
-              />
-              <ProviderGroupSection
-                title="Pharmacies"
-                userId={appUserId}
-                hasGoogleCalendarConnection={hasGoogleCalendarConnection}
-                snapshots={pharmacies}
-              />
+    <main
+      className="min-h-screen pb-24"
+      style={{
+        background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)",
+      }}
+    >
+      <div className="mx-auto max-w-lg">
+        {/* ── 1. Top Bar ── */}
+        <div className="flex items-center justify-between px-7 pt-16">
+          {/* Neumorphic QB logo */}
+          <div
+            className="flex h-11 w-11 items-center justify-center rounded-xl"
+            style={{
+              background: "#ECEEF1",
+              boxShadow:
+                "5px 5px 10px rgba(0,0,0,0.08), -4px -4px 6px rgba(255,255,255,0.9)",
+            }}
+          >
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-lg"
+              style={{ background: "#E0E2E6" }}
+            >
+              <CheckmarkIcon className="h-4 w-4 text-[#C0C4CA]" />
             </div>
-          </>
-        ) : null}
+          </div>
+
+          <span className="text-sm text-[#7A7F8A]">
+            Hi, {userName || "there"}
+          </span>
+        </div>
+
+        {/* ── 2. Mini Week Strip ── */}
+        <div className="mt-8 flex items-center justify-center gap-2.5">
+          {DAY_LETTERS.map((letter, i) => (
+            <div
+              key={i}
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${
+                i === todayIndex
+                  ? "bg-[#5C6B5C] text-white"
+                  : "text-[#B0B4BC]"
+              }`}
+            >
+              {letter}
+            </div>
+          ))}
+        </div>
+
+        {/* ── 3. Hero Section ── */}
+        <div className="mt-3 px-7">
+          {overdueCount > 0 ? (
+            <>
+              <div
+                className="font-extralight leading-none text-[#1A1D2E]"
+                style={{ fontSize: "96px" }}
+              >
+                {overdueCount}
+              </div>
+              <div className="text-3xl font-light text-[#7A7F8A]">overdue</div>
+              {topOverdue && (
+                <div className="mt-2 text-base text-[#B0B4BC]">
+                  {topOverdue.provider?.name || "A provider"} hasn&apos;t seen
+                  you in {topOverdueMonths ?? "a while"}{" "}
+                  {topOverdueMonths ? "months" : ""}.
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div
+                className="font-extralight leading-none text-[#5C6B5C]"
+                style={{ fontSize: "96px" }}
+              >
+                ✓
+              </div>
+              <div className="text-3xl font-light text-[#7A7F8A]">
+                All caught up
+              </div>
+              <div className="mt-2 text-base text-[#B0B4BC]">
+                Every provider is current. Nice work.
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ── 4. Big Action Button ── */}
+        {overdueCount > 0 && (
+          <div className="mt-7 px-7">
+            <button
+              type="button"
+              onClick={() => {
+                // Trigger handle-all flow
+                overdueSnapshots.forEach((s) => {
+                  apiFetch("/api/vapi/start-call", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      app_user_id: appUserId,
+                      provider_id: s.provider.id,
+                      provider_name: s.provider.name,
+                      mode: "BOOK",
+                    }),
+                  });
+                });
+              }}
+              className="w-full rounded-3xl px-6 py-5 text-left shadow-lg"
+              style={{
+                background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
+                boxShadow: "0 8px 24px rgba(92,107,92,0.35)",
+              }}
+            >
+              <div className="text-lg font-semibold text-white">
+                Let Kate book these →
+              </div>
+              <div className="mt-1 text-sm text-white/60">
+                She&apos;ll call and schedule for you
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* ── 5. Color Hub — At a Glance ── */}
+        <div className="mt-10 px-7">
+          <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
+            AT A GLANCE
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {/* Providers */}
+            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#D8E8D0] p-5">
+              <div className="text-4xl font-extralight text-[#5C6B5C]">
+                {providerCount}
+              </div>
+              <div className="text-sm font-semibold text-[#5C6B5C]/70">
+                Providers
+              </div>
+            </div>
+
+            {/* Overdue */}
+            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#F8D8D0] p-5">
+              <div className="text-4xl font-extralight text-[#E04030]">
+                {overdueCount}
+              </div>
+              <div className="text-sm font-semibold text-[#E04030]/70">
+                Overdue
+              </div>
+            </div>
+
+            {/* Upcoming */}
+            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#D0E4F0] p-5">
+              <div className="text-4xl font-extralight text-[#A0C8E8]">
+                {upcomingCount}
+              </div>
+              <div className="text-sm font-semibold text-[#A0C8E8]/70">
+                Upcoming
+              </div>
+            </div>
+
+            {/* Score */}
+            <div className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl bg-[#E0D8F0] p-5">
+              <ScoreRing score={healthScore} />
+              <div className="mt-1 text-sm font-semibold text-[#9078C8]/70">
+                Score
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 6. Provider List ── */}
+        <div className="mt-10 px-7">
+          <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
+            YOUR PROVIDERS
+          </div>
+          <div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm">
+            {snapshots.map((s, idx) => {
+              const overdue = isOverdue(s);
+              const isLast = idx === snapshots.length - 1;
+
+              return (
+                <div
+                  key={s.provider.id}
+                  className={`flex items-center justify-between px-5 py-4 ${
+                    !isLast ? "border-b border-[#F0F0F0]" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{
+                        backgroundColor: overdue ? "#E04030" : "#5C6B5C",
+                      }}
+                    />
+                    <span className="text-sm font-medium text-[#1A1D2E]">
+                      {s.provider.name}
+                    </span>
+                  </div>
+
+                  {overdue ? (
+                    <HandleItButton
+                      userId={appUserId}
+                      providerId={s.provider.id}
+                      providerName={s.provider.name}
+                      label="Book"
+                    />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4 text-[#B0B4BC]" />
+                  )}
+                </div>
+              );
+            })}
+            {snapshots.length === 0 && (
+              <div className="px-5 py-8 text-center text-sm text-[#B0B4BC]">
+                No providers discovered yet.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <KateWidget userId={appUserId} />
+      {/* ── 7. Bottom Tab Bar ── */}
+      <BottomTabBar />
     </main>
   );
 }
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#1E2228]" />}>
+    <Suspense
+      fallback={
+        <main
+          className="min-h-screen"
+          style={{
+            background:
+              "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)",
+          }}
+        />
+      }
+    >
       <DashboardInner />
     </Suspense>
   );
