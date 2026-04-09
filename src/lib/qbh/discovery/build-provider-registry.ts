@@ -127,9 +127,16 @@ export async function buildProviderRegistry(
     "CINEMA", "MOVIE", "THEATER", "THEATRE", "ARCADE", "BOWLING",
     // Finance / transfers
     "TRANSFER", "DEPOSIT", "WITHDRAWAL", "ZELLE", "VENMO", "PAYROLL", "PAYCHECK",
-    "LATE FEE", "INTEREST ", "PREMIUM",
-    // Insurance (not a provider)
+    "LATE FEE", "INTEREST ", "PREMIUM", "MORTGAGE", "LOAN ", "INVEST", "BROKERAGE",
+    "FIDELITY", "SCHWAB", "VANGUARD", "AMERITRADE", "MERRILL",
+    // Insurance (not a provider — paying premiums is NOT a provider visit)
     "INSURANCE", "INSUR ",
+    "WILLIAM PENN", "GEICO", "STATE FARM", "ALLSTATE", "PROGRESSIVE",
+    "LIBERTY MUTUAL", "NATIONWIDE", "USAA", "FARMERS", "METLIFE",
+    "CIGNA", "AETNA", "ANTHEM", "HUMANA", "KAISER",
+    "UNITED HEALTH", "UNITEDHEALTH", "BLUE CROSS", "BLUECROSS", "BCBS",
+    "GUARDIAN", "LINCOLN FINANCIAL", "AFLAC", "PRUDENTIAL", "HARTFORD",
+    "TRAVELERS", "MUTUAL OF OMAHA",
     // Misc
     "PET ", "VET ", "VETERINA", "LANDSCAP", "CLEANING", "LAUNDRY", "DRY CLEAN",
   ];

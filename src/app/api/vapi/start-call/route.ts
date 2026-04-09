@@ -249,14 +249,15 @@ export async function POST(req: Request) {
 
   console.log("qbh start-call using assistant:", assistantId);
 
-  // Check if this is a manually-added provider (no visit history)
+  // Check if this is a manually-added provider and get doctor_name if available
   const { data: providerRow } = await supabaseAdmin
     .from("providers")
-    .select("source")
+    .select("source, doctor_name")
     .eq("id", provider_id)
     .single();
 
   const isManualProvider = providerRow?.source === "manual";
+  const doctorName = (providerRow?.doctor_name || "").trim();
 
   const availabilityContext = await buildStartCallAvailabilityContext(
     app_user_id
@@ -361,6 +362,7 @@ export async function POST(req: Request) {
           mode,
           call_purpose: isManualProvider ? "INQUIRY" : mode,
           is_manual_provider: isManualProvider,
+          doctor_name: doctorName || "not specified",
           patient_date_of_birth: patientProfile.date_of_birth || "not available — the patient will provide when they arrive",
           patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
           patient_insurance_member_id: patientProfile.insurance_member_id || "not available — the patient will provide when they arrive",

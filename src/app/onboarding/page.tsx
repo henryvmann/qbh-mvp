@@ -217,7 +217,9 @@ export default function OnboardingPage() {
     step3: [],
     step4: [],
   });
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const name = `${firstName.trim()} ${lastName.trim()}`.trim();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [userId, setUserId] = useState("");
@@ -328,7 +330,7 @@ export default function OnboardingPage() {
           setPlaidPublicToken(publicToken);
           setPlaidConnected(true);
           // Auto-advance: if account info is filled, trigger continue immediately
-          if (name.trim() && email.trim() && password.length >= 6) {
+          if (firstName.trim() && lastName.trim() && email.trim() && password.length >= 6) {
             // Small delay so user sees the "connected" state briefly
             setTimeout(() => {
               document.getElementById("step7-continue-btn")?.click();
@@ -355,7 +357,7 @@ export default function OnboardingPage() {
 
   /* ---- Step 7 continue: create user ---- */
   const handleStep7Continue = useCallback(async () => {
-    if (!name.trim() || !email.trim() || password.length < 6) return;
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6) return;
     setError(null);
 
     try {
@@ -388,7 +390,7 @@ export default function OnboardingPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
     }
-  }, [name, email, password, userId, survey]);
+  }, [firstName, lastName, email, password, userId, survey]);
 
   /* ---- Step 8: run discovery ---- */
   useEffect(() => {
@@ -525,7 +527,7 @@ export default function OnboardingPage() {
 
   /* ---- Manual path: handle continue ---- */
   const handleManualContinue = useCallback(async () => {
-    if (!name.trim() || !email.trim() || password.length < 6) return;
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6) return;
     setError(null);
 
     try {
@@ -576,7 +578,7 @@ export default function OnboardingPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
     }
-  }, [name, email, password, userId, survey, manualProviders]);
+  }, [firstName, lastName, email, password, userId, survey, manualProviders]);
 
   /* ---- render per step ---- */
 
@@ -842,7 +844,7 @@ export default function OnboardingPage() {
 
   // Step 7 (manual path): Account setup + NPI provider search
   if (step === 7 && manualPath) {
-    const canContinue = name.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
+    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
 
     // Build person options from step 3 survey answers
     const personLabelMap: Record<string, string> = {
@@ -901,14 +903,24 @@ export default function OnboardingPage() {
 
         {/* Account fields */}
         <div className="mt-6 flex flex-col gap-4">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-            style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-          />
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
+              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+            />
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last name"
+              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+            />
+          </div>
           <input
             type="email"
             value={email}
@@ -1071,7 +1083,7 @@ export default function OnboardingPage() {
 
   // Step 7: Account setup + Plaid connection (was step 5)
   if (step === 7) {
-    const canContinue = name.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
+    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
     return (
       <Shell>
         <div className="mb-6">
@@ -1090,17 +1102,24 @@ export default function OnboardingPage() {
         </p>
 
         <div className="mt-6 flex flex-col gap-4">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-            style={{
-              backgroundColor: CARD_BG,
-              borderColor: CARD_BORDER,
-            }}
-          />
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
+              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+            />
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last name"
+              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+            />
+          </div>
           <input
             type="email"
             value={email}

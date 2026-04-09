@@ -4,6 +4,8 @@ export type Provider = {
   phone?: string | null;
   specialty?: string | null;
   location?: string | null;
+  doctor_name?: string | null;
+  notes?: string | null;
 };
 
 export type ScheduleAttemptStatus =

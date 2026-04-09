@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { apiFetch } from "../../lib/api";
 import type {
   ProviderDashboardSnapshot,
@@ -287,6 +287,39 @@ export default function ProviderCard({
     (state.key === "in-progress" || state.key === "blocked") &&
     snapshot.latestAttempt;
 
+  // Provider detail editing
+  const [showDetails, setShowDetails] = useState(false);
+  const [editDoctorName, setEditDoctorName] = useState(provider.doctor_name || "");
+  const [editSpecialty, setEditSpecialty] = useState(provider.specialty || "");
+  const [editNotes, setEditNotes] = useState(provider.notes || "");
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [detailsSaved, setDetailsSaved] = useState(false);
+
+  const saveDetails = useCallback(async () => {
+    setSavingDetails(true);
+    try {
+      await apiFetch("/api/providers/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider_id: provider.id,
+          doctor_name: editDoctorName.trim() || null,
+          specialty: editSpecialty.trim() || null,
+          notes: editNotes.trim() || null,
+        }),
+      });
+      setDetailsSaved(true);
+      setTimeout(() => setDetailsSaved(false), 2000);
+    } catch {
+      // Silently fail
+    } finally {
+      setSavingDetails(false);
+    }
+  }, [provider.id, editDoctorName, editSpecialty, editNotes]);
+
+  const detailInputClass =
+    "w-full rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]";
+
   return (
     <article className="rounded-2xl bg-white p-5 border border-[#EBEDF0] shadow-sm">
       <div className="flex items-start justify-between gap-4">
@@ -296,16 +329,85 @@ export default function ProviderCard({
           </h3>
 
           <div className="mt-1 text-sm text-[#7A7F8A]">
-            {provider.specialty || "Provider"}
+            {provider.doctor_name
+              ? `Dr. ${provider.doctor_name}${provider.specialty ? ` · ${provider.specialty}` : ""}`
+              : provider.specialty || "Provider"}
           </div>
         </div>
 
-        <div
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${state.badgeClassName}`}
-        >
-          {state.label}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowDetails(!showDetails)}
+            className="rounded-lg px-2.5 py-1 text-xs font-medium text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
+          >
+            {showDetails ? "Close" : "Details"}
+          </button>
+          <div
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${state.badgeClassName}`}
+          >
+            {state.label}
+          </div>
         </div>
       </div>
+
+      {showDetails && (
+        <div className="mt-4 rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0]">
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#7A7F8A]">
+            Provider details
+          </div>
+          <div className="mt-3 flex flex-col gap-2.5">
+            <div>
+              <label className="mb-1 block text-xs text-[#7A7F8A]">Doctor&apos;s name</label>
+              <input
+                type="text"
+                value={editDoctorName}
+                onChange={(e) => setEditDoctorName(e.target.value)}
+                placeholder="e.g. Dr. Sarah Chen"
+                className={detailInputClass}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[#7A7F8A]">Specialty</label>
+              <input
+                type="text"
+                value={editSpecialty}
+                onChange={(e) => setEditSpecialty(e.target.value)}
+                placeholder="e.g. Psychiatry, Dermatology"
+                className={detailInputClass}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[#7A7F8A]">Notes</label>
+              <input
+                type="text"
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="e.g. Prefers morning appointments"
+                className={detailInputClass}
+              />
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={saveDetails}
+              disabled={savingDetails}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+            >
+              {savingDetails ? "Saving..." : detailsSaved ? "Saved!" : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDetails(false)}
+              className="rounded-lg px-3 py-1.5 text-xs text-[#7A7F8A] hover:bg-white"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <p className="mt-4 text-sm text-[#7A7F8A]">{state.description}</p>
 
