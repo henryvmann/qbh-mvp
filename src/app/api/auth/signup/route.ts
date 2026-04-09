@@ -50,16 +50,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Link auth user to app_users row
+    // Ensure app_users row exists and link auth user to it
     if (userData.user) {
-      const { error: linkError } = await supabaseAdmin
+      // Upsert the app_users row — may not exist on manual provider path (no Plaid step)
+      const { error: upsertError } = await supabaseAdmin
         .from("app_users")
-        .update({ auth_user_id: userData.user.id })
-        .eq("id", appUserId)
-        .is("auth_user_id", null);
+        .upsert(
+          { id: appUserId, auth_user_id: userData.user.id },
+          { onConflict: "id" }
+        );
 
-      if (linkError) {
-        console.error("signup link error:", linkError);
+      if (upsertError) {
+        console.error("signup upsert app_users error:", upsertError);
       }
     }
 
