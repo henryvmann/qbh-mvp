@@ -171,8 +171,8 @@ function buildAttemptMetadata(params: {
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
 
-  const office_number = String(
-    body?.office_number || process.env.QBH_DEMO_CALL_DESTINATION || ""
+  let office_number = String(
+    body?.office_number || ""
   ).trim();
   const provider_id = String(body?.provider_id || "").trim();
   const attemptIdFromBody = body?.attempt_id
@@ -249,15 +249,23 @@ export async function POST(req: Request) {
 
   console.log("qbh start-call using assistant:", assistantId);
 
-  // Check if this is a manually-added provider and get doctor_name if available
+  // Check if this is a manually-added provider and get doctor_name + phone if available
   const { data: providerRow } = await supabaseAdmin
     .from("providers")
-    .select("source, doctor_name")
+    .select("source, doctor_name, phone_number")
     .eq("id", provider_id)
     .single();
 
   const isManualProvider = providerRow?.source === "manual";
   const doctorName = (providerRow?.doctor_name || "").trim();
+
+  // Resolve office number: body > provider DB > demo fallback
+  if (!office_number && providerRow?.phone_number) {
+    office_number = providerRow.phone_number.trim();
+  }
+  if (!office_number) {
+    office_number = (process.env.QBH_DEMO_CALL_DESTINATION || "").trim();
+  }
 
   const availabilityContext = await buildStartCallAvailabilityContext(
     app_user_id
