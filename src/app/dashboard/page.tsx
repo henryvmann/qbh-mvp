@@ -187,13 +187,13 @@ function TopNavBar({ activePath = "/dashboard" }: { activePath?: string }) {
         {/* QB Logo */}
         <Link href="/dashboard" className="flex items-center gap-3">
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl"
+            className="flex h-10 w-10 items-center justify-center rounded-xl"
             style={{
-              background: "linear-gradient(145deg, #F0F2F5, #E0E3E8)",
-              boxShadow: "3px 3px 8px rgba(0,0,0,0.08), -3px -3px 8px rgba(255,255,255,0.9), inset 1px 1px 2px rgba(255,255,255,0.5)",
+              background: "#FFFFFF",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.15), inset 0 -1px 2px rgba(0,0,0,0.04), inset 0 1px 1px rgba(255,255,255,1)",
             }}
           >
-            <CheckmarkIcon className="h-4 w-4 text-[#C8CCD2]" />
+            <CheckmarkIcon className="h-5 w-5 text-[#D0D3D8]" />
           </div>
           <span className="text-sm font-semibold text-white/90 hidden sm:inline">
             Quarterback
