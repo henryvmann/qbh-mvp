@@ -240,7 +240,25 @@ function DashboardInner() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <main
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)",
+        }}
+      >
+        <div className="text-center">
+          <div className="text-lg font-light text-[#7A7F8A]">
+            No data yet
+          </div>
+          <div className="mt-2 text-sm text-[#B0B4BC]">
+            Your dashboard will populate once providers are discovered.
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const { appUserId, userName, snapshots } = data;
 
