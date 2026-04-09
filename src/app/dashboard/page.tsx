@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
 import HandleItButton from "../../components/qbh/HandleItButton";
+import KateChatButton from "../../components/qbh/KateChatButton";
 
 /* ── Types ── */
 
@@ -170,37 +171,55 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-/* ── Bottom Tab Bar ── */
+/* ── Top Nav Bar ── */
 
-function BottomTabBar() {
-  const tabs = [
-    { label: "Home", icon: HomeIcon, href: "/dashboard", active: true },
-    { label: "Visits", icon: CalendarIcon, href: "/visits", active: false },
-    { label: "Kate", icon: ChatIcon, href: "/kate", active: false },
-    { label: "Profile", icon: UserIcon, href: "/account", active: false },
+function TopNavBar({ activePath = "/dashboard" }: { activePath?: string }) {
+  const links = [
+    { label: "Home", href: "/dashboard" },
+    { label: "Goals", href: "/goals" },
+    { label: "Visits", href: "/visits" },
+    { label: "Timeline", href: "/timeline" },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-20 items-center justify-around border-t border-[#EBEDF0] bg-white/95">
-      {tabs.map((tab) => (
-        <Link
-          key={tab.label}
-          href={tab.href}
-          className="flex flex-col items-center gap-1"
-        >
-          <tab.icon active={tab.active} />
-          <span
-            className={`text-[11px] font-medium ${
-              tab.active ? "text-[#5C6B5C]" : "text-[#B0B4BC]"
-            }`}
+    <nav className="sticky top-0 z-30 border-b border-[#2A2F35]" style={{ background: "#1A1D2E" }}>
+      <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-3">
+        {/* QB Logo */}
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-xl"
+            style={{
+              background: "linear-gradient(145deg, #F0F2F5, #E0E3E8)",
+              boxShadow: "3px 3px 8px rgba(0,0,0,0.08), -3px -3px 8px rgba(255,255,255,0.9), inset 1px 1px 2px rgba(255,255,255,0.5)",
+            }}
           >
-            {tab.label}
+            <CheckmarkIcon className="h-4 w-4 text-[#C8CCD2]" />
+          </div>
+          <span className="text-sm font-semibold text-white/90 hidden sm:inline">
+            Quarterback
           </span>
-          {tab.active && (
-            <span className="h-1 w-1 rounded-full bg-[#5C6B5C]" />
-          )}
         </Link>
-      ))}
+
+        {/* Nav links */}
+        <div className="flex items-center gap-1">
+          {links.map((link) => {
+            const isActive = activePath === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  isActive
+                    ? "bg-white/10 text-white"
+                    : "text-white/50 hover:text-white/80"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
     </nav>
   );
 }
@@ -276,26 +295,15 @@ function DashboardInner() {
 
   return (
     <main
-      className="min-h-screen pb-24"
+      className="min-h-screen pb-12"
       style={{
         background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)",
       }}
     >
+      <TopNavBar activePath="/dashboard" />
       <div className="mx-auto max-w-lg sm:max-w-xl md:max-w-2xl">
-        {/* ── 1. Top Bar ── */}
-        <div className="flex items-center justify-between px-7 pt-16">
-          {/* Neumorphic QB logo */}
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-2xl"
-            style={{
-              background: "linear-gradient(145deg, #F0F2F5, #E0E3E8)",
-              boxShadow:
-                "6px 6px 14px rgba(0,0,0,0.10), -6px -6px 14px rgba(255,255,255,0.95), inset 1px 1px 2px rgba(255,255,255,0.6)",
-            }}
-          >
-            <CheckmarkIcon className="h-6 w-6 text-[#C8CCD2]" />
-          </div>
-
+        {/* ── 1. Greeting ── */}
+        <div className="px-7 pt-8">
           <span className="text-sm text-[#7A7F8A]">
             Hi, {userName || "there"}
           </span>
@@ -526,8 +534,8 @@ function DashboardInner() {
         </div>
       </div>
 
-      {/* ── 7. Bottom Tab Bar ── */}
-      <BottomTabBar />
+      {/* ── 7. Kate Chat ── */}
+      <KateChatButton />
     </main>
   );
 }
