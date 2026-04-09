@@ -901,46 +901,7 @@ export default function OnboardingPage() {
           Search by name to find your doctor, dentist, or specialist.
         </p>
 
-        {/* Account fields */}
-        <div className="mt-6 flex flex-col gap-4">
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="First name"
-              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            />
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              placeholder="Last name"
-              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            />
-          </div>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-            style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Create a password"
-            minLength={6}
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-            style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-          />
-        </div>
-
-        {/* NPI Search */}
+        {/* NPI Search — shown first since that's what they clicked for */}
         <div className="mt-6">
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>
             Search providers
@@ -1053,6 +1014,54 @@ export default function OnboardingPage() {
             </div>
           </div>
         )}
+
+        {/* Account creation — separate section */}
+        <div className="mt-8 border-t border-[#EBEDF0] pt-6">
+          <h2 className="text-lg font-semibold text-[#1A1D2E]">
+            Create your account
+          </h2>
+          <p className="mt-1 text-sm text-[#7A7F8A]">
+            We need this to save your providers and get started.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-3">
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First name"
+                className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+              />
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last name"
+                className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+              />
+            </div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create a password"
+              minLength={6}
+              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+            />
+          </div>
+        </div>
 
         {error && (
           <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
