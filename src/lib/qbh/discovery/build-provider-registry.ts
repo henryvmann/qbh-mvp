@@ -21,6 +21,7 @@ export type DiscoveredProvider = {
   normalized_name: string;
   bucket: DiscoveryBucket;
   care_action_type: string | null;
+  provider_type: string | null;
   first_seen_at: string | null;
   last_seen_at: string | null;
   visit_count: number;
@@ -167,8 +168,11 @@ export async function buildProviderRegistry(
     "SUBSCRIPTION",
   ];
 
+  const PHARMACY_HINTS = ["PHARMACY", "CVS", "WALGREENS", "RITE AID", "DUANE READE"];
+  const LAB_HINTS = ["LABCORP", "QUEST DIAG"];
+
   // Pre-classify: split merchants into definite buckets vs ambiguous (needs AI)
-  const preClassified = new Map<string, "HEALTHCARE" | "IGNORE">();
+  const preClassified = new Map<string, { bucket: "HEALTHCARE" | "IGNORE"; provider_type: string | null }>();
 
   for (const entry of grouped.values()) {
     const n = entry.normalized_name;
@@ -176,32 +180,36 @@ export async function buildProviderRegistry(
 
     // Check obvious non-healthcare by name
     if (OBVIOUS_NOT_HEALTHCARE.some((hint) => n.includes(hint))) {
-      preClassified.set(n, "IGNORE");
+      preClassified.set(n, { bucket: "IGNORE", provider_type: null });
       continue;
     }
 
     // Check obvious non-healthcare by Plaid category
     if (NON_HEALTHCARE_PLAID_CATEGORIES.some((cat) => cats.includes(cat))) {
-      preClassified.set(n, "IGNORE");
+      preClassified.set(n, { bucket: "IGNORE", provider_type: null });
       continue;
     }
 
-    // Check obvious healthcare by name
+    // Check obvious healthcare by name — detect specific types
     if (OBVIOUS_HEALTHCARE.some((hint) => n.includes(hint))) {
-      preClassified.set(n, "HEALTHCARE");
+      const isPharmacy = PHARMACY_HINTS.some((h) => n.includes(h));
+      const isLab = LAB_HINTS.some((h) => n.includes(h));
+      const pType = isPharmacy ? "pharmacy" : isLab ? "lab" : null;
+      preClassified.set(n, { bucket: "HEALTHCARE", provider_type: pType });
       continue;
     }
 
     // Check healthcare by Plaid category
     if (["DOCTOR", "HOSPITAL", "PHARMACY", "MEDICAL", "HEALTHCARE"].some((cat) => cats.includes(cat))) {
-      preClassified.set(n, "HEALTHCARE");
+      const isPharmacy = cats.includes("PHARMACY");
+      preClassified.set(n, { bucket: "HEALTHCARE", provider_type: isPharmacy ? "pharmacy" : null });
       continue;
     }
 
     // Ambiguous — will go to AI
   }
 
-  console.log(`[buildProviderRegistry] Pre-filter: ${Array.from(preClassified.values()).filter(v => v === "IGNORE").length} ignored, ${Array.from(preClassified.values()).filter(v => v === "HEALTHCARE").length} healthcare, ${grouped.size - preClassified.size} need AI`);
+  console.log(`[buildProviderRegistry] Pre-filter: ${Array.from(preClassified.values()).filter(v => v.bucket === "IGNORE").length} ignored, ${Array.from(preClassified.values()).filter(v => v.bucket === "HEALTHCARE").length} healthcare, ${grouped.size - preClassified.size} need AI`);
 
   // Step 2: Prepare ONLY ambiguous merchants for AI classification
   const merchantInputs = Array.from(grouped.values())
@@ -312,25 +320,30 @@ export async function buildProviderRegistry(
 
     let bucket: DiscoveryBucket;
     let care_action_type: string | null;
+    let provider_type: string | null = null;
 
     // Priority: pre-filter → NPI → AI → ignore
-    if (preResult === "IGNORE") {
+    if (preResult?.bucket === "IGNORE") {
       bucket = "IGNORE";
       care_action_type = null;
-    } else if (preResult === "HEALTHCARE") {
+    } else if (preResult?.bucket === "HEALTHCARE") {
       bucket = "HEALTHCARE";
       care_action_type = "CHECK_APPOINTMENT_STATUS";
+      provider_type = preResult.provider_type;
     } else if (npiResult?.found) {
       bucket = "HEALTHCARE";
       care_action_type = "CHECK_APPOINTMENT_STATUS";
+      provider_type = npiResult.provider_type;
       console.log(`[buildProviderRegistry] NPI override: "${entry.provider_name}" → HEALTHCARE (${npiResult.provider_type})`);
     } else if (aiResult) {
       if (aiResult.is_healthcare && aiResult.confidence === "high") {
         bucket = "HEALTHCARE";
         care_action_type = "CHECK_APPOINTMENT_STATUS";
+        provider_type = aiResult.provider_type;
       } else if (aiResult.is_healthcare) {
         bucket = "REVIEW_NEEDED";
         care_action_type = "REVIEW_PROVIDER";
+        provider_type = aiResult.provider_type;
       } else {
         bucket = "IGNORE";
         care_action_type = null;
@@ -354,6 +367,7 @@ export async function buildProviderRegistry(
       normalized_name: entry.normalized_name,
       bucket,
       care_action_type,
+      provider_type,
       first_seen_at: sortedDates[0] || null,
       last_seen_at: sortedDates[sortedDates.length - 1] || null,
       visit_count: entry.transaction_ids.length,

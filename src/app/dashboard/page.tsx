@@ -244,9 +244,10 @@ function DashboardInner() {
 
   const { appUserId, userName, snapshots } = data;
 
-  const overdueSnapshots = snapshots.filter(isOverdue);
+  const nonPharmacySnapshots = snapshots.filter((s) => s.provider.provider_type !== "pharmacy");
+  const overdueSnapshots = nonPharmacySnapshots.filter(isOverdue);
   const overdueCount = overdueSnapshots.length;
-  const upcomingCount = snapshots.filter(hasConfirmedBooking).length;
+  const upcomingCount = nonPharmacySnapshots.filter(hasConfirmedBooking).length;
   const providerCount = snapshots.length;
   const healthScore = computeHealthScore(snapshots);
 
@@ -431,6 +432,7 @@ function DashboardInner() {
             {snapshots.map((s, idx) => {
               const overdue = isOverdue(s);
               const isLast = idx === snapshots.length - 1;
+              const isPharmacy = s.provider.provider_type === "pharmacy";
 
               return (
                 <div
@@ -443,15 +445,26 @@ function DashboardInner() {
                     <span
                       className="h-2 w-2 rounded-full"
                       style={{
-                        backgroundColor: overdue ? "#E04030" : "#5C6B5C",
+                        backgroundColor: isPharmacy
+                          ? "#A0C8E8"
+                          : overdue
+                            ? "#E04030"
+                            : "#5C6B5C",
                       }}
                     />
-                    <span className="text-sm font-medium text-[#1A1D2E]">
-                      {s.provider.name}
-                    </span>
+                    <div>
+                      <span className="text-sm font-medium text-[#1A1D2E]">
+                        {s.provider.name}
+                      </span>
+                      {isPharmacy && (
+                        <span className="ml-2 text-xs text-[#A0C8E8]">Pharmacy</span>
+                      )}
+                    </div>
                   </div>
 
-                  {overdue ? (
+                  {isPharmacy ? (
+                    <span className="text-xs text-[#B0B4BC]">Tracked</span>
+                  ) : overdue ? (
                     <HandleItButton
                       userId={appUserId}
                       providerId={s.provider.id}

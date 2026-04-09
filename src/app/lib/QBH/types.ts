@@ -6,6 +6,7 @@ export type Provider = {
   location?: string | null;
   doctor_name?: string | null;
   notes?: string | null;
+  provider_type?: string | null;
 };
 
 export type ScheduleAttemptStatus =

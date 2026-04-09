@@ -28,9 +28,14 @@ export async function POST(req: NextRequest) {
       body?.care_recipient ? [body.care_recipient] : [];
     const newStatus = action === "approve" ? "active" : "dismissed";
 
+    const providerType = typeof body?.provider_type === "string" ? body.provider_type.trim() : null;
+
     const updateData: Record<string, string | null> = { status: newStatus };
     if (careRecipients.length > 0 && action === "approve") {
       updateData.care_recipient = JSON.stringify(careRecipients);
+    }
+    if (providerType && action === "approve") {
+      updateData.provider_type = providerType;
     }
 
     const { error } = await supabaseAdmin

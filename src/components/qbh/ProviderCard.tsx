@@ -271,7 +271,10 @@ export default function ProviderCard({
     nextAction.requiredBy === "SYSTEM" &&
     !nextAction.userInputRequired;
 
+  const isPharmacy = provider.provider_type === "pharmacy";
+
   const showHandleButton =
+    !isPharmacy &&
     !isSystemOwnedRetry &&
     (state.key === "follow-up" ||
       (state.key === "blocked" &&
@@ -279,6 +282,7 @@ export default function ProviderCard({
         nextAction.userInputRequired));
 
   const showAdjustButton =
+    !isPharmacy &&
     state.key === "upcoming" &&
     (bs?.displayTime || bs?.appointmentStart) &&
     !actions.integrity.hasMultipleFutureConfirmedEvents;
@@ -329,10 +333,17 @@ export default function ProviderCard({
           </h3>
 
           <div className="mt-1 text-sm text-[#7A7F8A]">
-            {provider.doctor_name
-              ? `Dr. ${provider.doctor_name}${provider.specialty ? ` · ${provider.specialty}` : ""}`
-              : provider.specialty || "Provider"}
+            {isPharmacy
+              ? "Pharmacy"
+              : provider.doctor_name
+                ? `Dr. ${provider.doctor_name}${provider.specialty ? ` · ${provider.specialty}` : ""}`
+                : provider.specialty || "Provider"}
           </div>
+          {!isPharmacy && !provider.phone && (
+            <div className="mt-1 text-xs text-amber-600">
+              No phone number — add one in Details to enable booking
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

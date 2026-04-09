@@ -1216,7 +1216,7 @@ export default function OnboardingPage() {
       });
     }
 
-    async function handleProviderAssign(providerId: string, careRecipients: string[]) {
+    async function handleProviderAssign(providerId: string, careRecipients: string[], providerType?: string) {
       const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
       try {
         await apiFetch("/api/providers/review", {
@@ -1227,6 +1227,7 @@ export default function OnboardingPage() {
             action: "approve",
             app_user_id: effectiveUserId,
             care_recipients: careRecipients,
+            ...(providerType ? { provider_type: providerType } : {}),
           }),
         });
       } catch {
@@ -1299,7 +1300,7 @@ export default function OnboardingPage() {
                     const defaultPeople = personOptions.length === 1
                       ? [personOptions[0].value]
                       : Array.from(selected.size > 0 ? selected : new Set([personOptions[0]?.value || "myself"]));
-                    handleProviderAssign(provider.id, defaultPeople);
+                    handleProviderAssign(provider.id, defaultPeople, "pharmacy");
                   }}
                   className="rounded-lg px-3 py-1.5 text-xs font-semibold"
                   style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
@@ -1410,7 +1411,7 @@ export default function OnboardingPage() {
           <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
             {error}
           </div>
-          <GoldButton onClick={() => router.push("/handle-first")}>
+          <GoldButton onClick={() => window.location.href = "/handle-first"}>
             Continue to dashboard &rarr;
           </GoldButton>
         </Shell>
@@ -1516,7 +1517,7 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <GoldButton onClick={() => router.push("/handle-first")}>
+        <GoldButton onClick={() => window.location.href = "/handle-first"}>
           See your dashboard &rarr;
         </GoldButton>
       </Shell>
@@ -1525,7 +1526,7 @@ export default function OnboardingPage() {
 
   // Step 10: Dashboard redirect (fallback)
   if (step === 10) {
-    router.push("/handle-first");
+    window.location.href = "/handle-first";
     return null;
   }
 
