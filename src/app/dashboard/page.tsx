@@ -232,6 +232,8 @@ function DashboardInner() {
 
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bookingAll, setBookingAll] = useState(false);
+  const [bookingAllDone, setBookingAllDone] = useState(false);
 
   useEffect(() => {
     apiFetch("/api/dashboard/data")
@@ -403,23 +405,39 @@ function DashboardInner() {
               <div className="px-6 pb-5 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    overdueSnapshots.forEach((s) => {
-                      apiFetch("/api/vapi/start-call", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          app_user_id: appUserId,
-                          provider_id: s.provider.id,
-                          provider_name: s.provider.name,
-                          mode: "BOOK",
-                        }),
-                      });
-                    });
+                  disabled={bookingAll || bookingAllDone}
+                  onClick={async () => {
+                    setBookingAll(true);
+                    try {
+                      await Promise.all(
+                        overdueSnapshots.map((s) =>
+                          apiFetch("/api/vapi/start-call", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              app_user_id: appUserId,
+                              provider_id: s.provider.id,
+                              provider_name: s.provider.name,
+                              mode: "BOOK",
+                            }),
+                          })
+                        )
+                      );
+                      setBookingAllDone(true);
+                    } catch {
+                      // still mark as done so UI updates
+                      setBookingAllDone(true);
+                    } finally {
+                      setBookingAll(false);
+                    }
                   }}
-                  className="w-full rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/25"
+                  className="w-full rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/25 disabled:opacity-60"
                 >
-                  Book {overdueCount === 1 ? "it" : "all"} now
+                  {bookingAll
+                    ? "Starting calls..."
+                    : bookingAllDone
+                      ? "Kate is on it!"
+                      : `Book ${overdueCount === 1 ? "it" : "all"} now`}
                 </button>
               </div>
             </div>
