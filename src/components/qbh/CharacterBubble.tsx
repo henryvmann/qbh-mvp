@@ -11,14 +11,14 @@ export function Character({ pose: _pose }: { pose: Pose }) {
     <div
       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
       style={{
-        background: "#ECEEF1",
+        background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
         boxShadow:
-          "5px 5px 10px rgba(0,0,0,0.08), -4px -4px 6px rgba(255,255,255,0.9)",
+          "5px 5px 10px rgba(0,0,0,0.12), -4px -4px 6px rgba(255,255,255,0.9)",
       }}
     >
       <div
         className="flex h-7 w-7 items-center justify-center rounded-lg"
-        style={{ background: "#E0E2E6" }}
+        style={{ background: "rgba(255,255,255,0.12)" }}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <text
@@ -28,7 +28,7 @@ export function Character({ pose: _pose }: { pose: Pose }) {
             fontSize="12"
             fontWeight="700"
             fontFamily="system-ui, sans-serif"
-            fill="#C0C4CA"
+            fill="#D8E8F5"
           >
             K
           </text>
