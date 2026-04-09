@@ -286,19 +286,14 @@ function DashboardInner() {
         <div className="flex items-center justify-between px-7 pt-16">
           {/* Neumorphic QB logo */}
           <div
-            className="flex h-11 w-11 items-center justify-center rounded-xl"
+            className="flex h-14 w-14 items-center justify-center rounded-2xl"
             style={{
-              background: "#ECEEF1",
+              background: "linear-gradient(145deg, #F0F2F5, #E0E3E8)",
               boxShadow:
-                "5px 5px 10px rgba(0,0,0,0.08), -4px -4px 6px rgba(255,255,255,0.9)",
+                "6px 6px 14px rgba(0,0,0,0.10), -6px -6px 14px rgba(255,255,255,0.95), inset 1px 1px 2px rgba(255,255,255,0.6)",
             }}
           >
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-lg"
-              style={{ background: "#E0E2E6" }}
-            >
-              <CheckmarkIcon className="h-4 w-4 text-[#C0C4CA]" />
-            </div>
+            <CheckmarkIcon className="h-6 w-6 text-[#C8CCD2]" />
           </div>
 
           <span className="text-sm text-[#7A7F8A]">
