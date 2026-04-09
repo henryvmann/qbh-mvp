@@ -38,11 +38,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const profile = body?.profile || {};
+  const incoming = body?.profile || {};
+
+  // Merge with existing profile so we don't overwrite fields not in this request
+  const { data: existing } = await supabaseAdmin
+    .from("app_users")
+    .select("patient_profile")
+    .eq("id", appUserId)
+    .single();
+
+  const merged = { ...(existing?.patient_profile || {}), ...incoming };
 
   const { error } = await supabaseAdmin
     .from("app_users")
-    .update({ patient_profile: profile })
+    .update({ patient_profile: merged })
     .eq("id", appUserId);
 
   if (error) {
