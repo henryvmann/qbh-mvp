@@ -596,7 +596,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Preview cards */}
-        <div className="mt-8 flex gap-3">
+        <div className="mt-8 flex justify-center gap-3">
           {[
             { icon: "\u25C9", label: "Find providers" },
             { icon: "\u25C9", label: "Book appointments" },
@@ -604,13 +604,13 @@ export default function OnboardingPage() {
           ].map((card) => (
             <div
               key={card.label}
-              className="flex flex-col items-center gap-2 rounded-xl px-4 py-3"
+              className="flex flex-1 flex-col items-center gap-2 rounded-xl px-4 py-3 shadow-sm"
               style={{
                 backgroundColor: CARD_BG,
                 borderWidth: 1,
                 borderStyle: "solid",
                 borderColor: CARD_BORDER,
-                minWidth: 96,
+                maxWidth: 160,
               }}
             >
               <span className="text-lg" style={{ color: ACCENT }}>{card.icon}</span>
@@ -619,7 +619,9 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <GoldButton onClick={() => setStep(1)}>Let&apos;s get started &rarr;</GoldButton>
+        <div className="mx-auto max-w-md">
+          <GoldButton onClick={() => setStep(1)}>Let&apos;s get started &rarr;</GoldButton>
+        </div>
       </Shell>
     );
   }
@@ -1569,7 +1571,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
       <DecorativeCircle />
-      <div className="relative z-10 mx-auto max-w-lg px-6 py-12 sm:py-20">
+      <div className="relative z-10 mx-auto max-w-lg px-6 py-12 sm:max-w-xl sm:py-20 md:max-w-2xl">
         {children}
       </div>
     </main>

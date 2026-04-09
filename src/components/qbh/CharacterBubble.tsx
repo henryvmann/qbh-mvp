@@ -20,7 +20,19 @@ export function Character({ pose: _pose }: { pose: Pose }) {
         className="flex h-7 w-7 items-center justify-center rounded-lg"
         style={{ background: "#E0E2E6" }}
       >
-        <span className="text-sm font-bold text-[#C0C4CA]">K</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <text
+            x="7"
+            y="11"
+            textAnchor="middle"
+            fontSize="12"
+            fontWeight="700"
+            fontFamily="system-ui, sans-serif"
+            fill="#C0C4CA"
+          >
+            K
+          </text>
+        </svg>
       </div>
     </div>
   );
