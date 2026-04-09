@@ -281,7 +281,7 @@ function DashboardInner() {
         background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)",
       }}
     >
-      <div className="mx-auto max-w-lg">
+      <div className="mx-auto max-w-lg sm:max-w-xl md:max-w-2xl">
         {/* ── 1. Top Bar ── */}
         <div className="flex items-center justify-between px-7 pt-16">
           {/* Neumorphic QB logo */}
@@ -390,53 +390,7 @@ function DashboardInner() {
           </div>
         )}
 
-        {/* ── 5. Color Hub — At a Glance ── */}
-        <div className="mt-10 px-7">
-          <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
-            AT A GLANCE
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            {/* Providers */}
-            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#C2D9B8] p-5">
-              <div className="text-4xl font-extralight text-[#3D5A3D]">
-                {providerCount}
-              </div>
-              <div className="text-sm font-semibold text-[#3D5A3D]/80">
-                Providers
-              </div>
-            </div>
-
-            {/* Overdue */}
-            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#F0B8B0] p-5">
-              <div className="text-4xl font-extralight text-[#C03020]">
-                {overdueCount}
-              </div>
-              <div className="text-sm font-semibold text-[#C03020]/80">
-                Overdue
-              </div>
-            </div>
-
-            {/* Upcoming */}
-            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#B0D0E8] p-5">
-              <div className="text-4xl font-extralight text-[#2A6090]">
-                {upcomingCount}
-              </div>
-              <div className="text-sm font-semibold text-[#2A6090]/80">
-                Upcoming
-              </div>
-            </div>
-
-            {/* Score */}
-            <div className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl bg-[#C8B8E0] p-5">
-              <ScoreRing score={healthScore} />
-              <div className="mt-1 text-sm font-semibold text-[#5C4A8A]/80">
-                Score
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── 6. Provider List ── */}
+        {/* ── 5. Provider List ── */}
         <div className="mt-10 px-7">
           <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
             YOUR PROVIDERS
@@ -495,6 +449,51 @@ function DashboardInner() {
                 No providers discovered yet.
               </div>
             )}
+          </div>
+        </div>
+        {/* ── 6. Color Hub — At a Glance ── */}
+        <div className="mt-10 px-7">
+          <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
+            AT A GLANCE
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {/* Providers */}
+            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#C2D9B8] p-5">
+              <div className="text-4xl font-extralight text-[#3D5A3D]">
+                {providerCount}
+              </div>
+              <div className="text-sm font-semibold text-[#3D5A3D]/80">
+                Providers
+              </div>
+            </div>
+
+            {/* Overdue */}
+            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#F0B8B0] p-5">
+              <div className="text-4xl font-extralight text-[#C03020]">
+                {overdueCount}
+              </div>
+              <div className="text-sm font-semibold text-[#C03020]/80">
+                Overdue
+              </div>
+            </div>
+
+            {/* Upcoming */}
+            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#B0D0E8] p-5">
+              <div className="text-4xl font-extralight text-[#2A6090]">
+                {upcomingCount}
+              </div>
+              <div className="text-sm font-semibold text-[#2A6090]/80">
+                Upcoming
+              </div>
+            </div>
+
+            {/* Score */}
+            <div className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl bg-[#C8B8E0] p-5">
+              <ScoreRing score={healthScore} />
+              <div className="mt-1 text-sm font-semibold text-[#5C4A8A]/80">
+                Score
+              </div>
+            </div>
           </div>
         </div>
       </div>
