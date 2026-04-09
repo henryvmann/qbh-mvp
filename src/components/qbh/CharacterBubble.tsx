@@ -13,7 +13,7 @@ export function Character({ pose: _pose }: { pose: Pose }) {
       style={{
         background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
         boxShadow:
-          "5px 5px 10px rgba(0,0,0,0.12), -4px -4px 6px rgba(255,255,255,0.9)",
+          "0 2px 8px rgba(74,90,74,0.3)",
       }}
     >
       <div
