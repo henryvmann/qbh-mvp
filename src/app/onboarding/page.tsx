@@ -586,9 +586,12 @@ export default function OnboardingPage() {
       <Shell>
         <div className="mt-8">
           <CharacterWithBubble pose="waving">
-            You don&apos;t have to manage this alone. I&apos;m QB — I keep track
-            of your healthcare, follow up with your providers, and handle the
-            details so you don&apos;t have to.
+            Hey! I&apos;m Kate and I&apos;ll walk you through this.
+            Quarterback&apos;s here to help manage your health journey. After a
+            few questions we&apos;ll get all your current providers, find out if
+            you need to book appointments and help you (or your kids or your
+            parents) stay on top of your visits. And that&apos;s just the
+            beginning... Welcome to Quarterback Health.
           </CharacterWithBubble>
         </div>
 
