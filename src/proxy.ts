@@ -12,12 +12,10 @@ export async function proxy(request: NextRequest) {
     (p) => pathname === p || pathname.startsWith(p + "/")
   );
 
-  if (isPublic) {
-    return NextResponse.next({ request });
-  }
-
   let supabaseResponse = NextResponse.next({ request });
 
+  // Always refresh the session to keep cookies alive — even on public paths.
+  // Without this, post-signup navigations lose the auth session.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -43,7 +41,8 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  // Only enforce auth redirect on non-public paths
+  if (!isPublic && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
