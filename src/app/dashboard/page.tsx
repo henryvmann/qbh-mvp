@@ -357,36 +357,64 @@ function DashboardInner() {
         {/* ── 4. Big Action Button ── */}
         {overdueCount > 0 && (
           <div className="mt-7 px-7">
-            <button
-              type="button"
-              onClick={() => {
-                // Trigger handle-all flow
-                overdueSnapshots.forEach((s) => {
-                  apiFetch("/api/vapi/start-call", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      app_user_id: appUserId,
-                      provider_id: s.provider.id,
-                      provider_name: s.provider.name,
-                      mode: "BOOK",
-                    }),
-                  });
-                });
-              }}
-              className="w-full rounded-3xl px-6 py-5 text-left shadow-lg"
+            <div
+              className="overflow-hidden rounded-3xl shadow-lg"
               style={{
                 background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
                 boxShadow: "0 8px 24px rgba(92,107,92,0.35)",
               }}
             >
-              <div className="text-lg font-semibold text-white">
-                Let Kate book these →
+              <div className="px-6 pt-5 pb-3">
+                <div className="text-base font-semibold text-white">
+                  {overdueCount === 1
+                    ? "Want Kate to book this?"
+                    : `Want Kate to book all ${overdueCount}?`}
+                </div>
+                <div className="mt-1 text-sm text-white/50">
+                  She&apos;ll call each office and schedule for you
+                </div>
               </div>
-              <div className="mt-1 text-sm text-white/60">
-                She&apos;ll call and schedule for you
+
+              <div className="px-6 pb-2">
+                {overdueSnapshots.slice(0, 5).map((s) => (
+                  <div
+                    key={s.provider.id}
+                    className="flex items-center gap-2 py-1.5 text-sm text-white/70"
+                  >
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
+                    {s.provider.name}
+                  </div>
+                ))}
+                {overdueCount > 5 && (
+                  <div className="py-1.5 text-xs text-white/40">
+                    +{overdueCount - 5} more
+                  </div>
+                )}
               </div>
-            </button>
+
+              <div className="px-6 pb-5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    overdueSnapshots.forEach((s) => {
+                      apiFetch("/api/vapi/start-call", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          app_user_id: appUserId,
+                          provider_id: s.provider.id,
+                          provider_name: s.provider.name,
+                          mode: "BOOK",
+                        }),
+                      });
+                    });
+                  }}
+                  className="w-full rounded-2xl bg-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/25"
+                >
+                  Book {overdueCount === 1 ? "it" : "all"} now
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
