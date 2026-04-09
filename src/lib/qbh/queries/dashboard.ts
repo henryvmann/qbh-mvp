@@ -34,6 +34,7 @@ type ProviderRow = {
   doctor_name: string | null;
   notes: string | null;
   provider_type: string | null;
+  source: string | null;
 };
 
 type AttemptRow = {
@@ -531,7 +532,7 @@ export async function getDashboardProvidersForUser(
 
   const { data: providers, error: providersError } = await supabaseAdmin
     .from("providers")
-    .select("id,name,status,created_at,app_user_id,phone_number,specialty,doctor_name,notes,provider_type")
+    .select("id,name,status,created_at,app_user_id,phone_number,specialty,doctor_name,notes,provider_type,source")
     .eq("app_user_id", cleanedUserId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
@@ -707,6 +708,8 @@ export async function getDashboardProvidersForUser(
 
     const retryDecision = deriveRetryDecision(rawLatestAttempt?.metadata);
 
+    const isManualProvider = pRow.source === "manual";
+
     const booking_state: ProviderDashboardSnapshot["booking_state"] = {
       status: hasMultipleFutureConfirmedEvents
         ? "IN_PROGRESS"
@@ -714,7 +717,7 @@ export async function getDashboardProvidersForUser(
           ? "BOOKED"
           : hasActiveBookingAttempt
             ? "IN_PROGRESS"
-            : hasVisitHistory
+            : hasVisitHistory || isManualProvider
               ? "FOLLOW_UP"
               : "NONE",
       displayTime: getAttemptBookingString(rawLatestAttempt, "display_time"),

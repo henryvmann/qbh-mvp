@@ -147,7 +147,7 @@ function ScoreRing({ score }: { score: number }) {
           cy={36}
           r={radius}
           fill="none"
-          stroke="#E0D8F0"
+          stroke="#D8C8F0"
           strokeWidth={5}
         />
         <circle
@@ -163,7 +163,7 @@ function ScoreRing({ score }: { score: number }) {
           transform="rotate(-90 36 36)"
         />
       </svg>
-      <span className="absolute text-lg font-semibold text-[#9078C8]">
+      <span className="absolute text-lg font-semibold text-[#5C4A8A]">
         {score}
       </span>
     </div>
@@ -402,39 +402,39 @@ function DashboardInner() {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {/* Providers */}
-            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#D8E8D0] p-5">
-              <div className="text-4xl font-extralight text-[#5C6B5C]">
+            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#C2D9B8] p-5">
+              <div className="text-4xl font-extralight text-[#3D5A3D]">
                 {providerCount}
               </div>
-              <div className="text-sm font-semibold text-[#5C6B5C]/70">
+              <div className="text-sm font-semibold text-[#3D5A3D]/80">
                 Providers
               </div>
             </div>
 
             {/* Overdue */}
-            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#F8D8D0] p-5">
-              <div className="text-4xl font-extralight text-[#E04030]">
+            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#F0B8B0] p-5">
+              <div className="text-4xl font-extralight text-[#C03020]">
                 {overdueCount}
               </div>
-              <div className="text-sm font-semibold text-[#E04030]/70">
+              <div className="text-sm font-semibold text-[#C03020]/80">
                 Overdue
               </div>
             </div>
 
             {/* Upcoming */}
-            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#D0E4F0] p-5">
-              <div className="text-4xl font-extralight text-[#A0C8E8]">
+            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#B0D0E8] p-5">
+              <div className="text-4xl font-extralight text-[#2A6090]">
                 {upcomingCount}
               </div>
-              <div className="text-sm font-semibold text-[#A0C8E8]/70">
+              <div className="text-sm font-semibold text-[#2A6090]/80">
                 Upcoming
               </div>
             </div>
 
             {/* Score */}
-            <div className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl bg-[#E0D8F0] p-5">
+            <div className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl bg-[#C8B8E0] p-5">
               <ScoreRing score={healthScore} />
-              <div className="mt-1 text-sm font-semibold text-[#9078C8]/70">
+              <div className="mt-1 text-sm font-semibold text-[#5C4A8A]/80">
                 Score
               </div>
             </div>
