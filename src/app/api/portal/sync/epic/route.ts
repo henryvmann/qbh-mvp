@@ -33,16 +33,18 @@ function patientDisplayName(patient: EpicPatientResource): string {
   return combined || "Unknown patient";
 }
 
-function getEpicFhirBaseUrl(portalTenant?: string | null): string {
-  const tenant = String(portalTenant || "").trim().toLowerCase();
+/** Resolve FHIR base URL: prefer stored fhir_base_url, fall back to legacy portal_tenant. */
+function resolveFhirBaseUrl(connection: Record<string, any>): string {
+  if (connection.fhir_base_url?.trim()) return connection.fhir_base_url.trim();
 
+  // Legacy fallback
+  const tenant = String(connection.portal_tenant || "").trim().toLowerCase();
   if (tenant === "stamford" || tenant === "stamford_health") {
     return (
       (process.env.EPIC_STAMFORD_FHIR_BASE_URL || "").trim() ||
       "https://epicproxy.et1378.epichosted.com/APIProxyPRD/api/FHIR/R4"
     );
   }
-
   return (
     (process.env.EPIC_SANDBOX_FHIR_BASE_URL || "").trim() ||
     "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4"
@@ -95,7 +97,7 @@ export async function POST(req: Request) {
     const { data: connection, error: connectionError } = await supabaseAdmin
       .from("portal_connections")
       .select(
-        "integration_id, app_user_id, provider_id, portal_brand, portal_tenant, access_token, token_expires_at, status"
+        "integration_id, app_user_id, provider_id, portal_brand, portal_tenant, fhir_base_url, access_token, token_expires_at, status"
       )
       .eq("app_user_id", appUserId)
       .eq("provider_id", providerId)
@@ -123,7 +125,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const fhirBaseUrl = getEpicFhirBaseUrl(connection.portal_tenant);
+    const fhirBaseUrl = resolveFhirBaseUrl(connection);
 
     const { data: tokenFact, error: tokenFactError } = await supabaseAdmin
       .from("portal_facts")

@@ -102,10 +102,10 @@ function ProgressDots({
           key={i}
           className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
             i + 1 === active
-              ? "bg-[#7BA59A]"
+              ? "bg-[#5C6B5C]"
               : i + 1 < active
-              ? "bg-[#7BA59A]/50"
-              : "border border-white/8 bg-transparent"
+              ? "bg-[#5C6B5C]/50"
+              : "border border-[#EBEDF0] bg-transparent"
           }`}
         />
       ))}
@@ -132,9 +132,17 @@ function GoldButton({
       onClick={onClick}
       className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-semibold transition ${
         secondary
-          ? "border border-white/8 bg-transparent text-[#8A9BAE] hover:bg-white/5"
-          : "bg-[#7BA59A] text-[#1E2228] hover:bg-[#7BA59A]/90"
+          ? "border border-[#EBEDF0] bg-transparent text-[#7A7F8A] hover:bg-[#F0F2F5]"
+          : "text-white shadow-lg"
       }`}
+      style={
+        secondary
+          ? undefined
+          : {
+              background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
+              boxShadow: "0 8px 24px rgba(92,107,92,0.35)",
+            }
+      }
     >
       {children}
     </button>
@@ -157,7 +165,7 @@ function TogglePill({
       type="button"
       onClick={onToggle}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-        active ? "bg-[#7BA59A]" : "bg-white/8"
+        active ? "bg-[#5C6B5C]" : "bg-[#EBEDF0]"
       }`}
     >
       <span
@@ -304,7 +312,7 @@ export default function HandleFirstPage() {
 
   /* ---- Loading state ---- */
   if (loading || !data) {
-    return <div className="min-h-screen bg-[#1E2228]" />;
+    return <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />;
   }
 
   const { appUserId, userName, snapshots, hasGoogleCalendarConnection } = data;
@@ -348,12 +356,12 @@ export default function HandleFirstPage() {
               {snapshots.map((s) => (
                 <div
                   key={s.provider.id}
-                  className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
                 >
-                  <span className="text-sm font-medium text-[#F0F2F5]">
+                  <span className="text-sm font-medium text-[#1A1D2E]">
                     {s.provider.name}
                   </span>
-                  <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-xs text-[#8A9BAE]">
+                  <span className="rounded-full bg-[#F0F2F5] px-2.5 py-0.5 text-xs text-[#7A7F8A]">
                     {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
                   </span>
                 </div>
@@ -377,17 +385,17 @@ export default function HandleFirstPage() {
               {snapshots.map((s) => (
                 <div
                   key={s.provider.id}
-                  className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
                 >
                   <div>
-                    <p className="text-sm font-medium text-[#F0F2F5]">
+                    <p className="text-sm font-medium text-[#1A1D2E]">
                       {s.provider.name}
                     </p>
-                    <p className="text-xs text-[#8A9BAE]">
+                    <p className="text-xs text-[#7A7F8A]">
                       {formatDate(s.lastVisitDate)}
                     </p>
                   </div>
-                  <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-xs text-[#8A9BAE]">
+                  <span className="rounded-full bg-[#F0F2F5] px-2.5 py-0.5 text-xs text-[#7A7F8A]">
                     {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
                   </span>
                 </div>
@@ -411,16 +419,16 @@ export default function HandleFirstPage() {
             <div className="mt-6 space-y-5">
               {hasOverdue && (
                 <div>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#7BA59A]">
+                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#5C6B5C]">
                     Might be overdue
                   </h3>
                   <div className="space-y-2">
                     {overdueProviders.map((s) => (
                       <div
                         key={s.provider.id}
-                        className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
+                        className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
                       >
-                        <span className="text-sm font-medium text-[#F0F2F5]">
+                        <span className="text-sm font-medium text-[#1A1D2E]">
                           {s.provider.name}
                         </span>
                         <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-400">
@@ -443,9 +451,9 @@ export default function HandleFirstPage() {
                     {currentProviders.map((s) => (
                       <div
                         key={s.provider.id}
-                        className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
+                        className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
                       >
-                        <span className="text-sm font-medium text-[#F0F2F5]">
+                        <span className="text-sm font-medium text-[#1A1D2E]">
                           {s.provider.name}
                         </span>
                         <span className="text-emerald-400">
@@ -489,9 +497,9 @@ export default function HandleFirstPage() {
               {overdueProviders.map((s) => (
                 <div
                   key={s.provider.id}
-                  className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
                 >
-                  <span className="text-sm font-medium text-[#F0F2F5]">
+                  <span className="text-sm font-medium text-[#1A1D2E]">
                     {s.provider.name}
                   </span>
                   <TogglePill
@@ -519,42 +527,42 @@ export default function HandleFirstPage() {
 
             <div className="mt-6 space-y-4">
               <div>
-                <label className="mb-1 block text-xs text-[#8A9BAE]">Full name</label>
+                <label className="mb-1 block text-xs text-[#7A7F8A]">Full name</label>
                 <input
                   type="text"
                   value={patientFullName}
                   onChange={(e) => setPatientFullName(e.target.value)}
                   placeholder="First and Last"
-                  className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#4A5568] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-[#8A9BAE]">Date of birth</label>
+                <label className="mb-1 block text-xs text-[#7A7F8A]">Date of birth</label>
                 <input
                   type="date"
                   value={patientDob}
                   onChange={(e) => setPatientDob(e.target.value)}
-                  className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#4A5568] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-[#8A9BAE]">Insurance provider</label>
+                <label className="mb-1 block text-xs text-[#7A7F8A]">Insurance provider</label>
                 <input
                   type="text"
                   value={patientInsurance}
                   onChange={(e) => setPatientInsurance(e.target.value)}
                   placeholder="e.g., Aetna, Blue Cross, United"
-                  className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#4A5568] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-[#8A9BAE]">Member ID</label>
+                <label className="mb-1 block text-xs text-[#7A7F8A]">Member ID</label>
                 <input
                   type="text"
                   value={patientMemberId}
                   onChange={(e) => setPatientMemberId(e.target.value)}
                   placeholder="Found on your insurance card"
-                  className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#4A5568] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
               </div>
             </div>
@@ -599,8 +607,8 @@ export default function HandleFirstPage() {
               times.
             </CharacterWithBubble>
 
-            <div className="mt-6 rounded-xl border border-white/8 bg-white/5 p-5">
-              <p className="text-sm text-[#8A9BAE]">
+            <div className="mt-6 rounded-xl border border-[#EBEDF0] bg-white shadow-sm p-5">
+              <p className="text-sm text-[#7A7F8A]">
                 We&apos;ll check your Google Calendar for conflicts before
                 suggesting appointment times. Your calendar data stays private
                 and is only used for scheduling.
@@ -640,18 +648,18 @@ export default function HandleFirstPage() {
                 {currentProviders.map((s) => (
                   <div
                     key={s.provider.id}
-                    className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-4 py-3"
+                    className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
                   >
-                    <span className="text-sm font-medium text-[#F0F2F5]">
+                    <span className="text-sm font-medium text-[#1A1D2E]">
                       {s.provider.name}
                     </span>
                     {selectedProviders.has(s.provider.id) ? (
-                      <span className="text-xs text-[#7BA59A]">Added</span>
+                      <span className="text-xs text-[#5C6B5C]">Added</span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => toggleProvider(s.provider.id)}
-                        className="rounded-full border border-[#7BA59A] px-3 py-1 text-xs font-medium text-[#7BA59A] transition hover:bg-[#7BA59A]/10"
+                        className="rounded-full border border-[#5C6B5C] px-3 py-1 text-xs font-medium text-[#5C6B5C] transition hover:bg-[#5C6B5C]/10"
                       >
                         Schedule this one too
                       </button>
@@ -683,9 +691,9 @@ export default function HandleFirstPage() {
                 {selectedSnaps.map((s) => (
                   <div
                     key={s.provider.id}
-                    className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-4 py-3"
+                    className="flex items-center gap-3 rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
                   >
-                    <span className="text-[#7BA59A]">
+                    <span className="text-[#5C6B5C]">
                       <svg
                         width="16"
                         height="16"
@@ -701,7 +709,7 @@ export default function HandleFirstPage() {
                         />
                       </svg>
                     </span>
-                    <span className="text-sm font-medium text-[#F0F2F5]">
+                    <span className="text-sm font-medium text-[#1A1D2E]">
                       {s.provider.name}
                     </span>
                   </div>
@@ -709,7 +717,7 @@ export default function HandleFirstPage() {
               </div>
             )}
 
-            <p className="mt-4 text-sm text-[#8A9BAE]">
+            <p className="mt-4 text-sm text-[#7A7F8A]">
               After these appointments are booked, we&apos;ll help you customize
               QB further.
             </p>
@@ -727,16 +735,16 @@ export default function HandleFirstPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#1E2228] text-white overflow-hidden">
+    <div className="relative min-h-screen text-[#1A1D2E] overflow-hidden" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
       {/* Decorative circle */}
-      <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#7BA59A]/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#5C6B5C]/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-lg px-5 py-10">
         {/* Progress dots */}
         <ProgressDots total={visibleSteps.length} active={activeIndex} />
 
         {/* Branding */}
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#7BA59A] mb-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#5C6B5C] mb-6">
           Quarterback AI
         </p>
 

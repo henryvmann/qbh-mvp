@@ -44,16 +44,19 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
+    <main
+      className="min-h-screen text-[#1A1D2E]"
+      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
+    >
       <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#7BA59A]">
+            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5C6B5C]">
               Quarterback AI
             </div>
             <Link
               href="/dashboard"
-              className="text-sm text-[#4D6480] underline underline-offset-4 hover:text-[#8A9BAE]"
+              className="text-sm text-[#B0B4BC] underline underline-offset-4 hover:text-[#7A7F8A]"
             >
               Back to dashboard
             </Link>
@@ -63,17 +66,17 @@ export default function AccountPage() {
             Set a password
           </h1>
 
-          <p className="mt-3 text-base text-[#8A9BAE]">
+          <p className="mt-3 text-base text-[#7A7F8A]">
             Once set, you can sign in with your email and password instead of a
             magic link.
           </p>
 
           {done ? (
-            <div className="mt-8 rounded-2xl bg-white/5 p-6 ring-1 ring-white/8">
-              <div className="text-sm font-medium text-[#F0F2F5]">
+            <div className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+              <div className="text-sm font-medium text-[#1A1D2E]">
                 Password set
               </div>
-              <div className="mt-1 text-sm text-[#8A9BAE]">
+              <div className="mt-1 text-sm text-[#7A7F8A]">
                 You can now sign in with your email and password.
               </div>
             </div>
@@ -86,7 +89,7 @@ export default function AccountPage() {
                 placeholder="New password"
                 required
                 autoFocus
-                className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                className="w-full rounded-2xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
               />
 
               <input
@@ -95,19 +98,20 @@ export default function AccountPage() {
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="Confirm password"
                 required
-                className="w-full rounded-2xl border border-white/10 bg-[#162030] px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+                className="w-full rounded-2xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
               />
 
               <button
                 type="submit"
                 disabled={submitting || !password.trim() || !confirm.trim()}
-                className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-sm font-medium text-[#1E2228] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-2xl px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
               >
                 {submitting ? "Saving..." : "Set password"}
               </button>
 
               {error ? (
-                <div className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+                <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
                   {error}
                 </div>
               ) : null}

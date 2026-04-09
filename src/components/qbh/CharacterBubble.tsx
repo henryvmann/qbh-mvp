@@ -89,11 +89,11 @@ export function TalkBubble({ children }: { children: React.ReactNode }) {
           height: 0,
           borderTop: "8px solid transparent",
           borderBottom: "8px solid transparent",
-          borderRight: "10px solid rgba(123, 165, 154, 0.15)",
+          borderRight: "10px solid rgba(92, 107, 92, 0.10)",
         }}
       />
-      <div className="rounded-2xl border border-white/8 bg-white/5 p-5 backdrop-blur-sm">
-        <div className="text-base text-[#F0F2F5]">{children}</div>
+      <div className="rounded-2xl border border-[#EBEDF0] bg-white p-5 shadow-sm">
+        <div className="text-base text-[#1A1D2E]">{children}</div>
       </div>
     </div>
   );

@@ -96,36 +96,36 @@ export default function DashboardAnalyzer({
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="w-full max-w-lg">
-        <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#7BA59A]">
+        <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5C6B5C]">
           Quarterback AI
         </div>
 
-        <h2 className="mt-4 text-3xl tracking-tight text-[#F0F2F5]">
+        <h2 className="mt-4 text-3xl tracking-tight text-[#1A1D2E]">
           {status === "error" ? "Something went wrong" : "Building your care picture"}
         </h2>
 
         {status !== "error" ? (
           <>
-            <p className="mt-3 text-base text-[#8A9BAE]">
+            <p className="mt-3 text-base text-[#7A7F8A]">
               Reviewing your transactions and identifying healthcare providers.
             </p>
 
-            <div className="mt-8 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-2/3 animate-pulse rounded-full bg-[#7BA59A]" />
+            <div className="mt-8 h-1.5 w-full overflow-hidden rounded-full bg-[#EBEDF0]">
+              <div className="h-full w-2/3 animate-pulse rounded-full bg-[#5C6B5C]" />
             </div>
 
-            <div className="mt-8 rounded-2xl bg-white/5 p-6 ring-1 ring-white/8">
-              <div className="text-xs font-semibold uppercase tracking-widest text-[#7BA59A]">
+            <div className="mt-8 rounded-2xl bg-white p-6 border border-[#EBEDF0] shadow-sm">
+              <div className="text-xs font-semibold uppercase tracking-widest text-[#5C6B5C]">
                 Did you know
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-[#9AB0CC] transition-all">
+              <p className="mt-3 text-sm leading-relaxed text-[#7A7F8A] transition-all">
                 {FACTS[factIndex]}
               </p>
             </div>
           </>
         ) : (
           <>
-            <div className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+            <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
               {error}
             </div>
             <button
@@ -134,7 +134,8 @@ export default function DashboardAnalyzer({
                 setStatus("idle");
                 setError(null);
               }}
-              className="mt-4 rounded-xl bg-[#7BA59A] px-5 py-2.5 text-sm font-medium text-[#1E2228] hover:brightness-95"
+              className="mt-4 rounded-xl px-5 py-2.5 text-sm font-medium text-white hover:brightness-95"
+              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
             >
               Try again
             </button>

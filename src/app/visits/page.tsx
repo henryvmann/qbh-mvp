@@ -74,18 +74,18 @@ function VisitsInner() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#1E2228]" />;
+    return <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />;
   }
 
   return (
-    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
+    <main className="min-h-screen text-[#1A1D2E]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
       <div className="mx-auto max-w-5xl px-6 pb-16 pt-10">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#F0F2F5]">
+            <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
               Visits
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#8A9BAE]">
+            <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
               Upcoming appointments from QBH scheduling and past visits from
               your financial data.
             </p>
@@ -93,24 +93,24 @@ function VisitsInner() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/8 bg-white/5 px-4 py-2 text-sm font-medium text-[#8A9BAE] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
           >
             Back to Dashboard
           </Link>
         </div>
 
         {/* Upcoming visits */}
-        <section className="mt-8 rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-xl text-[#F0F2F5]">
+              <h2 className="font-serif text-xl text-[#1A1D2E]">
                 Upcoming visits
               </h2>
-              <p className="mt-2 text-sm text-[#8A9BAE]">
+              <p className="mt-2 text-sm text-[#7A7F8A]">
                 Confirmed appointments from the QBH booking system.
               </p>
             </div>
-            <span className="text-sm font-medium text-[#8A9BAE]">
+            <span className="text-sm font-medium text-[#7A7F8A]">
               {upcoming.length} upcoming
             </span>
           </div>
@@ -120,29 +120,29 @@ function VisitsInner() {
               {upcoming.map((visit) => (
                 <div
                   key={visit.id}
-                  className="flex flex-col gap-2 rounded-2xl bg-[#162030] p-5 ring-1 ring-[rgba(255,255,255,0.08)] md:flex-row md:items-center md:justify-between"
+                  className="flex flex-col gap-2 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0] md:flex-row md:items-center md:justify-between"
                 >
                   <div>
-                    <div className="font-semibold text-[#F0F2F5]">
+                    <div className="font-semibold text-[#1A1D2E]">
                       {visit.provider_name}
                     </div>
-                    <div className="mt-1 text-sm text-[#8A9BAE]">
+                    <div className="mt-1 text-sm text-[#7A7F8A]">
                       {formatDate(visit.start_at)} at{" "}
                       {formatTime(visit.start_at)}
                     </div>
                   </div>
-                  <span className="inline-flex items-center rounded-full bg-[#7BA59A]/15 px-3 py-1 text-xs font-semibold text-[#7BA59A] ring-1 ring-[#7BA59A]/30">
+                  <span className="inline-flex items-center rounded-full bg-[#5C6B5C]/15 px-3 py-1 text-xs font-semibold text-[#5C6B5C] ring-1 ring-[#5C6B5C]/30">
                     {visit.status ?? "Confirmed"}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="mt-6 rounded-2xl bg-[#162030] p-5 ring-1 ring-[rgba(255,255,255,0.08)]">
-              <div className="font-semibold text-[#F0F2F5]">
+            <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
+              <div className="font-semibold text-[#1A1D2E]">
                 No confirmed upcoming appointments yet
               </div>
-              <p className="mt-2 text-sm text-[#8A9BAE]">
+              <p className="mt-2 text-sm text-[#7A7F8A]">
                 As QBH books care through the live scheduling loop, upcoming
                 visits will appear here automatically.
               </p>
@@ -153,17 +153,17 @@ function VisitsInner() {
         {/* Follow-ups and Past visits side by side */}
         <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Follow-ups */}
-          <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-xl text-[#F0F2F5]">
+                <h2 className="font-serif text-xl text-[#1A1D2E]">
                   Follow-ups to schedule
                 </h2>
-                <p className="mt-2 text-sm text-[#8A9BAE]">
+                <p className="mt-2 text-sm text-[#7A7F8A]">
                   Providers currently needing another scheduling push.
                 </p>
               </div>
-              <span className="text-sm font-medium text-[#8A9BAE]">
+              <span className="text-sm font-medium text-[#7A7F8A]">
                 {followUps.length} open
               </span>
             </div>
@@ -173,23 +173,23 @@ function VisitsInner() {
                 {followUps.map((fu) => (
                   <div
                     key={fu.provider_id}
-                    className="rounded-2xl bg-[#162030] p-5 ring-1 ring-[rgba(255,255,255,0.08)]"
+                    className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]"
                   >
                     <div className="flex items-center justify-between gap-4">
-                      <div className="font-semibold text-[#F0F2F5]">
+                      <div className="font-semibold text-[#1A1D2E]">
                         {fu.provider_name}
                       </div>
                       <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-400 ring-1 ring-amber-500/30">
                         Follow-up needed
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-[#8A9BAE]">
+                    <p className="mt-2 text-sm text-[#7A7F8A]">
                       QBH can continue outreach and move this provider toward a
                       confirmed appointment.
                     </p>
                     <Link
                       href="/dashboard"
-                      className="mt-3 inline-block text-sm font-medium text-[#7BA59A] hover:underline"
+                      className="mt-3 inline-block text-sm font-medium text-[#5C6B5C] hover:underline"
                     >
                       View on dashboard
                     </Link>
@@ -197,11 +197,11 @@ function VisitsInner() {
                 ))}
               </div>
             ) : (
-              <div className="mt-6 rounded-2xl bg-[#162030] p-5 ring-1 ring-[rgba(255,255,255,0.08)]">
-                <div className="font-semibold text-[#F0F2F5]">
+              <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
+                <div className="font-semibold text-[#1A1D2E]">
                   No open follow-ups right now
                 </div>
-                <p className="mt-2 text-sm text-[#8A9BAE]">
+                <p className="mt-2 text-sm text-[#7A7F8A]">
                   Current providers are either booked already or not yet marked
                   for another scheduling attempt.
                 </p>
@@ -210,17 +210,17 @@ function VisitsInner() {
           </div>
 
           {/* Past visits */}
-          <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-xl text-[#F0F2F5]">
+                <h2 className="font-serif text-xl text-[#1A1D2E]">
                   Past visits
                 </h2>
-                <p className="mt-2 text-sm text-[#8A9BAE]">
+                <p className="mt-2 text-sm text-[#7A7F8A]">
                   Visits found from your financial data analysis.
                 </p>
               </div>
-              <span className="text-sm font-medium text-[#8A9BAE]">
+              <span className="text-sm font-medium text-[#7A7F8A]">
                 {past.length} visits
               </span>
             </div>
@@ -230,21 +230,21 @@ function VisitsInner() {
                 {past.map((visit) => (
                   <div
                     key={visit.id}
-                    className="rounded-2xl bg-[#162030] p-5 ring-1 ring-[rgba(255,255,255,0.08)]"
+                    className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]"
                   >
                     <div className="flex items-center justify-between gap-4">
-                      <div className="text-sm font-semibold text-[#4D6480]">
+                      <div className="text-sm font-semibold text-[#B0B4BC]">
                         {formatDate(visit.visit_date)}
                       </div>
-                      <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#8A9BAE] ring-1 ring-white/10">
+                      <span className="rounded-full bg-[#F0F2F5] px-3 py-1 text-xs font-semibold text-[#7A7F8A] ring-1 ring-[#EBEDF0]">
                         Completed
                       </span>
                     </div>
-                    <div className="mt-2 font-semibold text-[#F0F2F5]">
+                    <div className="mt-2 font-semibold text-[#1A1D2E]">
                       {visit.provider_name}
                     </div>
                     {visit.amount_cents != null && (
-                      <p className="mt-1 text-sm text-[#8A9BAE]">
+                      <p className="mt-1 text-sm text-[#7A7F8A]">
                         {formatAmount(visit.amount_cents)}
                       </p>
                     )}
@@ -252,11 +252,11 @@ function VisitsInner() {
                 ))}
               </div>
             ) : (
-              <div className="mt-6 rounded-2xl bg-[#162030] p-5 ring-1 ring-[rgba(255,255,255,0.08)]">
-                <div className="font-semibold text-[#F0F2F5]">
+              <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
+                <div className="font-semibold text-[#1A1D2E]">
                   No past visits found yet
                 </div>
-                <p className="mt-2 text-sm text-[#8A9BAE]">
+                <p className="mt-2 text-sm text-[#7A7F8A]">
                   Past visits will appear once QBH analyzes your financial data.
                 </p>
               </div>
@@ -270,7 +270,7 @@ function VisitsInner() {
 
 export default function VisitsPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#1E2228]" />}>
+    <Suspense fallback={<main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />}>
       <VisitsInner />
     </Suspense>
   );

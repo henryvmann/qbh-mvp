@@ -3,19 +3,15 @@ import { createHash, randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
+import { resolveEpicEndpoints, getEpicClientId } from "../../../../lib/epic/endpoints";
 
 type ConnectBody = {
   provider_id?: string;
   portal_brand?: string;
   portal_tenant?: string | null;
+  fhir_base_url?: string;
+  org_name?: string;
   mode?: string;
-};
-
-type EpicPortalConfig = {
-  authorizeUrl: string;
-  clientId: string;
-  fhirBaseUrl: string;
-  modeLabel: string;
 };
 
 function getBaseUrl(req: Request): string {
@@ -40,44 +36,26 @@ function createPkcePair() {
   return { verifier, challenge };
 }
 
-function getEpicPortalConfig(portalTenant?: string | null): EpicPortalConfig {
-  const tenant = String(portalTenant || "").trim().toLowerCase();
+/** Resolve fhir_base_url from either the new field or legacy portal_tenant. */
+function resolveFhirBaseUrl(body: ConnectBody): string | null {
+  if (body.fhir_base_url?.trim()) return body.fhir_base_url.trim();
 
+  // Legacy fallback for in-flight or old callers
+  const tenant = String(body.portal_tenant || "").trim().toLowerCase();
   if (tenant === "stamford" || tenant === "stamford_health") {
-    const authorizeUrl =
-      (process.env.EPIC_STAMFORD_AUTHORIZE_URL || "").trim() ||
-      "https://epicproxy.et1378.epichosted.com/APIProxyPRD/oauth2/authorize";
-
-    const clientId = (process.env.EPIC_STAMFORD_CLIENT_ID || "").trim();
-
-    const fhirBaseUrl =
+    return (
       (process.env.EPIC_STAMFORD_FHIR_BASE_URL || "").trim() ||
-      "https://epicproxy.et1378.epichosted.com/APIProxyPRD/api/FHIR/R4";
-
-    return {
-      authorizeUrl,
-      clientId,
-      fhirBaseUrl,
-      modeLabel: "stamford_auth",
-    };
+      "https://epicproxy.et1378.epichosted.com/APIProxyPRD/api/FHIR/R4"
+    );
+  }
+  if (tenant) {
+    return (
+      (process.env.EPIC_SANDBOX_FHIR_BASE_URL || "").trim() ||
+      "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4"
+    );
   }
 
-  const authorizeUrl =
-    (process.env.EPIC_SANDBOX_AUTHORIZE_URL || "").trim() ||
-    "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize";
-
-  const clientId = (process.env.EPIC_SANDBOX_CLIENT_ID || "").trim();
-
-  const fhirBaseUrl =
-    (process.env.EPIC_SANDBOX_FHIR_BASE_URL || "").trim() ||
-    "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4";
-
-  return {
-    authorizeUrl,
-    clientId,
-    fhirBaseUrl,
-    modeLabel: "sandbox_auth",
-  };
+  return null;
 }
 
 async function ensurePortalIntegration(appUserId: string) {
@@ -127,7 +105,7 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json().catch(() => ({}))) as ConnectBody;
-  const { provider_id, portal_brand, portal_tenant, mode } = body ?? {};
+  const { provider_id, portal_brand, portal_tenant, fhir_base_url, org_name, mode } = body ?? {};
 
   if (!provider_id || !portal_brand) {
     return NextResponse.json(
@@ -166,6 +144,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, mode: "mock", connection: data });
     }
 
+    const resolvedFhirBaseUrl = resolveFhirBaseUrl(body);
+    if (!resolvedFhirBaseUrl) {
+      return NextResponse.json(
+        { ok: false, error: "fhir_base_url is required for Epic connections" },
+        { status: 400 }
+      );
+    }
+
+    const epicEndpoints = await resolveEpicEndpoints(resolvedFhirBaseUrl);
+    const clientId = getEpicClientId(resolvedFhirBaseUrl);
+
+    if (!clientId) {
+      return NextResponse.json(
+        { ok: false, error: "EPIC_CLIENT_ID not configured" },
+        { status: 500 }
+      );
+    }
+
     const callbackUrl = `${getBaseUrl(req)}/api/portal/callback`;
     const { verifier, challenge } = createPkcePair();
 
@@ -175,35 +171,22 @@ export async function POST(req: Request) {
         provider_id,
         portal_brand,
         portal_tenant: portal_tenant ?? null,
+        fhir_base_url: resolvedFhirBaseUrl,
+        org_name: org_name ?? null,
         pkce_verifier: verifier,
       })
     );
 
-    const epicConfig = getEpicPortalConfig(portal_tenant);
-
-    if (!epicConfig.clientId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error:
-            portal_tenant === "stamford" || portal_tenant === "stamford_health"
-              ? "EPIC_STAMFORD_CLIENT_ID not set"
-              : "EPIC_SANDBOX_CLIENT_ID not set",
-        },
-        { status: 500 }
-      );
-    }
-
-    const authorizeUrl = new URL(epicConfig.authorizeUrl);
+    const authorizeUrl = new URL(epicEndpoints.authorizeUrl);
     authorizeUrl.searchParams.set("response_type", "code");
-    authorizeUrl.searchParams.set("client_id", epicConfig.clientId);
+    authorizeUrl.searchParams.set("client_id", clientId);
     authorizeUrl.searchParams.set("redirect_uri", callbackUrl);
     authorizeUrl.searchParams.set(
       "scope",
       "launch/patient openid profile offline_access patient/Patient.read patient/Encounter.read patient/Condition.read patient/MedicationRequest.read"
     );
     authorizeUrl.searchParams.set("state", state);
-    authorizeUrl.searchParams.set("aud", epicConfig.fhirBaseUrl);
+    authorizeUrl.searchParams.set("aud", epicEndpoints.fhirBaseUrl);
     authorizeUrl.searchParams.set("code_challenge_method", "S256");
     authorizeUrl.searchParams.set("code_challenge", challenge);
 
@@ -216,6 +199,8 @@ export async function POST(req: Request) {
           provider_id,
           portal_brand,
           portal_tenant: portal_tenant ?? null,
+          fhir_base_url: resolvedFhirBaseUrl,
+          org_name: org_name ?? null,
           status: "pending_auth",
         },
         { onConflict: "app_user_id,provider_id,portal_brand" }
@@ -230,9 +215,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      mode: epicConfig.modeLabel,
+      mode: "epic_oauth",
       authorize_url: authorizeUrl.toString(),
       callback_url: callbackUrl,
+      org_name: org_name ?? null,
     });
   } catch (error) {
     const message =

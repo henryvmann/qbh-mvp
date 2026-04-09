@@ -38,9 +38,12 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#1E2228] text-[#F0F2F5]">
+    <main
+      className="relative min-h-screen overflow-hidden text-[#1A1D2E]"
+      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
+    >
       <div
-        className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-white/10"
+        className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-[#EBEDF0]"
         aria-hidden
       />
 
@@ -48,7 +51,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div
             className="text-xs font-semibold uppercase tracking-[0.25em]"
-            style={{ color: "#7BA59A" }}
+            style={{ color: "#5C6B5C" }}
           >
             Quarterback AI
           </div>
@@ -57,7 +60,7 @@ export default function LoginPage() {
             Welcome back
           </h1>
 
-          <p className="mt-3 text-base text-[#8A9BAE]">
+          <p className="mt-3 text-base text-[#7A7F8A]">
             Sign in with your email and password.
           </p>
 
@@ -69,7 +72,7 @@ export default function LoginPage() {
               placeholder="you@example.com"
               required
               autoFocus
-              className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+              className="w-full rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
             />
 
             <input
@@ -78,31 +81,31 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               required
-              className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:border-[#7BA59A] focus:outline-none focus:ring-1 focus:ring-[#7BA59A]"
+              className="w-full rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
             />
 
             <button
               type="submit"
               disabled={submitting || !email.trim() || !password.trim()}
-              className="w-full rounded-xl px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ backgroundColor: "#7BA59A", color: "#1E2228" }}
+              className="w-full rounded-xl px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
             >
               {submitting ? "Signing in..." : "Sign in"}
             </button>
 
             {error ? (
-              <div className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+              <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
                 {error}
               </div>
             ) : null}
           </form>
 
-          <div className="mt-8 text-center text-sm text-[#4D6480]">
+          <div className="mt-8 text-center text-sm text-[#B0B4BC]">
             New here?{" "}
             <a
               href="/onboarding"
-              className="underline underline-offset-4 hover:text-[#8A9BAE]"
-              style={{ color: "#7BA59A" }}
+              className="underline underline-offset-4 hover:text-[#7A7F8A]"
+              style={{ color: "#5C6B5C" }}
             >
               Get started
             </a>

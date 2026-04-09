@@ -49,14 +49,17 @@ export default function MedicationsPage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
+    <main
+      className="min-h-screen text-[#1A1D2E]"
+      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
+    >
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#F0F2F5]">
+            <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
               Medications
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#8A9BAE]">
+            <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
               View your detected pharmacy visits and track medications as part of
               your care plan.
             </p>
@@ -64,35 +67,35 @@ export default function MedicationsPage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[#8A9BAE] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
           >
             Back to Dashboard
           </Link>
         </div>
 
         {/* Pharmacy Visits Section */}
-        <section className="mt-8 rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
           <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl text-[#F0F2F5]">
+            <h2 className="font-serif text-xl text-[#1A1D2E]">
               Pharmacy visits
             </h2>
-            <span className="rounded-full bg-[#7BA59A]/15 px-3 py-1 text-xs font-semibold text-[#7BA59A] ring-1 ring-[#7BA59A]/30">
+            <span className="rounded-full bg-[#5C6B5C]/15 px-3 py-1 text-xs font-semibold text-[#5C6B5C] ring-1 ring-[#5C6B5C]/30">
               From bank data
             </span>
           </div>
-          <p className="mt-2 text-sm text-[#8A9BAE]">
+          <p className="mt-2 text-sm text-[#7A7F8A]">
             Pharmacy transactions detected from your connected financial
             accounts.
           </p>
 
           {loading ? (
-            <div className="mt-6 flex items-center gap-2 text-sm text-[#8A9BAE]">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#7BA59A] border-t-transparent" />
+            <div className="mt-6 flex items-center gap-2 text-sm text-[#7A7F8A]">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
               Loading pharmacy visits...
             </div>
           ) : pharmacyVisits.length === 0 ? (
-            <div className="mt-6 rounded-2xl bg-[#162030] p-5 ring-1 ring-[rgba(255,255,255,0.08)]">
-              <p className="text-sm text-[#8A9BAE]">
+            <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
+              <p className="text-sm text-[#7A7F8A]">
                 No pharmacy visits detected yet. Once you connect a financial
                 account, transactions at pharmacies like CVS, Walgreens, and
                 Rite Aid will appear here automatically.
@@ -103,12 +106,12 @@ export default function MedicationsPage() {
               {pharmacyVisits.map((visit, i) => (
                 <div
                   key={`${visit.provider_name}-${visit.visit_date}-${i}`}
-                  className="flex items-center justify-between rounded-2xl bg-[#162030] px-5 py-4 ring-1 ring-[rgba(255,255,255,0.08)]"
+                  className="flex items-center justify-between rounded-2xl bg-[#F0F2F5] px-5 py-4 border border-[#EBEDF0]"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#7BA59A]/15">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#5C6B5C]/15">
                       <svg
-                        className="h-4 w-4 text-[#7BA59A]"
+                        className="h-4 w-4 text-[#5C6B5C]"
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={1.5}
@@ -122,16 +125,16 @@ export default function MedicationsPage() {
                       </svg>
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-[#F0F2F5]">
+                      <div className="text-sm font-semibold text-[#1A1D2E]">
                         {visit.provider_name}
                       </div>
-                      <div className="text-xs text-[#8A9BAE]">
+                      <div className="text-xs text-[#7A7F8A]">
                         {formatDate(visit.visit_date)}
                       </div>
                     </div>
                   </div>
                   {visit.amount_cents != null && (
-                    <div className="text-sm font-medium text-[#F0F2F5]">
+                    <div className="text-sm font-medium text-[#1A1D2E]">
                       {formatAmount(visit.amount_cents)}
                     </div>
                   )}
@@ -142,21 +145,21 @@ export default function MedicationsPage() {
         </section>
 
         {/* Your Medications Section */}
-        <section className="mt-8 rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
           <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl text-[#F0F2F5]">
+            <h2 className="font-serif text-xl text-[#1A1D2E]">
               Your medications
             </h2>
-            <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-[#8A9BAE] ring-1 ring-white/10">
+            <span className="rounded-full bg-[#F0F2F5] px-3 py-1 text-xs font-semibold text-[#7A7F8A] ring-1 ring-[#EBEDF0]">
               Coming soon
             </span>
           </div>
 
-          <div className="mt-4 rounded-2xl bg-[#162030] p-5 ring-1 ring-[rgba(255,255,255,0.08)]">
+          <div className="mt-4 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
             <div className="flex items-start gap-4">
-              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#7BA59A]/15">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/15">
                 <svg
-                  className="h-4 w-4 text-[#7BA59A]"
+                  className="h-4 w-4 text-[#5C6B5C]"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
@@ -170,10 +173,10 @@ export default function MedicationsPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm text-[#F0F2F5] font-medium">
+                <p className="text-sm text-[#1A1D2E] font-medium">
                   Track your medications here
                 </p>
-                <p className="mt-2 text-sm text-[#8A9BAE] leading-relaxed">
+                <p className="mt-2 text-sm text-[#7A7F8A] leading-relaxed">
                   This feature is coming soon — we are working on connecting
                   with health portals to automatically detect your
                   prescriptions. In the meantime, pharmacy visits from your

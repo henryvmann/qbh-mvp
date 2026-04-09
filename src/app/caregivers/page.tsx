@@ -13,7 +13,7 @@ const features = [
       "Give trusted people visibility into your care — from upcoming appointments to medication lists — on your terms.",
     icon: (
       <svg
-        className="h-5 w-5 text-[#7BA59A]"
+        className="h-5 w-5 text-[#5C6B5C]"
         fill="none"
         viewBox="0 0 24 24"
         strokeWidth={1.5}
@@ -33,7 +33,7 @@ const features = [
       "Manage who handles what across your household — from scheduling appointments to picking up prescriptions.",
     icon: (
       <svg
-        className="h-5 w-5 text-[#7BA59A]"
+        className="h-5 w-5 text-[#5C6B5C]"
         fill="none"
         viewBox="0 0 24 24"
         strokeWidth={1.5}
@@ -53,7 +53,7 @@ const features = [
       "Get updates when appointments are booked or changed, so everyone involved in care stays on the same page.",
     icon: (
       <svg
-        className="h-5 w-5 text-[#7BA59A]"
+        className="h-5 w-5 text-[#5C6B5C]"
         fill="none"
         viewBox="0 0 24 24"
         strokeWidth={1.5}
@@ -71,14 +71,14 @@ const features = [
 
 export default function CaregiversPage() {
   return (
-    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
+    <main className="min-h-screen text-[#1A1D2E]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#F0F2F5]">
+            <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
               Caregivers
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#8A9BAE]">
+            <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
               Coordinate health tasks across your household — sharing
               visibility, delegating work, and keeping the right people in the
               loop.
@@ -87,18 +87,18 @@ export default function CaregiversPage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-[#8A9BAE] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
           >
             Back to Dashboard
           </Link>
         </div>
 
         {/* Coming Soon Header */}
-        <section className="mt-8 rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7BA59A]/15">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#5C6B5C]/15">
               <svg
-                className="h-5 w-5 text-[#7BA59A]"
+                className="h-5 w-5 text-[#5C6B5C]"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
@@ -112,10 +112,10 @@ export default function CaregiversPage() {
               </svg>
             </div>
             <div>
-              <h2 className="font-serif text-xl text-[#F0F2F5]">
+              <h2 className="font-serif text-xl text-[#1A1D2E]">
                 Coming soon
               </h2>
-              <p className="mt-1 text-sm text-[#8A9BAE]">
+              <p className="mt-1 text-sm text-[#7A7F8A]">
                 We are building caregiver tools so trusted people can help
                 manage health without losing control of privacy.
               </p>
@@ -128,15 +128,15 @@ export default function CaregiversPage() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]"
+              className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7BA59A]/15">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#5C6B5C]/15">
                 {feature.icon}
               </div>
-              <h3 className="mt-4 text-base font-semibold text-[#F0F2F5]">
+              <h3 className="mt-4 text-base font-semibold text-[#1A1D2E]">
                 {feature.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-[#8A9BAE]">
+              <p className="mt-2 text-sm leading-relaxed text-[#7A7F8A]">
                 {feature.description}
               </p>
             </div>
@@ -144,11 +144,11 @@ export default function CaregiversPage() {
         </section>
 
         {/* Interested Footer */}
-        <section className="mt-6 rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+        <section className="mt-6 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
           <div className="flex items-start gap-4">
-            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#7BA59A]/15">
+            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/15">
               <svg
-                className="h-4 w-4 text-[#7BA59A]"
+                className="h-4 w-4 text-[#5C6B5C]"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
@@ -162,10 +162,10 @@ export default function CaregiversPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-medium text-[#F0F2F5]">
+              <p className="text-sm font-medium text-[#1A1D2E]">
                 Interested? Let us know.
               </p>
-              <p className="mt-1 text-sm text-[#8A9BAE] leading-relaxed">
+              <p className="mt-1 text-sm text-[#7A7F8A] leading-relaxed">
                 Caregiver features are actively in development. Your feedback
                 helps us prioritize what to build first — reach out anytime
                 through your dashboard.

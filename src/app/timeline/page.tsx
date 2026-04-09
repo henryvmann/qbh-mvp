@@ -31,10 +31,10 @@ const tagConfig: Record<
     dot: "#10b981",
   },
   discovered: {
-    bg: "bg-[#7BA59A]/15",
-    text: "text-[#7BA59A]",
-    ring: "ring-[#7BA59A]/30",
-    dot: "#7BA59A",
+    bg: "bg-[#5C6B5C]/15",
+    text: "text-[#5C6B5C]",
+    ring: "ring-[#5C6B5C]/30",
+    dot: "#5C6B5C",
   },
 };
 
@@ -68,18 +68,18 @@ export default function TimelinePage() {
   }, [router]);
 
   if (loading) {
-    return <main className="min-h-screen bg-[#1E2228]" />;
+    return <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />;
   }
 
   return (
-    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
+    <main className="min-h-screen text-[#1A1D2E]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#F0F2F5]">
+            <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
               Health Timeline
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#8A9BAE]">
+            <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
               A chronological record of visits, bookings, and provider
               discoveries. QBH builds this from your real data so you never lose
               track of your care history.
@@ -88,23 +88,23 @@ export default function TimelinePage() {
 
           <Link
             href="/dashboard"
-            className="rounded-xl border border-white/8 bg-white/5 px-4 py-2 text-sm font-medium text-[#8A9BAE] shadow-sm hover:bg-[#162030]"
+            className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
           >
             Back to Dashboard
           </Link>
         </div>
 
         {events.length === 0 ? (
-          <div className="mt-10 rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
-            <div className="font-semibold text-[#F0F2F5]">No events yet</div>
-            <p className="mt-2 text-sm text-[#8A9BAE]">
+          <div className="mt-10 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+            <div className="font-semibold text-[#1A1D2E]">No events yet</div>
+            <p className="mt-2 text-sm text-[#7A7F8A]">
               Connect your bank account to start building your health timeline.
             </p>
           </div>
         ) : (
           <div className="relative mt-10">
             {/* Vertical timeline line */}
-            <div className="absolute left-4 top-0 bottom-0 w-px bg-white/8" />
+            <div className="absolute left-4 top-0 bottom-0 w-px bg-[#EBEDF0]" />
 
             <div className="space-y-6">
               {events.map((event) => {
@@ -113,13 +113,13 @@ export default function TimelinePage() {
                   <div key={event.id} className="relative pl-12">
                     {/* Timeline dot */}
                     <div
-                      className="absolute left-2.5 top-6 h-3 w-3 rounded-full ring-2 ring-[#1E2228]"
+                      className="absolute left-2.5 top-6 h-3 w-3 rounded-full ring-2 ring-white"
                       style={{ backgroundColor: cfg.dot }}
                     />
 
-                    <div className="rounded-2xl bg-white/5 p-6 ring-1 ring-[rgba(255,255,255,0.08)]">
+                    <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
                       <div className="flex items-center justify-between">
-                        <div className="text-sm font-semibold text-[#4D6480]">
+                        <div className="text-sm font-semibold text-[#B0B4BC]">
                           {formatEventDate(event.date)}
                         </div>
                         <span
@@ -129,11 +129,11 @@ export default function TimelinePage() {
                         </span>
                       </div>
 
-                      <div className="mt-2 font-serif text-lg text-[#F0F2F5]">
+                      <div className="mt-2 font-serif text-lg text-[#1A1D2E]">
                         {event.title}
                       </div>
 
-                      <p className="mt-2 text-sm text-[#8A9BAE]">
+                      <p className="mt-2 text-sm text-[#7A7F8A]">
                         {event.detail}
                       </p>
                     </div>

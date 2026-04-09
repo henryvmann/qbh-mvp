@@ -126,17 +126,20 @@ function CalendarConnectPageInner() {
   }
 
   return (
-    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
+    <main
+      className="min-h-screen text-[#1A1D2E]"
+      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
+    >
       <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
         <header className="flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="text-sm text-[#8A9BAE] underline underline-offset-4"
+            className="text-sm text-[#7A7F8A] underline underline-offset-4"
           >
             Back
           </Link>
 
-          <div className="text-xs text-[#4D6480]">Calendar</div>
+          <div className="text-xs text-[#B0B4BC]">Calendar</div>
         </header>
 
         <section className="mt-12">
@@ -144,30 +147,30 @@ function CalendarConnectPageInner() {
             Connect Your Calendar
           </h1>
 
-          <p className="mt-4 max-w-2xl text-lg text-[#8A9BAE]">
+          <p className="mt-4 max-w-2xl text-lg text-[#7A7F8A]">
             Connect your calendar so Quarterback can avoid conflicts, understand
             your real availability, and schedule safely on your behalf.
           </p>
 
-          <div className="mt-10 rounded-2xl bg-white/5 p-8 ring-1 ring-white/8">
+          <div className="mt-10 rounded-2xl bg-white shadow-sm p-8 border border-[#EBEDF0]">
             <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr]">
               <div>
-                <div className="text-sm font-medium text-[#F0F2F5]">
+                <div className="text-sm font-medium text-[#1A1D2E]">
                   Why this matters
                 </div>
 
-                <div className="mt-4 space-y-4 text-sm text-[#8A9BAE]">
-                  <div className="rounded-2xl bg-[#162030] px-4 py-3">
+                <div className="mt-4 space-y-4 text-sm text-[#7A7F8A]">
+                  <div className="rounded-2xl bg-[#F0F2F5] px-4 py-3">
                     QBH uses your calendar to avoid proposing or confirming
                     appointment times that conflict with your day.
                   </div>
 
-                  <div className="rounded-2xl bg-[#162030] px-4 py-3">
+                  <div className="rounded-2xl bg-[#F0F2F5] px-4 py-3">
                     Access is read-only. QBH reads calendar availability so it
                     can protect your schedule before booking starts.
                   </div>
 
-                  <div className="rounded-2xl bg-[#162030] px-4 py-3">
+                  <div className="rounded-2xl bg-[#F0F2F5] px-4 py-3">
                     You can connect this now or come back later. QBH works best
                     when it has real availability context.
                   </div>
@@ -175,12 +178,12 @@ function CalendarConnectPageInner() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#162030] p-6">
+                <div className="flex flex-col justify-between rounded-2xl border border-[#EBEDF0] bg-[#F0F2F5] p-6">
                   <div>
-                    <div className="text-sm font-medium text-[#F0F2F5]">
+                    <div className="text-sm font-medium text-[#1A1D2E]">
                       Google Calendar
                     </div>
-                    <div className="mt-2 text-sm text-[#8A9BAE]">
+                    <div className="mt-2 text-sm text-[#7A7F8A]">
                       Read-only calendar access for conflict-aware scheduling.
                     </div>
                   </div>
@@ -189,7 +192,8 @@ function CalendarConnectPageInner() {
                     <button
                       onClick={startGoogleCalendarConnect}
                       disabled={!userId || submitting || submittingOutlook}
-                      className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-[#1E2228] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
                     >
                       {submitting
                         ? "Redirecting to Google..."
@@ -198,12 +202,12 @@ function CalendarConnectPageInner() {
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#162030] p-6">
+                <div className="flex flex-col justify-between rounded-2xl border border-[#EBEDF0] bg-[#F0F2F5] p-6">
                   <div>
-                    <div className="text-sm font-medium text-[#F0F2F5]">
+                    <div className="text-sm font-medium text-[#1A1D2E]">
                       Outlook Calendar
                     </div>
-                    <div className="mt-2 text-sm text-[#8A9BAE]">
+                    <div className="mt-2 text-sm text-[#7A7F8A]">
                       Read-only calendar access for conflict-aware scheduling.
                     </div>
                   </div>
@@ -212,7 +216,8 @@ function CalendarConnectPageInner() {
                     <button
                       onClick={startOutlookCalendarConnect}
                       disabled={!userId || submitting || submittingOutlook}
-                      className="w-full rounded-2xl bg-[#7BA59A] px-6 py-3 text-[#1E2228] font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
                     >
                       {submittingOutlook
                         ? "Redirecting to Microsoft..."
@@ -223,7 +228,7 @@ function CalendarConnectPageInner() {
 
                 <Link
                   href="/dashboard"
-                  className="block text-center text-sm text-[#4D6480] underline underline-offset-4"
+                  className="block text-center text-sm text-[#B0B4BC] underline underline-offset-4"
                 >
                   Return to dashboard
                 </Link>
@@ -232,7 +237,7 @@ function CalendarConnectPageInner() {
           </div>
 
           {error ? (
-            <div className="mt-6 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+            <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
               {error}
             </div>
           ) : null}
@@ -244,7 +249,7 @@ function CalendarConnectPageInner() {
 
 export default function CalendarConnectPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#1E2228]" />}>
+    <Suspense fallback={<div className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />}>
       <CalendarConnectPageInner />
     </Suspense>
   );

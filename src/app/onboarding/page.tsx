@@ -60,10 +60,10 @@ const STEP4_OPTIONS = [
   "Thread care together",
 ];
 
-const GOLD = "#7BA59A";
-const NAVY = "#1E2228";
-const CARD_BG = "rgba(255,255,255,0.05)";
-const CARD_BORDER = "rgba(255,255,255,0.08)";
+const ACCENT = "#5C6B5C";
+const ACCENT_BG = "#1A1D2E";
+const CARD_BG = "#FFFFFF";
+const CARD_BORDER = "#EBEDF0";
 
 /* Survey step mapping: step 1 -> survey 1, step 3 -> survey 2, step 4 -> survey 3, step 5 -> survey 4 */
 const SURVEY_STEP_MAP: Record<number, number> = { 1: 1, 3: 2, 4: 3, 5: 4 };
@@ -75,7 +75,7 @@ const SURVEY_STEP_MAP: Record<number, number> = { 1: 1, 3: 2, 4: 3, 5: 4 };
 function DecorativeCircle() {
   return (
     <div
-      className="pointer-events-none fixed -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-white/10"
+      className="pointer-events-none fixed -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-[#D0D8E0]/30"
       aria-hidden
     />
   );
@@ -85,7 +85,7 @@ function StepCounter({ current, total }: { current: number; total: number }) {
   return (
     <div
       className="mb-8 text-xs font-semibold uppercase tracking-[0.25em]"
-      style={{ color: GOLD }}
+      style={{ color: ACCENT }}
     >
       Step {current} of {total}
     </div>
@@ -111,8 +111,11 @@ function GoldButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="mt-8 w-full rounded-2xl px-6 py-4 text-base font-semibold transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
-      style={{ backgroundColor: GOLD, color: NAVY }}
+      className="mt-8 w-full rounded-3xl px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
+      style={{
+        background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
+        boxShadow: "0 8px 24px rgba(92,107,92,0.35)",
+      }}
     >
       {children}
     </button>
@@ -134,30 +137,30 @@ function OptionRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-4 rounded-xl px-5 py-4 text-left text-sm transition"
+      className="flex w-full items-center gap-4 rounded-xl px-5 py-4 text-left text-sm transition shadow-sm"
       style={{
         backgroundColor: CARD_BG,
         borderWidth: 1,
         borderStyle: "solid",
-        borderColor: selected ? GOLD : CARD_BORDER,
+        borderColor: selected ? ACCENT : CARD_BORDER,
       }}
     >
       {/* indicator */}
       <span
         className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border"
         style={{
-          borderColor: selected ? GOLD : "#3A4A66",
-          backgroundColor: selected ? GOLD : "transparent",
+          borderColor: selected ? ACCENT : "#B0B4BC",
+          backgroundColor: selected ? ACCENT : "transparent",
         }}
       >
         {selected && (
           <span
             className="block h-2 w-2 rounded-full"
-            style={{ backgroundColor: multi ? "#fff" : NAVY }}
+            style={{ backgroundColor: "#fff" }}
           />
         )}
       </span>
-      <span className="text-[#F0F2F5]">{label}</span>
+      <span className="text-[#1A1D2E]">{label}</span>
     </button>
   );
 }
@@ -177,21 +180,21 @@ function ConnectionRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-xl px-5 py-4 text-left text-sm transition"
+      className="flex w-full items-center justify-between rounded-xl px-5 py-4 text-left text-sm transition shadow-sm"
       style={{
         backgroundColor: CARD_BG,
         borderWidth: 1,
         borderStyle: "solid",
-        borderColor: connected ? "#34D399" : CARD_BORDER,
+        borderColor: connected ? "#5C6B5C" : CARD_BORDER,
       }}
     >
-      <span className="text-[#F0F2F5]">{label}</span>
+      <span className="text-[#1A1D2E]">{label}</span>
       {connected ? (
-        <span className="text-emerald-400 text-xs font-medium">Connected &#10003;</span>
+        <span className="text-[#5C6B5C] text-xs font-medium">Connected &#10003;</span>
       ) : pending ? (
-        <span className="text-amber-400 text-xs font-medium">Pending...</span>
+        <span className="text-amber-600 text-xs font-medium">Pending...</span>
       ) : (
-        <span className="text-xs font-medium" style={{ color: GOLD }}>
+        <span className="text-xs font-medium" style={{ color: ACCENT }}>
           Connect
         </span>
       )}
@@ -607,8 +610,8 @@ export default function OnboardingPage() {
                 minWidth: 96,
               }}
             >
-              <span className="text-lg" style={{ color: GOLD }}>{card.icon}</span>
-              <span className="text-xs text-[#F0F2F5]">{card.label}</span>
+              <span className="text-lg" style={{ color: ACCENT }}>{card.icon}</span>
+              <span className="text-xs text-[#1A1D2E]">{card.label}</span>
             </div>
           ))}
         </div>
@@ -622,8 +625,17 @@ export default function OnboardingPage() {
   if (step === 1) {
     return (
       <Shell>
+        <div className="mb-6">
+          <CharacterWithBubble pose="waving">
+            We can be as involved or as removed as you want! This helps me
+            understand what part of Quarterback is going to be the most helpful
+            for you. Just let me know whether you want help booking appointments,
+            collecting your medical history into one place, or managing your
+            child or parent&apos;s health.
+          </CharacterWithBubble>
+        </div>
         <StepCounter current={SURVEY_STEP_MAP[1]} total={4} />
-        <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
+        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What do you want help staying on top of?
         </h1>
         <div className="mt-6 flex flex-col gap-3">
@@ -658,8 +670,16 @@ export default function OnboardingPage() {
   if (step === 3) {
     return (
       <Shell>
+        <div className="mb-6">
+          <CharacterWithBubble pose="thinking">
+            No judgment here &mdash; healthcare is a lot to keep track of.
+            Knowing what feels hardest right now helps me figure out where to
+            jump in first. I&apos;ll focus on the stuff that&apos;s slipping
+            through the cracks.
+          </CharacterWithBubble>
+        </div>
         <StepCounter current={SURVEY_STEP_MAP[3]} total={4} />
-        <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
+        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What&apos;s hardest to manage today?
         </h1>
         <div className="mt-6 flex flex-col gap-3">
@@ -687,11 +707,19 @@ export default function OnboardingPage() {
   if (step === 4) {
     return (
       <Shell>
+        <div className="mb-6">
+          <CharacterWithBubble pose="pointing">
+            A lot of people aren&apos;t just managing their own health &mdash;
+            they&apos;re keeping track of their kids&apos; checkups or their
+            parents&apos; specialists too. Let me know who I&apos;m helping you
+            look after so I can keep everything organized by person.
+          </CharacterWithBubble>
+        </div>
         <StepCounter current={SURVEY_STEP_MAP[4]} total={4} />
-        <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
+        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           Who are you managing care for?
         </h1>
-        <p className="mt-2 text-sm text-[#8A9BAE]">Choose as many as you&apos;d like</p>
+        <p className="mt-2 text-sm text-[#7A7F8A]">Choose as many as you&apos;d like</p>
         <div className="mt-6 flex flex-col gap-3">
           {STEP3_OPTIONS.map((opt) => (
             <OptionRow
@@ -717,8 +745,15 @@ export default function OnboardingPage() {
   if (step === 5) {
     return (
       <Shell>
+        <div className="mb-6">
+          <CharacterWithBubble pose="waving">
+            Last question! This is the fun part &mdash; tell me what you actually
+            want me to do. Some people just want reminders. Others want me to
+            pick up the phone and book everything. There&apos;s no wrong answer.
+          </CharacterWithBubble>
+        </div>
         <StepCounter current={SURVEY_STEP_MAP[5]} total={4} />
-        <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
+        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What would you want QB to handle?
         </h1>
         <div className="mt-6 flex flex-col gap-3">
@@ -775,13 +810,13 @@ export default function OnboardingPage() {
             <div key={s.num} className="flex gap-4">
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                style={{ backgroundColor: GOLD, color: NAVY }}
+                style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
               >
                 {s.num}
               </span>
               <div>
-                <div className="text-sm font-medium text-[#F0F2F5]">{s.title}</div>
-                <div className="mt-1 text-xs text-[#8A9BAE] leading-relaxed">{s.desc}</div>
+                <div className="text-sm font-medium text-[#1A1D2E]">{s.title}</div>
+                <div className="mt-1 text-xs text-[#7A7F8A] leading-relaxed">{s.desc}</div>
               </div>
             </div>
           ))}
@@ -792,7 +827,7 @@ export default function OnboardingPage() {
         <div className="mt-6 text-center">
           <button
             onClick={() => { setManualPath(true); setStep(7); }}
-            className="text-sm text-[#8A9BAE] underline underline-offset-4 hover:text-[#F0F2F5]"
+            className="text-sm text-[#7A7F8A] underline underline-offset-4 hover:text-[#1A1D2E]"
           >
             I&apos;d rather add my providers manually
           </button>
@@ -845,10 +880,18 @@ export default function OnboardingPage() {
 
     return (
       <Shell>
-        <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
+        <div className="mb-6">
+          <CharacterWithBubble pose="pointing">
+            No problem! You can add your providers by name and I&apos;ll look
+            them up. Just search for your doctor, dentist, or specialist and
+            I&apos;ll pull in their details. You can always add more later from
+            your dashboard.
+          </CharacterWithBubble>
+        </div>
+        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           Add your healthcare providers
         </h1>
-        <p className="mt-2 text-sm text-[#8A9BAE]">
+        <p className="mt-2 text-sm text-[#7A7F8A]">
           Search by name to find your doctor, dentist, or specialist.
         </p>
 
@@ -859,7 +902,7 @@ export default function OnboardingPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:outline-none focus:ring-1"
+            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
             style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
           />
           <input
@@ -867,7 +910,7 @@ export default function OnboardingPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:outline-none focus:ring-1"
+            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
             style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
           />
           <input
@@ -876,14 +919,14 @@ export default function OnboardingPage() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Create a password"
             minLength={6}
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:outline-none focus:ring-1"
+            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
             style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
           />
         </div>
 
         {/* NPI Search */}
         <div className="mt-6">
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider" style={{ color: GOLD }}>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>
             Search providers
           </label>
           <div className="relative">
@@ -892,11 +935,11 @@ export default function OnboardingPage() {
               value={npiSearchQuery}
               onChange={(e) => setNpiSearchQuery(e.target.value)}
               placeholder="Dr. Smith, City Dental, etc."
-              className="w-full rounded-xl border px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:outline-none focus:ring-1"
+              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
               style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
             />
             {npiSearching && (
-              <span className="absolute right-3 top-3 text-xs text-[#8A9BAE]">Searching...</span>
+              <span className="absolute right-3 top-3 text-xs text-[#7A7F8A]">Searching...</span>
             )}
           </div>
 
@@ -914,17 +957,17 @@ export default function OnboardingPage() {
                     <button
                       type="button"
                       onClick={() => addManualProvider(result)}
-                      className="flex w-full flex-col px-4 py-3 text-left transition hover:bg-white/5"
+                      className="flex w-full flex-col px-4 py-3 text-left transition hover:bg-[#F0F2F5]"
                     >
-                      <span className="text-sm font-medium text-[#F0F2F5]">{result.name}</span>
-                      <span className="text-xs text-[#8A9BAE]">
+                      <span className="text-sm font-medium text-[#1A1D2E]">{result.name}</span>
+                      <span className="text-xs text-[#7A7F8A]">
                         {[result.specialty, [result.city, result.state].filter(Boolean).join(", ")].filter(Boolean).join(" \u00b7 ")}
                       </span>
                     </button>
                   ) : (
                     <div className="flex flex-col px-4 py-3">
-                      <span className="text-sm font-medium text-[#F0F2F5]">{result.name}</span>
-                      <span className="text-xs text-[#8A9BAE]">
+                      <span className="text-sm font-medium text-[#1A1D2E]">{result.name}</span>
+                      <span className="text-xs text-[#7A7F8A]">
                         {[result.specialty, [result.city, result.state].filter(Boolean).join(", ")].filter(Boolean).join(" \u00b7 ")}
                       </span>
                       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -935,9 +978,9 @@ export default function OnboardingPage() {
                             onClick={() => toggleNpiResultPerson(result.npi, opt.value)}
                             className="rounded-lg px-2.5 py-1 text-xs font-semibold"
                             style={{
-                              backgroundColor: selected.has(opt.value) ? GOLD : "transparent",
-                              color: selected.has(opt.value) ? NAVY : "#8A9BAE",
-                              border: selected.has(opt.value) ? "none" : "1px solid rgba(255,255,255,0.15)",
+                              backgroundColor: selected.has(opt.value) ? ACCENT : "transparent",
+                              color: selected.has(opt.value) ? "#FFFFFF" : "#7A7F8A",
+                              border: selected.has(opt.value) ? "none" : "1px solid #EBEDF0",
                             }}
                           >
                             {opt.label}
@@ -948,7 +991,7 @@ export default function OnboardingPage() {
                             type="button"
                             onClick={() => addManualProvider(result, Array.from(selected))}
                             className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                            style={{ backgroundColor: "#22C55E", color: NAVY }}
+                            style={{ backgroundColor: "#5C6B5C", color: "#FFFFFF" }}
                           >
                             Confirm
                           </button>
@@ -966,7 +1009,7 @@ export default function OnboardingPage() {
         {/* Added providers */}
         {manualProviders.length > 0 && (
           <div className="mt-6">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: GOLD }}>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>
               Your providers ({manualProviders.length})
             </div>
             <div className="flex flex-col gap-2">
@@ -974,18 +1017,18 @@ export default function OnboardingPage() {
                 <div
                   key={i}
                   className="flex items-center justify-between rounded-xl border px-4 py-3"
-                  style={{ backgroundColor: CARD_BG, borderColor: GOLD }}
+                  style={{ backgroundColor: CARD_BG, borderColor: ACCENT }}
                 >
                   <div>
-                    <div className="text-sm font-medium text-[#F0F2F5]">{prov.name}</div>
+                    <div className="text-sm font-medium text-[#1A1D2E]">{prov.name}</div>
                     {prov.specialty && (
-                      <div className="text-xs text-[#8A9BAE]">{prov.specialty}</div>
+                      <div className="text-xs text-[#7A7F8A]">{prov.specialty}</div>
                     )}
                   </div>
                   <button
                     type="button"
                     onClick={() => setManualProviders((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="text-xs text-[#8A9BAE] hover:text-red-400"
+                    className="text-xs text-[#7A7F8A] hover:text-red-600"
                   >
                     Remove
                   </button>
@@ -996,7 +1039,7 @@ export default function OnboardingPage() {
         )}
 
         {error && (
-          <div className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+          <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
             {error}
           </div>
         )}
@@ -1012,7 +1055,7 @@ export default function OnboardingPage() {
           <div className="mt-3 text-center">
             <button
               onClick={handleManualContinue}
-              className="text-sm text-[#8A9BAE] underline underline-offset-4 hover:text-[#F0F2F5]"
+              className="text-sm text-[#7A7F8A] underline underline-offset-4 hover:text-[#1A1D2E]"
             >
               Skip &mdash; I&apos;ll add providers later
             </button>
@@ -1027,10 +1070,18 @@ export default function OnboardingPage() {
     const canContinue = name.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
     return (
       <Shell>
-        <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
+        <div className="mb-6">
+          <CharacterWithBubble pose="pointing">
+            Almost there! I just need a few basics to create your account.
+            Then we&apos;ll connect your bank so I can find your healthcare
+            providers automatically. Don&apos;t worry &mdash; it&apos;s
+            read-only. I can&apos;t move money or see your balances.
+          </CharacterWithBubble>
+        </div>
+        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           Let&apos;s get you set up
         </h1>
-        <p className="mt-2 text-sm text-[#8A9BAE]">
+        <p className="mt-2 text-sm text-[#7A7F8A]">
           Name &bull; Email &bull; Connect accounts
         </p>
 
@@ -1040,7 +1091,7 @@ export default function OnboardingPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:outline-none focus:ring-1"
+            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
             style={{
               backgroundColor: CARD_BG,
               borderColor: CARD_BORDER,
@@ -1051,7 +1102,7 @@ export default function OnboardingPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:outline-none focus:ring-1"
+            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
             style={{
               backgroundColor: CARD_BG,
               borderColor: CARD_BORDER,
@@ -1063,7 +1114,7 @@ export default function OnboardingPage() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Create a password"
             minLength={6}
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#F0F2F5] placeholder:text-[#3D526B] focus:outline-none focus:ring-1"
+            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
             style={{
               backgroundColor: CARD_BG,
               borderColor: CARD_BORDER,
@@ -1079,14 +1130,14 @@ export default function OnboardingPage() {
             multi
           />
           {calendarPending && (
-            <p className="px-1 text-xs text-[#8A9BAE]">
+            <p className="px-1 text-xs text-[#7A7F8A]">
               We&apos;ll prompt you to connect Google Calendar once your account is verified.
             </p>
           )}
         </div>
 
         {error && (
-          <div className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+          <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
             {error}
           </div>
         )}
@@ -1192,21 +1243,21 @@ export default function OnboardingPage() {
         <div
           key={provider.id}
           className="rounded-xl border px-4 py-3"
-          style={{ backgroundColor: CARD_BG, borderColor: isConfirmed ? "#1A3A2A" : CARD_BORDER }}
+          style={{ backgroundColor: CARD_BG, borderColor: isConfirmed ? "#5C6B5C" : CARD_BORDER }}
         >
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-medium text-[#F0F2F5]">{provider.name}</div>
-              <div className="text-xs text-[#8A9BAE]">
+              <div className="text-sm font-medium text-[#1A1D2E]">{provider.name}</div>
+              <div className="text-xs text-[#7A7F8A]">
                 {provider.visit_count} {isConfirmed ? "visit" : "transaction"}{provider.visit_count !== 1 ? "s" : ""}
               </div>
             </div>
-            {isConfirmed && <span className="text-xs text-emerald-400">&#10003;</span>}
+            {isConfirmed && <span className="text-xs text-[#5C6B5C]">&#10003;</span>}
           </div>
 
           {chain ? (
             <>
-              <p className="mt-2 text-xs text-[#8A9BAE] italic">
+              <p className="mt-2 text-xs text-[#7A7F8A] italic">
                 Do you use {provider.name} as a pharmacy?
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1219,13 +1270,13 @@ export default function OnboardingPage() {
                     handleProviderAssign(provider.id, defaultPeople);
                   }}
                   className="rounded-lg px-3 py-1.5 text-xs font-semibold"
-                  style={{ backgroundColor: GOLD, color: NAVY }}
+                  style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
                 >
                   Yes, it&apos;s my pharmacy
                 </button>
                 <button
                   onClick={() => handleProviderDismiss(provider.id)}
-                  className="rounded-lg border border-white/10 bg-[#1A2336] px-3 py-1.5 text-xs text-[#8A9BAE]"
+                  className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#7A7F8A]"
                 >
                   No, I just shop there
                 </button>
@@ -1239,9 +1290,9 @@ export default function OnboardingPage() {
                   onClick={() => toggleProviderPerson(provider.id, opt.value)}
                   className="rounded-lg px-2.5 py-1 text-xs font-semibold"
                   style={{
-                    backgroundColor: selected.has(opt.value) ? GOLD : "transparent",
-                    color: selected.has(opt.value) ? NAVY : "#8A9BAE",
-                    border: selected.has(opt.value) ? "none" : "1px solid rgba(255,255,255,0.15)",
+                    backgroundColor: selected.has(opt.value) ? ACCENT : "transparent",
+                    color: selected.has(opt.value) ? "#FFFFFF" : "#7A7F8A",
+                    border: selected.has(opt.value) ? "none" : "1px solid #EBEDF0",
                   }}
                 >
                   {opt.label}
@@ -1251,14 +1302,14 @@ export default function OnboardingPage() {
                 <button
                   onClick={() => handleProviderAssign(provider.id, Array.from(selected))}
                   className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                  style={{ backgroundColor: "#22C55E", color: NAVY }}
+                  style={{ backgroundColor: "#5C6B5C", color: "#FFFFFF" }}
                 >
                   Confirm
                 </button>
               )}
               <button
                 onClick={() => handleProviderDismiss(provider.id)}
-                className="rounded-lg border border-white/10 bg-[#1A2336] px-2.5 py-1 text-xs text-[#8A9BAE]"
+                className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-2.5 py-1 text-xs text-[#7A7F8A]"
               >
                 Ignore
               </button>
@@ -1270,16 +1321,24 @@ export default function OnboardingPage() {
 
     return (
       <Shell>
-        <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
+        <div className="mb-6">
+          <CharacterWithBubble pose="celebrating">
+            Great news &mdash; I found some providers! Take a quick look and
+            let me know who each one is for. If something doesn&apos;t look like
+            a healthcare provider, just hit ignore. I want to make sure I&apos;m
+            only tracking the right ones.
+          </CharacterWithBubble>
+        </div>
+        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           We found your healthcare providers
         </h1>
-        <p className="mt-2 text-sm text-[#8A9BAE]">
+        <p className="mt-2 text-sm text-[#7A7F8A]">
           Who is each provider for? Tap to assign or ignore.
         </p>
 
         {confirmedProviders.length > 0 && (
           <div className="mt-6">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-400">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#5C6B5C]">
               Confirmed providers
             </div>
             <div className="flex flex-col gap-2">
@@ -1290,7 +1349,7 @@ export default function OnboardingPage() {
 
         {needsReview.length > 0 && (
           <div className="mt-6">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: GOLD }}>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>
               Could be a provider ({needsReview.length} remaining)
             </div>
             <div className="flex flex-col gap-2">
@@ -1313,10 +1372,10 @@ export default function OnboardingPage() {
     if (error) {
       return (
         <Shell>
-          <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
+          <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
             Something went wrong
           </h1>
-          <div className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+          <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
             {error}
           </div>
           <GoldButton onClick={() => router.push("/handle-first")}>
@@ -1335,10 +1394,17 @@ export default function OnboardingPage() {
     return (
       <Shell>
         <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <h1 className="text-2xl font-light text-[#F0F2F5] sm:text-3xl">
-            QB is getting started
+          <div className="mb-8 text-left">
+            <CharacterWithBubble pose="thinking">
+              Give me just a moment &mdash; I&apos;m scanning your transactions
+              to find your healthcare providers. I&apos;ll match them against
+              medical databases to make sure I get it right.
+            </CharacterWithBubble>
+          </div>
+          <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
+            Kate is getting started
           </h1>
-          <p className="mt-2 text-sm text-[#8A9BAE]">
+          <p className="mt-2 text-sm text-[#7A7F8A]">
             This usually takes a few seconds
           </p>
 
@@ -1353,25 +1419,25 @@ export default function OnboardingPage() {
                     backgroundColor: CARD_BG,
                     borderWidth: 1,
                     borderStyle: "solid",
-                    borderColor: done ? GOLD : CARD_BORDER,
+                    borderColor: done ? ACCENT : CARD_BORDER,
                     opacity: analysisProgress >= i ? 1 : 0.3,
                   }}
                 >
                   <span
                     className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors duration-500"
                     style={{
-                      backgroundColor: done ? GOLD : "transparent",
-                      color: done ? NAVY : "#3A4A66",
+                      backgroundColor: done ? ACCENT : "transparent",
+                      color: done ? "#FFFFFF" : "#B0B4BC",
                       borderWidth: done ? 0 : 2,
                       borderStyle: "solid",
-                      borderColor: "#3A4A66",
+                      borderColor: "#B0B4BC",
                     }}
                   >
                     {done ? "\u2713" : ""}
                   </span>
                   <span
                     className="text-sm transition-colors duration-500"
-                    style={{ color: done ? "#F0F2F5" : "#8A9BAE" }}
+                    style={{ color: done ? "#1A1D2E" : "#B0B4BC" }}
                   >
                     {label}
                   </span>
@@ -1409,11 +1475,11 @@ export default function OnboardingPage() {
             >
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                style={{ backgroundColor: GOLD, color: NAVY }}
+                style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
               >
                 {card.value}
               </span>
-              <span className="text-[#F0F2F5]">{card.label}</span>
+              <span className="text-[#1A1D2E]">{card.label}</span>
             </div>
           ))}
         </div>
@@ -1468,7 +1534,7 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
         </CharacterWithBubble>
       </div>
 
-      <p className="mt-4 text-center text-xs text-[#8A9BAE]">&mdash; Early QB member</p>
+      <p className="mt-4 text-center text-xs text-[#7A7F8A]">&mdash; Early QB member</p>
 
       {/* Trust points */}
       <div className="mt-8 flex justify-center gap-4">
@@ -1479,7 +1545,7 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
         ].map((item) => (
           <div key={item.label} className="flex flex-col items-center gap-2" style={{ minWidth: 88 }}>
             <span className="text-lg">{item.icon}</span>
-            <span className="text-xs text-[#8A9BAE]">{item.label}</span>
+            <span className="text-xs text-[#7A7F8A]">{item.label}</span>
           </div>
         ))}
       </div>
@@ -1496,8 +1562,8 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main
-      className="relative min-h-screen overflow-x-hidden text-[#F0F2F5]"
-      style={{ backgroundColor: NAVY }}
+      className="relative min-h-screen overflow-x-hidden text-[#1A1D2E]"
+      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
       <DecorativeCircle />
       <div className="relative z-10 mx-auto max-w-lg px-6 py-12 sm:py-20">

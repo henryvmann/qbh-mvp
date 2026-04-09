@@ -44,9 +44,9 @@ function Badge({ yes, label }: { yes: boolean; label: string }) {
         borderRadius: 4,
         fontSize: 12,
         fontWeight: 600,
-        backgroundColor: yes ? "rgba(212,168,67,0.2)" : "rgba(255,255,255,0.06)",
-        color: yes ? "#7BA59A" : "#6B7280",
-        border: `1px solid ${yes ? "rgba(212,168,67,0.3)" : "rgba(255,255,255,0.08)"}`,
+        backgroundColor: yes ? "rgba(92,107,92,0.1)" : "#F0F2F5",
+        color: yes ? "#5C6B5C" : "#7A7F8A",
+        border: `1px solid ${yes ? "rgba(92,107,92,0.2)" : "#EBEDF0"}`,
       }}
     >
       {label}: {yes ? "Yes" : "No"}
@@ -56,20 +56,20 @@ function Badge({ yes, label }: { yes: boolean; label: string }) {
 
 function SurveyAnswers({ answers }: { answers: any }) {
   if (!answers || typeof answers !== "object") {
-    return <span style={{ color: "#6B7280" }}>No survey data</span>;
+    return <span style={{ color: "#B0B4BC" }}>No survey data</span>;
   }
 
   const entries = Object.entries(answers);
   if (entries.length === 0) {
-    return <span style={{ color: "#6B7280" }}>No survey data</span>;
+    return <span style={{ color: "#B0B4BC" }}>No survey data</span>;
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {entries.map(([key, value]) => (
         <div key={key} style={{ fontSize: 13 }}>
-          <span style={{ color: "#9CA3AF" }}>{key}:</span>{" "}
-          <span style={{ color: "#E5E7EB" }}>
+          <span style={{ color: "#7A7F8A" }}>{key}:</span>{" "}
+          <span style={{ color: "#1A1D2E" }}>
             {typeof value === "object" ? JSON.stringify(value) : String(value)}
           </span>
         </div>
@@ -85,15 +85,16 @@ function UserCard({ user }: { user: AdminUser }) {
     <div
       onClick={() => setExpanded(!expanded)}
       style={{
-        backgroundColor: "rgba(255,255,255,0.05)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #EBEDF0",
         borderRadius: 8,
         padding: 16,
         cursor: "pointer",
         transition: "border-color 0.15s",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#7BA59A")}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#5C6B5C")}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#EBEDF0")}
     >
       {/* Collapsed row */}
       <div
@@ -106,10 +107,10 @@ function UserCard({ user }: { user: AdminUser }) {
       >
         <div style={{ minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ color: "#F9FAFB", fontWeight: 600, fontSize: 15 }}>
+            <span style={{ color: "#1A1D2E", fontWeight: 600, fontSize: 15 }}>
               {user.name || "Unknown"}
             </span>
-            <span style={{ color: "#6B7280", fontSize: 13 }}>
+            <span style={{ color: "#B0B4BC", fontSize: 13 }}>
               {user.email || "no email"}
             </span>
           </div>
@@ -122,17 +123,17 @@ function UserCard({ user }: { user: AdminUser }) {
               alignItems: "center",
             }}
           >
-            <span style={{ color: "#9CA3AF", fontSize: 12 }}>
+            <span style={{ color: "#7A7F8A", fontSize: 12 }}>
               Signed up {formatDate(user.created_at)}
             </span>
-            <span style={{ color: "#7BA59A", fontSize: 13, fontWeight: 600 }}>
+            <span style={{ color: "#5C6B5C", fontSize: 13, fontWeight: 600 }}>
               {user.providers_total} providers
             </span>
             <Badge yes={user.plaid_connected} label="Plaid" />
             <Badge yes={user.calendar_connected} label="Calendar" />
           </div>
         </div>
-        <div style={{ color: "#6B7280", fontSize: 18 }}>
+        <div style={{ color: "#B0B4BC", fontSize: 18 }}>
           {expanded ? "\u25B2" : "\u25BC"}
         </div>
       </div>
@@ -143,17 +144,17 @@ function UserCard({ user }: { user: AdminUser }) {
           style={{
             marginTop: 16,
             paddingTop: 16,
-            borderTop: "1px solid rgba(255,255,255,0.08)",
+            borderTop: "1px solid #EBEDF0",
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
             gap: 16,
           }}
         >
           <div>
-            <div style={{ color: "#9CA3AF", fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            <div style={{ color: "#7A7F8A", fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
               Provider Breakdown
             </div>
-            <div style={{ color: "#E5E7EB", fontSize: 14, lineHeight: 1.6 }}>
+            <div style={{ color: "#1A1D2E", fontSize: 14, lineHeight: 1.6 }}>
               Active: {user.providers_active}<br />
               Dismissed: {user.providers_dismissed}<br />
               Review needed: {user.providers_review}<br />
@@ -162,10 +163,10 @@ function UserCard({ user }: { user: AdminUser }) {
           </div>
 
           <div>
-            <div style={{ color: "#9CA3AF", fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            <div style={{ color: "#7A7F8A", fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
               Activity
             </div>
-            <div style={{ color: "#E5E7EB", fontSize: 14, lineHeight: 1.6 }}>
+            <div style={{ color: "#1A1D2E", fontSize: 14, lineHeight: 1.6 }}>
               Visits: {user.visits_count}<br />
               Booking attempts: {user.booking_attempts}<br />
               Last activity: {formatDate(user.last_activity)}
@@ -173,24 +174,24 @@ function UserCard({ user }: { user: AdminUser }) {
           </div>
 
           <div>
-            <div style={{ color: "#9CA3AF", fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            <div style={{ color: "#7A7F8A", fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
               Connections
             </div>
-            <div style={{ color: "#E5E7EB", fontSize: 14, lineHeight: 1.6 }}>
+            <div style={{ color: "#1A1D2E", fontSize: 14, lineHeight: 1.6 }}>
               Plaid: {user.plaid_connected ? "Connected" : "Not connected"}<br />
               Calendar: {user.calendar_connected ? "Connected" : "Not connected"}
             </div>
           </div>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <div style={{ color: "#9CA3AF", fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            <div style={{ color: "#7A7F8A", fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
               Survey Answers
             </div>
             <SurveyAnswers answers={user.survey_answers} />
           </div>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <div style={{ color: "#6B7280", fontSize: 11 }}>
+            <div style={{ color: "#B0B4BC", fontSize: 11 }}>
               App User ID: {user.app_user_id}
             </div>
           </div>
@@ -242,8 +243,8 @@ export default function AdminPage() {
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#1E2228",
-        color: "#F9FAFB",
+        background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)",
+        color: "#1A1D2E",
         padding: "24px 16px",
       }}
     >
@@ -253,7 +254,7 @@ export default function AdminPage() {
           <Link
             href="/dashboard"
             style={{
-              color: "#7BA59A",
+              color: "#5C6B5C",
               textDecoration: "none",
               fontSize: 14,
               fontWeight: 500,
@@ -273,14 +274,14 @@ export default function AdminPage() {
               style={{
                 width: 32,
                 height: 32,
-                border: "3px solid rgba(255,255,255,0.08)",
-                borderTopColor: "#7BA59A",
+                border: "3px solid #EBEDF0",
+                borderTopColor: "#5C6B5C",
                 borderRadius: "50%",
                 animation: "spin 0.8s linear infinite",
                 margin: "0 auto 12px",
               }}
             />
-            <div style={{ color: "#9CA3AF" }}>Loading user data...</div>
+            <div style={{ color: "#7A7F8A" }}>Loading user data...</div>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         )}
@@ -289,11 +290,11 @@ export default function AdminPage() {
         {error && !loading && (
           <div
             style={{
-              backgroundColor: "rgba(239,68,68,0.1)",
-              border: "1px solid rgba(239,68,68,0.3)",
+              backgroundColor: "#FEF2F2",
+              border: "1px solid #FECACA",
               borderRadius: 8,
               padding: 16,
-              color: "#FCA5A5",
+              color: "#DC2626",
               textAlign: "center",
             }}
           >
@@ -322,17 +323,17 @@ export default function AdminPage() {
                 <div
                   key={stat.label}
                   style={{
-                    backgroundColor: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    backgroundColor: "#FFFFFF",
+                    border: "1px solid #EBEDF0",
                     borderRadius: 8,
                     padding: "16px 20px",
                     textAlign: "center",
                   }}
                 >
-                  <div style={{ color: "#7BA59A", fontSize: 28, fontWeight: 700 }}>
+                  <div style={{ color: "#5C6B5C", fontSize: 28, fontWeight: 700 }}>
                     {stat.value}
                   </div>
-                  <div style={{ color: "#9CA3AF", fontSize: 13, marginTop: 4 }}>
+                  <div style={{ color: "#7A7F8A", fontSize: 13, marginTop: 4 }}>
                     {stat.label}
                   </div>
                 </div>
@@ -341,7 +342,7 @@ export default function AdminPage() {
 
             {/* User list */}
             {users.length === 0 ? (
-              <div style={{ textAlign: "center", color: "#6B7280", padding: 40 }}>
+              <div style={{ textAlign: "center", color: "#B0B4BC", padding: 40 }}>
                 No users found.
               </div>
             ) : (

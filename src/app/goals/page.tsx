@@ -45,7 +45,7 @@ const categoryConfig: Record<
   preventive: {
     label: "Preventive",
     sectionTitle: "Preventive Care",
-    color: "#7BA59A",
+    color: "#5C6B5C",
   },
   medications: {
     label: "Medications",
@@ -55,12 +55,12 @@ const categoryConfig: Record<
   upcoming: {
     label: "Upcoming",
     sectionTitle: "Upcoming",
-    color: "#E2F0A0",
+    color: "#B8C840",
   },
   setup: {
     label: "Setup",
     sectionTitle: "Setup",
-    color: "#B0D4F0",
+    color: "#6A9DC0",
   },
 };
 
@@ -83,7 +83,7 @@ function MiniGauge({ value, color }: { value: number; color: string }) {
       <path
         d="M 5 40 A 30 30 0 0 1 75 40"
         fill="none"
-        stroke="rgba(255,255,255,0.1)"
+        stroke="rgba(0,0,0,0.08)"
         strokeWidth={6}
         strokeLinecap="round"
       />
@@ -100,7 +100,7 @@ function MiniGauge({ value, color }: { value: number; color: string }) {
         x={40}
         y={35}
         textAnchor="middle"
-        fill="#F0F2F5"
+        fill="#1A1D2E"
         fontSize={14}
         fontWeight="300"
       >
@@ -117,7 +117,7 @@ function HeroGauge({ score }: { score: number }) {
   const circ = Math.PI * r;
   const filled = (Math.min(Math.max(score, 0), 100) / 100) * circ;
 
-  let color = "#7BA59A"; // sage (high)
+  let color = "#5C6B5C"; // sage (high)
   if (score < 40) color = "#E04030"; // coral (low)
   else if (score < 70) color = "#C8D84A"; // lime-ish (medium)
 
@@ -127,7 +127,7 @@ function HeroGauge({ score }: { score: number }) {
         <path
           d="M 10 105 A 80 80 0 0 1 190 105"
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          stroke="rgba(0,0,0,0.06)"
           strokeWidth={12}
           strokeLinecap="round"
         />
@@ -144,7 +144,7 @@ function HeroGauge({ score }: { score: number }) {
           x={100}
           y={85}
           textAnchor="middle"
-          fill="#F0F2F5"
+          fill="#1A1D2E"
           fontSize={40}
           fontWeight="300"
         >
@@ -154,7 +154,7 @@ function HeroGauge({ score }: { score: number }) {
           x={100}
           y={108}
           textAnchor="middle"
-          fill="#8A9BAE"
+          fill="#7A7F8A"
           fontSize={13}
           fontWeight="400"
         >
@@ -266,7 +266,7 @@ export default function GoalsPage() {
   }
 
   if (loading) {
-    return <main className="min-h-screen bg-[#1E2228]" />;
+    return <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />;
   }
 
   // Group goals by category
@@ -288,13 +288,16 @@ export default function GoalsPage() {
   const onTrackCount = goals.filter((g) => g.progress >= 50).length;
 
   return (
-    <main className="min-h-screen bg-[#1E2228] text-[#F0F2F5]">
+    <main
+      className="min-h-screen text-[#1A1D2E]"
+      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
+    >
       <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link
             href="/dashboard"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-[#8A9BAE] hover:bg-white/10 transition"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#EBEDF0] bg-white shadow-sm text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
           >
             <svg
               width={18}
@@ -311,26 +314,26 @@ export default function GoalsPage() {
               />
             </svg>
           </Link>
-          <h1 className="font-serif text-2xl tracking-tight text-[#F0F2F5]">
+          <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
             Goals
           </h1>
         </div>
 
         {/* Hero Health Score */}
-        <div className="rounded-2xl bg-white/5 backdrop-blur p-6 ring-1 ring-white/[0.08] mb-6">
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
           <HeroGauge score={healthScore} />
-          <p className="text-center text-sm text-[#8A9BAE] mt-2">
+          <p className="text-center text-sm text-[#7A7F8A] mt-2">
             {onTrackCount} of {goals.length} goals on track
           </p>
         </div>
 
         {/* Goal sections */}
         {goals.length === 0 && userGoals.length === 0 ? (
-          <div className="rounded-2xl bg-white/5 backdrop-blur p-6 ring-1 ring-white/[0.08]">
-            <div className="font-semibold text-[#F0F2F5]">
+          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+            <div className="font-semibold text-[#1A1D2E]">
               No goals right now
             </div>
-            <p className="mt-2 text-sm text-[#8A9BAE]">
+            <p className="mt-2 text-sm text-[#7A7F8A]">
               As QBH discovers providers and tracks visits, goals will appear
               here automatically.
             </p>
@@ -349,12 +352,12 @@ export default function GoalsPage() {
                   {section.items.map((goal) => (
                     <div
                       key={goal.id}
-                      className="rounded-2xl bg-white/5 backdrop-blur p-5 ring-1 ring-white/[0.08]"
+                      className="rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-lg font-semibold text-[#F0F2F5]">
+                            <span className="text-lg font-semibold text-[#1A1D2E]">
                               {goal.title}
                             </span>
                             <span
@@ -367,7 +370,7 @@ export default function GoalsPage() {
                               {section.config.label}
                             </span>
                           </div>
-                          <p className="mt-1.5 text-sm text-[#8A9BAE]">
+                          <p className="mt-1.5 text-sm text-[#7A7F8A]">
                             {goal.detail}
                           </p>
                         </div>
@@ -400,17 +403,17 @@ export default function GoalsPage() {
         {/* User goals */}
         {userGoals.length > 0 && (
           <section className="mt-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#8A9BAE]">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#7A7F8A]">
               Your Goals
             </h2>
             <div className="space-y-3">
               {userGoals.map((ug) => (
                 <div
                   key={ug.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl bg-white/5 backdrop-blur p-5 ring-1 ring-white/[0.08]"
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]"
                 >
-                  <span className="text-[#F0F2F5] font-medium">{ug.title}</span>
-                  <MiniGauge value={ug.progress} color="#8A9BAE" />
+                  <span className="text-[#1A1D2E] font-medium">{ug.title}</span>
+                  <MiniGauge value={ug.progress} color="#7A7F8A" />
                 </div>
               ))}
             </div>
@@ -418,11 +421,11 @@ export default function GoalsPage() {
         )}
 
         {/* Add custom goal */}
-        <div className="mt-8 rounded-2xl bg-white/5 backdrop-blur p-5 ring-1 ring-white/[0.08]">
-          <h3 className="text-base font-semibold text-[#F0F2F5] mb-1">
+        <div className="mt-8 rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]">
+          <h3 className="text-base font-semibold text-[#1A1D2E] mb-1">
             What&apos;s important to you?
           </h3>
-          <p className="text-sm text-[#8A9BAE] mb-4">
+          <p className="text-sm text-[#7A7F8A] mb-4">
             Tell us what you want to work on and Kate will suggest specific goals.
           </p>
           <div className="flex gap-3">
@@ -434,13 +437,14 @@ export default function GoalsPage() {
                 if (e.key === "Enter") handleGetSuggestions();
               }}
               placeholder="e.g., I want to be more proactive about my health"
-              className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-[#F0F2F5] placeholder:text-[#8A9BAE]/50 outline-none focus:border-[#7BA59A]/50 focus:ring-1 focus:ring-[#7BA59A]/30 transition"
+              className="flex-1 rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#7A7F8A]/50 outline-none focus:border-[#5C6B5C]/50 focus:ring-1 focus:ring-[#5C6B5C]/30 transition"
             />
             <button
               type="button"
               onClick={handleGetSuggestions}
               disabled={loadingSuggestions || !newGoalText.trim()}
-              className="rounded-xl bg-[#7BA59A] px-5 py-2.5 text-sm font-semibold text-[#1E2228] shadow-sm transition hover:brightness-[0.95] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.95] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
             >
               {loadingSuggestions ? "Thinking..." : "Get suggestions"}
             </button>
@@ -449,23 +453,23 @@ export default function GoalsPage() {
           {/* AI Suggestions */}
           {aiSuggestions.length > 0 && (
             <div className="mt-4 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#7BA59A]">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C]">
                 Kate suggests
               </p>
               {aiSuggestions.map((s, i) => (
                 <div
                   key={i}
-                  className="flex items-start justify-between gap-3 rounded-xl bg-white/5 p-4 ring-1 ring-white/[0.06]"
+                  className="flex items-start justify-between gap-3 rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0]"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#F0F2F5]">{s.title}</p>
-                    <p className="mt-1 text-xs text-[#8A9BAE]">{s.detail}</p>
+                    <p className="text-sm font-medium text-[#1A1D2E]">{s.title}</p>
+                    <p className="mt-1 text-xs text-[#7A7F8A]">{s.detail}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleAddSuggestion(s.title)}
                     disabled={addingGoal}
-                    className="shrink-0 rounded-lg bg-[#7BA59A]/20 px-3 py-1.5 text-xs font-semibold text-[#7BA59A] transition hover:bg-[#7BA59A]/30 disabled:opacity-50"
+                    className="shrink-0 rounded-lg bg-[#5C6B5C]/15 px-3 py-1.5 text-xs font-semibold text-[#5C6B5C] transition hover:bg-[#5C6B5C]/25 disabled:opacity-50"
                   >
                     + Add
                   </button>
@@ -480,7 +484,7 @@ export default function GoalsPage() {
               type="button"
               onClick={handleAddGoal}
               disabled={addingGoal}
-              className="mt-3 text-xs text-[#8A9BAE] underline underline-offset-4 hover:text-[#F0F2F5]"
+              className="mt-3 text-xs text-[#7A7F8A] underline underline-offset-4 hover:text-[#1A1D2E]"
             >
               Or just add &ldquo;{newGoalText.trim()}&rdquo; as a goal directly
             </button>

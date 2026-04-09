@@ -27,21 +27,21 @@ export default function HomePage() {
   }, [router]);
 
   if (checking) {
-    return <main className="min-h-screen bg-[#1E2228]" />;
+    return <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />;
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#1E2228] text-[#F0F2F5]">
+    <main className="relative min-h-screen overflow-hidden text-[#1A1D2E]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
       {/* Decorative circle */}
       <div
-        className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-white/10"
+        className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-[#EBEDF0]"
         aria-hidden
       />
 
       <div className="relative mx-auto max-w-3xl px-6 pt-20 pb-20">
         <div
           className="text-xs font-semibold uppercase tracking-[0.25em]"
-          style={{ color: "#7BA59A" }}
+          style={{ color: "#5C6B5C" }}
         >
           QBH &#10022; Your Health Ally
         </div>
@@ -50,7 +50,7 @@ export default function HomePage() {
           Your healthcare, handled.
         </h1>
 
-        <p className="mt-4 max-w-xl text-lg text-[#8A9BAE]">
+        <p className="mt-4 max-w-xl text-lg text-[#7A7F8A]">
           You don&apos;t have to manage this alone. QB keeps track, follows up,
           and handles the details so you don&apos;t have to.
         </p>
@@ -58,15 +58,15 @@ export default function HomePage() {
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
           <Link
             href="/onboarding"
-            className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-semibold shadow-sm"
-            style={{ backgroundColor: "#7BA59A", color: "#1E2228" }}
+            className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-semibold text-white shadow-lg"
+            style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
           >
             Get started &rarr;
           </Link>
 
           <Link
             href="/login"
-            className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-8 py-3.5 text-sm font-medium text-[#F0F2F5] shadow-sm"
+            className="inline-flex items-center justify-center rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-8 py-3.5 text-sm font-medium text-[#1A1D2E]"
           >
             Sign in
           </Link>

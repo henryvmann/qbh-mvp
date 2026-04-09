@@ -69,11 +69,11 @@ function getHistoryBadgeClassName(event: BookingHistoryEvent): string {
   }
 
   if (event.event_type === "cancelled") {
-    return "bg-white/8 text-[#8A9BAE] ring-1 ring-white/10";
+    return "bg-[#F0F2F5] text-[#7A7F8A] ring-1 ring-[#EBEDF0]";
   }
 
   if (event.event_type === "failed") {
-    return "bg-red-500/15 text-red-400 ring-1 ring-red-500/30";
+    return "bg-red-50 text-red-600 ring-1 ring-red-200";
   }
 
   return "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30";
@@ -104,11 +104,11 @@ function getActionLabel(action: SystemActionItem | null): string {
 
 function getActionBadgeClassName(action: SystemActionItem | null): string {
   if (!action) {
-    return "bg-white/8 text-[#8A9BAE] ring-1 ring-white/10";
+    return "bg-[#F0F2F5] text-[#7A7F8A] ring-1 ring-[#EBEDF0]";
   }
 
   if (action.type === "REVIEW_BROKEN_STATE" || action.status === "BLOCKED") {
-    return "bg-red-500/15 text-red-400 ring-1 ring-red-500/30";
+    return "bg-red-50 text-red-600 ring-1 ring-red-200";
   }
 
   if (action.status === "COMPLETED") {
@@ -123,7 +123,7 @@ function getActionBadgeClassName(action: SystemActionItem | null): string {
     return "bg-sky-500/15 text-sky-400 ring-1 ring-sky-500/30";
   }
 
-  return "bg-white/8 text-[#8A9BAE] ring-1 ring-white/10";
+  return "bg-[#F0F2F5] text-[#7A7F8A] ring-1 ring-[#EBEDF0]";
 }
 
 function getState(snapshot: ProviderDashboardSnapshot) {
@@ -136,7 +136,7 @@ function getState(snapshot: ProviderDashboardSnapshot) {
     return {
       key: "broken" as const,
       label: "Needs review",
-      badgeClassName: "bg-red-500/15 text-red-400 ring-1 ring-red-500/30",
+      badgeClassName: "bg-red-50 text-red-600 ring-1 ring-red-200",
       description:
         "QBH found multiple future confirmed appointments for this provider. This state needs backend review before normal actions continue.",
     };
@@ -146,7 +146,7 @@ function getState(snapshot: ProviderDashboardSnapshot) {
     return {
       key: "blocked" as const,
       label: "Blocked",
-      badgeClassName: "bg-red-500/15 text-red-400 ring-1 ring-red-500/30",
+      badgeClassName: "bg-red-50 text-red-600 ring-1 ring-red-200",
       description:
         currentAction.blockingReason === "CALENDAR_CONFLICT_AT_CONFIRM"
           ? "QBH hit a calendar conflict while trying to confirm this appointment."
@@ -288,14 +288,14 @@ export default function ProviderCard({
     snapshot.latestAttempt;
 
   return (
-    <article className="rounded-2xl bg-white/5 p-5 ring-1 ring-white/8">
+    <article className="rounded-2xl bg-white p-5 border border-[#EBEDF0] shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-[#F0F2F5]">
+          <h3 className="text-lg font-semibold text-[#1A1D2E]">
             {provider.name}
           </h3>
 
-          <div className="mt-1 text-sm text-[#8A9BAE]">
+          <div className="mt-1 text-sm text-[#7A7F8A]">
             {provider.specialty || "Provider"}
           </div>
         </div>
@@ -307,16 +307,16 @@ export default function ProviderCard({
         </div>
       </div>
 
-      <p className="mt-4 text-sm text-[#8A9BAE]">{state.description}</p>
+      <p className="mt-4 text-sm text-[#7A7F8A]">{state.description}</p>
 
       {currentAction ? (
-        <div className="mt-4 rounded-xl bg-[#162030] px-4 py-3 ring-1 ring-white/8">
+        <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 ring-1 ring-[#EBEDF0]">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-sm font-medium text-[#F0F2F5]">
+              <div className="text-sm font-medium text-[#1A1D2E]">
                 Current system action
               </div>
-              <div className="mt-1 text-sm text-[#8A9BAE]">
+              <div className="mt-1 text-sm text-[#7A7F8A]">
                 {currentActionLabel}
                 {currentAction.status === "BLOCKED"
                   ? currentAction.userInputRequired
@@ -330,7 +330,7 @@ export default function ProviderCard({
               </div>
 
               {currentAction.blockingReason ? (
-                <div className="mt-1 text-xs text-[#4D6480]">
+                <div className="mt-1 text-xs text-[#B0B4BC]">
                   Reason: {currentAction.blockingReason}
                 </div>
               ) : null}
@@ -346,9 +346,9 @@ export default function ProviderCard({
       ) : null}
 
       {nextAction ? (
-        <div className="mt-4 rounded-xl bg-[#162030] px-4 py-3 ring-1 ring-white/8">
-          <div className="text-sm font-medium text-[#F0F2F5]">Next action</div>
-          <div className="mt-1 text-sm text-[#8A9BAE]">
+        <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 ring-1 ring-[#EBEDF0]">
+          <div className="text-sm font-medium text-[#1A1D2E]">Next action</div>
+          <div className="mt-1 text-sm text-[#7A7F8A]">
             {getActionLabel(nextAction)}
             {nextAction.userInputRequired
               ? " — this requires a user-triggered step."
@@ -360,7 +360,7 @@ export default function ProviderCard({
       ) : null}
 
       {actions.integrity.hasMultipleFutureConfirmedEvents ? (
-        <div className="mt-4 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+        <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
           QBH detected {actions.integrity.futureConfirmedEventCount} future
           confirmed appointments for this provider. This violates the current
           scheduling invariant and should be reviewed before additional actions
@@ -369,7 +369,7 @@ export default function ProviderCard({
       ) : null}
 
       {snapshot.latestNote?.summary && state.key !== "upcoming" ? (
-        <div className="mt-4 rounded-xl bg-[#162030] px-4 py-3 text-sm text-[#9AB0CC]">
+        <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 text-sm text-[#7A7F8A]">
           {snapshot.latestNote.summary}
         </div>
       ) : null}
@@ -379,21 +379,22 @@ export default function ProviderCard({
           <button
             onClick={handleIt}
             disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1E2228] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
           >
             {isSubmitting ? "Starting..." : "Handle it"}
           </button>
         ) : null}
 
         {showAttemptId ? (
-          <div className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm text-[#8A9BAE]">
+          <div className="inline-flex items-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm text-[#7A7F8A]">
             Attempt #{snapshot.latestAttempt.id}
           </div>
         ) : null}
 
         {showAdjustButton ? (
           <>
-            <div className="inline-flex items-center rounded-xl border border-white/10 px-4 py-2 text-sm text-[#8A9BAE]">
+            <div className="inline-flex items-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm text-[#7A7F8A]">
               {bs.displayTime ||
                 formatEventDateTime(bs.appointmentStart!, bs.timezone)}
             </div>
@@ -401,7 +402,7 @@ export default function ProviderCard({
             <button
               onClick={handleAdjust}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#8A9BAE] hover:bg-[#162030] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? "Starting..." : "Adjust"}
             </button>
@@ -410,22 +411,22 @@ export default function ProviderCard({
       </div>
 
       {history.length > 0 ? (
-        <div className="mt-5 rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8">
-          <div className="text-sm font-medium text-[#F0F2F5]">History</div>
+        <div className="mt-5 rounded-2xl bg-[#F0F2F5] p-4 ring-1 ring-[#EBEDF0]">
+          <div className="text-sm font-medium text-[#1A1D2E]">History</div>
 
           <div className="mt-3 space-y-3">
             {history.map((event, index) => (
               <div
                 key={event.id}
-                className="rounded-xl bg-white/5 px-4 py-3 ring-1 ring-white/8"
+                className="rounded-xl bg-white shadow-sm px-4 py-3 ring-1 ring-[#EBEDF0]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium text-[#F0F2F5]">
+                    <div className="text-sm font-medium text-[#1A1D2E]">
                       {getHistoryLabel(event)}
                     </div>
 
-                    <div className="mt-1 text-sm text-[#8A9BAE]">
+                    <div className="mt-1 text-sm text-[#7A7F8A]">
                       {event.event_type === "failed" &&
                       index === 0 &&
                       snapshot.latestNote?.summary
@@ -433,7 +434,7 @@ export default function ProviderCard({
                         : getHistoryDescription(event)}
                     </div>
 
-                    <div className="mt-1 text-xs text-[#4D6480]">
+                    <div className="mt-1 text-xs text-[#B0B4BC]">
                       Recorded{" "}
                       {formatEventDateTime(event.occurred_at, event.timezone)}
                     </div>
@@ -454,12 +455,12 @@ export default function ProviderCard({
       ) : null}
 
       {showCalendarPrompt ? (
-        <div className="mt-4 rounded-2xl bg-[#162030] p-4 ring-1 ring-white/8">
-          <div className="text-sm font-medium text-[#F0F2F5]">
+        <div className="mt-4 rounded-2xl bg-[#F0F2F5] p-4 ring-1 ring-[#EBEDF0]">
+          <div className="text-sm font-medium text-[#1A1D2E]">
             Connect Google Calendar for a better booking experience
           </div>
 
-          <div className="mt-1 text-sm text-[#8A9BAE]">
+          <div className="mt-1 text-sm text-[#7A7F8A]">
             QBH can avoid conflicts and use your real availability before it
             places booking calls. You can also skip this for now and continue.
           </div>
@@ -467,7 +468,7 @@ export default function ProviderCard({
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={calendarConnectHref}
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-[#8A9BAE] hover:bg-[#1E2D45]"
+              className="inline-flex items-center justify-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
             >
               Connect Google Calendar
             </Link>
@@ -477,7 +478,8 @@ export default function ProviderCard({
                 startCall(state.key === "upcoming" ? "ADJUST" : "BOOK")
               }
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#7BA59A] px-4 py-2 text-sm font-medium text-[#1E2228] hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
             >
               {isSubmitting
                 ? "Starting..."
@@ -489,7 +491,7 @@ export default function ProviderCard({
             <button
               onClick={() => setShowCalendarPrompt(false)}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#4D6480] hover:bg-[#162030]"
+              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
             >
               Cancel
             </button>
@@ -498,7 +500,7 @@ export default function ProviderCard({
       ) : null}
 
       {error ? (
-        <div className="mt-3 rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/30">
+        <div className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
           {error}
         </div>
       ) : null}

@@ -1,12 +1,15 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { resolveEpicEndpoints, getEpicClientId } from "../../../../lib/epic/endpoints";
 
 type CallbackState = {
   app_user_id?: string;
   provider_id?: string;
   portal_brand?: string;
   portal_tenant?: string | null;
+  fhir_base_url?: string;
+  org_name?: string | null;
   pkce_verifier?: string;
 };
 
@@ -20,11 +23,6 @@ type EpicTokenResponse = {
   patient?: string;
   error?: string;
   error_description?: string;
-};
-
-type EpicTokenConfig = {
-  tokenEndpoint: string;
-  clientId: string;
 };
 
 function getBaseUrl(req: Request): string {
@@ -56,24 +54,22 @@ function computeExpiresAt(expiresIn?: number): string | null {
   return new Date(Date.now() + expiresIn * 1000).toISOString();
 }
 
-function getEpicTokenConfig(portalTenant?: string | null): EpicTokenConfig {
-  const tenant = String(portalTenant || "").trim().toLowerCase();
+/** Resolve fhir_base_url from either new state field or legacy portal_tenant. */
+function resolveFhirBaseUrlFromState(decoded: CallbackState): string | null {
+  if (decoded.fhir_base_url?.trim()) return decoded.fhir_base_url.trim();
 
+  // Legacy fallback for in-flight OAuth sessions started before this change
+  const tenant = String(decoded.portal_tenant || "").trim().toLowerCase();
   if (tenant === "stamford" || tenant === "stamford_health") {
-    return {
-      tokenEndpoint:
-        (process.env.EPIC_STAMFORD_TOKEN_URL || "").trim() ||
-        "https://epicproxy.et1378.epichosted.com/APIProxyPRD/oauth2/token",
-      clientId: (process.env.EPIC_STAMFORD_CLIENT_ID || "").trim(),
-    };
+    return (
+      (process.env.EPIC_STAMFORD_FHIR_BASE_URL || "").trim() ||
+      "https://epicproxy.et1378.epichosted.com/APIProxyPRD/api/FHIR/R4"
+    );
   }
-
-  return {
-    tokenEndpoint:
-      (process.env.EPIC_SANDBOX_TOKEN_URL || "").trim() ||
-      "https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token",
-    clientId: (process.env.EPIC_SANDBOX_CLIENT_ID || "").trim(),
-  };
+  return (
+    (process.env.EPIC_SANDBOX_FHIR_BASE_URL || "").trim() ||
+    "https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4"
+  );
 }
 
 export async function GET(req: Request) {
@@ -141,17 +137,21 @@ export async function GET(req: Request) {
 
   const nowIso = new Date().toISOString();
   const callbackUrl = `${getBaseUrl(req)}/api/portal/callback`;
-  const epicConfig = getEpicTokenConfig(portalTenant);
 
-  if (!epicConfig.clientId) {
+  const fhirBaseUrl = resolveFhirBaseUrlFromState(decoded);
+  if (!fhirBaseUrl) {
     return NextResponse.json(
-      {
-        ok: false,
-        error:
-          portalTenant === "stamford" || portalTenant === "stamford_health"
-            ? "EPIC_STAMFORD_CLIENT_ID not set"
-            : "EPIC_SANDBOX_CLIENT_ID not set",
-      },
+      { ok: false, error: "unable_to_resolve_fhir_base_url" },
+      { status: 500 }
+    );
+  }
+
+  const epicEndpoints = await resolveEpicEndpoints(fhirBaseUrl);
+  const clientId = getEpicClientId(fhirBaseUrl);
+
+  if (!clientId) {
+    return NextResponse.json(
+      { ok: false, error: "EPIC_CLIENT_ID not configured" },
       { status: 500 }
     );
   }
@@ -160,10 +160,10 @@ export async function GET(req: Request) {
   tokenBody.set("grant_type", "authorization_code");
   tokenBody.set("code", code);
   tokenBody.set("redirect_uri", callbackUrl);
-  tokenBody.set("client_id", epicConfig.clientId);
+  tokenBody.set("client_id", clientId);
   tokenBody.set("code_verifier", pkceVerifier);
 
-  const tokenRes = await fetch(epicConfig.tokenEndpoint, {
+  const tokenRes = await fetch(epicEndpoints.tokenEndpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -250,6 +250,8 @@ export async function GET(req: Request) {
         provider_id: providerId,
         portal_brand: portalBrand,
         portal_tenant: portalTenant,
+        fhir_base_url: fhirBaseUrl,
+        org_name: decoded.org_name ?? null,
         status: "connected",
         last_sync_at: nowIso,
         access_token: tokenJson.access_token ?? null,

@@ -80,11 +80,12 @@ export default function HandleItButton({
         type="button"
         onClick={onClick}
         disabled={loading}
-        className="group relative w-full overflow-hidden rounded-2xl bg-[#7BA59A] px-4 py-2.5 text-sm font-semibold text-[#1E2228] shadow-sm transition hover:brightness-[0.98] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+        className="group relative w-full overflow-hidden rounded-2xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.98] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+        style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
       >
         <span className="relative z-10">{loading ? "One moment…" : label}</span>
         <span className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100">
-          <span className="absolute -left-1/3 top-0 h-full w-1/2 rotate-12 bg-white/10 blur-xl" />
+          <span className="absolute -left-1/3 top-0 h-full w-1/2 rotate-12 bg-white/20 blur-xl" />
         </span>
       </button>
 
@@ -93,8 +94,8 @@ export default function HandleItButton({
           className={
             "mt-2 rounded-xl px-3 py-2 text-xs shadow-sm " +
             (toast.kind === "ok"
-              ? "bg-[#7BA59A]/15 text-[#7BA59A]"
-              : "bg-red-500/15 text-red-400")
+              ? "bg-[#5C6B5C]/15 text-[#5C6B5C]"
+              : "bg-red-50 text-red-600")
           }
         >
           {toast.text}
