@@ -595,8 +595,8 @@ export default function OnboardingPage() {
           </CharacterWithBubble>
         </div>
 
-        {/* Preview cards */}
-        <div className="mt-8 flex justify-center gap-3">
+        {/* Preview cards — aligned with bubble right edge */}
+        <div className="mt-8 flex justify-end gap-3" style={{ paddingLeft: 56 }}>
           {[
             { icon: "\u25C9", label: "Find providers" },
             { icon: "\u25C9", label: "Book appointments" },
@@ -610,7 +610,6 @@ export default function OnboardingPage() {
                 borderWidth: 1,
                 borderStyle: "solid",
                 borderColor: CARD_BORDER,
-                maxWidth: 160,
               }}
             >
               <span className="text-lg" style={{ color: ACCENT }}>{card.icon}</span>
@@ -619,7 +618,7 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <div className="mx-auto max-w-md">
+        <div style={{ paddingLeft: 56 }}>
           <GoldButton onClick={() => setStep(1)}>Let&apos;s get started &rarr;</GoldButton>
         </div>
       </Shell>
