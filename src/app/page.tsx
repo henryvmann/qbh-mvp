@@ -58,8 +58,8 @@ export default function HomePage() {
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
           <Link
             href="/onboarding"
-            className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-semibold text-white shadow-lg"
-            style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+            className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-semibold shadow-lg"
+            style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)", color: "#FFFFFF" }}
           >
             Get started &rarr;
           </Link>
