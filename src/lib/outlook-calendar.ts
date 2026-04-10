@@ -141,6 +141,7 @@ export async function ensureOutlookCalendarProvider(
       app_user_id: cleanedAppUserId,
       name: OUTLOOK_CALENDAR_PROVIDER_NAME,
       status: "active",
+      provider_type: "calendar",
       guessed_portal_brand: "outlook_calendar",
       guessed_portal_confidence: 1,
     })

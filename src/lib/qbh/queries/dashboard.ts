@@ -539,7 +539,9 @@ export async function getDashboardProvidersForUser(
 
   if (providersError) throw providersError;
 
-  const providerRows = (providers ?? []) as ProviderRow[];
+  const providerRows = ((providers ?? []) as ProviderRow[]).filter(
+    (p) => p.provider_type !== "calendar"
+  );
 
   if (providerRows.length === 0) return [];
 

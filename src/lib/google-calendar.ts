@@ -133,6 +133,7 @@ export async function ensureGoogleCalendarProvider(
       app_user_id: cleanedAppUserId,
       name: GOOGLE_CALENDAR_PROVIDER_NAME,
       status: "active",
+      provider_type: "calendar",
       guessed_portal_brand: "google_calendar",
       guessed_portal_confidence: 1,
     })
