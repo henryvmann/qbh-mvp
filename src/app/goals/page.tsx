@@ -327,6 +327,77 @@ export default function GoalsPage() {
           </p>
         </div>
 
+        {/* What's important to you */}
+        <div className="mb-6 rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]">
+          <h3 className="text-base font-semibold text-[#1A1D2E] mb-1">
+            What&apos;s important to you?
+          </h3>
+          <p className="text-sm text-[#7A7F8A] mb-4">
+            Tell us what you want to work on and Kate will suggest specific goals.
+          </p>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={newGoalText}
+              onChange={(e) => { setNewGoalText(e.target.value); setAiSuggestions([]); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleGetSuggestions();
+              }}
+              placeholder="e.g., I want to be more proactive about my health"
+              className="flex-1 rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#7A7F8A]/50 outline-none focus:border-[#5C6B5C]/50 focus:ring-1 focus:ring-[#5C6B5C]/30 transition"
+            />
+            <button
+              type="button"
+              onClick={handleGetSuggestions}
+              disabled={loadingSuggestions || !newGoalText.trim()}
+              className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.95] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+            >
+              {loadingSuggestions ? "Thinking..." : "Get suggestions"}
+            </button>
+          </div>
+
+          {/* AI Suggestions */}
+          {aiSuggestions.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C]">
+                Kate suggests
+              </p>
+              {aiSuggestions.map((s, i) => (
+                <div
+                  key={i}
+                  className="flex items-start justify-between gap-3 rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0]"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[#1A1D2E]">{s.title}</p>
+                    <p className="mt-1 text-xs text-[#7A7F8A]">{s.detail}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleAddSuggestion(s.title)}
+                    disabled={addingGoal}
+                    className="shrink-0 rounded-lg bg-[#5C6B5C]/15 px-3 py-1.5 text-xs font-semibold text-[#5C6B5C] transition hover:bg-[#5C6B5C]/25 disabled:opacity-50"
+                  >
+                    + Add
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Quick add without AI */}
+          {aiSuggestions.length === 0 && newGoalText.trim() && !loadingSuggestions && (
+            <button
+              type="button"
+              onClick={handleAddGoal}
+              disabled={addingGoal}
+              className="mt-3 text-xs text-[#7A7F8A] underline underline-offset-4 hover:text-[#1A1D2E]"
+            >
+              Or just add &ldquo;{newGoalText.trim()}&rdquo; as a goal directly
+            </button>
+          )}
+        </div>
+
         {/* Goal sections */}
         {goals.length === 0 && userGoals.length === 0 ? (
           <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
@@ -420,76 +491,6 @@ export default function GoalsPage() {
           </section>
         )}
 
-        {/* Add custom goal */}
-        <div className="mt-8 rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]">
-          <h3 className="text-base font-semibold text-[#1A1D2E] mb-1">
-            What&apos;s important to you?
-          </h3>
-          <p className="text-sm text-[#7A7F8A] mb-4">
-            Tell us what you want to work on and Kate will suggest specific goals.
-          </p>
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={newGoalText}
-              onChange={(e) => { setNewGoalText(e.target.value); setAiSuggestions([]); }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleGetSuggestions();
-              }}
-              placeholder="e.g., I want to be more proactive about my health"
-              className="flex-1 rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#7A7F8A]/50 outline-none focus:border-[#5C6B5C]/50 focus:ring-1 focus:ring-[#5C6B5C]/30 transition"
-            />
-            <button
-              type="button"
-              onClick={handleGetSuggestions}
-              disabled={loadingSuggestions || !newGoalText.trim()}
-              className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.95] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
-            >
-              {loadingSuggestions ? "Thinking..." : "Get suggestions"}
-            </button>
-          </div>
-
-          {/* AI Suggestions */}
-          {aiSuggestions.length > 0 && (
-            <div className="mt-4 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C]">
-                Kate suggests
-              </p>
-              {aiSuggestions.map((s, i) => (
-                <div
-                  key={i}
-                  className="flex items-start justify-between gap-3 rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0]"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#1A1D2E]">{s.title}</p>
-                    <p className="mt-1 text-xs text-[#7A7F8A]">{s.detail}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleAddSuggestion(s.title)}
-                    disabled={addingGoal}
-                    className="shrink-0 rounded-lg bg-[#5C6B5C]/15 px-3 py-1.5 text-xs font-semibold text-[#5C6B5C] transition hover:bg-[#5C6B5C]/25 disabled:opacity-50"
-                  >
-                    + Add
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Quick add without AI */}
-          {aiSuggestions.length === 0 && newGoalText.trim() && !loadingSuggestions && (
-            <button
-              type="button"
-              onClick={handleAddGoal}
-              disabled={addingGoal}
-              className="mt-3 text-xs text-[#7A7F8A] underline underline-offset-4 hover:text-[#1A1D2E]"
-            >
-              Or just add &ldquo;{newGoalText.trim()}&rdquo; as a goal directly
-            </button>
-          )}
-        </div>
       </div>
     </main>
   );
