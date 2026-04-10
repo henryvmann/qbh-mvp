@@ -81,23 +81,23 @@ function VisitsInner() {
   return (
     <main className="min-h-screen text-[#1A1D2E]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
       <div className="mx-auto max-w-5xl px-6 pb-16 pt-10">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
-              Visits
-            </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
-              Upcoming appointments from QBH scheduling and past visits from
-              your financial data.
-            </p>
-          </div>
-
+        <div className="flex items-center gap-4 mb-2">
           <Link
             href="/dashboard"
-            className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#EBEDF0] bg-white shadow-sm text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
           >
-            Back to Dashboard
+            <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
           </Link>
+          <div>
+            <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
+              Visits
+            </h1>
+            <p className="mt-1 text-sm text-[#7A7F8A]">
+              Upcoming appointments and past visits
+            </p>
+          </div>
         </div>
 
         {/* Upcoming visits */}
