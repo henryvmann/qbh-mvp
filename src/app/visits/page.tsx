@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
+import HandleItButton from "../../components/qbh/HandleItButton";
 
 type UpcomingVisit = {
   id: string;
@@ -179,20 +180,18 @@ function VisitsInner() {
                       <div className="font-semibold text-[#1A1D2E]">
                         {fu.provider_name}
                       </div>
-                      <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-400 ring-1 ring-amber-500/30">
-                        Follow-up needed
+                      <span className="rounded-full bg-[#F0B8B0]/30 px-3 py-1 text-xs font-semibold text-[#C03020] ring-1 ring-[#F0B8B0]">
+                        Needs booking
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-[#7A7F8A]">
-                      QBH can continue outreach and move this provider toward a
-                      confirmed appointment.
+                      Kate can call and schedule this for you.
                     </p>
-                    <Link
-                      href="/dashboard"
-                      className="mt-3 inline-block text-sm font-medium text-[#5C6B5C] hover:underline"
-                    >
-                      View on dashboard
-                    </Link>
+                    <HandleItButton
+                      providerId={fu.provider_id}
+                      providerName={fu.provider_name}
+                      label="Book with Kate"
+                    />
                   </div>
                 ))}
               </div>
