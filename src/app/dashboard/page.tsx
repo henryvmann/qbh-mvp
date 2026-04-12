@@ -7,6 +7,7 @@ import { apiFetch } from "../../lib/api";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import KateChatButton from "../../components/qbh/KateChatButton";
 import KateInsights from "../../components/qbh/KateInsights";
+import TopNav from "../../components/qbh/TopNav";
 
 /* ── Types ── */
 
@@ -317,7 +318,7 @@ function DashboardInner() {
         background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)",
       }}
     >
-      <TopNavBar activePath="/dashboard" />
+      <TopNav />
       <div className="mx-auto max-w-lg sm:max-w-xl md:max-w-2xl">
         {/* ── 1. Greeting ── */}
         <div className="px-7 pt-8">

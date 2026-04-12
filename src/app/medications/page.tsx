@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { apiFetch } from "../../lib/api";
+import TopNav from "../../components/qbh/TopNav";
 
 type PharmacyVisit = {
   provider_name: string;
@@ -53,24 +53,16 @@ export default function MedicationsPage() {
       className="min-h-screen text-[#1A1D2E]"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
+      <TopNav />
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
-              Medications
-            </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
-              View your detected pharmacy visits and track medications as part of
-              your care plan.
-            </p>
-          </div>
-
-          <Link
-            href="/dashboard"
-            className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
-          >
-            Back to Dashboard
-          </Link>
+        <div>
+          <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
+            Medications
+          </h1>
+          <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
+            View your detected pharmacy visits and track medications as part of
+            your care plan.
+          </p>
         </div>
 
         {/* Pharmacy Visits Section */}

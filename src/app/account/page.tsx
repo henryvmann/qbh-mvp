@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { createClient } from "../../lib/supabase/client";
+import TopNav from "../../components/qbh/TopNav";
 
 export default function AccountPage() {
   const [password, setPassword] = useState("");
@@ -48,18 +48,11 @@ export default function AccountPage() {
       className="min-h-screen text-[#1A1D2E]"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
+      <TopNav />
       <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5C6B5C]">
-              Quarterback AI
-            </div>
-            <Link
-              href="/dashboard"
-              className="text-sm text-[#B0B4BC] underline underline-offset-4 hover:text-[#7A7F8A]"
-            >
-              Back to dashboard
-            </Link>
+          <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5C6B5C]">
+            Quarterback AI
           </div>
 
           <h1 className="mt-4 text-4xl tracking-tight">

@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { apiFetch } from "../../lib/api";
+import TopNav from "../../components/qbh/TopNav";
 import HandleItButton from "../../components/qbh/HandleItButton";
 
 /* ---------- types ---------- */
@@ -292,32 +292,11 @@ export default function GoalsPage() {
       className="min-h-screen text-[#1A1D2E]"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
+      <TopNav />
       <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Link
-            href="/dashboard"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#EBEDF0] bg-white shadow-sm text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
-          >
-            <svg
-              width={18}
-              height={18}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </Link>
-          <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
-            Goals
-          </h1>
-        </div>
+        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-8">
+          Goals
+        </h1>
 
         {/* Hero Health Score */}
         <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
