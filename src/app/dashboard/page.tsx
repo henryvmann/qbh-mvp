@@ -7,6 +7,7 @@ import { apiFetch } from "../../lib/api";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import KateChatButton from "../../components/qbh/KateChatButton";
 import KateInsights from "../../components/qbh/KateInsights";
+import CareGaps from "../../components/qbh/CareGaps";
 import TopNav from "../../components/qbh/TopNav";
 
 /* ── Types ── */
@@ -464,7 +465,10 @@ function DashboardInner() {
         {/* ── 5. Kate's Insights ── */}
         <KateInsights />
 
-        {/* ── 6. Provider List ── */}
+        {/* ── 6. Care Gaps ── */}
+        <CareGaps />
+
+        {/* ── 7. Provider List ── */}
         <div className="mt-10 px-7">
           <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
             YOUR PROVIDERS
