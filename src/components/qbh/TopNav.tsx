@@ -129,11 +129,18 @@ export default function TopNav() {
 
                 {/* Settings links */}
                 <Link
+                  href="/settings"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]"
+                >
+                  Kate Settings
+                </Link>
+                <Link
                   href="/account"
                   onClick={() => setMenuOpen(false)}
                   className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]"
                 >
-                  Account Settings
+                  Account
                 </Link>
                 <Link
                   href="/calendar-connect"
