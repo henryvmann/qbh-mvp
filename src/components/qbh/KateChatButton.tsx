@@ -179,10 +179,16 @@ export default function KateChatButton() {
         </div>
       </div>
 
-      {/* Floating K button */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition hover:brightness-95 active:scale-95"
+      {/* Floating K button + label */}
+      <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2">
+        {!open && (
+          <div className="rounded-xl bg-white px-3 py-1.5 text-xs font-medium text-[#1A1D2E] shadow-md border border-[#EBEDF0]">
+            Let&apos;s chat
+          </div>
+        )}
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition hover:brightness-95 active:scale-95"
         style={{
           background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
           boxShadow: "0 6px 20px rgba(74,90,74,0.4)",
@@ -201,6 +207,7 @@ export default function KateChatButton() {
           </svg>
         )}
       </button>
+      </div>
     </>
   );
 }
