@@ -152,9 +152,16 @@ export default function TopNav() {
                 <Link
                   href="/medications"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5] border-b border-[#EBEDF0]"
+                  className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]"
                 >
                   Medications
+                </Link>
+                <Link
+                  href="/analytics"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5] border-b border-[#EBEDF0]"
+                >
+                  Your Progress
                 </Link>
 
                 {/* Logout */}
