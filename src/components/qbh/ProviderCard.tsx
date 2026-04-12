@@ -8,6 +8,7 @@ import type {
   BookingHistoryEvent,
   SystemActionItem,
 } from "../../app/lib/QBH/types";
+import AppointmentPrep from "./AppointmentPrep";
 
 type ProviderCardProps = {
   snapshot: ProviderDashboardSnapshot;
@@ -421,6 +422,14 @@ export default function ProviderCard({
       )}
 
       <p className="mt-4 text-sm text-[#7A7F8A]">{state.description}</p>
+
+      {/* Appointment prep — show for non-pharmacy providers */}
+      {!isPharmacy && (
+        <AppointmentPrep
+          providerId={provider.id}
+          providerName={provider.name}
+        />
+      )}
 
       {currentAction ? (
         <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 ring-1 ring-[#EBEDF0]">
