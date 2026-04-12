@@ -8,20 +8,29 @@ import {
   getGoogleCalendarConnectionForUser,
 } from "../../../../lib/qbh/queries/dashboard";
 
-async function getUserName(appUserId: string): Promise<string | null> {
+async function getUserInfo(appUserId: string): Promise<{ displayName: string | null; fullName: string | null }> {
   const { data: appUser } = await supabaseAdmin
     .from("app_users")
-    .select("auth_user_id")
+    .select("auth_user_id, patient_profile")
     .eq("id", appUserId)
     .maybeSingle();
 
-  if (!appUser?.auth_user_id) return null;
+  const profile = (appUser?.patient_profile || {}) as Record<string, string | null>;
+  const nickname = profile.display_name || profile.nickname || null;
 
-  const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(
-    appUser.auth_user_id
-  );
+  let fullName: string | null = null;
+  if (appUser?.auth_user_id) {
+    const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(
+      appUser.auth_user_id
+    );
+    fullName = user?.user_metadata?.name ?? null;
+  }
 
-  return user?.user_metadata?.name ?? null;
+  // Display name: nickname > first name from full name > full name
+  const firstName = fullName?.split(" ")[0] || null;
+  const displayName = nickname || firstName || fullName;
+
+  return { displayName, fullName };
 }
 
 export async function GET(req: Request) {
@@ -31,18 +40,19 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const [snapshots, discoverySummary, hasGoogleCalendarConnection, userName] =
+  const [snapshots, discoverySummary, hasGoogleCalendarConnection, userInfo] =
     await Promise.all([
       getDashboardProvidersForUser(appUserId),
       getDashboardDiscoverySummaryForUser(appUserId),
       getGoogleCalendarConnectionForUser(appUserId),
-      getUserName(appUserId),
+      getUserInfo(appUserId),
     ]);
 
   return NextResponse.json({
     ok: true,
     appUserId,
-    userName: userName || null,
+    userName: userInfo.displayName || null,
+    fullName: userInfo.fullName || null,
     snapshots,
     discoverySummary,
     hasGoogleCalendarConnection,

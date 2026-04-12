@@ -6,6 +6,7 @@ import Link from "next/link";
 import { apiFetch } from "../../lib/api";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import KateChatButton from "../../components/qbh/KateChatButton";
+import KateInsights from "../../components/qbh/KateInsights";
 
 /* ── Types ── */
 
@@ -52,10 +53,24 @@ function computeHealthScore(snapshots: any[]): number {
 
 /* ── Day helpers ── */
 
-const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
+const DAY_ABBREV = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function getTodayDayIndex(): number {
-  return new Date().getDay();
+function getWeekDays(): Array<{ abbrev: string; date: number; isToday: boolean }> {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const days: Array<{ abbrev: string; date: number; isToday: boolean }> = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - dayOfWeek + i);
+    days.push({
+      abbrev: DAY_ABBREV[i],
+      date: d.getDate(),
+      isToday: i === dayOfWeek,
+    });
+  }
+
+  return days;
 }
 
 /* ── SVG Icons ── */
@@ -196,7 +211,7 @@ function TopNavBar({ activePath = "/dashboard" }: { activePath?: string }) {
             <CheckmarkIcon className="h-5 w-5 text-[#D0D3D8]" />
           </div>
           <span className="text-sm font-semibold text-white/90 hidden sm:inline">
-            Quarterback
+            Quarterback Health
           </span>
         </Link>
 
@@ -293,7 +308,7 @@ function DashboardInner() {
   const topOverdue = overdueSnapshots[0] ?? null;
   const topOverdueMonths = topOverdue ? monthsSinceLastVisit(topOverdue) : null;
 
-  const todayIndex = getTodayDayIndex();
+  const weekDays = getWeekDays();
 
   return (
     <main
@@ -311,18 +326,19 @@ function DashboardInner() {
           </span>
         </div>
 
-        {/* ── 2. Mini Week Strip ── */}
-        <div className="mt-8 flex items-center justify-center gap-2.5">
-          {DAY_LETTERS.map((letter, i) => (
+        {/* ── 2. Week Strip with dates ── */}
+        <div className="mt-6 flex items-center justify-center gap-2">
+          {weekDays.map((day, i) => (
             <div
               key={i}
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${
-                i === todayIndex
+              className={`flex flex-col items-center gap-1 rounded-xl px-2.5 py-2 ${
+                day.isToday
                   ? "bg-[#5C6B5C] text-white"
                   : "text-[#B0B4BC]"
               }`}
             >
-              {letter}
+              <span className="text-[10px] font-medium">{day.abbrev}</span>
+              <span className="text-sm font-semibold">{day.date}</span>
             </div>
           ))}
         </div>
@@ -444,7 +460,10 @@ function DashboardInner() {
           </div>
         )}
 
-        {/* ── 5. Provider List ── */}
+        {/* ── 5. Kate's Insights ── */}
+        <KateInsights />
+
+        {/* ── 6. Provider List ── */}
         <div className="mt-10 px-7">
           <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
             YOUR PROVIDERS
@@ -512,42 +531,42 @@ function DashboardInner() {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {/* Providers */}
-            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#C2D9B8] p-5">
+            <Link href="/visits" className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#C2D9B8] p-5 transition hover:brightness-95">
               <div className="text-4xl font-extralight text-[#3D5A3D]">
                 {providerCount}
               </div>
               <div className="text-sm font-semibold text-[#3D5A3D]/80">
                 Providers
               </div>
-            </div>
+            </Link>
 
             {/* Overdue */}
-            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#F0B8B0] p-5">
+            <Link href="/visits" className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#F0B8B0] p-5 transition hover:brightness-95">
               <div className="text-4xl font-extralight text-[#C03020]">
                 {overdueCount}
               </div>
               <div className="text-sm font-semibold text-[#C03020]/80">
                 Overdue
               </div>
-            </div>
+            </Link>
 
             {/* Upcoming */}
-            <div className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#B0D0E8] p-5">
+            <Link href="/visits" className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#B0D0E8] p-5 transition hover:brightness-95">
               <div className="text-4xl font-extralight text-[#2A6090]">
                 {upcomingCount}
               </div>
               <div className="text-sm font-semibold text-[#2A6090]/80">
                 Upcoming
               </div>
-            </div>
+            </Link>
 
             {/* Score */}
-            <div className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl bg-[#C8B8E0] p-5">
+            <Link href="/goals" className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl bg-[#C8B8E0] p-5 transition hover:brightness-95">
               <ScoreRing score={healthScore} />
               <div className="mt-1 text-sm font-semibold text-[#5C4A8A]/80">
                 Score
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
