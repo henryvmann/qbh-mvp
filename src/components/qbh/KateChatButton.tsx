@@ -8,11 +8,19 @@ type Message = {
   content: string;
 };
 
+const QUICK_ACTIONS = [
+  { label: "Book an appointment", prompt: "I need to book an appointment" },
+  { label: "Summarize my plan", prompt: "Can you summarize my current health plan and what's pending?" },
+  { label: "Prep for my next visit", prompt: "Help me prepare for my next upcoming appointment" },
+  { label: "What should I do next?", prompt: "What are the most important things I should do for my health right now?" },
+];
+
 export default function KateChatButton() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [hasGreeted, setHasGreeted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -24,7 +32,11 @@ export default function KateChatButton() {
     if (open && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [open]);
+    // Show greeting on first open
+    if (open && !hasGreeted && messages.length === 0) {
+      setHasGreeted(true);
+    }
+  }, [open, hasGreeted, messages.length]);
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
@@ -66,6 +78,43 @@ export default function KateChatButton() {
       setStreaming(false);
     }
   }, [input, messages, streaming]);
+
+  const sendQuickAction = useCallback(async (prompt: string) => {
+    if (streaming) return;
+    const userMsg: Message = { role: "user", content: prompt };
+    const newMessages = [userMsg];
+    setMessages(newMessages);
+    setStreaming(true);
+
+    try {
+      const res = await apiFetch("/api/kate/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+
+      if (!res.ok || !res.body) {
+        setMessages([...newMessages, { role: "assistant", content: "Sorry, something went wrong. Try again." }]);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = "";
+      setMessages([...newMessages, { role: "assistant", content: "" }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        assistantContent += decoder.decode(value, { stream: true });
+        setMessages([...newMessages, { role: "assistant", content: assistantContent }]);
+      }
+    } catch {
+      setMessages([...newMessages, { role: "assistant", content: "Sorry, I couldn't connect. Try again." }]);
+    } finally {
+      setStreaming(false);
+    }
+  }, [streaming]);
 
   return (
     <>
@@ -120,9 +169,24 @@ export default function KateChatButton() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ maxHeight: 360 }}>
           {messages.length === 0 && (
-            <div className="text-center py-8">
-              <div className="text-sm text-[#7A7F8A]">
-                Hey! I&apos;m Kate. Ask me anything about your healthcare — upcoming visits, what&apos;s overdue, or what to do next.
+            <div className="py-4">
+              <div className="text-sm text-[#1A1D2E] font-medium">
+                Anything I can help you with today?
+              </div>
+              <div className="mt-1 text-xs text-[#7A7F8A]">
+                Ask me anything, or try one of these:
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {QUICK_ACTIONS.map((action) => (
+                  <button
+                    key={action.label}
+                    onClick={() => sendQuickAction(action.prompt)}
+                    disabled={streaming}
+                    className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#1A1D2E] hover:bg-[#E8EBF0] transition disabled:opacity-50"
+                  >
+                    {action.label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
