@@ -401,15 +401,13 @@ export default function OnboardingPage() {
     setAnalysisProgress(0);
 
     // Animate progress items in sequence
-    const timer1 = window.setTimeout(() => {
-      if (!cancelled) setAnalysisProgress(1);
-    }, 1000);
-    const timer2 = window.setTimeout(() => {
-      if (!cancelled) setAnalysisProgress(2);
-    }, 3000);
-    const timer3 = window.setTimeout(() => {
-      if (!cancelled) setAnalysisProgress(3);
-    }, 5000);
+    // Animate 6 progress steps over ~90 seconds
+    const timer1 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(1); }, 3000);
+    const timer2 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(2); }, 10000);
+    const timer3 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(3); }, 25000);
+    const timer4 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(4); }, 45000);
+    const timer5 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(5); }, 65000);
+    const timer6 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(6); }, 85000);
 
     async function runDiscovery() {
       try {
@@ -504,6 +502,9 @@ export default function OnboardingPage() {
       window.clearTimeout(timer1);
       window.clearTimeout(timer2);
       window.clearTimeout(timer3);
+      window.clearTimeout(timer4);
+      window.clearTimeout(timer5);
+      window.clearTimeout(timer6);
     };
   }, [step, plaidPublicToken, plaidConnected, userId]);
 
@@ -1419,64 +1420,116 @@ export default function OnboardingPage() {
     }
 
     const progressItems = [
-      "Finding your healthcare providers",
-      "Building your care timeline",
-      "Checking for overdue care",
+      { label: "Scanning your transactions", icon: "🔍" },
+      { label: "Finding healthcare providers", icon: "🏥" },
+      { label: "Verifying against medical databases", icon: "✅" },
+      { label: "Building your care timeline", icon: "📅" },
+      { label: "Checking for overdue care", icon: "⏰" },
+      { label: "Preparing your dashboard", icon: "✨" },
     ];
+
+    const healthFacts = [
+      "Adults should get a physical exam at least once a year",
+      "Dental cleanings are recommended every 6 months",
+      "Eye exams can detect early signs of diabetes and high blood pressure",
+      "Preventive care can catch 80% of health issues before they become serious",
+      "The average American sees 7 different healthcare providers",
+      "Staying on top of screenings reduces hospitalization risk by 40%",
+      "Most insurance plans cover preventive care at no extra cost",
+    ];
+
+    const factIndex = Math.floor(analysisProgress * 1.5) % healthFacts.length;
 
     return (
       <Shell>
         <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <div className="mb-8 text-left">
+          <div className="mb-8 text-left w-full">
             <CharacterWithBubble pose="thinking">
               Give me just a moment &mdash; I&apos;m scanning your transactions
               to find your healthcare providers. I&apos;ll match them against
               medical databases to make sure I get it right.
             </CharacterWithBubble>
           </div>
+
+          {/* Pulsing animation */}
+          <div className="relative mb-6">
+            <div
+              className="h-16 w-16 rounded-2xl flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
+                animation: "pulse-glow 2s ease-in-out infinite",
+              }}
+            >
+              <span className="text-2xl text-white font-bold">K</span>
+            </div>
+            <style>{`
+              @keyframes pulse-glow {
+                0%, 100% { box-shadow: 0 0 0 0 rgba(92,107,92,0.4); }
+                50% { box-shadow: 0 0 0 16px rgba(92,107,92,0); }
+              }
+            `}</style>
+          </div>
+
           <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
             Kate is getting started
           </h1>
           <p className="mt-2 text-sm text-[#7A7F8A]">
-            This usually takes a few seconds
+            This usually takes a minute or two
           </p>
 
-          <div className="mt-10 flex flex-col gap-4 text-left w-full max-w-sm">
-            {progressItems.map((label, i) => {
+          {/* Progress steps */}
+          <div className="mt-8 flex flex-col gap-2.5 text-left w-full max-w-sm">
+            {progressItems.map((item, i) => {
               const done = analysisProgress >= i + 1;
+              const active = analysisProgress === i;
               return (
                 <div
-                  key={label}
-                  className="flex items-center gap-3 rounded-xl px-5 py-4 transition-all duration-500"
+                  key={item.label}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-500 shadow-sm"
                   style={{
                     backgroundColor: CARD_BG,
                     borderWidth: 1,
                     borderStyle: "solid",
-                    borderColor: done ? ACCENT : CARD_BORDER,
+                    borderColor: done ? ACCENT : active ? "#B0D0E8" : CARD_BORDER,
                     opacity: analysisProgress >= i ? 1 : 0.3,
+                    transform: active ? "scale(1.02)" : "scale(1)",
                   }}
                 >
-                  <span
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors duration-500"
-                    style={{
-                      backgroundColor: done ? ACCENT : "transparent",
-                      color: done ? "#FFFFFF" : "#B0B4BC",
-                      borderWidth: done ? 0 : 2,
-                      borderStyle: "solid",
-                      borderColor: "#B0B4BC",
-                    }}
-                  >
-                    {done ? "\u2713" : ""}
-                  </span>
+                  {done ? (
+                    <span
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                      style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
+                    >
+                      ✓
+                    </span>
+                  ) : active ? (
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+                    </span>
+                  ) : (
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center text-sm">
+                      {item.icon}
+                    </span>
+                  )}
                   <span
                     className="text-sm transition-colors duration-500"
-                    style={{ color: done ? "#1A1D2E" : "#B0B4BC" }}
+                    style={{ color: done ? "#1A1D2E" : active ? "#1A1D2E" : "#B0B4BC" }}
                   >
-                    {label}
+                    {item.label}
                   </span>
                 </div>
               );
             })}
+          </div>
+
+          {/* Rotating health fact */}
+          <div className="mt-8 max-w-sm rounded-xl bg-white border border-[#EBEDF0] shadow-sm px-5 py-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5C6B5C] mb-1">
+              Did you know?
+            </div>
+            <div className="text-xs text-[#7A7F8A] transition-opacity duration-500">
+              {healthFacts[factIndex]}
+            </div>
           </div>
         </div>
       </Shell>
