@@ -242,7 +242,9 @@ async function handleOne(
   // If no proposal_id but we have office_offer_raw_text, create a proposal on the fly
   if ((!proposalId || proposalId === "proposal_id") && officeOfferRawText) {
     try {
-      // Parse the raw text into a date/time using chrono-style heuristics
+      // Parse the raw text into a date/time
+      // Use Eastern Time offset to ensure correct local time
+      const ET_OFFSET_HOURS = -4; // EDT (April-November). TODO: handle EST (-5) in winter
       const now = new Date();
       const timezone = "America/New_York";
 
@@ -280,21 +282,24 @@ async function handleOne(
           parsedStart.setDate(now.getDate() + daysAhead);
 
           if (timeMatch) {
+            let localHours = 9;
+            let localMinutes = 0;
             if (timeMatch[1].toLowerCase() === "noon") {
-              parsedStart.setHours(12, 0, 0, 0);
+              localHours = 12;
             } else if (timeMatch[1].toLowerCase() === "midnight") {
-              parsedStart.setHours(0, 0, 0, 0);
+              localHours = 0;
             } else {
-              let hours = parseInt(timeMatch[2] || "9");
-              const minutes = parseInt(timeMatch[3] || "0");
+              localHours = parseInt(timeMatch[2] || "9");
+              localMinutes = parseInt(timeMatch[3] || "0");
               const ampm = (timeMatch[4] || "").toLowerCase();
-              if (ampm === "pm" && hours < 12) hours += 12;
-              if (ampm === "am" && hours === 12) hours = 0;
-              if (!ampm && hours < 8) hours += 12; // assume PM for small numbers
-              parsedStart.setHours(hours, minutes, 0, 0);
+              if (ampm === "pm" && localHours < 12) localHours += 12;
+              if (ampm === "am" && localHours === 12) localHours = 0;
+              if (!ampm && localHours < 8) localHours += 12; // assume PM for small numbers
             }
+            // Convert local ET to UTC for storage
+            parsedStart.setUTCHours(localHours - ET_OFFSET_HOURS, localMinutes, 0, 0);
           } else {
-            parsedStart.setHours(9, 0, 0, 0); // default to 9am
+            parsedStart.setUTCHours(9 - ET_OFFSET_HOURS, 0, 0, 0); // default to 9am ET
           }
         }
       }
@@ -306,22 +311,25 @@ async function handleOne(
           const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
           const month = monthNames.indexOf(monthDayMatch[1].toLowerCase());
           const day = parseInt(monthDayMatch[2]);
-          parsedStart = new Date(now.getFullYear(), month, day, 9, 0, 0);
+          // Create date in UTC with ET offset
+          parsedStart = new Date(Date.UTC(now.getFullYear(), month, day, 9 - ET_OFFSET_HOURS, 0, 0));
           if (parsedStart < now) parsedStart.setFullYear(now.getFullYear() + 1);
 
           const timeMatch2 = officeOfferRawText.match(/\b(noon|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
           if (timeMatch2) {
+            let lh = 9;
+            let lm = 0;
             if (timeMatch2[1].toLowerCase() === "noon") {
-              parsedStart.setHours(12, 0, 0, 0);
+              lh = 12;
             } else {
-              let h = parseInt(timeMatch2[2] || "9");
-              const m = parseInt(timeMatch2[3] || "0");
+              lh = parseInt(timeMatch2[2] || "9");
+              lm = parseInt(timeMatch2[3] || "0");
               const ap = (timeMatch2[4] || "").toLowerCase();
-              if (ap === "pm" && h < 12) h += 12;
-              if (ap === "am" && h === 12) h = 0;
-              if (!ap && h < 8) h += 12;
-              parsedStart.setHours(h, m, 0, 0);
+              if (ap === "pm" && lh < 12) lh += 12;
+              if (ap === "am" && lh === 12) lh = 0;
+              if (!ap && lh < 8) lh += 12;
             }
+            parsedStart.setUTCHours(lh - ET_OFFSET_HOURS, lm, 0, 0);
           }
         }
       }
