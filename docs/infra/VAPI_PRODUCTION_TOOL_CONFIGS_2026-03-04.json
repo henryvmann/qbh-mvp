@@ -71,21 +71,23 @@
     },
     {
       "name": "propose_office_slot",
-      "description": "Use THIS tool when the office offers a specific date/time (e.g., 'Friday at noon', 'June 17th at 2pm'). Records the offered time, checks for calendar conflicts, and returns what Kate should say next. This is the primary tool for the booking flow.",
+      "description": "Use THIS tool when the office offers a specific date/time (e.g., 'Friday at noon', 'June 17th at 2pm', 'August 1st'). Parses the time, checks for calendar conflicts, and returns what Kate should say next. This is the PRIMARY tool for the booking flow.",
       "url": "https://getquarterback.com/api/vapi/propose-office-slot",
       "method": "POST",
       "parameters": {
         "type": "object",
         "properties": {
           "attempt_id": {
-            "type": "number"
+            "type": "number",
+            "description": "Internal attempt id from call variables. Use {{attempt_id}} exactly."
           },
           "provider_id": {
-            "type": "string"
+            "type": "string",
+            "description": "Provider UUID from call variables. Use {{provider_id}} exactly."
           },
           "office_offer_raw_text": {
             "type": "string",
-            "description": "Raw text of the office-offered datetime, e.g. 'March 10th at 12 PM'."
+            "description": "Exactly what the office said about the available time, e.g. 'Friday at noon', 'June 17th at 2pm', 'August 1st at 10am'."
           }
         },
         "required": [

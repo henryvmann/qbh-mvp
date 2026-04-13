@@ -26,6 +26,7 @@ type ProposeOfficeSlotArgs = {
   provider_id?: unknown;
   proposal_id?: string;
   proposalId?: string;
+  office_offer_raw_text?: string;
 };
 
 function jsonToolResults(results: VapiToolResultEnvelope[]) {
@@ -166,7 +167,8 @@ async function handleOne(
     providerIdUuid = null;
   }
 
-  const proposalId = String(args?.proposal_id ?? args?.proposalId ?? "").trim();
+  let proposalId = String(args?.proposal_id ?? args?.proposalId ?? "").trim();
+  const officeOfferRawText = String(args?.office_offer_raw_text ?? "").trim();
 
   const toolPayload = {
     toolCallId,
@@ -235,6 +237,143 @@ async function handleOne(
     }
 
     return null;
+  }
+
+  // If no proposal_id but we have office_offer_raw_text, create a proposal on the fly
+  if ((!proposalId || proposalId === "proposal_id") && officeOfferRawText) {
+    try {
+      // Parse the raw text into a date/time using chrono-style heuristics
+      const now = new Date();
+      const timezone = "America/New_York";
+
+      // Simple date parsing for common patterns
+      let parsedStart: Date | null = null;
+
+      // Try parsing with Date constructor (handles "June 17, 2026", "August 1 2026", etc.)
+      const withYear = officeOfferRawText.match(/\d{4}/) ? officeOfferRawText : `${officeOfferRawText} ${now.getFullYear()}`;
+      const attempt = new Date(withYear);
+      if (!isNaN(attempt.getTime())) {
+        parsedStart = attempt;
+      }
+
+      // Handle relative dates like "this Friday at noon", "Friday at 2pm"
+      if (!parsedStart) {
+        const dayMatch = officeOfferRawText.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i);
+        const timeMatch = officeOfferRawText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
+
+        if (dayMatch) {
+          const dayNames = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+          const targetDay = dayNames.indexOf(dayMatch[1].toLowerCase());
+          const currentDay = now.getDay();
+          let daysAhead = targetDay - currentDay;
+          if (daysAhead <= 0) daysAhead += 7;
+
+          parsedStart = new Date(now);
+          parsedStart.setDate(now.getDate() + daysAhead);
+
+          if (timeMatch) {
+            if (timeMatch[1].toLowerCase() === "noon") {
+              parsedStart.setHours(12, 0, 0, 0);
+            } else if (timeMatch[1].toLowerCase() === "midnight") {
+              parsedStart.setHours(0, 0, 0, 0);
+            } else {
+              let hours = parseInt(timeMatch[2] || "9");
+              const minutes = parseInt(timeMatch[3] || "0");
+              const ampm = (timeMatch[4] || "").toLowerCase();
+              if (ampm === "pm" && hours < 12) hours += 12;
+              if (ampm === "am" && hours === 12) hours = 0;
+              if (!ampm && hours < 8) hours += 12; // assume PM for small numbers
+              parsedStart.setHours(hours, minutes, 0, 0);
+            }
+          } else {
+            parsedStart.setHours(9, 0, 0, 0); // default to 9am
+          }
+        }
+      }
+
+      // Handle month + day patterns like "June 17" or "August 1st"
+      if (!parsedStart) {
+        const monthDayMatch = officeOfferRawText.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})/i);
+        if (monthDayMatch) {
+          const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+          const month = monthNames.indexOf(monthDayMatch[1].toLowerCase());
+          const day = parseInt(monthDayMatch[2]);
+          parsedStart = new Date(now.getFullYear(), month, day, 9, 0, 0);
+          if (parsedStart < now) parsedStart.setFullYear(now.getFullYear() + 1);
+
+          const timeMatch2 = officeOfferRawText.match(/\b(noon|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
+          if (timeMatch2) {
+            if (timeMatch2[1].toLowerCase() === "noon") {
+              parsedStart.setHours(12, 0, 0, 0);
+            } else {
+              let h = parseInt(timeMatch2[2] || "9");
+              const m = parseInt(timeMatch2[3] || "0");
+              const ap = (timeMatch2[4] || "").toLowerCase();
+              if (ap === "pm" && h < 12) h += 12;
+              if (ap === "am" && h === 12) h = 0;
+              if (!ap && h < 8) h += 12;
+              parsedStart.setHours(h, m, 0, 0);
+            }
+          }
+        }
+      }
+
+      if (!parsedStart) {
+        return {
+          toolCallId,
+          result: JSON.stringify({
+            status: "OK",
+            code: "COULD_NOT_PARSE_TIME",
+            message_to_say: "I didn’t quite catch the specific date and time. Could you give me the month, day, and time?",
+            next_action: "WAIT_FOR_OFFICE_TIME",
+          }),
+        };
+      }
+
+      const normalizedStart = parsedStart.toISOString();
+      const endDate = new Date(parsedStart.getTime() + 30 * 60 * 1000);
+      const normalizedEnd = endDate.toISOString();
+
+      // Create a proposal record
+      const { data: newProposal, error: createErr } = await supabaseAdmin
+        .from("proposals")
+        .insert({
+          attempt_id: attemptIdStr,
+          provider_id: providerIdUuid,
+          office_offer_raw_text: officeOfferRawText,
+          normalized_start: normalizedStart,
+          normalized_end: normalizedEnd,
+          timezone,
+          status: "PROPOSED",
+        })
+        .select("id")
+        .single();
+
+      if (createErr || !newProposal?.id) {
+        return {
+          toolCallId,
+          result: JSON.stringify({
+            status: "ERROR",
+            code: "PROPOSAL_CREATE_FAILED",
+            message_to_say: "There was a system issue. I will call back shortly.",
+            next_action: "END_CALL",
+          }),
+        };
+      }
+
+      // Use the newly created proposal_id to continue the normal flow
+      proposalId = newProposal.id;
+    } catch (e) {
+      return {
+        toolCallId,
+        result: JSON.stringify({
+          status: "ERROR",
+          code: "PARSE_ERROR",
+          message_to_say: "I had trouble with that time. Could you give me the date and time again?",
+          next_action: "WAIT_FOR_OFFICE_TIME",
+        }),
+      };
+    }
   }
 
   if (!proposalId || proposalId === "proposal_id") {
