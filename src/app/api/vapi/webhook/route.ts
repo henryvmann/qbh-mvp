@@ -553,13 +553,41 @@ export async function POST(req: Request) {
 
     const { data: existingNote } = await supabase
       .from("call_notes")
-      .select("id")
+      .select("id, transcript")
       .eq("attempt_id", attemptId)
       .limit(1)
       .maybeSingle();
 
     if (existingNote) {
-      console.log("WEBHOOK_NOTE_SKIP:", { attemptId, reason: "note_already_exists" });
+      // If the new transcript is longer, update the existing note
+      // This handles the case where status-update fires first with a truncated
+      // transcript, then end-of-call-report fires with the full conversation
+      const existingTranscriptLen = (existingNote as any).transcript?.length || 0;
+      const newTranscriptLen = transcript?.length || 0;
+
+      if (newTranscriptLen > existingTranscriptLen && newTranscriptLen > 50) {
+        console.log("WEBHOOK_NOTE_UPDATE:", { attemptId, reason: "longer_transcript", oldLen: existingTranscriptLen, newLen: newTranscriptLen });
+
+        const { error: updateError } = await supabase
+          .from("call_notes")
+          .update({
+            transcript,
+            summary: callSummary,
+            booking_summary: structured.booking_summary,
+            appointment_time_spoken: structured.appointment_time_spoken,
+            office_instructions: structured.office_instructions,
+            documents_to_bring: structured.documents_to_bring,
+            follow_up_notes: structured.follow_up_notes,
+          })
+          .eq("id", existingNote.id);
+
+        if (updateError) {
+          console.error("WEBHOOK_NOTE_UPDATE_ERROR:", updateError);
+        }
+        return Response.json({ ok: true });
+      }
+
+      console.log("WEBHOOK_NOTE_SKIP:", { attemptId, reason: "note_already_exists_with_longer_transcript" });
       return Response.json({ ok: true });
     }
 
