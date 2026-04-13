@@ -179,7 +179,10 @@ export async function classifyCallOutcome(params: {
     "If an office explicitly says they are not accepting new patients, use failure_class = NOT_ACCEPTING_NEW_PATIENTS and retry_policy_hint = DO_NOT_RETRY.",
     "If the office is closed, prefer OFFICE_CLOSED with a retryable hint.",
     "If evidence is weak, use UNKNOWN_FAILURE.",
-    "For call_summary: write 1-2 plain English sentences describing what happened, suitable for showing directly to the patient. Be specific and human. Examples: 'The office was closed when QBH called — QBH will try again during business hours.' or 'QBH successfully booked your appointment for March 15th at 2:00 PM.' or 'The office said they are not currently accepting new patients.' Do not use jargon or internal codes.",
+    "For call_summary: write 2-4 plain English sentences describing what ACTUALLY happened on the call based on the transcript. Be SPECIFIC — mention what the office said, any issues raised (referral needed, insurance not accepted, etc.), and what Kate's next steps are. This is shown directly to the patient so make it clear and useful.",
+    "GOOD example: 'Kate called Stamford Health and spoke with a receptionist. They said a referral is needed before scheduling, and they don't accept Anthem insurance. Kate will let you know so you can follow up on the referral and check your insurance options.'",
+    "BAD example: 'The call could not be completed as there was no response from the office.' (This is too generic — tell the patient what actually happened.)",
+    "If there's a transcript, always base the summary on the actual conversation, not just the call status.",
     "",
     "EVIDENCE:",
     JSON.stringify(

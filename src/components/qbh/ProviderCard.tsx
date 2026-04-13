@@ -491,8 +491,18 @@ export default function ProviderCard({
       ) : null}
 
       {snapshot.latestNote?.summary && state.key !== "upcoming" ? (
-        <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 text-sm text-[#7A7F8A]">
-          {snapshot.latestNote.summary}
+        <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 space-y-2">
+          <div className="text-sm text-[#1A1D2E]">{snapshot.latestNote.summary}</div>
+          {snapshot.latestNote.follow_up_notes && (
+            <div className="text-xs text-[#7A7F8A]">
+              <span className="font-semibold">Follow-up:</span> {snapshot.latestNote.follow_up_notes}
+            </div>
+          )}
+          {snapshot.latestNote.office_instructions && (
+            <div className="text-xs text-[#7A7F8A]">
+              <span className="font-semibold">Office notes:</span> {snapshot.latestNote.office_instructions}
+            </div>
+          )}
         </div>
       ) : null}
 

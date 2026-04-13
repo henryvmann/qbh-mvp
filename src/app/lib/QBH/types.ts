@@ -172,6 +172,9 @@ export type ProviderDashboardSnapshot = {
   futureConfirmedEvent: CalendarEventSnapshot | null;
   latestNote?: {
     summary: string | null;
+    booking_summary?: string | null;
+    follow_up_notes?: string | null;
+    office_instructions?: string | null;
   } | null;
   booking_state: BookingState;
   history: BookingHistoryEvent[];

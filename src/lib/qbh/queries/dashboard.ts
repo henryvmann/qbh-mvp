@@ -64,6 +64,9 @@ type VisitRow = {
 type CallNoteRow = {
   attempt_id: number | string;
   summary: string | null;
+  booking_summary: string | null;
+  follow_up_notes: string | null;
+  office_instructions: string | null;
   created_at: string;
 };
 
@@ -656,12 +659,12 @@ export async function getDashboardProvidersForUser(
     )
   );
 
-  const latestNoteByAttemptId = new Map<number, { summary: string | null }>();
+  const latestNoteByAttemptId = new Map<number, { summary: string | null; booking_summary: string | null; follow_up_notes: string | null; office_instructions: string | null }>();
 
   if (latestAttemptIds.length > 0) {
     const { data: notes, error: notesError } = await supabaseAdmin
       .from("call_notes")
-      .select("attempt_id,summary,created_at")
+      .select("attempt_id,summary,booking_summary,follow_up_notes,office_instructions,created_at")
       .in("attempt_id", latestAttemptIds)
       .order("created_at", { ascending: false });
 
@@ -673,6 +676,9 @@ export async function getDashboardProvidersForUser(
       if (!latestNoteByAttemptId.has(attemptId)) {
         latestNoteByAttemptId.set(attemptId, {
           summary: row.summary,
+          booking_summary: row.booking_summary || null,
+          follow_up_notes: row.follow_up_notes || null,
+          office_instructions: row.office_instructions || null,
         });
       }
     }
