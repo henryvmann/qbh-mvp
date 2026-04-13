@@ -39,13 +39,48 @@ export default function AdminCallsPage() {
   const [analyzing, setAnalyzing] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
 
+  const [autoAnalyzing, setAutoAnalyzing] = useState(false);
+
   useEffect(() => {
     apiFetch("/api/admin/call-quality")
       .then((r) => r.json())
-      .then((data) => {
-        if (data.ok) setCalls(data.calls || []);
+      .then(async (data) => {
+        if (!data.ok) return;
+        const allCalls: CallEntry[] = data.calls || [];
+        setCalls(allCalls);
+        setLoading(false);
+
+        // Auto-analyze calls without scorecards
+        const unscored = allCalls.filter(
+          (c) => !c.scorecard && c.transcript_preview && c.transcript_preview.length > 30
+        );
+        if (unscored.length > 0) {
+          setAutoAnalyzing(true);
+          for (const call of unscored) {
+            try {
+              const res = await apiFetch("/api/admin/call-quality", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ attempt_id: call.attempt_id }),
+              });
+              const result = await res.json();
+              if (result.ok && result.scorecard) {
+                setCalls((prev) =>
+                  prev.map((c) =>
+                    c.attempt_id === call.attempt_id
+                      ? { ...c, scorecard: result.scorecard }
+                      : c
+                  )
+                );
+              }
+            } catch {
+              // Skip failed analyses
+            }
+          }
+          setAutoAnalyzing(false);
+        }
       })
-      .finally(() => setLoading(false));
+      .catch(() => setLoading(false));
   }, []);
 
   async function analyzeCall(attemptId: number) {
@@ -88,7 +123,7 @@ export default function AdminCallsPage() {
           Call Quality Dashboard
         </h1>
         <p className="mt-1 text-sm text-[#7A7F8A]">
-          {calls.length} recent calls — click to analyze
+          {calls.length} recent calls{autoAnalyzing ? " — analyzing..." : ""}
         </p>
 
         {/* Summary stats */}
