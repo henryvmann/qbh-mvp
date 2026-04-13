@@ -316,14 +316,26 @@ export async function POST(req: Request) {
     );
   }
 
-  const availabilityContext = await buildStartCallAvailabilityContext(
-    app_user_id
-  );
+  // Run availability + existing booking checks in parallel with timeout
+  const availabilityPromise = Promise.race([
+    buildStartCallAvailabilityContext(app_user_id),
+    new Promise<Awaited<ReturnType<typeof buildStartCallAvailabilityContext>>>((resolve) =>
+      setTimeout(() => resolve({
+        calendar_connected: false, time_min: null, time_max: null,
+        time_zone: "America/New_York", busy_blocks: [], busy_block_count: 0,
+        source_summaries: [], availability_error: "timeout",
+      }), 5000)
+    ),
+  ]);
 
-  const existingBookedAppointment =
-    mode === "ADJUST"
-      ? await getExistingBookedAppointment(app_user_id, provider_id)
-      : null;
+  const existingBookingPromise = mode === "ADJUST"
+    ? getExistingBookedAppointment(app_user_id, provider_id)
+    : Promise.resolve(null);
+
+  const [availabilityContext, existingBookedAppointment] = await Promise.all([
+    availabilityPromise,
+    existingBookingPromise,
+  ]);
 
   if (mode === "ADJUST" && !existingBookedAppointment) {
     return Response.json(
