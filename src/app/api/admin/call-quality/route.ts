@@ -75,15 +75,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "attempt_id required" }, { status: 400 });
   }
 
-  // Fetch transcript
-  const { data: note } = await supabaseAdmin
+  // Fetch transcript — get the longest one if duplicates exist
+  const { data: notes } = await supabaseAdmin
     .from("call_notes")
     .select("attempt_id, transcript, summary")
     .eq("attempt_id", attemptId)
-    .maybeSingle();
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  const note = (notes || [])
+    .sort((a, b) => (b.transcript?.length || 0) - (a.transcript?.length || 0))[0];
 
   if (!note?.transcript || note.transcript.length < 20) {
-    return NextResponse.json({ ok: false, error: "No transcript available" }, { status: 404 });
+    return NextResponse.json({ ok: false, error: "No transcript available for this call" }, { status: 404 });
   }
 
   // Fetch attempt metadata
