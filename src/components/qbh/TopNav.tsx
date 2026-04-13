@@ -113,7 +113,7 @@ export default function TopNav() {
                 className="fixed inset-0 z-40"
                 onClick={() => setMenuOpen(false)}
               />
-              <div className="absolute right-0 top-12 z-50 w-56 rounded-xl bg-white border border-[#EBEDF0] shadow-xl overflow-hidden">
+              <div className="absolute right-0 top-12 z-50 w-56 rounded-xl border border-[#EBEDF0] shadow-xl overflow-hidden" style={{ backgroundColor: "#FFFFFF", color: "#1A1D2E" }}>
                 {/* Mobile nav links */}
                 <div className="sm:hidden border-b border-[#EBEDF0]">
                   {NAV_LINKS.map((link) => (
