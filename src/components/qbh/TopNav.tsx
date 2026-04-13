@@ -50,7 +50,7 @@ export default function TopNav() {
       className="sticky top-0 z-30 border-b border-[#2A2F35]"
       style={{ background: "#1A1D2E" }}
     >
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-3">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
         {/* QB Logo */}
         <Link href="/dashboard" className="flex items-center gap-3">
           <div
@@ -69,7 +69,7 @@ export default function TopNav() {
         </Link>
 
         {/* Desktop nav links */}
-        <div className="hidden sm:flex items-center gap-1">
+        <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
           {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href ||

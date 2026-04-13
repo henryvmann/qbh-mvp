@@ -9,7 +9,7 @@ import HandleItButton from "../../components/qbh/HandleItButton";
 type UpcomingVisit = {
   id: string;
   provider_name: string;
-  start_at: string;
+  start_at: string | null;
   status: string;
 };
 
@@ -26,8 +26,14 @@ type FollowUp = {
   provider_name: string;
 };
 
-function formatDate(iso: string | null): string {
-  if (!iso) return "Unknown date";
+function isValidDate(iso: string | null | undefined): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  return !isNaN(d.getTime());
+}
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso || !isValidDate(iso)) return "";
   return new Date(iso).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -35,11 +41,20 @@ function formatDate(iso: string | null): string {
   });
 }
 
-function formatTime(iso: string): string {
+function formatTime(iso: string | null | undefined): string {
+  if (!iso || !isValidDate(iso)) return "";
   return new Date(iso).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function formatVisitDateTime(iso: string | null | undefined, providerName: string): string {
+  const date = formatDate(iso);
+  const time = formatTime(iso);
+  if (date && time) return `${date} at ${time}`;
+  if (date) return date;
+  return providerName;
 }
 
 function formatAmount(cents: number | null): string | null {
@@ -119,8 +134,7 @@ function VisitsInner() {
                       {visit.provider_name}
                     </div>
                     <div className="mt-1 text-sm text-[#7A7F8A]">
-                      {formatDate(visit.start_at)} at{" "}
-                      {formatTime(visit.start_at)}
+                      {formatVisitDateTime(visit.start_at, visit.provider_name)}
                     </div>
                   </div>
                   <span className="inline-flex items-center rounded-full bg-[#5C6B5C]/15 px-3 py-1 text-xs font-semibold text-[#5C6B5C] ring-1 ring-[#5C6B5C]/30">
