@@ -95,7 +95,7 @@ function ProvidersInner() {
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
       <TopNav />
-      <div className="mx-auto max-w-2xl px-6 pt-8 pb-20">
+      <div className="mx-auto max-w-4xl px-6 pt-8 pb-20">
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
           Your Providers
         </h1>
@@ -122,6 +122,8 @@ function ProvidersInner() {
                     ? `Dr. ${snapshot.provider.doctor_name}${snapshot.provider.specialty ? ` · ${snapshot.provider.specialty}` : ""}`
                     : snapshot.provider.specialty || null;
 
+                  const hasNotes = !!(snapshot.latestNote?.office_instructions || snapshot.latestNote?.follow_up_notes);
+
                   return (
                     <div key={snapshot.provider.id}>
                       <button
@@ -130,12 +132,25 @@ function ProvidersInner() {
                         className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left hover:bg-[#F8F9FA] transition-colors"
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-[#1A1D2E] truncate">
-                            {snapshot.provider.name}
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#1A1D2E] truncate">
+                              {snapshot.provider.name}
+                            </span>
+                            {hasNotes && (
+                              <span className="text-[10px] text-amber-600 bg-amber-50 rounded px-1.5 py-0.5 font-medium shrink-0">
+                                Notes
+                              </span>
+                            )}
                           </div>
                           {subtitle && (
                             <div className="text-xs text-[#7A7F8A] truncate mt-0.5">
                               {subtitle}
+                            </div>
+                          )}
+                          {/* Show brief note preview */}
+                          {snapshot.latestNote?.summary && !isExpanded && (
+                            <div className="text-xs text-[#B0B4BC] truncate mt-1">
+                              {snapshot.latestNote.summary.slice(0, 100)}
                             </div>
                           )}
                         </div>
@@ -150,7 +165,19 @@ function ProvidersInner() {
                       </button>
 
                       {isExpanded && (
-                        <div className="px-4 pb-4">
+                        <div className="px-4 pb-4 space-y-3">
+                          {/* Office notes section */}
+                          {(snapshot.latestNote?.office_instructions || snapshot.latestNote?.follow_up_notes) && (
+                            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+                              <div className="text-xs font-semibold text-amber-700 mb-2">Important Notes from Office</div>
+                              {snapshot.latestNote.office_instructions && (
+                                <div className="text-sm text-amber-900">{snapshot.latestNote.office_instructions}</div>
+                              )}
+                              {snapshot.latestNote.follow_up_notes && (
+                                <div className="text-sm text-amber-900 mt-1">{snapshot.latestNote.follow_up_notes}</div>
+                              )}
+                            </div>
+                          )}
                           <ProviderCard
                             snapshot={snapshot}
                             userId={userId}

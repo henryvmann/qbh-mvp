@@ -68,8 +68,8 @@ export default function TopNav() {
           </span>
         </Link>
 
-        {/* Desktop nav links */}
-        <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+        {/* Nav links — always visible */}
+        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
           {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href ||
@@ -78,10 +78,10 @@ export default function TopNav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                className={`rounded-lg px-2 py-1.5 text-[11px] sm:text-xs sm:px-3 font-medium transition ${
                   isActive
-                    ? "bg-white/10 text-white"
-                    : "text-white/50 hover:text-white/80"
+                    ? "bg-white/15 text-white"
+                    : "text-white/70 hover:text-white"
                 }`}
               >
                 {link.label}

@@ -204,20 +204,51 @@ function extractDocumentsToBring(transcript: string): string | null {
 function extractOfficeInstructions(lines: string[]): string | null {
   const instructionLines = lines.filter((line) => {
     const lower = line.toLowerCase();
+    // Only check user (office) lines for instructions
+    if (!lower.startsWith("user:")) return false;
     return (
       lower.includes("bring ") ||
       lower.includes("please bring") ||
       lower.includes("need to bring") ||
+      lower.includes("needs to") ||
+      lower.includes("let them know") ||
+      lower.includes("let her know") ||
+      lower.includes("let him know") ||
       lower.includes("let the patient know") ||
+      lower.includes("let jenny know") ||
+      lower.includes("tell them") ||
+      lower.includes("tell her") ||
+      lower.includes("tell him") ||
+      lower.includes("make sure") ||
+      lower.includes("don't eat") ||
+      lower.includes("not eat") ||
+      lower.includes("fasting") ||
+      lower.includes("arrive early") ||
+      lower.includes("arrive 15") ||
+      lower.includes("arrive thirty") ||
+      lower.includes("paperwork") ||
       lower.includes("insurance information") ||
       lower.includes("medical records") ||
-      lower.includes("photo id")
+      lower.includes("photo id") ||
+      lower.includes("referral") ||
+      lower.includes("out of pocket") ||
+      lower.includes("out-of-pocket") ||
+      lower.includes("copay") ||
+      lower.includes("co-pay") ||
+      lower.includes("don't take") ||
+      lower.includes("don't accept") ||
+      lower.includes("not accept") ||
+      lower.includes("not in network")
     );
   });
 
   if (instructionLines.length === 0) return null;
 
-  return instructionLines.slice(0, 2).join(" ");
+  // Clean up the "user: " prefix
+  return instructionLines
+    .slice(0, 4)
+    .map((line) => line.replace(/^user:\s*/i, "").trim())
+    .join(" | ");
 }
 
 function extractFollowUpNotes(lines: string[]): string | null {
