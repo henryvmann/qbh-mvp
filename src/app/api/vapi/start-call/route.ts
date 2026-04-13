@@ -31,22 +31,67 @@ function asNullableString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
-/** Format a DOB like "1989-10-22" into "October 22, 1989" for natural speech */
+/** Format DOB as fully written-out words for voice: "October twenty-second, nineteen eighty-nine" */
 function formatDobForSpeech(dob: string | null | undefined): string | null {
   if (!dob) return null;
   try {
-    // Handle both "1989-10-22" and "10/22/1989" formats
     const d = new Date(dob + (dob.includes("T") ? "" : "T00:00:00"));
     if (isNaN(d.getTime())) return dob;
-    return d.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-      timeZone: "UTC",
-    });
+
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const ordinals: Record<number, string> = {
+      1:"first",2:"second",3:"third",4:"fourth",5:"fifth",6:"sixth",7:"seventh",
+      8:"eighth",9:"ninth",10:"tenth",11:"eleventh",12:"twelfth",13:"thirteenth",
+      14:"fourteenth",15:"fifteenth",16:"sixteenth",17:"seventeenth",18:"eighteenth",
+      19:"nineteenth",20:"twentieth",21:"twenty-first",22:"twenty-second",23:"twenty-third",
+      24:"twenty-fourth",25:"twenty-fifth",26:"twenty-sixth",27:"twenty-seventh",
+      28:"twenty-eighth",29:"twenty-ninth",30:"thirtieth",31:"thirty-first",
+    };
+
+    const ones = ["","one","two","three","four","five","six","seven","eight","nine",
+      "ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen",
+      "eighteen","nineteen"];
+    const tens = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+
+    function yearToWords(y: number): string {
+      if (y >= 1900 && y <= 1999) {
+        const suffix = y - 1900;
+        if (suffix < 20) return `nineteen ${ones[suffix]}`;
+        const t = Math.floor(suffix / 10);
+        const o = suffix % 10;
+        return `nineteen ${tens[t]}${o > 0 ? "-" + ones[o] : ""}`;
+      }
+      if (y >= 2000 && y <= 2009) return `two thousand${y > 2000 ? " " + ones[y - 2000] : ""}`;
+      if (y >= 2010 && y <= 2029) {
+        const suffix = y - 2000;
+        if (suffix < 20) return `twenty ${ones[suffix]}`;
+        const t = Math.floor(suffix / 10);
+        const o = suffix % 10;
+        return `twenty ${tens[t]}${o > 0 ? "-" + ones[o] : ""}`;
+      }
+      return String(y);
+    }
+
+    const month = months[d.getUTCMonth()];
+    const day = ordinals[d.getUTCDate()] || String(d.getUTCDate());
+    const year = yearToWords(d.getUTCFullYear());
+
+    return `${month} ${day}, ${year}`;
   } catch {
     return dob;
   }
+}
+
+/** Format member ID with dashes for slower speech: "J-Q-U - 8-8-9 - A-P - 1-1-2-9-4-3" */
+function formatMemberIdForSpeech(id: string | null | undefined): string | null {
+  if (!id) return null;
+  const chars = id.replace(/[\s-]/g, "").split("");
+  // Group into chunks of 3
+  const groups: string[] = [];
+  for (let i = 0; i < chars.length; i += 3) {
+    groups.push(chars.slice(i, i + 3).join("-"));
+  }
+  return groups.join(" ... ");
 }
 
 function getStartCallMode(value: unknown): StartCallMode {
@@ -435,7 +480,7 @@ export async function POST(req: Request) {
           doctor_name: doctorName || "not specified",
           patient_date_of_birth: formatDobForSpeech(patientProfile.date_of_birth) || "not available — the patient will provide when they arrive",
           patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
-          patient_insurance_member_id: patientProfile.insurance_member_id || "not available — the patient will provide when they arrive",
+          patient_insurance_member_id: formatMemberIdForSpeech(patientProfile.insurance_member_id) || "not available — the patient will provide when they arrive",
           patient_callback_phone: patientProfile.callback_phone || "not available",
           patient_reason_for_visit: patientProfile.reason_for_visit || "routine checkup / follow-up",
         },

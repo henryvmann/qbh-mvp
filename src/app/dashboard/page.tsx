@@ -8,6 +8,7 @@ import HandleItButton from "../../components/qbh/HandleItButton";
 import KateChatButton from "../../components/qbh/KateChatButton";
 import KateInsights from "../../components/qbh/KateInsights";
 import CareGaps from "../../components/qbh/CareGaps";
+import KateFollowUp from "../../components/qbh/KateFollowUp";
 import TopNav from "../../components/qbh/TopNav";
 
 /* ── Types ── */
@@ -462,7 +463,10 @@ function DashboardInner() {
           </div>
         )}
 
-        {/* ── 5. Kate's Insights ── */}
+        {/* ── 5. Kate's Follow-up Questions ── */}
+        <KateFollowUp />
+
+        {/* ── 6. Kate's Insights ── */}
         <KateInsights />
 
         {/* ── 6. Care Gaps ── */}
