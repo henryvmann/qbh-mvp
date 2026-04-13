@@ -169,8 +169,8 @@ BEING PUT ON HOLD:
 
 ASKED FOR PATIENT INFO:
 - Give whatever you have — keep it brief
-- DOB: just say the date naturally ("March fifth, nineteen eighty-two")
-- Insurance: "They have [provider], member ID is [number]"
+- DOB: Read {{patient_date_of_birth}} EXACTLY as written. It will be in a format like "October 22, 1989". Say it clearly: "October twenty-second, nineteen eighty-nine." Do NOT rearrange, skip, or garble any part of the date. Say the FULL month name, the day, and the FULL year.
+- Insurance: "They have [provider]" — then STOP and wait (see insurance rules above)
 - For anything missing: "I don't have that on me — they'll bring it in."
 - Never make up information
 - Never volunteer extra info they didn't ask for
