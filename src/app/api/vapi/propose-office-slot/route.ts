@@ -255,15 +255,68 @@ async function handleOne(
       // Must check this BEFORE generic Date constructor which can misparse these
       const dayMatch = officeOfferRawText.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i);
 
-      if (dayMatch) {
-        // This is a relative date — handle it directly
-      } else {
-        // No day-of-week — try parsing as absolute date
-        // Only use Date constructor for strings with month names or numbers, not day names
-        const withYear = officeOfferRawText.match(/\d{4}/) ? officeOfferRawText : `${officeOfferRawText} ${now.getFullYear()}`;
-        const attempt = new Date(withYear);
-        if (!isNaN(attempt.getTime()) && attempt.getFullYear() >= now.getFullYear()) {
-          parsedStart = attempt;
+      // Only try the month+day parser or day-of-week parser — NEVER the generic Date constructor
+      // Date constructor is too permissive ("the twenty first" → Jan 1 instead of failing)
+      const hasMonthName = /\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i.test(officeOfferRawText);
+
+      if (!dayMatch && hasMonthName) {
+        // Has a month name — parse as month + day (handled below in the month+day section)
+      } else if (!dayMatch && !hasMonthName) {
+        // No day-of-week and no month name — might be "the 21st" or "the twenty first"
+        // Extract any number and assume it's a day of the current or next month
+        const dayNumMatch = officeOfferRawText.match(/\b(\d{1,2})(?:st|nd|rd|th)?\b/);
+        const wordNumMatch = officeOfferRawText.match(/\b(twenty[- ]?first|twenty[- ]?second|twenty[- ]?third|twenty[- ]?fourth|twenty[- ]?fifth|twenty[- ]?sixth|twenty[- ]?seventh|twenty[- ]?eighth|twenty[- ]?ninth|thirtieth|thirty[- ]?first|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth)\b/i);
+
+        let dayNum: number | null = null;
+        if (dayNumMatch) {
+          dayNum = parseInt(dayNumMatch[1]);
+        } else if (wordNumMatch) {
+          const wordToNum: Record<string, number> = {
+            first:1,second:2,third:3,fourth:4,fifth:5,sixth:6,seventh:7,eighth:8,ninth:9,tenth:10,
+            eleventh:11,twelfth:12,thirteenth:13,fourteenth:14,fifteenth:15,sixteenth:16,
+            seventeenth:17,eighteenth:18,nineteenth:19,twentieth:20,
+          };
+          const w = wordNumMatch[1].toLowerCase().replace(/[- ]/g, " ").trim();
+          if (w.startsWith("twenty")) {
+            const suffix = w.replace("twenty", "").trim();
+            dayNum = 20 + (wordToNum[suffix] || 0);
+          } else if (w.startsWith("thirty")) {
+            const suffix = w.replace("thirty", "").trim();
+            dayNum = 30 + (wordToNum[suffix] || 0);
+          } else {
+            dayNum = wordToNum[w] || null;
+          }
+        }
+
+        if (dayNum && dayNum >= 1 && dayNum <= 31) {
+          // Assume current month, or next month if the day has passed
+          let month = now.getMonth();
+          let year = now.getFullYear();
+          const testDate = new Date(Date.UTC(year, month, dayNum, 9 - ET_OFFSET_HOURS, 0, 0));
+          if (testDate < now) {
+            month++;
+            if (month > 11) { month = 0; year++; }
+          }
+          parsedStart = new Date(Date.UTC(year, month, dayNum, 9 - ET_OFFSET_HOURS, 0, 0));
+
+          // Check for time
+          const tMatch = officeOfferRawText.match(/\b(noon|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
+          if (tMatch) {
+            let h = 9;
+            if (tMatch[1].toLowerCase() === "noon") { h = 12; }
+            else {
+              h = parseInt(tMatch[2] || "9");
+              const m2 = parseInt(tMatch[3] || "0");
+              const ap = (tMatch[4] || "").toLowerCase();
+              if (ap === "pm" && h < 12) h += 12;
+              if (ap === "am" && h === 12) h = 0;
+              if (!ap && h < 8) h += 12;
+              parsedStart.setUTCHours(h - ET_OFFSET_HOURS, m2, 0, 0);
+            }
+            if (tMatch[1].toLowerCase() === "noon") {
+              parsedStart.setUTCHours(12 - ET_OFFSET_HOURS, 0, 0, 0);
+            }
+          }
         }
       }
 
@@ -304,32 +357,57 @@ async function handleOne(
         }
       }
 
-      // Handle month + day patterns like "June 17" or "August 1st"
-      if (!parsedStart) {
-        const monthDayMatch = officeOfferRawText.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})/i);
-        if (monthDayMatch) {
-          const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
-          const month = monthNames.indexOf(monthDayMatch[1].toLowerCase());
-          const day = parseInt(monthDayMatch[2]);
-          // Create date in UTC with ET offset
-          parsedStart = new Date(Date.UTC(now.getFullYear(), month, day, 9 - ET_OFFSET_HOURS, 0, 0));
-          if (parsedStart < now) parsedStart.setFullYear(now.getFullYear() + 1);
+      // Handle month + day patterns like "June 17", "August 1st", "April twenty first"
+      if (!parsedStart && hasMonthName) {
+        const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+        const monthOnlyMatch = officeOfferRawText.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i);
+        if (monthOnlyMatch) {
+          const month = monthNames.indexOf(monthOnlyMatch[1].toLowerCase());
 
-          const timeMatch2 = officeOfferRawText.match(/\b(noon|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
-          if (timeMatch2) {
-            let lh = 9;
-            let lm = 0;
-            if (timeMatch2[1].toLowerCase() === "noon") {
-              lh = 12;
-            } else {
-              lh = parseInt(timeMatch2[2] || "9");
-              lm = parseInt(timeMatch2[3] || "0");
-              const ap = (timeMatch2[4] || "").toLowerCase();
-              if (ap === "pm" && lh < 12) lh += 12;
-              if (ap === "am" && lh === 12) lh = 0;
-              if (!ap && lh < 8) lh += 12;
+          // Try digit day first
+          const digitDay = officeOfferRawText.match(/\b(\d{1,2})(?:st|nd|rd|th)?\b/);
+          let day: number | null = digitDay ? parseInt(digitDay[1]) : null;
+
+          // Try word day — check compound words (twenty first) BEFORE single words (first)
+          if (!day) {
+            const compoundDays: [string, number][] = [
+              ["thirty first",31],["thirtieth",30],
+              ["twenty ninth",29],["twenty eighth",28],["twenty seventh",27],
+              ["twenty sixth",26],["twenty fifth",25],["twenty fourth",24],
+              ["twenty third",23],["twenty second",22],["twenty first",21],
+              ["twentieth",20],["nineteenth",19],["eighteenth",18],["seventeenth",17],
+              ["sixteenth",16],["fifteenth",15],["fourteenth",14],["thirteenth",13],
+              ["twelfth",12],["eleventh",11],["tenth",10],["ninth",9],["eighth",8],
+              ["seventh",7],["sixth",6],["fifth",5],["fourth",4],["third",3],
+              ["second",2],["first",1],
+            ];
+            const lower = officeOfferRawText.toLowerCase();
+            for (const [word, num] of compoundDays) {
+              if (lower.includes(word)) { day = num; break; }
             }
-            parsedStart.setUTCHours(lh - ET_OFFSET_HOURS, lm, 0, 0);
+          }
+
+          if (day && day >= 1 && day <= 31) {
+            // Create date in UTC with ET offset
+            parsedStart = new Date(Date.UTC(now.getFullYear(), month, day, 9 - ET_OFFSET_HOURS, 0, 0));
+            if (parsedStart < now) parsedStart.setFullYear(now.getFullYear() + 1);
+
+            const timeMatch2 = officeOfferRawText.match(/\b(noon|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
+            if (timeMatch2) {
+              let lh = 9;
+              let lm = 0;
+              if (timeMatch2[1].toLowerCase() === "noon") {
+                lh = 12;
+              } else {
+                lh = parseInt(timeMatch2[2] || "9");
+                lm = parseInt(timeMatch2[3] || "0");
+                const ap = (timeMatch2[4] || "").toLowerCase();
+                if (ap === "pm" && lh < 12) lh += 12;
+                if (ap === "am" && lh === 12) lh = 0;
+                if (!ap && lh < 8) lh += 12;
+              }
+              parsedStart.setUTCHours(lh - ET_OFFSET_HOURS, lm, 0, 0);
+            }
           }
         }
       }
