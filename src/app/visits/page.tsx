@@ -7,23 +7,23 @@ import TopNav from "../../components/qbh/TopNav";
 import HandleItButton from "../../components/qbh/HandleItButton";
 
 type UpcomingVisit = {
-  id: string;
-  provider_name: string;
-  start_at: string | null;
-  status: string;
+  eventId: string;
+  providerName: string;
+  startAt: string | null;
+  endAt: string | null;
+  timezone: string | null;
 };
 
 type PastVisit = {
   id: string;
-  provider_name: string;
-  visit_date: string | null;
-  amount_cents: number | null;
-  source: string | null;
+  providerName: string;
+  visitDate: string | null;
+  amount: number | null;
 };
 
 type FollowUp = {
-  provider_id: string;
-  provider_name: string;
+  providerId: string;
+  providerName: string;
 };
 
 function isValidDate(iso: string | null | undefined): boolean {
@@ -126,19 +126,19 @@ function VisitsInner() {
             <div className="mt-6 space-y-4">
               {upcoming.map((visit) => (
                 <div
-                  key={visit.id}
+                  key={visit.eventId}
                   className="flex flex-col gap-2 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0] md:flex-row md:items-center md:justify-between"
                 >
                   <div>
                     <div className="font-semibold text-[#1A1D2E]">
-                      {visit.provider_name}
+                      {visit.providerName}
                     </div>
                     <div className="mt-1 text-sm text-[#7A7F8A]">
-                      {formatVisitDateTime(visit.start_at, visit.provider_name)}
+                      {formatVisitDateTime(visit.startAt, visit.providerName)}
                     </div>
                   </div>
                   <span className="inline-flex items-center rounded-full bg-[#5C6B5C]/15 px-3 py-1 text-xs font-semibold text-[#5C6B5C] ring-1 ring-[#5C6B5C]/30">
-                    {visit.status ?? "Confirmed"}
+                    Confirmed
                   </span>
                 </div>
               ))}
@@ -178,12 +178,12 @@ function VisitsInner() {
               <div className="mt-6 space-y-4">
                 {followUps.map((fu) => (
                   <div
-                    key={fu.provider_id}
+                    key={fu.providerId}
                     className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="font-semibold text-[#1A1D2E]">
-                        {fu.provider_name}
+                        {fu.providerName}
                       </div>
                       <span className="rounded-full bg-[#F0B8B0]/30 px-3 py-1 text-xs font-semibold text-[#C03020] ring-1 ring-[#F0B8B0]">
                         Needs booking
@@ -193,8 +193,8 @@ function VisitsInner() {
                       Kate can call and schedule this for you.
                     </p>
                     <HandleItButton
-                      providerId={fu.provider_id}
-                      providerName={fu.provider_name}
+                      providerId={fu.providerId}
+                      providerName={fu.providerName}
                       label="Book with Kate"
                     />
                   </div>
@@ -238,18 +238,18 @@ function VisitsInner() {
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="text-sm font-semibold text-[#B0B4BC]">
-                        {formatDate(visit.visit_date)}
+                        {formatDate(visit.visitDate)}
                       </div>
                       <span className="rounded-full bg-[#F0F2F5] px-3 py-1 text-xs font-semibold text-[#7A7F8A] ring-1 ring-[#EBEDF0]">
                         Completed
                       </span>
                     </div>
                     <div className="mt-2 font-semibold text-[#1A1D2E]">
-                      {visit.provider_name}
+                      {visit.providerName}
                     </div>
-                    {visit.amount_cents != null && (
+                    {visit.amount != null && (
                       <p className="mt-1 text-sm text-[#7A7F8A]">
-                        {formatAmount(visit.amount_cents)}
+                        {formatAmount(visit.amount)}
                       </p>
                     )}
                   </div>
