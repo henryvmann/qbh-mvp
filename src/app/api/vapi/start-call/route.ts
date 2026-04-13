@@ -213,12 +213,7 @@ export async function POST(req: Request) {
     }
   }
 
-  if (!office_number) {
-    return Response.json(
-      { ok: false, error: "office_number is required" },
-      { status: 400 }
-    );
-  }
+  // office_number validated after provider lookup + demo fallback (below)
 
   if (!provider_id) {
     return Response.json(
@@ -265,6 +260,13 @@ export async function POST(req: Request) {
   }
   if (!office_number) {
     office_number = (process.env.QBH_DEMO_CALL_DESTINATION || "").trim();
+  }
+
+  if (!office_number) {
+    return Response.json(
+      { ok: false, error: "No phone number found for this provider. Add one in provider Details." },
+      { status: 400 }
+    );
   }
 
   const availabilityContext = await buildStartCallAvailabilityContext(
