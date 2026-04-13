@@ -47,6 +47,7 @@ export default function HandleItButton({
   const [dob, setDob] = React.useState("");
   const [insuranceProvider, setInsuranceProvider] = React.useState("");
   const [insuranceMemberId, setInsuranceMemberId] = React.useState("");
+  const [callbackPhone, setCallbackPhone] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
   async function checkProfileAndProceed() {
@@ -73,6 +74,7 @@ export default function HandleItButton({
         setDob(profile.date_of_birth || "");
         setInsuranceProvider(profile.insurance_provider || "");
         setInsuranceMemberId(profile.insurance_member_id || "");
+        setCallbackPhone(profile.callback_phone || "");
         setShowForm(true);
         setLoading(false);
       }
@@ -96,6 +98,7 @@ export default function HandleItButton({
             date_of_birth: dob.trim() || null,
             insurance_provider: insuranceProvider.trim() || null,
             insurance_member_id: insuranceMemberId.trim() || null,
+            callback_phone: callbackPhone.trim() || null,
           },
         }),
       });
@@ -213,6 +216,19 @@ export default function HandleItButton({
                 value={insuranceMemberId}
                 onChange={(e) => setInsuranceMemberId(e.target.value)}
                 placeholder="Found on your insurance card"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[#7A7F8A]">
+                Your phone number
+              </label>
+              <input
+                type="tel"
+                value={callbackPhone}
+                onChange={(e) => setCallbackPhone(e.target.value)}
+                placeholder="(555) 123-4567"
                 className={inputClass}
               />
             </div>

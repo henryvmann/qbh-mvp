@@ -403,6 +403,7 @@ export async function POST(req: Request) {
           patient_date_of_birth: patientProfile.date_of_birth || "not available — the patient will provide when they arrive",
           patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
           patient_insurance_member_id: patientProfile.insurance_member_id || "not available — the patient will provide when they arrive",
+          patient_callback_phone: patientProfile.callback_phone || "not available",
           patient_reason_for_visit: patientProfile.reason_for_visit || "routine checkup / follow-up",
         },
       },
