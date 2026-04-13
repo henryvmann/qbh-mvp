@@ -25,12 +25,22 @@ type CallScorecard = {
 
 // GET: Fetch scorecards for recent calls
 export async function GET() {
-  const { data: notes, error } = await supabaseAdmin
+  const { data: rawNotes, error } = await supabaseAdmin
     .from("call_notes")
     .select("attempt_id, transcript, summary, booking_summary, follow_up_notes, created_at")
     .not("transcript", "is", null)
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(40);
+
+  // Deduplicate by attempt_id — keep the one with the longest transcript
+  const byAttempt = new Map<number, typeof rawNotes extends (infer T)[] | null ? T : never>();
+  for (const note of rawNotes || []) {
+    const existing = byAttempt.get(note.attempt_id);
+    if (!existing || (note.transcript?.length || 0) > (existing.transcript?.length || 0)) {
+      byAttempt.set(note.attempt_id, note);
+    }
+  }
+  const notes = Array.from(byAttempt.values()).slice(0, 20);
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
