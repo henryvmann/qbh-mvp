@@ -18,6 +18,7 @@ type PatientProfile = {
   date_of_birth?: string | null;
   insurance_provider?: string | null;
   insurance_member_id?: string | null;
+  callback_phone?: string | null;
 };
 
 function isProfileComplete(p: PatientProfile): boolean {
