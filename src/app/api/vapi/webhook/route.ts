@@ -254,6 +254,8 @@ function extractOfficeInstructions(lines: string[]): string | null {
 function extractFollowUpNotes(lines: string[]): string | null {
   const followUpLines = lines.filter((line) => {
     const lower = line.toLowerCase();
+    // Only extract from office (user) lines, not Kate's responses
+    if (!lower.startsWith("user:")) return false;
     return (
       lower.includes("call back") ||
       lower.includes("follow up") ||
@@ -267,7 +269,10 @@ function extractFollowUpNotes(lines: string[]): string | null {
 
   if (followUpLines.length === 0) return null;
 
-  return followUpLines.slice(0, 2).join(" ");
+  return followUpLines
+    .slice(0, 2)
+    .map((line) => line.replace(/^user:\s*/i, "").trim())
+    .join(" | ");
 }
 
 function buildStructuredBookingNotes(transcript: string): StructuredBookingNotes {

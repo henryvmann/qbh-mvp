@@ -63,13 +63,13 @@ export default function TopNav() {
           >
             <CheckmarkIcon className="h-5 w-5 text-[#D0D3D8]" />
           </div>
-          <span className="text-sm font-semibold text-white/90 hidden sm:inline">
+          <span className="text-sm font-semibold text-white/90 hidden md:inline">
             Quarterback Health
           </span>
         </Link>
 
-        {/* Nav links — always visible */}
-        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+        {/* Nav links — always visible, scrollable on narrow screens */}
+        <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto">
           {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href ||
