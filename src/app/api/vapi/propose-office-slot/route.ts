@@ -249,16 +249,24 @@ async function handleOne(
       // Simple date parsing for common patterns
       let parsedStart: Date | null = null;
 
-      // Try parsing with Date constructor (handles "June 17, 2026", "August 1 2026", etc.)
-      const withYear = officeOfferRawText.match(/\d{4}/) ? officeOfferRawText : `${officeOfferRawText} ${now.getFullYear()}`;
-      const attempt = new Date(withYear);
-      if (!isNaN(attempt.getTime())) {
-        parsedStart = attempt;
+      // FIRST: Check for day-of-week patterns ("Friday at noon", "this Tuesday at 2pm")
+      // Must check this BEFORE generic Date constructor which can misparse these
+      const dayMatch = officeOfferRawText.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i);
+
+      if (dayMatch) {
+        // This is a relative date — handle it directly
+      } else {
+        // No day-of-week — try parsing as absolute date
+        // Only use Date constructor for strings with month names or numbers, not day names
+        const withYear = officeOfferRawText.match(/\d{4}/) ? officeOfferRawText : `${officeOfferRawText} ${now.getFullYear()}`;
+        const attempt = new Date(withYear);
+        if (!isNaN(attempt.getTime()) && attempt.getFullYear() >= now.getFullYear()) {
+          parsedStart = attempt;
+        }
       }
 
       // Handle relative dates like "this Friday at noon", "Friday at 2pm"
       if (!parsedStart) {
-        const dayMatch = officeOfferRawText.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i);
         const timeMatch = officeOfferRawText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
 
         if (dayMatch) {
