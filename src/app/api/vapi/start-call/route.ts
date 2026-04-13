@@ -202,7 +202,7 @@ export async function POST(req: Request) {
 
   const patientProfile = (userRow?.patient_profile || {}) as Record<string, string | null>;
 
-  // Look up user's name from auth metadata if not in patient_profile
+  // Resolve patient full name: body > profile > auth metadata
   let resolvedPatientName = patient_name || patientProfile.full_name || null;
   if (!resolvedPatientName && userRow?.auth_user_id) {
     try {
@@ -211,6 +211,14 @@ export async function POST(req: Request) {
     } catch {
       // Non-critical
     }
+  }
+
+  // Require full name (first + last) for calls
+  if (!resolvedPatientName || !resolvedPatientName.includes(" ")) {
+    return Response.json(
+      { ok: false, error: "Full name (first and last) is required before Kate can call. Please update your profile." },
+      { status: 400 }
+    );
   }
 
   // office_number validated after provider lookup + demo fallback (below)
@@ -253,6 +261,16 @@ export async function POST(req: Request) {
 
   const isManualProvider = providerRow?.source === "manual";
   const doctorName = (providerRow?.doctor_name || "").trim();
+
+  // Check if patient has visit history with this provider (determines new vs existing)
+  const { count: visitCount } = await supabaseAdmin
+    .from("provider_visits")
+    .select("id", { count: "exact", head: true })
+    .eq("app_user_id", app_user_id)
+    .eq("provider_id", provider_id);
+
+  const hasVisitHistory = (visitCount || 0) > 0;
+  const patientStatus = hasVisitHistory ? "existing" : isManualProvider ? "unknown" : "likely_new";
 
   // Test mode: if QBH_TEST_MODE=true, always call the demo destination
   const testMode = (process.env.QBH_TEST_MODE || "").trim().toLowerCase() === "true";
@@ -380,6 +398,7 @@ export async function POST(req: Request) {
           mode,
           call_purpose: isManualProvider ? "INQUIRY" : mode,
           is_manual_provider: isManualProvider,
+          patient_status: patientStatus,
           doctor_name: doctorName || "not specified",
           patient_date_of_birth: patientProfile.date_of_birth || "not available — the patient will provide when they arrive",
           patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
