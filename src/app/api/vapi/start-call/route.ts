@@ -281,14 +281,17 @@ export async function POST(req: Request) {
   const doctorName = (providerRow?.doctor_name || "").trim();
 
   // Check if patient has visit history with this provider (determines new vs existing)
-  const { count: visitCount } = await supabaseAdmin
-    .from("provider_visits")
-    .select("id", { count: "exact", head: true })
-    .eq("app_user_id", app_user_id)
-    .eq("provider_id", provider_id);
-
-  const hasVisitHistory = (visitCount || 0) > 0;
-  const patientStatus = hasVisitHistory ? "existing" : isManualProvider ? "unknown" : "likely_new";
+  let patientStatus = isManualProvider ? "unknown" : "likely_new";
+  try {
+    const { count: visitCount } = await supabaseAdmin
+      .from("provider_visits")
+      .select("id", { count: "exact", head: true })
+      .eq("app_user_id", app_user_id)
+      .eq("provider_id", provider_id);
+    if ((visitCount || 0) > 0) patientStatus = "existing";
+  } catch {
+    // Non-critical — default to unknown
+  }
 
   // Test mode: if QBH_TEST_MODE=true, always call the demo destination
   const testMode = (process.env.QBH_TEST_MODE || "").trim().toLowerCase() === "true";
