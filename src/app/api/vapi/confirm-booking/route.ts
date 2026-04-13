@@ -537,11 +537,12 @@ async function handleOne(
     });
   }
 
+  const patientName = String(attemptRow?.metadata?.patient_name ?? "the patient").split(" ")[0];
   const messageToSay = demoAutoconfirm
-    ? `Perfect — you’re all set${spokenStart ? ` for ${spokenStart}` : ""}. Thank you.`
+    ? `Great — ${patientName} is booked${spokenStart ? ` for ${spokenStart}` : ""}. Thanks so much for your help.`
     : flowMode === "ADJUST"
-      ? "The appointment has been successfully rescheduled."
-      : "The appointment has been successfully scheduled.";
+      ? `Got it — ${patientName} is rescheduled${spokenStart ? ` for ${spokenStart}` : ""}. Thanks for your help.`
+      : `Perfect — ${patientName} is booked${spokenStart ? ` for ${spokenStart}` : ""}. Thanks so much.`;
 
   const nextAction = demoAutoconfirm ? "END_CALL" : "ASK_CONFIRMATION_NUMBER";
 
