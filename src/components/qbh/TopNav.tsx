@@ -23,6 +23,7 @@ function CheckmarkIcon({ className }: { className?: string }) {
 
 const NAV_LINKS = [
   { label: "Home", href: "/dashboard" },
+  { label: "Providers", href: "/providers" },
   { label: "Goals", href: "/goals" },
   { label: "Visits", href: "/visits" },
   { label: "Timeline", href: "/timeline" },
