@@ -31,6 +31,24 @@ function asNullableString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
+/** Format a DOB like "1989-10-22" into "October 22, 1989" for natural speech */
+function formatDobForSpeech(dob: string | null | undefined): string | null {
+  if (!dob) return null;
+  try {
+    // Handle both "1989-10-22" and "10/22/1989" formats
+    const d = new Date(dob + (dob.includes("T") ? "" : "T00:00:00"));
+    if (isNaN(d.getTime())) return dob;
+    return d.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  } catch {
+    return dob;
+  }
+}
+
 function getStartCallMode(value: unknown): StartCallMode {
   return String(value || "").trim().toUpperCase() === "ADJUST"
     ? "ADJUST"
@@ -400,7 +418,7 @@ export async function POST(req: Request) {
           is_manual_provider: isManualProvider,
           patient_status: patientStatus,
           doctor_name: doctorName || "not specified",
-          patient_date_of_birth: patientProfile.date_of_birth || "not available — the patient will provide when they arrive",
+          patient_date_of_birth: formatDobForSpeech(patientProfile.date_of_birth) || "not available — the patient will provide when they arrive",
           patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
           patient_insurance_member_id: patientProfile.insurance_member_id || "not available — the patient will provide when they arrive",
           patient_callback_phone: patientProfile.callback_phone || "not available",

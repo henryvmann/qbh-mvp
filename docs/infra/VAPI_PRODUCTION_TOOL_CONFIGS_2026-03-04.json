@@ -47,7 +47,7 @@
     },
     {
       "name": "get_candidate_slots",
-      "description": "Retrieves suggested alternative time slots based on calendar availability. Use when the office asks what times are available or asks for alternatives.",
+      "description": "Generates alternative time suggestions from the patient's calendar. Use ONLY when Kate needs to SUGGEST times TO the office (e.g., the office says 'what times work for you?'). Do NOT use this when the office offers a specific time — use propose_office_slot instead.",
       "url": "https://getquarterback.com/api/vapi/get-candidate-slots",
       "method": "POST",
       "parameters": {
@@ -71,7 +71,7 @@
     },
     {
       "name": "propose_office_slot",
-      "description": "Records the time slot offered by the office and checks for conflicts. Use immediately after the office offers a specific date/time.",
+      "description": "Use THIS tool when the office offers a specific date/time (e.g., 'Friday at noon', 'June 17th at 2pm'). Records the offered time, checks for calendar conflicts, and returns what Kate should say next. This is the primary tool for the booking flow.",
       "url": "https://getquarterback.com/api/vapi/propose-office-slot",
       "method": "POST",
       "parameters": {
