@@ -534,7 +534,8 @@ export default function ProviderCard({
             <button
               onClick={handleAdjust}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
             >
               {isSubmitting ? "Starting..." : "Adjust"}
             </button>
