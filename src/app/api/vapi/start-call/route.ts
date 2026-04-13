@@ -254,12 +254,20 @@ export async function POST(req: Request) {
   const isManualProvider = providerRow?.source === "manual";
   const doctorName = (providerRow?.doctor_name || "").trim();
 
-  // Resolve office number: body > provider DB > demo fallback
-  if (!office_number && providerRow?.phone_number) {
-    office_number = providerRow.phone_number.trim();
-  }
-  if (!office_number) {
-    office_number = (process.env.QBH_DEMO_CALL_DESTINATION || "").trim();
+  // Test mode: if QBH_TEST_MODE=true, always call the demo destination
+  const testMode = (process.env.QBH_TEST_MODE || "").trim().toLowerCase() === "true";
+  const demoNumber = (process.env.QBH_DEMO_CALL_DESTINATION || "").trim();
+
+  if (testMode && demoNumber) {
+    office_number = demoNumber;
+  } else {
+    // Live mode: body > provider DB > demo fallback
+    if (!office_number && providerRow?.phone_number) {
+      office_number = providerRow.phone_number.trim();
+    }
+    if (!office_number) {
+      office_number = demoNumber;
+    }
   }
 
   if (!office_number) {
