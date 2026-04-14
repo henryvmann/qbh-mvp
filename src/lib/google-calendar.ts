@@ -550,6 +550,130 @@ export async function getValidGoogleCalendarAccessToken(
   };
 }
 
+// --- Calendar scan for healthcare providers ---
+
+const GOOGLE_EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+
+const HEALTHCARE_KEYWORDS = [
+  "doctor", "dr.", "dr ", "dentist", "dental", "medical", "clinic",
+  "hospital", "health", "therapy", "physical therapy", "chiropractic",
+  "optom", "eye exam", "eye doctor", "derma", "cardio", "ortho",
+  "urgent care", "checkup", "check-up", "check up", "appointment",
+  "annual exam", "wellness visit",
+];
+
+const HEALTHCARE_PATTERN = new RegExp(
+  HEALTHCARE_KEYWORDS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
+  "i"
+);
+
+export type CalendarProviderMatch = {
+  name: string;
+  date: string;
+  upcoming: boolean;
+};
+
+/**
+ * Extracts a provider name from an event summary.
+ * Strips common prefixes like "Appointment with", "Visit -", etc.
+ */
+function extractProviderName(summary: string): string {
+  let name = summary.trim();
+  // Remove common prefixes
+  name = name.replace(/^(appointment|visit|checkup|check-?up|annual exam|wellness visit)\s*(with|at|[-:@])\s*/i, "");
+  name = name.replace(/^(dr\.?|doctor)\s+/i, "Dr. ");
+  // Remove trailing date/time fragments that sometimes appear
+  name = name.replace(/\s*[-–]\s*\d{1,2}:\d{2}.*$/i, "");
+  return name.trim() || summary.trim();
+}
+
+/**
+ * Scans Google Calendar events from the last 12 months and next 3 months
+ * for healthcare-related keywords, returning discovered providers.
+ */
+export async function scanCalendarForProviders(
+  appUserId: string
+): Promise<CalendarProviderMatch[]> {
+  const connection = await getValidGoogleCalendarAccessToken(appUserId);
+  const now = new Date();
+  const timeMin = new Date(now);
+  timeMin.setMonth(timeMin.getMonth() - 12);
+  const timeMax = new Date(now);
+  timeMax.setMonth(timeMax.getMonth() + 3);
+
+  const matches: CalendarProviderMatch[] = [];
+  let pageToken: string | undefined;
+
+  // Paginate through all events in the window
+  do {
+    const params = new URLSearchParams({
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: "true",
+      orderBy: "startTime",
+      maxResults: "250",
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+
+    const response = await fetch(`${GOOGLE_EVENTS_URL}?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${connection.access_token}` },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      throw new Error(
+        (errJson as any)?.error?.message || "Failed to fetch calendar events"
+      );
+    }
+
+    const data = (await response.json()) as {
+      items?: Array<{
+        summary?: string;
+        description?: string;
+        start?: { dateTime?: string; date?: string };
+      }>;
+      nextPageToken?: string;
+    };
+
+    for (const event of data.items || []) {
+      const summary = event.summary || "";
+      const description = event.description || "";
+      const text = `${summary} ${description}`;
+
+      if (!HEALTHCARE_PATTERN.test(text)) continue;
+
+      const eventDate =
+        event.start?.dateTime || event.start?.date || "";
+      if (!eventDate) continue;
+
+      matches.push({
+        name: extractProviderName(summary),
+        date: eventDate,
+        upcoming: new Date(eventDate) > now,
+      });
+    }
+
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  // Deduplicate by provider name (keep earliest date)
+  const seen = new Map<string, CalendarProviderMatch>();
+  for (const m of matches) {
+    const key = m.name.toLowerCase();
+    const existing = seen.get(key);
+    if (!existing || new Date(m.date) < new Date(existing.date)) {
+      seen.set(key, m);
+    }
+    // If any occurrence is upcoming, mark it as upcoming
+    if (m.upcoming && existing) {
+      existing.upcoming = true;
+    }
+  }
+
+  return Array.from(seen.values());
+}
+
 export async function fetchGoogleCalendarFreeBusy(params: {
   appUserId: string;
   timeMin: string;

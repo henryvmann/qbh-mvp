@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
+import { lookupPlacePhone } from "../../../../lib/google/places-lookup";
 
 // Common US state names and abbreviations for detecting location in queries
 const STATE_PATTERNS = /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|ALABAMA|ALASKA|ARIZONA|ARKANSAS|CALIFORNIA|COLORADO|CONNECTICUT|DELAWARE|FLORIDA|GEORGIA|HAWAII|IDAHO|ILLINOIS|INDIANA|IOWA|KANSAS|KENTUCKY|LOUISIANA|MAINE|MARYLAND|MASSACHUSETTS|MICHIGAN|MINNESOTA|MISSISSIPPI|MISSOURI|MONTANA|NEBRASKA|NEVADA|NEW HAMPSHIRE|NEW JERSEY|NEW MEXICO|NEW YORK|NORTH CAROLINA|NORTH DAKOTA|OHIO|OKLAHOMA|OREGON|PENNSYLVANIA|RHODE ISLAND|SOUTH CAROLINA|SOUTH DAKOTA|TENNESSEE|TEXAS|UTAH|VERMONT|VIRGINIA|WASHINGTON|WEST VIRGINIA|WISCONSIN|WYOMING)\b/i;
@@ -115,12 +116,14 @@ export async function GET(req: NextRequest) {
     const allData = await Promise.all(responses.map((r) => r.json().catch(() => ({}))));
 
     const results: Array<{
-      npi: string;
+      npi: string | null;
       name: string;
       specialty: string | null;
       phone: string | null;
       city: string | null;
       state: string | null;
+      source: "npi" | "google_places";
+      place_id?: string | null;
     }> = [];
 
     const seen = new Set<string>();
@@ -157,6 +160,7 @@ export async function GET(req: NextRequest) {
           phone,
           city: location?.city || null,
           state: location?.state || null,
+          source: "npi",
         });
       }
     }
@@ -169,6 +173,70 @@ export async function GET(req: NextRequest) {
         const bMatch = b.city?.toUpperCase().includes(cityUpper) ? 0 : 1;
         return aMatch - bMatch;
       });
+    }
+
+    // P3-5: If NPI returned fewer than 5 results, supplement with Google Places
+    if (results.length < 5 && process.env.GOOGLE_PLACES_API_KEY) {
+      try {
+        const placesQuery =
+          city && state
+            ? `${query} healthcare ${city} ${state}`
+            : state
+            ? `${query} healthcare ${state}`
+            : `${query} healthcare`;
+
+        const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+        const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
+          placesQuery
+        )}&type=health&key=${apiKey}`;
+
+        const placesRes = await fetch(searchUrl, {
+          signal: AbortSignal.timeout(5000),
+        });
+        const placesData = await placesRes.json();
+
+        const placesResults = (placesData.results || []).slice(0, 5);
+        const existingNames = new Set(results.map((r) => r.name.toLowerCase()));
+
+        for (const place of placesResults) {
+          if (!place.name) continue;
+          // Skip if we already have this provider from NPI
+          if (existingNames.has(place.name.toLowerCase())) continue;
+
+          // Extract city/state from formatted_address
+          const addrParts = (place.formatted_address || "").split(",").map((s: string) => s.trim());
+          const placeCity = addrParts.length >= 2 ? addrParts[addrParts.length - 3] || null : null;
+          const stateZip = addrParts.length >= 2 ? addrParts[addrParts.length - 2] || "" : "";
+          const placeState = stateZip.split(" ")[0] || null;
+
+          // Get phone number via the existing places-lookup detail fetch
+          let phone: string | null = null;
+          try {
+            phone = await lookupPlacePhone(place.name, placeCity || undefined, placeState || undefined);
+          } catch {
+            // phone lookup is best-effort
+          }
+
+          results.push({
+            npi: null,
+            name: place.name,
+            specialty: place.types?.includes("dentist")
+              ? "Dentist"
+              : place.types?.includes("doctor")
+              ? "Doctor"
+              : place.types?.includes("pharmacy")
+              ? "Pharmacy"
+              : "Healthcare Provider",
+            phone,
+            city: placeCity,
+            state: placeState,
+            source: "google_places",
+            place_id: place.place_id || null,
+          });
+        }
+      } catch {
+        // Google Places is best-effort supplemental — never fail the whole search
+      }
     }
 
     return NextResponse.json({ ok: true, results: results.slice(0, 15) });

@@ -191,6 +191,19 @@ export async function GET(req: Request) {
       );
     }
 
+    // Trigger background calendar scan for healthcare providers
+    try {
+      const scanUrl = new URL("/api/calendar/scan", url.origin);
+      fetch(scanUrl.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-app-user-id": parsedState.app_user_id },
+      }).catch(() => {
+        // Fire-and-forget — don't block the redirect
+      });
+    } catch {
+      // Never block the OAuth callback redirect
+    }
+
     return NextResponse.redirect(
       new URL(dashboardHref(parsedState.app_user_id), url.origin)
     );

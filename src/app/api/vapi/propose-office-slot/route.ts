@@ -29,6 +29,69 @@ type ProposeOfficeSlotArgs = {
   office_offer_raw_text?: string;
 };
 
+// --- Timezone resolution by provider state ---
+
+const ET_STATES = new Set([
+  "NY","CT","MA","NJ","PA","VA","MD","DC","NC","SC","GA","FL",
+  "OH","MI","IN","WV","VT","NH","ME","RI","DE","KY","TN",
+]);
+const CT_STATES = new Set([
+  "IL","WI","MN","MO","IA","AR","LA","MS","AL","OK","KS","NE","SD","ND","TX",
+]);
+const MT_STATES = new Set([
+  "MT","WY","CO","NM","AZ","UT","ID",
+]);
+const PT_STATES = new Set([
+  "CA","OR","WA","NV",
+]);
+
+function getTimezoneOffsetForState(state: string | null | undefined): {
+  offset: number;
+  timezone: string;
+} {
+  if (!state) return { offset: -4, timezone: "America/New_York" };
+  const s = state.toUpperCase().trim();
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1-12
+  const isDST = month >= 4 && month <= 10; // April through October = daylight time
+
+  if (ET_STATES.has(s)) {
+    return { offset: isDST ? -4 : -5, timezone: "America/New_York" };
+  }
+  if (CT_STATES.has(s)) {
+    return { offset: isDST ? -5 : -6, timezone: "America/Chicago" };
+  }
+  if (MT_STATES.has(s)) {
+    // Arizona doesn't observe DST
+    if (s === "AZ") return { offset: -7, timezone: "America/Phoenix" };
+    return { offset: isDST ? -6 : -7, timezone: "America/Denver" };
+  }
+  if (PT_STATES.has(s)) {
+    return { offset: isDST ? -7 : -8, timezone: "America/Los_Angeles" };
+  }
+  // Default to ET
+  return { offset: isDST ? -4 : -5, timezone: "America/New_York" };
+}
+
+async function resolveProviderTimezone(providerIdUuid: string | null): Promise<{
+  offset: number;
+  timezone: string;
+}> {
+  if (!providerIdUuid) return getTimezoneOffsetForState(null);
+
+  try {
+    const { data } = await supabaseAdmin
+      .from("providers")
+      .select("state")
+      .eq("id", providerIdUuid)
+      .maybeSingle();
+
+    return getTimezoneOffsetForState(data?.state || null);
+  } catch {
+    return getTimezoneOffsetForState(null);
+  }
+}
+
 function jsonToolResults(results: VapiToolResultEnvelope[]) {
   return Response.json({ results });
 }
@@ -243,10 +306,11 @@ async function handleOne(
   if ((!proposalId || proposalId === "proposal_id") && officeOfferRawText) {
     try {
       // Parse the raw text into a date/time
-      // Use Eastern Time offset to ensure correct local time
-      const ET_OFFSET_HOURS = -4; // EDT (April-November). TODO: handle EST (-5) in winter
+      // Resolve timezone from provider's state (NPI data) instead of hardcoding ET
+      const providerTz = await resolveProviderTimezone(providerIdUuid);
+      const ET_OFFSET_HOURS = providerTz.offset;
       const now = new Date();
-      const timezone = "America/New_York";
+      const timezone = providerTz.timezone;
 
       // Simple date parsing for common patterns
       let parsedStart: Date | null = null;

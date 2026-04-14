@@ -71,14 +71,18 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (!existingVisit) {
-      await supabaseAdmin.from("provider_visits").insert({
-        app_user_id: appUserId,
-        provider_id: providerStatus.provider_id,
-        source: "user_confirmed",
-        visit_date: new Date().toISOString().slice(0, 10),
-        amount_cents: 0,
-        source_transaction_id: `user_confirmed_${Date.now()}`,
-      }).catch(() => {});
+      try {
+        await supabaseAdmin.from("provider_visits").insert({
+          app_user_id: appUserId,
+          provider_id: providerStatus.provider_id,
+          source: "user_confirmed",
+          visit_date: new Date().toISOString().slice(0, 10),
+          amount_cents: 0,
+          source_transaction_id: `user_confirmed_${Date.now()}`,
+        });
+      } catch {
+        // Non-critical
+      }
     }
   }
 

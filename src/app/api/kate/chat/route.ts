@@ -73,9 +73,15 @@ async function buildContext(appUserId: string): Promise<string> {
 
   const displayName = profile.display_name || profile.nickname || profile.full_name || "Unknown";
 
+  // Kate focus areas from patient profile
+  const focusAreas = profile.kate_focus_areas || null;
+  const focusSection = focusAreas
+    ? `\nUser's priority health focus areas: ${focusAreas}\nEmphasize these areas when giving suggestions, asking follow-ups, or offering proactive help.\n`
+    : "";
+
   return `User's name: ${displayName} (full name: ${profile.full_name || "Unknown"})
 Today: ${now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-
+${focusSection}
 Providers on file:
 ${providerList || "No providers yet."}
 

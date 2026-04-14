@@ -123,7 +123,24 @@ export async function GET(req: NextRequest) {
   try {
     const context = await buildUserContext(appUserId);
 
-    const prompt = `You are Kate, a friendly healthcare assistant. Based on this user's health data, generate 2-4 personalized insights. Each insight should be actionable, encouraging, or informative.
+    // Read Kate focus/proactivity settings from patient_profile
+    const focusAreas = context.profile?.kate_focus_areas || null;
+    const proactivity = context.profile?.kate_proactivity || "balanced";
+
+    // Determine insight count range based on proactivity
+    let insightCountInstruction = "generate 2-4 personalized insights";
+    if (proactivity === "minimal") {
+      insightCountInstruction = "generate 1-2 personalized insights (the user prefers fewer, higher-signal notifications)";
+    } else if (proactivity === "proactive") {
+      insightCountInstruction = "generate 3-5 personalized insights (the user wants more proactive suggestions)";
+    }
+
+    // Build focus area weighting instruction
+    const focusInstruction = focusAreas
+      ? `\nThe user has chosen these health focus areas: ${focusAreas}. Weight your insights toward these areas — at least half of insights should relate to their focus areas when possible.`
+      : "";
+
+    const prompt = `You are Kate, a friendly healthcare assistant. Based on this user's health data, ${insightCountInstruction}. Each insight should be actionable, encouraging, or informative.${focusInstruction}
 
 User context:
 ${JSON.stringify(context, null, 2)}
