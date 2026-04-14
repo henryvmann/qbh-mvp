@@ -220,7 +220,8 @@ export default function HandleFirstPage() {
             return;
           }
           setData(json);
-          if (json.userName) setPatientFullName(json.userName);
+          if (json.fullName) setPatientFullName(json.fullName);
+          else if (json.userName) setPatientFullName(json.userName);
 
           // Restore session state (returning from calendar-connect)
           const savedStep = sessionStorage.getItem("guided-step");

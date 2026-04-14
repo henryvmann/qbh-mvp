@@ -244,11 +244,21 @@ function extractOfficeInstructions(lines: string[]): string | null {
 
   if (instructionLines.length === 0) return null;
 
-  // Clean up the "user: " prefix
+  // Clean up: remove "user: " prefix, filler words, and transcript artifacts
   return instructionLines
     .slice(0, 4)
-    .map((line) => line.replace(/^user:\s*/i, "").trim())
-    .join(" | ");
+    .map((line) => {
+      let clean = line.replace(/^user:\s*/i, "").trim();
+      // Remove filler words and speech artifacts
+      clean = clean.replace(/\b(um|uh|ugh|hmm|like,?\s|you know,?\s|so,?\s(?=\w))\b/gi, "");
+      // Clean double spaces
+      clean = clean.replace(/\s{2,}/g, " ").trim();
+      // Capitalize first letter
+      clean = clean.charAt(0).toUpperCase() + clean.slice(1);
+      return clean;
+    })
+    .filter((line) => line.length > 5)
+    .join(". ");
 }
 
 function extractFollowUpNotes(lines: string[]): string | null {
@@ -271,8 +281,15 @@ function extractFollowUpNotes(lines: string[]): string | null {
 
   return followUpLines
     .slice(0, 2)
-    .map((line) => line.replace(/^user:\s*/i, "").trim())
-    .join(" | ");
+    .map((line) => {
+      let clean = line.replace(/^user:\s*/i, "").trim();
+      clean = clean.replace(/\b(um|uh|ugh|hmm|like,?\s|you know,?\s|so,?\s(?=\w))\b/gi, "");
+      clean = clean.replace(/\s{2,}/g, " ").trim();
+      clean = clean.charAt(0).toUpperCase() + clean.slice(1);
+      return clean;
+    })
+    .filter((line) => line.length > 5)
+    .join(". ");
 }
 
 function buildStructuredBookingNotes(transcript: string): StructuredBookingNotes {

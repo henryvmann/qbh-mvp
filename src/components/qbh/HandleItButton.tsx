@@ -49,6 +49,7 @@ export default function HandleItButton({
   const [insuranceProvider, setInsuranceProvider] = React.useState("");
   const [insuranceMemberId, setInsuranceMemberId] = React.useState("");
   const [callbackPhone, setCallbackPhone] = React.useState("");
+  const [patientStatus, setPatientStatus] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
   async function checkProfileAndProceed() {
@@ -101,6 +102,10 @@ export default function HandleItButton({
             insurance_member_id: insuranceMemberId.trim() || null,
             callback_phone: callbackPhone.trim() || null,
           },
+          // Save patient status for this provider
+          ...(patientStatus && providerId ? {
+            provider_status: { provider_id: providerId, status: patientStatus },
+          } : {}),
         }),
       });
 
@@ -233,6 +238,36 @@ export default function HandleItButton({
                 className={inputClass}
               />
             </div>
+
+            {/* New/existing patient */}
+            {providerName && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#7A7F8A]">
+                  Have you been seen at {providerName} before?
+                </label>
+                <div className="flex gap-2">
+                  {[
+                    { value: "existing", label: "Yes, existing patient" },
+                    { value: "likely_new", label: "No, I'm new" },
+                    { value: "unknown", label: "Not sure" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setPatientStatus(opt.value)}
+                      className="flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition"
+                      style={{
+                        backgroundColor: patientStatus === opt.value ? "#5C6B5C" : "#F0F2F5",
+                        color: patientStatus === opt.value ? "#FFFFFF" : "#7A7F8A",
+                        border: `1px solid ${patientStatus === opt.value ? "#5C6B5C" : "#EBEDF0"}`,
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 flex gap-2">

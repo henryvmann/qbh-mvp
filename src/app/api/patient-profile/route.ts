@@ -58,5 +58,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 
+  // Handle provider-specific patient status
+  const providerStatus = body?.provider_status;
+  if (providerStatus?.provider_id && providerStatus?.status === "existing") {
+    // Create a synthetic visit so the system knows they're existing
+    const { data: existingVisit } = await supabaseAdmin
+      .from("provider_visits")
+      .select("id")
+      .eq("app_user_id", appUserId)
+      .eq("provider_id", providerStatus.provider_id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!existingVisit) {
+      await supabaseAdmin.from("provider_visits").insert({
+        app_user_id: appUserId,
+        provider_id: providerStatus.provider_id,
+        source: "user_confirmed",
+        visit_date: new Date().toISOString().slice(0, 10),
+        amount_cents: 0,
+        source_transaction_id: `user_confirmed_${Date.now()}`,
+      }).catch(() => {});
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
