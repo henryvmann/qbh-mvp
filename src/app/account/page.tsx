@@ -1,15 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "../../lib/supabase/client";
+import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
 
 export default function AccountPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  // User info
+  const [userName, setUserName] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+
+  // Calendar connections
+  const [hasGoogleCalendar, setHasGoogleCalendar] = useState(false);
+
+  // Insurance / patient profile
+  const [insuranceProvider, setInsuranceProvider] = useState<string | null>(null);
+  const [memberId, setMemberId] = useState<string | null>(null);
+
+  // Password section
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        // Get email from supabase auth
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) setEmail(user.email);
+
+        // Fetch dashboard data for name and calendar status
+        const dashRes = await apiFetch("/api/dashboard/data");
+        if (dashRes.status === 401) { router.push("/login"); return; }
+        const dashJson = await dashRes.json();
+        if (dashJson?.ok) {
+          setUserName(dashJson.userName || null);
+          setFullName(dashJson.fullName || null);
+          setHasGoogleCalendar(!!dashJson.hasGoogleCalendarConnection);
+        }
+
+        // Fetch patient profile for insurance
+        const profRes = await apiFetch("/api/patient-profile");
+        if (profRes.ok) {
+          const profJson = await profRes.json();
+          if (profJson?.ok && profJson.profile) {
+            const p = profJson.profile;
+            setInsuranceProvider(p.insurance_provider || p.insuranceProvider || null);
+            setMemberId(p.member_id || p.memberId || null);
+          }
+        }
+      } catch {
+        // Non-critical
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,72 +100,177 @@ export default function AccountPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
+        <TopNav />
+      </main>
+    );
+  }
+
   return (
     <main
       className="min-h-screen text-[#1A1D2E]"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
       <TopNav />
-      <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-16">
-        <div className="w-full max-w-md">
-          <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5C6B5C]">
-            Quarterback AI
+      <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
+        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-8">
+          Account
+        </h1>
+
+        {/* Personal Info */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C] mb-4">
+            Personal Information
+          </h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[#7A7F8A]">Name</span>
+              <span className="text-sm font-medium text-[#1A1D2E]">
+                {fullName || userName || "Not set"}
+              </span>
+            </div>
+            <div className="h-px bg-[#EBEDF0]" />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[#7A7F8A]">Email</span>
+              <span className="text-sm font-medium text-[#1A1D2E]">
+                {email || "Not set"}
+              </span>
+            </div>
           </div>
+        </div>
 
-          <h1 className="mt-4 text-4xl tracking-tight">
-            Set a password
-          </h1>
+        {/* Connected Services */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C] mb-4">
+            Connected Services
+          </h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[#1A1D2E]">Google Calendar</span>
+              {hasGoogleCalendar ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-200">
+                  Connected
+                </span>
+              ) : (
+                <Link
+                  href="/calendar-connect"
+                  className="text-xs font-medium text-[#5C6B5C] underline underline-offset-4"
+                >
+                  Connect
+                </Link>
+              )}
+            </div>
+            <div className="h-px bg-[#EBEDF0]" />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[#1A1D2E]">Outlook Calendar</span>
+              <Link
+                href="/calendar-connect"
+                className="text-xs font-medium text-[#5C6B5C] underline underline-offset-4"
+              >
+                Connect
+              </Link>
+            </div>
+          </div>
+        </div>
 
-          <p className="mt-3 text-base text-[#7A7F8A]">
-            Once set, you can sign in with your email and password instead of a
-            magic link.
-          </p>
-
-          {done ? (
-            <div className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
-              <div className="text-sm font-medium text-[#1A1D2E]">
-                Password set
+        {/* Insurance Info */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C] mb-4">
+            Insurance
+          </h2>
+          {insuranceProvider || memberId ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-[#7A7F8A]">Provider</span>
+                <span className="text-sm font-medium text-[#1A1D2E]">
+                  {insuranceProvider || "Not set"}
+                </span>
               </div>
-              <div className="mt-1 text-sm text-[#7A7F8A]">
-                You can now sign in with your email and password.
+              <div className="h-px bg-[#EBEDF0]" />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-[#7A7F8A]">Member ID</span>
+                <span className="text-sm font-medium text-[#1A1D2E]">
+                  {memberId || "Not set"}
+                </span>
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="New password"
-                required
-                autoFocus
-                className="w-full rounded-2xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-              />
+            <p className="text-sm text-[#7A7F8A]">
+              No insurance information on file. You can add this through your health profile or by talking to Kate.
+            </p>
+          )}
+        </div>
 
-              <input
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                placeholder="Confirm password"
-                required
-                className="w-full rounded-2xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-              />
+        {/* Password Section (collapsible) */}
+        <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0]">
+          <button
+            type="button"
+            onClick={() => setPasswordOpen(!passwordOpen)}
+            className="flex w-full items-center justify-between p-6 text-left"
+          >
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C]">
+              Password
+            </h2>
+            <svg
+              className={`h-4 w-4 text-[#7A7F8A] transition-transform ${passwordOpen ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
 
-              <button
-                type="submit"
-                disabled={submitting || !password.trim() || !confirm.trim()}
-                className="w-full rounded-2xl px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
-              >
-                {submitting ? "Saving..." : "Set password"}
-              </button>
+          {passwordOpen && (
+            <div className="px-6 pb-6">
+              <p className="text-sm text-[#7A7F8A] mb-4">
+                Set a password to sign in with your email and password instead of a magic link.
+              </p>
 
-              {error ? (
-                <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
-                  {error}
+              {done ? (
+                <div className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700 ring-1 ring-green-200">
+                  Password updated successfully.
                 </div>
-              ) : null}
-            </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="New password"
+                    required
+                    className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  />
+
+                  <input
+                    type="password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    placeholder="Confirm password"
+                    required
+                    className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={submitting || !password.trim() || !confirm.trim()}
+                    className="w-full rounded-xl px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                  >
+                    {submitting ? "Saving..." : "Set password"}
+                  </button>
+
+                  {error ? (
+                    <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
+                      {error}
+                    </div>
+                  ) : null}
+                </form>
+              )}
+            </div>
           )}
         </div>
       </div>

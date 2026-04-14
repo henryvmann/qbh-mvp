@@ -2,9 +2,53 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
 import HandleItButton from "../../components/qbh/HandleItButton";
+
+/* ---------- helpers ---------- */
+
+const PROVIDER_TYPE_KEYWORDS = [
+  "dentist", "dental", "eye", "optometrist", "ophthalmologist", "vision",
+  "dermatologist", "dermatology", "skin", "obgyn", "ob-gyn", "gynecologist",
+  "cardiologist", "cardiology", "orthopedic", "physical therapy", "therapist",
+  "psychiatrist", "psychologist", "mental health", "counselor",
+  "allergist", "ent", "ear nose", "podiatrist", "foot", "urologist",
+  "endocrinologist", "gastroenterologist", "neurologist", "pulmonologist",
+  "rheumatologist", "oncologist",
+];
+
+function getGoalLink(goal: { title: string; category: string; providerId?: string }): { href: string; label: string } | null {
+  const t = goal.title.toLowerCase();
+
+  // Profile-related goals
+  if (t.includes("profile") || t.includes("health profile") || t.includes("complete your") || t.includes("update your info")) {
+    return { href: "/settings", label: "Go to profile" };
+  }
+
+  // Calendar-related goals
+  if (t.includes("calendar") || t.includes("connect your calendar")) {
+    return { href: "/calendar-connect", label: "Connect calendar" };
+  }
+
+  // If it has a providerId, link to providers page
+  if (goal.providerId) {
+    return { href: "/providers", label: "View providers" };
+  }
+
+  // If it mentions a provider type, link to provider search
+  if (PROVIDER_TYPE_KEYWORDS.some((kw) => t.includes(kw))) {
+    return { href: "/providers", label: "Find providers" };
+  }
+
+  // Booking-related
+  if (t.includes("book") || t.includes("schedule") || t.includes("appointment")) {
+    return { href: "/providers", label: "Find providers" };
+  }
+
+  return null;
+}
 
 /* ---------- types ---------- */
 
@@ -399,7 +443,9 @@ export default function GoalsPage() {
                   {section.config.sectionTitle}
                 </h2>
                 <div className="space-y-3">
-                  {section.items.map((goal) => (
+                  {section.items.map((goal) => {
+                    const goalLink = getGoalLink(goal);
+                    return (
                     <div
                       key={goal.id}
                       className="rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]"
@@ -407,9 +453,18 @@ export default function GoalsPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-lg font-semibold text-[#1A1D2E]">
-                              {goal.title}
-                            </span>
+                            {goalLink ? (
+                              <Link
+                                href={goalLink.href}
+                                className="text-lg font-semibold text-[#1A1D2E] underline decoration-[#5C6B5C]/30 underline-offset-4 hover:decoration-[#5C6B5C]"
+                              >
+                                {goal.title}
+                              </Link>
+                            ) : (
+                              <span className="text-lg font-semibold text-[#1A1D2E]">
+                                {goal.title}
+                              </span>
+                            )}
                             <span
                               className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0"
                               style={{
@@ -423,6 +478,17 @@ export default function GoalsPage() {
                           <p className="mt-1.5 text-sm text-[#7A7F8A]">
                             {goal.detail}
                           </p>
+                          {goalLink && (
+                            <Link
+                              href={goalLink.href}
+                              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#5C6B5C] hover:underline underline-offset-4"
+                            >
+                              {goalLink.label}
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                              </svg>
+                            </Link>
+                          )}
                         </div>
                         <div className="shrink-0">
                           <MiniGauge
@@ -443,7 +509,8 @@ export default function GoalsPage() {
                           />
                         )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             ))}

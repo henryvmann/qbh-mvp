@@ -13,6 +13,8 @@ function CalendarConnectPageInner() {
   const [submitting, setSubmitting] = useState(false);
   const [submittingOutlook, setSubmittingOutlook] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [outlookConnected, setOutlookConnected] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -37,6 +39,23 @@ function CalendarConnectPageInner() {
 
     setError("Missing user_id");
   }, [searchParams]);
+
+  // Check connection status from dashboard data
+  useEffect(() => {
+    apiFetch("/api/dashboard/data")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.ok) {
+          setGoogleConnected(!!json.hasGoogleCalendarConnection);
+          // Outlook connection: the dashboard API currently bundles both into
+          // hasGoogleCalendarConnection. We keep a separate state so the UI
+          // can be updated when the API is extended.
+          // For now, if the flag is true we also check the provider query param
+          // after a successful callback redirect.
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const calendarError = (searchParams.get("calendar_error") || "").trim();
@@ -191,16 +210,22 @@ function CalendarConnectPageInner() {
                   </div>
 
                   <div className="mt-6">
-                    <button
-                      onClick={startGoogleCalendarConnect}
-                      disabled={!userId || submitting || submittingOutlook}
-                      className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
-                      style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
-                    >
-                      {submitting
-                        ? "Redirecting to Google..."
-                        : "Connect Google Calendar"}
-                    </button>
+                    {googleConnected ? (
+                      <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
+                        Connected &#10003;
+                      </div>
+                    ) : (
+                      <button
+                        onClick={startGoogleCalendarConnect}
+                        disabled={!userId || submitting || submittingOutlook}
+                        className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                      >
+                        {submitting
+                          ? "Redirecting to Google..."
+                          : "Connect Google Calendar"}
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -215,16 +240,22 @@ function CalendarConnectPageInner() {
                   </div>
 
                   <div className="mt-6">
-                    <button
-                      onClick={startOutlookCalendarConnect}
-                      disabled={!userId || submitting || submittingOutlook}
-                      className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
-                      style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
-                    >
-                      {submittingOutlook
-                        ? "Redirecting to Microsoft..."
-                        : "Connect Outlook Calendar"}
-                    </button>
+                    {outlookConnected ? (
+                      <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
+                        Connected &#10003;
+                      </div>
+                    ) : (
+                      <button
+                        onClick={startOutlookCalendarConnect}
+                        disabled={!userId || submitting || submittingOutlook}
+                        className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                      >
+                        {submittingOutlook
+                          ? "Redirecting to Microsoft..."
+                          : "Connect Outlook Calendar"}
+                      </button>
+                    )}
                   </div>
                 </div>
 

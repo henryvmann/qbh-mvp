@@ -601,9 +601,9 @@ export default function OnboardingPage() {
         {/* Preview cards — aligned with bubble right edge */}
         <div className="mt-8 flex justify-end gap-3" style={{ paddingLeft: 56 }}>
           {[
-            { icon: "\u25C9", label: "Find providers" },
-            { icon: "\u25C9", label: "Book appointments" },
-            { icon: "\u2713", label: "Stay on track" },
+            { icon: "🔍", label: "Find providers" },
+            { icon: "📅", label: "Book appointments" },
+            { icon: "✅", label: "Stay on track" },
           ].map((card) => (
             <div
               key={card.label}
@@ -666,11 +666,11 @@ export default function OnboardingPage() {
     );
   }
 
-  // Step 2: NEW — Social Proof / Trust interstitial
+  // Step 2: Skipped (social proof removed). Step 1 advances directly to step 3.
+  // Safety fallback if step 2 is reached via any path:
+  // (Note: useEffect in SocialProofScreen handled this before; now we auto-advance with 0ms delay)
   if (step === 2) {
-    return (
-      <SocialProofScreen onContinue={() => setStep(3)} />
-    );
+    return <SocialProofScreen onContinue={() => setStep(3)} />;
   }
 
   // Step 3: What's hardest to manage today? (was step 2)
@@ -1606,7 +1606,7 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
         hasFired.current = true;
         onContinue();
       }
-    }, 4000);
+    }, 0);
     return () => window.clearTimeout(timer);
   }, [onContinue]);
 
