@@ -4,12 +4,14 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
+import { Check } from "lucide-react";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import KateChatButton from "../../components/qbh/KateChatButton";
 import KateInsights from "../../components/qbh/KateInsights";
 import CareGaps from "../../components/qbh/CareGaps";
 import KateFollowUp from "../../components/qbh/KateFollowUp";
 import TopNav from "../../components/qbh/TopNav";
+import BestNextStep from "../../components/qbh/BestNextStep";
 
 /* ── Types ── */
 
@@ -79,19 +81,7 @@ function getWeekDays(): Array<{ abbrev: string; date: number; isToday: boolean }
 /* ── SVG Icons ── */
 
 function CheckmarkIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
+  return <Check className={className} size={20} strokeWidth={2.5} />;
 }
 
 function ChevronRightIcon({ className }: { className?: string }) {
@@ -327,6 +317,11 @@ function DashboardInner() {
           <span className="text-sm text-[#7A7F8A]">
             Hi, {userName || "there"}
           </span>
+        </div>
+
+        {/* ── Best Next Step ── */}
+        <div className="px-7">
+          <BestNextStep />
         </div>
 
         {/* ── 2. Week Strip with dates ── */}

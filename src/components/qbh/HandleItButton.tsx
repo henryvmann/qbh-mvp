@@ -3,6 +3,7 @@
 
 import * as React from "react";
 import { apiFetch } from "../../lib/api";
+import WhyWeAsk from "./WhyWeAsk";
 
 type Props = {
   userId?: string | null;
@@ -198,6 +199,7 @@ export default function HandleItButton({
                 onChange={(e) => setDob(e.target.value)}
                 className={inputClass}
               />
+              <WhyWeAsk text="Offices verify your identity with this before scheduling" />
             </div>
 
             <div>
@@ -211,6 +213,7 @@ export default function HandleItButton({
                 placeholder="e.g. Aetna, Blue Cross, UnitedHealthcare"
                 className={inputClass}
               />
+              <WhyWeAsk text="Kate will share this when booking so they can check coverage" />
             </div>
 
             <div>
@@ -224,6 +227,7 @@ export default function HandleItButton({
                 placeholder="Found on your insurance card"
                 className={inputClass}
               />
+              <WhyWeAsk text="Some offices need this upfront — others will ask at check-in" />
             </div>
 
             <div>
@@ -237,6 +241,7 @@ export default function HandleItButton({
                 placeholder="(555) 123-4567"
                 className={inputClass}
               />
+              <WhyWeAsk text="We share this with offices in case they need to reach you directly" />
             </div>
 
             {/* New/existing patient */}
@@ -266,6 +271,7 @@ export default function HandleItButton({
                     </button>
                   ))}
                 </div>
+                <WhyWeAsk text="This helps Kate introduce you correctly to the office" />
               </div>
             )}
           </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import TopNav from "../../components/qbh/TopNav";
 import { apiFetch } from "../../lib/api";
+import { Rocket, Building2, CalendarCheck, BarChart3, Target, Link as LinkIcon, Star, Trophy, Check } from "lucide-react";
 
 type AnalyticsData = {
   providerCount: number;
@@ -40,12 +41,12 @@ function StatCard({
 }
 
 function AchievementBadge({
-  icon,
+  icon: IconComp,
   title,
   description,
   earned,
 }: {
-  icon: string;
+  icon: React.ComponentType<any>;
   title: string;
   description: string;
   earned: boolean;
@@ -58,7 +59,7 @@ function AchievementBadge({
           : "bg-[#F0F2F5] border-[#EBEDF0] opacity-50"
       }`}
     >
-      <span className="text-2xl">{icon}</span>
+      <IconComp size={24} strokeWidth={1.5} color={earned ? "#5C6B5C" : "#B0B4BC"} />
       <div>
         <div className={`text-sm font-semibold ${earned ? "text-[#1A1D2E]" : "text-[#B0B4BC]"}`}>
           {title}
@@ -66,7 +67,9 @@ function AchievementBadge({
         <div className="text-xs text-[#7A7F8A]">{description}</div>
       </div>
       {earned && (
-        <span className="ml-auto text-xs font-semibold text-[#5C6B5C]">✓</span>
+        <span className="ml-auto">
+          <Check size={16} strokeWidth={2} color="#5C6B5C" />
+        </span>
       )}
     </div>
   );
@@ -136,14 +139,14 @@ export default function AnalyticsPage() {
   if (!data) return null;
 
   const achievements = [
-    { icon: "🚀", title: "Getting Started", description: "Created your account", earned: true },
-    { icon: "🏥", title: "Provider Tracker", description: "Added your first provider", earned: data.providerCount > 0 },
-    { icon: "📅", title: "First Booking", description: "Booked your first appointment", earned: data.bookedCount > 0 },
-    { icon: "📊", title: "Health Historian", description: "5+ past visits tracked", earned: data.visitCount >= 5 },
-    { icon: "🎯", title: "Goal Setter", description: "Set your first health goal", earned: data.goalsTotal > 0 },
-    { icon: "🔗", title: "Connected", description: "Connected your calendar", earned: data.calendarConnected },
-    { icon: "⭐", title: "On Track", description: "All providers current", earned: data.overdueCount === 0 && data.providerCount > 0 },
-    { icon: "🏆", title: "Health Champion", description: "10+ providers tracked", earned: data.providerCount >= 10 },
+    { icon: Rocket, title: "Getting Started", description: "Created your account", earned: true },
+    { icon: Building2, title: "Provider Tracker", description: "Added your first provider", earned: data.providerCount > 0 },
+    { icon: CalendarCheck, title: "First Booking", description: "Booked your first appointment", earned: data.bookedCount > 0 },
+    { icon: BarChart3, title: "Health Historian", description: "5+ past visits tracked", earned: data.visitCount >= 5 },
+    { icon: Target, title: "Goal Setter", description: "Set your first health goal", earned: data.goalsTotal > 0 },
+    { icon: LinkIcon, title: "Connected", description: "Connected your calendar", earned: data.calendarConnected },
+    { icon: Star, title: "On Track", description: "All providers current", earned: data.overdueCount === 0 && data.providerCount > 0 },
+    { icon: Trophy, title: "Health Champion", description: "10+ providers tracked", earned: data.providerCount >= 10 },
   ];
 
   const earnedCount = achievements.filter((a) => a.earned).length;

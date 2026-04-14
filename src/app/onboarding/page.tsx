@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "../../lib/supabase/client";
 import { apiFetch } from "../../lib/api";
 import { CharacterWithBubble } from "../../components/qbh/CharacterBubble";
+import WhyWeAsk from "../../components/qbh/WhyWeAsk";
+import { Search, Calendar, CheckCircle, Building2, ShieldCheck, Clock, Sparkles } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -601,9 +603,9 @@ export default function OnboardingPage() {
         {/* Preview cards — aligned with bubble right edge */}
         <div className="mt-8 flex justify-end gap-3" style={{ paddingLeft: 56 }}>
           {[
-            { icon: "🔍", label: "Find providers" },
-            { icon: "📅", label: "Book appointments" },
-            { icon: "✅", label: "Stay on track" },
+            { icon: Search, label: "Find providers" },
+            { icon: Calendar, label: "Book appointments" },
+            { icon: CheckCircle, label: "Stay on track" },
           ].map((card) => (
             <div
               key={card.label}
@@ -615,7 +617,7 @@ export default function OnboardingPage() {
                 borderColor: CARD_BORDER,
               }}
             >
-              <span className="text-lg" style={{ color: ACCENT }}>{card.icon}</span>
+              <card.icon size={20} strokeWidth={1.5} color="#5C6B5C" />
               <span className="text-xs text-[#1A1D2E]">{card.label}</span>
             </div>
           ))}
@@ -1026,23 +1028,26 @@ export default function OnboardingPage() {
           </p>
 
           <div className="mt-4 flex flex-col gap-3">
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="First name"
-                className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-              />
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Last name"
-                className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-              />
+            <div>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First name"
+                  className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+                />
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last name"
+                  className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+                />
+              </div>
+              <WhyWeAsk text="Kate uses your full name when calling offices on your behalf" />
             </div>
             <input
               type="email"
@@ -1112,23 +1117,26 @@ export default function OnboardingPage() {
         </p>
 
         <div className="mt-6 flex flex-col gap-4">
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="First name"
-              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            />
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              placeholder="Last name"
-              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            />
+          <div>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First name"
+                className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+              />
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last name"
+                className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+              />
+            </div>
+            <WhyWeAsk text="Kate uses your full name when calling offices on your behalf" />
           </div>
           <input
             type="email"
@@ -1419,13 +1427,21 @@ export default function OnboardingPage() {
       );
     }
 
+    const progressIconMap: Record<string, React.ComponentType<any>> = {
+      "Scanning your transactions": Search,
+      "Finding healthcare providers": Building2,
+      "Verifying against medical databases": ShieldCheck,
+      "Building your care timeline": Calendar,
+      "Checking for overdue care": Clock,
+      "Preparing your dashboard": Sparkles,
+    };
     const progressItems = [
-      { label: "Scanning your transactions", icon: "🔍" },
-      { label: "Finding healthcare providers", icon: "🏥" },
-      { label: "Verifying against medical databases", icon: "✅" },
-      { label: "Building your care timeline", icon: "📅" },
-      { label: "Checking for overdue care", icon: "⏰" },
-      { label: "Preparing your dashboard", icon: "✨" },
+      { label: "Scanning your transactions" },
+      { label: "Finding healthcare providers" },
+      { label: "Verifying against medical databases" },
+      { label: "Building your care timeline" },
+      { label: "Checking for overdue care" },
+      { label: "Preparing your dashboard" },
     ];
 
     const healthFacts = [
@@ -1507,8 +1523,11 @@ export default function OnboardingPage() {
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
                     </span>
                   ) : (
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center text-sm">
-                      {item.icon}
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+                      {(() => {
+                        const IC = progressIconMap[item.label] || Search;
+                        return <IC size={16} strokeWidth={1.5} color="#B0B4BC" />;
+                      })()}
                     </span>
                   )}
                   <span

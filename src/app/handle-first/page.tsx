@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import { CharacterWithBubble } from "../../components/qbh/CharacterBubble";
 import type { Pose } from "../../components/qbh/CharacterBubble";
+import WhyWeAsk from "../../components/qbh/WhyWeAsk";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -527,33 +528,36 @@ export default function HandleFirstPage() {
             </CharacterWithBubble>
 
             <div className="mt-6 space-y-4">
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs text-[#7A7F8A]">First name</label>
-                  <input
-                    type="text"
-                    value={patientFullName.split(" ")[0] || ""}
-                    onChange={(e) => {
-                      const last = patientFullName.split(" ").slice(1).join(" ");
-                      setPatientFullName(`${e.target.value} ${last}`.trim());
-                    }}
-                    placeholder="First name"
-                    className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                  />
+              <div>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs text-[#7A7F8A]">First name</label>
+                    <input
+                      type="text"
+                      value={patientFullName.split(" ")[0] || ""}
+                      onChange={(e) => {
+                        const last = patientFullName.split(" ").slice(1).join(" ");
+                        setPatientFullName(`${e.target.value} ${last}`.trim());
+                      }}
+                      placeholder="First name"
+                      className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs text-[#7A7F8A]">Last name</label>
+                    <input
+                      type="text"
+                      value={patientFullName.split(" ").slice(1).join(" ") || ""}
+                      onChange={(e) => {
+                        const first = patientFullName.split(" ")[0] || "";
+                        setPatientFullName(`${first} ${e.target.value}`.trim());
+                      }}
+                      placeholder="Last name"
+                      className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs text-[#7A7F8A]">Last name</label>
-                  <input
-                    type="text"
-                    value={patientFullName.split(" ").slice(1).join(" ") || ""}
-                    onChange={(e) => {
-                      const first = patientFullName.split(" ")[0] || "";
-                      setPatientFullName(`${first} ${e.target.value}`.trim());
-                    }}
-                    placeholder="Last name"
-                    className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                  />
-                </div>
+                <WhyWeAsk text="Kate uses your full name when calling offices on your behalf" />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-[#7A7F8A]">Date of birth</label>
@@ -563,6 +567,7 @@ export default function HandleFirstPage() {
                   onChange={(e) => setPatientDob(e.target.value)}
                   className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
+                <WhyWeAsk text="Offices verify your identity with this before scheduling" />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-[#7A7F8A]">Insurance provider</label>
@@ -573,6 +578,7 @@ export default function HandleFirstPage() {
                   placeholder="e.g., Aetna, Blue Cross, United"
                   className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
+                <WhyWeAsk text="Kate will share this when booking so they can check coverage" />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-[#7A7F8A]">Member ID</label>
@@ -583,6 +589,7 @@ export default function HandleFirstPage() {
                   placeholder="Found on your insurance card"
                   className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
+                <WhyWeAsk text="Some offices need this upfront — others will ask at check-in" />
               </div>
             </div>
 

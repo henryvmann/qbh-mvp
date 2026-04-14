@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { apiFetch } from "../../lib/api";
+import { ClipboardList, Check, Lightbulb } from "lucide-react";
 
 type PrepData = {
   provider_name: string;
@@ -61,7 +62,7 @@ export default function AppointmentPrep({
         disabled={loading}
         className="mt-3 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-[#5C6B5C] bg-[#5C6B5C]/10 hover:bg-[#5C6B5C]/20 transition disabled:opacity-50"
       >
-        <span>📋</span>
+        <ClipboardList size={14} strokeWidth={1.5} color="#5C6B5C" />
         {loading ? "Preparing..." : "Prep for this visit"}
       </button>
     );
@@ -73,7 +74,7 @@ export default function AppointmentPrep({
     <div className="mt-4 rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-base">📋</span>
+          <ClipboardList size={18} strokeWidth={1.5} color="#5C6B5C" />
           <div>
             <div className="text-sm font-semibold text-[#1A1D2E]">
               Visit Prep: {prep.provider_name}
@@ -122,7 +123,7 @@ export default function AppointmentPrep({
       <div className="space-y-1.5 mb-4">
         {prep.questions_to_ask.map((q, i) => (
           <div key={i} className="flex gap-2 text-sm text-[#1A1D2E]">
-            <span className="text-[#5C6B5C] shrink-0">•</span>
+            <Check size={14} strokeWidth={1.5} color="#5C6B5C" className="shrink-0 mt-0.5" />
             <span>{q}</span>
           </div>
         ))}
@@ -135,7 +136,7 @@ export default function AppointmentPrep({
       <div className="space-y-1.5 mb-4">
         {prep.things_to_bring.map((item, i) => (
           <div key={i} className="flex gap-2 text-sm text-[#1A1D2E]">
-            <span className="text-[#5C6B5C] shrink-0">✓</span>
+            <Check size={14} strokeWidth={1.5} color="#5C6B5C" className="shrink-0 mt-0.5" />
             <span>{item}</span>
           </div>
         ))}
@@ -153,7 +154,7 @@ export default function AppointmentPrep({
 
       {/* Kate's note */}
       <div className="mt-3 rounded-lg bg-white border border-[#EBEDF0] p-3 text-xs text-[#7A7F8A] italic">
-        💡 {prep.kate_note}
+        <span className="inline-flex items-center gap-1.5"><Lightbulb size={14} strokeWidth={1.5} color="#5C6B5C" /> {prep.kate_note}</span>
       </div>
 
       {/* Actions */}

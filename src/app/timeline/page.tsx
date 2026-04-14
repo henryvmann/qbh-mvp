@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
+import { Sparkles, Lightbulb, Target, Star as StarIcon, Trophy, Calendar } from "lucide-react";
 
 type TimelineEvent = {
   id: string;
@@ -128,11 +129,11 @@ export default function TimelinePage() {
     : events.filter((e) => e.eventType === filter);
 
   // Milestones
-  const milestones = [];
-  if (events.length >= 1) milestones.push({ icon: "🎯", text: "First event tracked" });
-  if (events.length >= 5) milestones.push({ icon: "⭐", text: "5 events in your timeline" });
-  if (events.length >= 10) milestones.push({ icon: "🏆", text: "10+ health events tracked" });
-  if (futureEvents.length > 0) milestones.push({ icon: "📅", text: `${futureEvents.length} upcoming` });
+  const milestones: Array<{ icon: React.ComponentType<any>; text: string }> = [];
+  if (events.length >= 1) milestones.push({ icon: Target, text: "First event tracked" });
+  if (events.length >= 5) milestones.push({ icon: StarIcon, text: "5 events in your timeline" });
+  if (events.length >= 10) milestones.push({ icon: Trophy, text: "10+ health events tracked" });
+  if (futureEvents.length > 0) milestones.push({ icon: Calendar, text: `${futureEvents.length} upcoming` });
 
   return (
     <main className="min-h-screen text-[#1A1D2E]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
@@ -150,7 +151,7 @@ export default function TimelinePage() {
           <div className="mt-4 flex flex-wrap gap-2">
             {milestones.map((m, i) => (
               <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EBEDF0] px-3 py-1 text-xs font-medium text-[#1A1D2E] shadow-sm">
-                {m.icon} {m.text}
+                <m.icon size={14} strokeWidth={1.5} color="#5C6B5C" /> {m.text}
               </span>
             ))}
           </div>
@@ -234,7 +235,7 @@ export default function TimelinePage() {
                               className="rounded-md p-1 text-[#B0B4BC] hover:text-[#5C6B5C] hover:bg-[#5C6B5C]/10 transition"
                               title="Get Kate's insight"
                             >
-                              ✨
+                              <Sparkles size={16} strokeWidth={1.5} />
                             </button>
                             <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${cfg.bg} ${cfg.text}`}>
                               {cfg.label}
@@ -255,7 +256,7 @@ export default function TimelinePage() {
                       {isExpanded && insightText && (
                         <div className="border-t border-[#EBEDF0] px-5 py-4 bg-[#F0F2F5]/50 rounded-b-2xl">
                           <div className="flex items-start gap-2">
-                            <span className="text-sm shrink-0">💡</span>
+                            <Lightbulb size={16} strokeWidth={1.5} color="#5C6B5C" className="shrink-0" />
                             <div className="text-xs text-[#7A7F8A] leading-relaxed">
                               {insightLoading && !insightText ? (
                                 <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />

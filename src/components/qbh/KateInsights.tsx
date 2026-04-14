@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
+import { ClipboardList, Search, Star, Zap, Lightbulb, Link2 } from "lucide-react";
 
 type Insight = {
   id: string;
@@ -15,13 +16,19 @@ type Insight = {
   generated_at: string;
 };
 
-const priorityIcon: Record<string, string> = {
-  upcoming_prep: "📋",
-  care_gap: "🔍",
-  encouragement: "🌟",
-  action_needed: "⚡",
-  tip: "💡",
-  connection: "🔗",
+const priorityColor: Record<string, string> = {
+  high: "#C03020",
+  medium: "#5C6B5C",
+  low: "#2A6090",
+};
+
+const insightIconMap: Record<string, React.ComponentType<any>> = {
+  upcoming_prep: ClipboardList,
+  care_gap: Search,
+  encouragement: Star,
+  action_needed: Zap,
+  tip: Lightbulb,
+  connection: Link2,
 };
 
 const priorityBorder: Record<string, string> = {
@@ -71,7 +78,7 @@ export default function KateInsights() {
           onClick={() => setMinimized(false)}
           className="flex items-center gap-2 text-xs font-medium text-[#5C6B5C] hover:underline"
         >
-          <span>💡</span>
+          <Lightbulb size={14} strokeWidth={1.5} color="#5C6B5C" />
           Kate has {insights.length} insight{insights.length !== 1 ? "s" : ""} for you
         </button>
       </div>
@@ -109,8 +116,11 @@ export default function KateInsights() {
             className={`rounded-xl bg-white border border-[#EBEDF0] border-l-[3px] ${priorityBorder[insight.priority] || ""} p-4 shadow-sm`}
           >
             <div className="flex items-start gap-3">
-              <span className="text-base mt-0.5 shrink-0">
-                {priorityIcon[insight.type] || "💡"}
+              <span className="mt-0.5 shrink-0">
+                {(() => {
+                  const IconComp = insightIconMap[insight.type] || Lightbulb;
+                  return <IconComp size={18} strokeWidth={1.5} color={priorityColor[insight.priority] || "#5C6B5C"} />;
+                })()}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold text-[#1A1D2E]">

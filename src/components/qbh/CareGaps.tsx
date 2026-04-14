@@ -2,12 +2,21 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../../lib/api";
+import { Stethoscope, SmilePlus, Eye, Microscope, Heart } from "lucide-react";
 
 type CareGap = {
   type: string;
   label: string;
   description: string;
-  icon: string;
+  iconKey: string;
+};
+
+const careGapIconMap: Record<string, React.ComponentType<any>> = {
+  pcp: Stethoscope,
+  dentist: SmilePlus,
+  eye: Eye,
+  dermatologist: Microscope,
+  obgyn: Heart,
 };
 
 const CARE_GAP_TYPES: CareGap[] = [
@@ -15,31 +24,31 @@ const CARE_GAP_TYPES: CareGap[] = [
     type: "pcp",
     label: "Primary Care",
     description: "Annual checkups, preventive screenings, and general health",
-    icon: "🩺",
+    iconKey: "pcp",
   },
   {
     type: "dentist",
     label: "Dentist",
     description: "Dental cleanings and checkups every 6 months",
-    icon: "🦷",
+    iconKey: "dentist",
   },
   {
     type: "eye",
     label: "Eye Doctor",
     description: "Vision exams and eye health screenings",
-    icon: "👁",
+    iconKey: "eye",
   },
   {
     type: "dermatologist",
     label: "Dermatologist",
     description: "Skin checks and annual mole screenings",
-    icon: "🔬",
+    iconKey: "dermatologist",
   },
   {
     type: "obgyn",
     label: "OB/GYN",
     description: "Gynecological exams and reproductive health",
-    icon: "💊",
+    iconKey: "obgyn",
   },
 ];
 
@@ -115,7 +124,12 @@ export default function CareGaps() {
             className="flex items-center justify-between gap-3 rounded-xl bg-white border border-[#EBEDF0] shadow-sm p-4"
           >
             <div className="flex items-center gap-3">
-              <span className="text-lg">{gap.icon}</span>
+              <span className="shrink-0">
+                {(() => {
+                  const IconComp = careGapIconMap[gap.type] || Stethoscope;
+                  return <IconComp size={20} strokeWidth={1.5} color="#5C6B5C" />;
+                })()}
+              </span>
               <div>
                 <div className="text-sm font-medium text-[#1A1D2E]">
                   No {gap.label} on file

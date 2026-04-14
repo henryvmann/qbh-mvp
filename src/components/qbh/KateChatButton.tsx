@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { apiFetch } from "../../lib/api";
+import { Send, CalendarPlus, FileText, Stethoscope, HelpCircle } from "lucide-react";
 
 type Message = {
   role: "user" | "assistant";
@@ -9,10 +10,10 @@ type Message = {
 };
 
 const QUICK_ACTIONS = [
-  { label: "Book an appointment", prompt: "I need to book an appointment" },
-  { label: "Summarize my plan", prompt: "Can you summarize my current health plan and what's pending?" },
-  { label: "Prep for my next visit", prompt: "Help me prepare for my next upcoming appointment" },
-  { label: "What should I do next?", prompt: "What are the most important things I should do for my health right now?" },
+  { label: "Book an appointment", prompt: "I need to book an appointment", icon: CalendarPlus },
+  { label: "Summarize my plan", prompt: "Can you summarize my current health plan and what's pending?", icon: FileText },
+  { label: "Prep for my next visit", prompt: "Help me prepare for my next upcoming appointment", icon: Stethoscope },
+  { label: "What should I do next?", prompt: "What are the most important things I should do for my health right now?", icon: HelpCircle },
 ];
 
 export default function KateChatButton() {
@@ -182,8 +183,9 @@ export default function KateChatButton() {
                     key={action.label}
                     onClick={() => sendQuickAction(action.prompt)}
                     disabled={streaming}
-                    className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#1A1D2E] hover:bg-[#E8EBF0] transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#1A1D2E] hover:bg-[#E8EBF0] transition disabled:opacity-50"
                   >
+                    <action.icon size={13} strokeWidth={1.5} color="#5C6B5C" />
                     {action.label}
                   </button>
                 ))}
@@ -235,9 +237,7 @@ export default function KateChatButton() {
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white disabled:opacity-40"
               style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M2 8l12-5-5 12-2-5-5-2z" fill="currentColor" />
-              </svg>
+              <Send size={16} strokeWidth={1.5} />
             </button>
           </div>
         </div>
