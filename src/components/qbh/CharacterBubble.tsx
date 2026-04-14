@@ -14,7 +14,10 @@ export function Character({ pose: _pose }: { pose: Pose }) {
         alt="Kate"
         width={44}
         height={44}
+        loading="eager"
+        fetchPriority="high"
         className="rounded-xl object-cover shadow-sm"
+        style={{ width: 44, height: 44, display: "block" }}
       />
     </div>
   );
