@@ -52,6 +52,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on all pages; skip Next.js internals and API routes.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)"],
+  // Run on all pages; skip Next.js internals, API routes, and static assets.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)"],
 };

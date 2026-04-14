@@ -297,25 +297,39 @@ async function handleOne(
             month++;
             if (month > 11) { month = 0; year++; }
           }
+
+          // Check for time — if no time given, ask for it instead of defaulting to 9AM
+          const tMatch = officeOfferRawText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
+          if (!tMatch) {
+            // Build a spoken date for the response
+            const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            const spokenDate = `${monthNames[month]} ${ordinal(dayNum)}`;
+            return {
+              toolCallId,
+              result: JSON.stringify({
+                status: "OK",
+                code: "NEED_TIME",
+                message_to_say: `Got it — what time on ${spokenDate} works best?`,
+                next_action: "WAIT_FOR_OFFICE_TIME",
+              }),
+            };
+          }
+
           parsedStart = new Date(Date.UTC(year, month, dayNum, 9 - ET_OFFSET_HOURS, 0, 0));
 
-          // Check for time
-          const tMatch = officeOfferRawText.match(/\b(noon|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
-          if (tMatch) {
-            let h = 9;
-            if (tMatch[1].toLowerCase() === "noon") { h = 12; }
-            else {
-              h = parseInt(tMatch[2] || "9");
-              const m2 = parseInt(tMatch[3] || "0");
-              const ap = (tMatch[4] || "").toLowerCase();
-              if (ap === "pm" && h < 12) h += 12;
-              if (ap === "am" && h === 12) h = 0;
-              if (!ap && h < 8) h += 12;
-              parsedStart.setUTCHours(h - ET_OFFSET_HOURS, m2, 0, 0);
-            }
-            if (tMatch[1].toLowerCase() === "noon") {
-              parsedStart.setUTCHours(12 - ET_OFFSET_HOURS, 0, 0, 0);
-            }
+          let h = 9;
+          if (tMatch[1].toLowerCase() === "noon") { h = 12; }
+          else {
+            h = parseInt(tMatch[2] || "9");
+            const m2 = parseInt(tMatch[3] || "0");
+            const ap = (tMatch[4] || "").toLowerCase();
+            if (ap === "pm" && h < 12) h += 12;
+            if (ap === "am" && h === 12) h = 0;
+            if (!ap && h < 8) h += 12;
+            parsedStart.setUTCHours(h - ET_OFFSET_HOURS, m2, 0, 0);
+          }
+          if (tMatch[1].toLowerCase() === "noon") {
+            parsedStart.setUTCHours(12 - ET_OFFSET_HOURS, 0, 0, 0);
           }
         }
       }
@@ -352,7 +366,18 @@ async function handleOne(
             // Convert local ET to UTC for storage
             parsedStart.setUTCHours(localHours - ET_OFFSET_HOURS, localMinutes, 0, 0);
           } else {
-            parsedStart.setUTCHours(9 - ET_OFFSET_HOURS, 0, 0, 0); // default to 9am ET
+            // No time given — ask for it instead of defaulting to 9AM
+            const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+            const spokenDay = dayNames[parsedStart.getDay()];
+            return {
+              toolCallId,
+              result: JSON.stringify({
+                status: "OK",
+                code: "NEED_TIME",
+                message_to_say: `Got it — what time on ${spokenDay} works best?`,
+                next_action: "WAIT_FOR_OFFICE_TIME",
+              }),
+            };
           }
         }
       }
@@ -388,26 +413,38 @@ async function handleOne(
           }
 
           if (day && day >= 1 && day <= 31) {
+            const timeMatch2 = officeOfferRawText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
+            if (!timeMatch2) {
+              // No time given — ask for it instead of defaulting to 9AM
+              const spokenDate = `${monthOnlyMatch![1]} ${ordinal(day)}`;
+              return {
+                toolCallId,
+                result: JSON.stringify({
+                  status: "OK",
+                  code: "NEED_TIME",
+                  message_to_say: `Got it — what time on ${spokenDate} works best?`,
+                  next_action: "WAIT_FOR_OFFICE_TIME",
+                }),
+              };
+            }
+
             // Create date in UTC with ET offset
             parsedStart = new Date(Date.UTC(now.getFullYear(), month, day, 9 - ET_OFFSET_HOURS, 0, 0));
             if (parsedStart < now) parsedStart.setFullYear(now.getFullYear() + 1);
 
-            const timeMatch2 = officeOfferRawText.match(/\b(noon|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
-            if (timeMatch2) {
-              let lh = 9;
-              let lm = 0;
-              if (timeMatch2[1].toLowerCase() === "noon") {
-                lh = 12;
-              } else {
-                lh = parseInt(timeMatch2[2] || "9");
-                lm = parseInt(timeMatch2[3] || "0");
-                const ap = (timeMatch2[4] || "").toLowerCase();
-                if (ap === "pm" && lh < 12) lh += 12;
-                if (ap === "am" && lh === 12) lh = 0;
-                if (!ap && lh < 8) lh += 12;
-              }
-              parsedStart.setUTCHours(lh - ET_OFFSET_HOURS, lm, 0, 0);
+            let lh = 9;
+            let lm = 0;
+            if (timeMatch2[1].toLowerCase() === "noon") {
+              lh = 12;
+            } else {
+              lh = parseInt(timeMatch2[2] || "9");
+              lm = parseInt(timeMatch2[3] || "0");
+              const ap = (timeMatch2[4] || "").toLowerCase();
+              if (ap === "pm" && lh < 12) lh += 12;
+              if (ap === "am" && lh === 12) lh = 0;
+              if (!ap && lh < 8) lh += 12;
             }
+            parsedStart.setUTCHours(lh - ET_OFFSET_HOURS, lm, 0, 0);
           }
         }
       }

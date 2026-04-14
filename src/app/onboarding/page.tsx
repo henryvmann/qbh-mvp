@@ -657,7 +657,7 @@ export default function OnboardingPage() {
           ))}
         </div>
         <GoldButton
-          onClick={() => setStep(2)}
+          onClick={() => setStep(3)}
           disabled={survey.step1.length === 0}
         >
           Continue &rarr;

@@ -22,6 +22,51 @@ type ExistingBookedAppointment = {
   booking_summary: BookedAppointmentSummary;
 };
 
+/**
+ * Strip credential prefixes (DDS, MD, D.D.S., etc.) from a provider name
+ * and return a natural-sounding name for speech.
+ * e.g. "DDS Eric Echelman" → "Eric Echelman"
+ *      "D.D.S. ERIC ECHELMAN" → "Eric Echelman"
+ */
+function cleanProviderNameForSpeech(raw: string | null | undefined): string {
+  if (!raw) return "";
+  let name = raw.trim();
+
+  // Credential prefixes to strip (order matters — check longer/dotted forms first)
+  const prefixes = [
+    /^D\.?D\.?S\.?\s+/i,
+    /^M\.?D\.?\s+/i,
+    /^D\.?O\.?\s+/i,
+    /^N\.?P\.?\s+/i,
+    /^P\.?A\.?\s+/i,
+    /^A\.?P\.?R\.?N\.?\s+/i,
+    /^R\.?N\.?\s+/i,
+    /^Ph\.?D\.?\s+/i,
+    /^Dr\.?\s+/i,
+    /^DDS\s+/i,
+    /^MD\s+/i,
+    /^DO\s+/i,
+    /^NP\s+/i,
+    /^PA\s+/i,
+    /^APRN\s+/i,
+    /^RN\s+/i,
+    /^PhD\s+/i,
+  ];
+
+  for (const prefix of prefixes) {
+    name = name.replace(prefix, "");
+  }
+
+  // Title-case if the name is ALL-CAPS (e.g. "ERIC ECHELMAN" → "Eric Echelman")
+  if (name === name.toUpperCase() && name.length > 1) {
+    name = name
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  return name.trim();
+}
+
 function asRecord(value: unknown): JsonRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as JsonRecord;
@@ -470,7 +515,7 @@ export async function POST(req: Request) {
           attempt_id,
           provider_id,
           patient_name: resolvedPatientName,
-          provider_name,
+          provider_name: cleanProviderNameForSpeech(provider_name),
           preferred_timeframe,
           demo_autoconfirm,
           mode,

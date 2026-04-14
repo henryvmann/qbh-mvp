@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiFetch } from "../../lib/api";
+import TopNav from "../../components/qbh/TopNav";
 
 function CalendarConnectPageInner() {
   const searchParams = useSearchParams();
@@ -130,6 +131,7 @@ function CalendarConnectPageInner() {
       className="min-h-screen text-[#1A1D2E]"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
+      <TopNav />
       <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
         <header className="flex items-center justify-between">
           <Link
