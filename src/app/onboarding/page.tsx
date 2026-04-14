@@ -241,7 +241,7 @@ export default function OnboardingPage() {
   const [loadingDiscovery, setLoadingDiscovery] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [manualPath, setManualPath] = useState(false);
-  const [manualProviders, setManualProviders] = useState<Array<{ name: string; specialty: string | null; phone: string | null; careRecipients: string[] }>>([]);
+  const [manualProviders, setManualProviders] = useState<Array<{ name: string; specialty: string | null; phone: string | null; npi?: string | null; careRecipients: string[] }>>([]);
   const [npiSearchQuery, setNpiSearchQuery] = useState("");
   const [npiSearchResults, setNpiSearchResults] = useState<Array<{ npi: string; name: string; specialty: string | null; phone: string | null; city: string | null; state: string | null }>>([]);
   const [npiSearching, setNpiSearching] = useState(false);
@@ -592,6 +592,7 @@ export default function OnboardingPage() {
             name: prov.name,
             phone_number: prov.phone,
             specialty: prov.specialty,
+            npi: prov.npi,
             care_recipients: prov.careRecipients,
           }),
         });
@@ -898,12 +899,12 @@ export default function OnboardingPage() {
       });
     }
 
-    function addManualProvider(result: { name: string; specialty: string | null; phone: string | null; npi?: string }, careRecipients?: string[]) {
+    function addManualProvider(result: { name: string; specialty: string | null; phone: string | null; npi?: string | null }, careRecipients?: string[]) {
       const crs = careRecipients || (singlePerson ? [defaultCareRecipient] : []);
       if (crs.length === 0) return; // need assignment
       setManualProviders((prev) => {
         if (prev.some((p) => p.name === result.name)) return prev;
-        return [...prev, { name: result.name, specialty: result.specialty, phone: result.phone, careRecipients: crs }];
+        return [...prev, { name: result.name, specialty: result.specialty, phone: result.phone, npi: result.npi || null, careRecipients: crs }];
       });
       setNpiSearchQuery("");
       setNpiSearchResults([]);

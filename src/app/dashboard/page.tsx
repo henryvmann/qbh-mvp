@@ -12,6 +12,7 @@ import CareGaps from "../../components/qbh/CareGaps";
 import KateFollowUp from "../../components/qbh/KateFollowUp";
 import TopNav from "../../components/qbh/TopNav";
 import BestNextStep from "../../components/qbh/BestNextStep";
+import UrgentCareButton from "../../components/qbh/UrgentCareButton";
 
 /* ── Types ── */
 
@@ -322,6 +323,11 @@ function DashboardInner() {
         {/* ── Best Next Step ── */}
         <div className="px-7">
           <BestNextStep />
+        </div>
+
+        {/* ── Urgent Care ── */}
+        <div className="mt-3 px-7">
+          <UrgentCareButton />
         </div>
 
         {/* ── 2. Week Strip with dates ── */}

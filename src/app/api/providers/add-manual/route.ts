@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
     const name = String(body?.name || "").trim();
     const phone = String(body?.phone_number || "").trim() || null;
     const specialty = String(body?.specialty || "").trim() || null;
+    const npi = String(body?.npi || "").trim() || null;
     const careRecipients = Array.isArray(body?.care_recipients) ? body.care_recipients :
       body?.care_recipient ? [body.care_recipient] : [];
 
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest) {
         app_user_id: appUserId,
         name,
         phone_number: phone,
+        specialty: specialty,
+        npi: npi,
         status: "active",
         care_recipient: careRecipients.length > 0 ? JSON.stringify(careRecipients) : null,
         source: "manual",

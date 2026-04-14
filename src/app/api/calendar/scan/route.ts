@@ -6,7 +6,26 @@ import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { scanCalendarForProviders } from "../../../../lib/google-calendar";
 
 export async function POST(req: NextRequest) {
-  const appUserId = await getSessionAppUserId(req);
+  // Try session-based auth first (normal user requests)
+  let appUserId = await getSessionAppUserId(req);
+
+  // Fallback: internal server-to-server call from the OAuth callback
+  // passes app_user_id via x-app-user-id header
+  if (!appUserId) {
+    const headerUserId = req.headers.get("x-app-user-id")?.trim();
+    if (headerUserId) {
+      // Validate the user exists before trusting the header
+      const { data } = await supabaseAdmin
+        .from("app_users")
+        .select("id")
+        .eq("id", headerUserId)
+        .maybeSingle();
+      if (data?.id) {
+        appUserId = data.id;
+      }
+    }
+  }
+
   if (!appUserId) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized" },

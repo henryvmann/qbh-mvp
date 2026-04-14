@@ -7,7 +7,15 @@ export type Provider = {
   doctor_name?: string | null;
   notes?: string | null;
   provider_type?: string | null;
+  npi?: string | null;
 };
+
+export type LastVisitCategory =
+  | "just_visited"
+  | "on_track"
+  | "coming_due"
+  | "overdue"
+  | "needs_scheduling";
 
 export type ScheduleAttemptStatus =
   | "CREATED"
@@ -181,4 +189,6 @@ export type ProviderDashboardSnapshot = {
   system_actions: SystemActionsState;
   visitCount: number;
   lastVisitDate: string | null;
+  lastVisitCategory: LastVisitCategory;
+  lastVisitLabel: string;
 };

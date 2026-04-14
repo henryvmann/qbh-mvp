@@ -3,12 +3,114 @@ import { deriveRetryDecision } from "../derive-retry-decision";
 import type {
   ProviderDashboardSnapshot,
   Provider,
+  LastVisitCategory,
   ScheduleAttemptSnapshot,
   CalendarEventSnapshot,
   BookingHistoryEvent,
   SystemActionItem,
   SystemActionsState,
 } from "../../../app/lib/QBH/types";
+
+/* ── Time-based provider visit categorization ── */
+
+function monthsSince(dateStr: string): number {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth()) +
+    (now.getDate() < d.getDate() ? -0.5 : 0);
+}
+
+function daysSince(dateStr: string): number {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/** Normalize specialty/provider_type to a care interval bucket */
+function isDentist(specialty: string | null, providerType: string | null): boolean {
+  const s = (specialty || providerType || "").toLowerCase();
+  return s.includes("dentist") || s.includes("dental") || s.includes("orthodont");
+}
+
+function isPCP(specialty: string | null, providerType: string | null): boolean {
+  const s = (specialty || providerType || "").toLowerCase();
+  return (
+    s.includes("primary care") ||
+    s.includes("family medicine") ||
+    s.includes("family practice") ||
+    s.includes("internal medicine") ||
+    s.includes("general practice") ||
+    s.includes("pediatric") ||
+    s === "pcp"
+  );
+}
+
+function computeLastVisitCategory(
+  lastVisitDate: string | null,
+  specialty: string | null,
+  providerType: string | null,
+  isManual: boolean,
+  hasVisitHistory: boolean,
+): { category: LastVisitCategory; label: string } {
+  if (!lastVisitDate) {
+    if (isManual && !hasVisitHistory) {
+      return { category: "needs_scheduling", label: "No visit history \u2014 let\u2019s get you scheduled" };
+    }
+    return { category: "needs_scheduling", label: "No visit history \u2014 let\u2019s get you scheduled" };
+  }
+
+  const months = monthsSince(lastVisitDate);
+  const days = daysSince(lastVisitDate);
+  const dentist = isDentist(specialty, providerType);
+  const pcp = isPCP(specialty, providerType);
+
+  // Build a human-friendly time description
+  let timeAgo: string;
+  if (days < 7) {
+    timeAgo = days <= 1 ? "yesterday" : `${days} days ago`;
+  } else if (days < 30) {
+    const weeks = Math.round(days / 7);
+    timeAgo = `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+  } else {
+    const m = Math.round(months);
+    timeAgo = `${m} month${m === 1 ? "" : "s"} ago`;
+  }
+
+  // Within 1 month: just visited
+  if (months < 1) {
+    return { category: "just_visited", label: `Visited ${timeAgo}` };
+  }
+
+  // 1-3 months: on track for everyone
+  if (months < 3) {
+    return { category: "on_track", label: `Last seen ${timeAgo}` };
+  }
+
+  // 3-6 months
+  if (months < 6) {
+    if (dentist || pcp) {
+      return { category: "coming_due", label: `Last seen ${timeAgo} \u2014 time for a checkup` };
+    }
+    return { category: "on_track", label: `Last seen ${timeAgo}` };
+  }
+
+  // 6-12 months
+  if (months < 12) {
+    if (dentist) {
+      return { category: "overdue", label: `Last seen ${timeAgo} \u2014 overdue for a cleaning` };
+    }
+    if (pcp) {
+      return { category: "coming_due", label: `Last seen ${timeAgo} \u2014 time for a checkup` };
+    }
+    return { category: "on_track", label: `Last seen ${timeAgo}` };
+  }
+
+  // 12+ months: overdue for most
+  if (dentist) {
+    return { category: "overdue", label: `Last seen ${timeAgo} \u2014 overdue for a cleaning` };
+  }
+  return { category: "overdue", label: `Last seen ${timeAgo} \u2014 overdue` };
+}
 
 export type DashboardDiscoverySummary = {
   chargesAnalyzed: number;
@@ -762,6 +864,15 @@ export async function getDashboardProvidersForUser(
       retryDecision?.next_action !== "BLOCK" &&
       retryDecision?.next_action !== "USER_REQUIRED";
 
+    const lastVisitDate = latestVisitByProvider.get(pRow.id) ?? null;
+    const { category: lastVisitCategory, label: lastVisitLabel } = computeLastVisitCategory(
+      lastVisitDate,
+      pRow.specialty,
+      pRow.provider_type,
+      isManualProvider,
+      hasVisitHistory,
+    );
+
     return {
       provider,
       followUpNeeded,
@@ -772,7 +883,9 @@ export async function getDashboardProvidersForUser(
       history,
       system_actions,
       visitCount,
-      lastVisitDate: latestVisitByProvider.get(pRow.id) ?? null,
+      lastVisitDate,
+      lastVisitCategory,
+      lastVisitLabel,
     };
   });
 }
