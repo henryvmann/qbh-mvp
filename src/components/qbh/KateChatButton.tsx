@@ -252,25 +252,21 @@ export default function KateChatButton() {
         )}
         <button
           onClick={() => setOpen(!open)}
-          className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition hover:brightness-95 active:scale-95"
-        style={{
-          background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
-          boxShadow: "0 6px 20px rgba(74,90,74,0.4)",
-        }}
-      >
-        {open ? (
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-            <path d="M4 4l8 8M12 4l-8 8" />
-          </svg>
-        ) : (
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <text
-              x="9" y="14" textAnchor="middle" fontSize="15"
-              fontWeight="700" fontFamily="system-ui, sans-serif" fill="#D8E8F5"
-            >K</text>
-          </svg>
-        )}
-      </button>
+          className="flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition hover:brightness-95 active:scale-95 overflow-hidden"
+          style={{
+            boxShadow: "0 6px 20px rgba(74,90,74,0.4)",
+          }}
+        >
+          {open ? (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}>
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 4l8 8M12 4l-8 8" />
+              </svg>
+            </div>
+          ) : (
+            <img src="/kate-avatar.png" alt="Kate" className="h-14 w-14 rounded-full object-cover" />
+          )}
+        </button>
       </div>
     </>
   );

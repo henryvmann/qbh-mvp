@@ -1,39 +1,24 @@
 "use client";
 
+import Image from "next/image";
+
 export type Pose = "waving" | "thinking" | "pointing" | "celebrating";
 
 /**
- * Kate monogram avatar — neumorphic style matching the dashboard QB logo.
- * Outer rounded square with soft shadow, inner rounded square with "K".
+ * Kate avatar — uses the Kate portrait image.
  */
 export function Character({ pose: _pose }: { pose: Pose }) {
   return (
-    <div
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-      style={{
-        background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
-        boxShadow:
-          "0 2px 8px rgba(74,90,74,0.3)",
-      }}
-    >
-      <div
-        className="flex h-7 w-7 items-center justify-center rounded-lg"
-        style={{ background: "rgba(255,255,255,0.12)" }}
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <text
-            x="7"
-            y="11"
-            textAnchor="middle"
-            fontSize="12"
-            fontWeight="700"
-            fontFamily="system-ui, sans-serif"
-            fill="#D8E8F5"
-          >
-            K
-          </text>
-        </svg>
-      </div>
+    <div className="shrink-0">
+      <Image
+        src="/kate-avatar.png"
+        alt="Kate"
+        width={44}
+        height={44}
+        className="rounded-xl object-cover shadow-sm"
+        style={{ width: 44, height: 44 }}
+        priority
+      />
     </div>
   );
 }
