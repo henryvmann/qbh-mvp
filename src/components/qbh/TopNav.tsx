@@ -78,11 +78,11 @@ export default function TopNav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-lg px-2 py-1.5 text-[11px] sm:text-xs sm:px-3 font-medium transition ${
-                  isActive
-                    ? "bg-white/15 text-white"
-                    : "text-white/70 hover:text-white"
-                }`}
+                className="rounded-lg px-2 py-1.5 text-[11px] sm:text-xs sm:px-3 font-medium transition whitespace-nowrap"
+                style={{
+                  backgroundColor: isActive ? "rgba(255,255,255,0.15)" : "transparent",
+                  color: isActive ? "#FFFFFF" : "rgba(255,255,255,0.75)",
+                }}
               >
                 {link.label}
               </Link>
