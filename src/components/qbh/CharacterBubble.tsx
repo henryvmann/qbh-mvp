@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 export type Pose = "waving" | "thinking" | "pointing" | "celebrating";
 
 /**
@@ -10,14 +8,13 @@ export type Pose = "waving" | "thinking" | "pointing" | "celebrating";
 export function Character({ pose: _pose }: { pose: Pose }) {
   return (
     <div className="shrink-0">
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src="/kate-avatar.png"
         alt="Kate"
         width={44}
         height={44}
         className="rounded-xl object-cover shadow-sm"
-        style={{ width: 44, height: 44 }}
-        priority
       />
     </div>
   );

@@ -52,4 +52,7 @@ next-env.d.ts
 *.png
 *.jpg
 *.jpeg
+
+# Exception: public assets needed for the app
+!public/kate-avatar.png
 "From ChatGPT - Current Source Files/"
