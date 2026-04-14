@@ -7,7 +7,7 @@ export type Pose = "waving" | "thinking" | "pointing" | "celebrating";
  */
 export function Character({ pose: _pose }: { pose: Pose }) {
   return (
-    <div className="shrink-0">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl shadow-sm">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/kate-avatar.png"
@@ -16,8 +16,7 @@ export function Character({ pose: _pose }: { pose: Pose }) {
         height={44}
         loading="eager"
         fetchPriority="high"
-        className="rounded-xl object-cover shadow-sm"
-        style={{ width: 44, height: 44, display: "block" }}
+        className="h-full w-full object-cover object-center"
       />
     </div>
   );

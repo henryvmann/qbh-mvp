@@ -246,7 +246,11 @@ export default function OnboardingPage() {
   const [npiSearchResults, setNpiSearchResults] = useState<Array<{ npi: string; name: string; specialty: string | null; phone: string | null; city: string | null; state: string | null }>>([]);
   const [npiSearching, setNpiSearching] = useState(false);
   const [npiResultPeople, setNpiResultPeople] = useState<Record<string, Set<string>>>({});
+  const [healthFactIndex, setHealthFactIndex] = useState(0);
+  const [healthFactFading, setHealthFactFading] = useState(false);
+  const [providerExisting, setProviderExisting] = useState<Record<string, boolean>>({});
 
+  const [plaidAutoAdvance, setPlaidAutoAdvance] = useState(false);
   const plaidHandlerRef = useRef<{ open: () => void } | null>(null);
 
   // No auth guard here — if someone explicitly navigates to /onboarding,
@@ -331,13 +335,10 @@ export default function OnboardingPage() {
         onSuccess: (publicToken: string) => {
           setPlaidPublicToken(publicToken);
           setPlaidConnected(true);
-          // Auto-advance: if account info is filled, trigger continue immediately
-          if (firstName.trim() && lastName.trim() && email.trim() && password.length >= 6) {
-            // Small delay so user sees the "connected" state briefly
-            setTimeout(() => {
-              document.getElementById("step7-continue-btn")?.click();
-            }, 800);
-          }
+          // Auto-advance after brief delay so user sees "connected" state
+          setTimeout(() => {
+            setPlaidAutoAdvance(true);
+          }, 1500);
         },
         onExit: (err: unknown) => {
           if (err) {
@@ -393,6 +394,15 @@ export default function OnboardingPage() {
       setError(err instanceof Error ? err.message : "Failed to create account.");
     }
   }, [firstName, lastName, email, password, userId, survey]);
+
+  /* ---- Auto-advance after Plaid connects ---- */
+  useEffect(() => {
+    if (!plaidAutoAdvance) return;
+    if (firstName.trim() && lastName.trim() && email.trim() && password.length >= 6) {
+      handleStep7Continue();
+    }
+    setPlaidAutoAdvance(false);
+  }, [plaidAutoAdvance, handleStep7Continue, firstName, lastName, email, password]);
 
   /* ---- Step 8: run discovery ---- */
   useEffect(() => {
@@ -509,6 +519,19 @@ export default function OnboardingPage() {
       window.clearTimeout(timer6);
     };
   }, [step, plaidPublicToken, plaidConnected, userId]);
+
+  /* ---- Rotating health facts on discovery screen ---- */
+  useEffect(() => {
+    if (step !== 8 || reviewingProviders) return;
+    const interval = window.setInterval(() => {
+      setHealthFactFading(true);
+      setTimeout(() => {
+        setHealthFactIndex((prev) => (prev + 1) % 7);
+        setHealthFactFading(false);
+      }, 400);
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [step, reviewingProviders]);
 
   /* ---- NPI search debounce ---- */
   useEffect(() => {
@@ -1209,6 +1232,7 @@ export default function OnboardingPage() {
     const personOptions = survey.step3
       .map((s) => ({ value: s.toLowerCase().replace(/[^a-z]/g, "_"), label: personLabelMap[s] || s }))
       .filter((o) => o.label);
+    const singlePerson = personOptions.length === 1;
 
     // If only "Myself" was selected, options are just "Me" and "Ignore"
     // Otherwise, show all selected people plus "Ignore"
@@ -1225,7 +1249,7 @@ export default function OnboardingPage() {
       });
     }
 
-    async function handleProviderAssign(providerId: string, careRecipients: string[], providerType?: string) {
+    async function handleProviderAssign(providerId: string, careRecipients: string[], providerType?: string, existingPatient?: boolean) {
       const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
       try {
         await apiFetch("/api/providers/review", {
@@ -1237,6 +1261,7 @@ export default function OnboardingPage() {
             app_user_id: effectiveUserId,
             care_recipients: careRecipients,
             ...(providerType ? { provider_type: providerType } : {}),
+            ...(existingPatient !== undefined ? { existing_patient: existingPatient } : {}),
           }),
         });
       } catch {
@@ -1280,6 +1305,7 @@ export default function OnboardingPage() {
     function renderProviderCard(provider: typeof pendingProviders[0], isConfirmed: boolean) {
       const selected = providerPeople[provider.id] || new Set<string>();
       const chain = isChainStore(provider.name);
+      const existingPatient = providerExisting[provider.id];
 
       return (
         <div
@@ -1288,13 +1314,13 @@ export default function OnboardingPage() {
           style={{ backgroundColor: CARD_BG, borderColor: isConfirmed ? "#5C6B5C" : CARD_BORDER }}
         >
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium text-[#1A1D2E]">{provider.name}</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-[#1A1D2E] break-words">{provider.name}</div>
               <div className="text-xs text-[#7A7F8A]">
                 {provider.visit_count} {isConfirmed ? "visit" : "transaction"}{provider.visit_count !== 1 ? "s" : ""}
               </div>
             </div>
-            {isConfirmed && <span className="text-xs text-[#5C6B5C]">&#10003;</span>}
+            {isConfirmed && <span className="text-xs text-[#5C6B5C] shrink-0 ml-2">&#10003;</span>}
           </div>
 
           {chain ? (
@@ -1324,37 +1350,110 @@ export default function OnboardingPage() {
                 </button>
               </div>
             </>
-          ) : (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {personOptions.map((opt) => (
+          ) : singlePerson ? (
+            /* Single person mode: one tap to approve, no Confirm step needed */
+            <div className="mt-2">
+              {/* New/existing patient toggle */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-[#7A7F8A]">Been seen here before?</span>
                 <button
-                  key={opt.value}
-                  onClick={() => toggleProviderPerson(provider.id, opt.value)}
-                  className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                  onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: true }))}
+                  className="rounded-lg px-2 py-0.5 text-xs font-semibold"
                   style={{
-                    backgroundColor: selected.has(opt.value) ? ACCENT : "transparent",
-                    color: selected.has(opt.value) ? "#FFFFFF" : "#7A7F8A",
-                    border: selected.has(opt.value) ? "none" : "1px solid #EBEDF0",
+                    backgroundColor: existingPatient === true ? ACCENT : "transparent",
+                    color: existingPatient === true ? "#FFFFFF" : "#7A7F8A",
+                    border: existingPatient === true ? "none" : "1px solid #EBEDF0",
                   }}
                 >
-                  {opt.label}
+                  Yes
                 </button>
-              ))}
-              {selected.size > 0 && (
                 <button
-                  onClick={() => handleProviderAssign(provider.id, Array.from(selected))}
-                  className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                  style={{ backgroundColor: "#5C6B5C", color: "#FFFFFF" }}
+                  onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: false }))}
+                  className="rounded-lg px-2 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: existingPatient === false ? ACCENT : "transparent",
+                    color: existingPatient === false ? "#FFFFFF" : "#7A7F8A",
+                    border: existingPatient === false ? "none" : "1px solid #EBEDF0",
+                  }}
                 >
-                  Confirm
+                  No
                 </button>
-              )}
-              <button
-                onClick={() => handleProviderDismiss(provider.id)}
-                className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-2.5 py-1 text-xs text-[#7A7F8A]"
-              >
-                Ignore
-              </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => handleProviderAssign(provider.id, [personOptions[0].value], undefined, existingPatient)}
+                  className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                  style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
+                >
+                  {personOptions[0].label} &#10003;
+                </button>
+                <button
+                  onClick={() => handleProviderDismiss(provider.id)}
+                  className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-2.5 py-1 text-xs text-[#7A7F8A]"
+                >
+                  Ignore
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-2">
+              {/* New/existing patient toggle */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-[#7A7F8A]">Been seen here before?</span>
+                <button
+                  onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: true }))}
+                  className="rounded-lg px-2 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: existingPatient === true ? ACCENT : "transparent",
+                    color: existingPatient === true ? "#FFFFFF" : "#7A7F8A",
+                    border: existingPatient === true ? "none" : "1px solid #EBEDF0",
+                  }}
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: false }))}
+                  className="rounded-lg px-2 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: existingPatient === false ? ACCENT : "transparent",
+                    color: existingPatient === false ? "#FFFFFF" : "#7A7F8A",
+                    border: existingPatient === false ? "none" : "1px solid #EBEDF0",
+                  }}
+                >
+                  No
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {personOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => toggleProviderPerson(provider.id, opt.value)}
+                    className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                    style={{
+                      backgroundColor: selected.has(opt.value) ? ACCENT : "transparent",
+                      color: selected.has(opt.value) ? "#FFFFFF" : "#7A7F8A",
+                      border: selected.has(opt.value) ? "none" : "1px solid #EBEDF0",
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+                {selected.size > 0 && (
+                  <button
+                    onClick={() => handleProviderAssign(provider.id, Array.from(selected), undefined, existingPatient)}
+                    className="rounded-lg px-2.5 py-1 text-xs font-semibold"
+                    style={{ backgroundColor: "#5C6B5C", color: "#FFFFFF" }}
+                  >
+                    Confirm
+                  </button>
+                )}
+                <button
+                  onClick={() => handleProviderDismiss(provider.id)}
+                  className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-2.5 py-1 text-xs text-[#7A7F8A]"
+                >
+                  Ignore
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -1454,8 +1553,6 @@ export default function OnboardingPage() {
       "Most insurance plans cover preventive care at no extra cost",
     ];
 
-    const factIndex = Math.floor(analysisProgress * 1.5) % healthFacts.length;
-
     return (
       <Shell>
         <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
@@ -1467,25 +1564,6 @@ export default function OnboardingPage() {
             </CharacterWithBubble>
           </div>
 
-          {/* Pulsing animation */}
-          <div className="relative mb-6">
-            <div
-              className="h-16 w-16 rounded-2xl flex items-center justify-center"
-              style={{
-                background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
-                animation: "pulse-glow 2s ease-in-out infinite",
-              }}
-            >
-              <span className="text-2xl text-white font-bold">K</span>
-            </div>
-            <style>{`
-              @keyframes pulse-glow {
-                0%, 100% { box-shadow: 0 0 0 0 rgba(92,107,92,0.4); }
-                50% { box-shadow: 0 0 0 16px rgba(92,107,92,0); }
-              }
-            `}</style>
-          </div>
-
           <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
             Kate is getting started
           </h1>
@@ -1493,8 +1571,21 @@ export default function OnboardingPage() {
             This usually takes a minute or two
           </p>
 
+          {/* Rotating health fact — above fold */}
+          <div className="mt-6 w-full max-w-sm rounded-xl bg-white border border-[#EBEDF0] shadow-sm px-5 py-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5C6B5C] mb-1">
+              Did you know?
+            </div>
+            <div
+              className="text-sm text-[#7A7F8A] transition-opacity duration-400"
+              style={{ opacity: healthFactFading ? 0 : 1 }}
+            >
+              {healthFacts[healthFactIndex]}
+            </div>
+          </div>
+
           {/* Progress steps */}
-          <div className="mt-8 flex flex-col gap-2.5 text-left w-full max-w-sm">
+          <div className="mt-6 flex flex-col gap-2.5 text-left w-full max-w-sm">
             {progressItems.map((item, i) => {
               const done = analysisProgress >= i + 1;
               const active = analysisProgress === i;
@@ -1539,16 +1630,6 @@ export default function OnboardingPage() {
                 </div>
               );
             })}
-          </div>
-
-          {/* Rotating health fact */}
-          <div className="mt-8 max-w-sm rounded-xl bg-white border border-[#EBEDF0] shadow-sm px-5 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5C6B5C] mb-1">
-              Did you know?
-            </div>
-            <div className="text-xs text-[#7A7F8A] transition-opacity duration-500">
-              {healthFacts[factIndex]}
-            </div>
           </div>
         </div>
       </Shell>

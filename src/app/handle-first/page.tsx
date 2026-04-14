@@ -404,7 +404,7 @@ export default function HandleFirstPage() {
               ))}
             </div>
 
-            <GoldButton onClick={advance}>Does this look right? →</GoldButton>
+            <GoldButton onClick={advance}>Continue →</GoldButton>
           </>
         );
 
