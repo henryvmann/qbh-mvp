@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
+import BestNextStep from "../../components/qbh/BestNextStep";
 import HandleItButton from "../../components/qbh/HandleItButton";
 
 type UpcomingVisit = {
@@ -105,6 +106,8 @@ function VisitsInner() {
             Upcoming appointments and past visits
           </p>
         </div>
+
+        <BestNextStep context="visits" />
 
         {/* Upcoming visits */}
         <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">

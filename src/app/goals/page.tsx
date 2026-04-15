@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
+import BestNextStep from "../../components/qbh/BestNextStep";
 import HandleItButton from "../../components/qbh/HandleItButton";
 
 /* ---------- helpers ---------- */
@@ -338,9 +339,13 @@ export default function GoalsPage() {
     >
       <TopNav />
       <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
-        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-8">
+        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-4">
           Goals
         </h1>
+
+        <BestNextStep context="goals" />
+
+        <div className="mt-4" />
 
         {/* Hero Health Score */}
         <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">

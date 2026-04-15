@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import TopNav from "../../components/qbh/TopNav";
+import BestNextStep from "../../components/qbh/BestNextStep";
 import { apiFetch } from "../../lib/api";
 import ProviderCard from "../../components/qbh/ProviderCard";
 import type { ProviderDashboardSnapshot } from "../lib/QBH/types";
@@ -102,6 +103,8 @@ function ProvidersInner() {
         <p className="mt-1 text-sm text-[#7A7F8A]">
           {snapshots.length} provider{snapshots.length !== 1 ? "s" : ""} on file
         </p>
+
+        <BestNextStep context="providers" />
 
         {doctors.length === 0 && pharmacies.length === 0 ? (
           <div className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">

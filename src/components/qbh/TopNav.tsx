@@ -26,6 +26,7 @@ const NAV_LINKS = [
   { label: "Providers", href: "/providers" },
   { label: "Goals", href: "/goals" },
   { label: "Visits", href: "/visits" },
+  { label: "Calendar", href: "/calendar-view" },
   { label: "Timeline", href: "/timeline" },
 ];
 

@@ -29,11 +29,16 @@ type PatientProfile = {
   callback_phone?: string | null;
 };
 
+/* ── Context type ── */
+
+type BestNextStepContext = "dashboard" | "providers" | "visits" | "goals";
+
 /* ── Priority logic ── */
 
 function buildSuggestions(
   dashboard: DashboardData,
-  profile: PatientProfile
+  profile: PatientProfile,
+  context: BestNextStepContext = "dashboard"
 ): Suggestion[] {
   const suggestions: Suggestion[] = [];
 
@@ -105,6 +110,27 @@ function buildSuggestions(
     });
   }
 
+  // Re-order based on context to prioritize relevant suggestions
+  if (context === "providers") {
+    suggestions.sort((a, b) => {
+      const aProvider = a.id.includes("provider") || a.id.includes("review") || a.id.includes("book-overdue") ? 0 : 1;
+      const bProvider = b.id.includes("provider") || b.id.includes("review") || b.id.includes("book-overdue") ? 0 : 1;
+      return aProvider - bProvider;
+    });
+  } else if (context === "visits") {
+    suggestions.sort((a, b) => {
+      const aVisit = a.id.includes("book") || a.id.includes("calendar") ? 0 : 1;
+      const bVisit = b.id.includes("book") || b.id.includes("calendar") ? 0 : 1;
+      return aVisit - bVisit;
+    });
+  } else if (context === "goals") {
+    suggestions.sort((a, b) => {
+      const aGoal = a.id.includes("profile") || a.id.includes("book-overdue") ? 0 : 1;
+      const bGoal = b.id.includes("profile") || b.id.includes("book-overdue") ? 0 : 1;
+      return aGoal - bGoal;
+    });
+  }
+
   return suggestions;
 }
 
@@ -129,7 +155,7 @@ function addDismissed(id: string) {
 
 /* ── Component ── */
 
-export default function BestNextStep() {
+export default function BestNextStep({ context = "dashboard" }: { context?: BestNextStepContext }) {
   const router = useRouter();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
@@ -151,11 +177,11 @@ export default function BestNextStep() {
       .then(([dashJson, profileJson]) => {
         if (!dashJson?.ok) return;
         const profile: PatientProfile = profileJson?.profile || {};
-        const built = buildSuggestions(dashJson as DashboardData, profile);
+        const built = buildSuggestions(dashJson as DashboardData, profile, context);
         setSuggestions(built);
       })
       .finally(() => setLoaded(true));
-  }, []);
+  }, [context]);
 
   if (!loaded) return null;
 
