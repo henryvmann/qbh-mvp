@@ -12,7 +12,7 @@ const PUBLIC_PATHS = [
   "/medications", "/recordings", "/analytics", "/admin", "/portal-connect",
 ];
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isPublic = PUBLIC_PATHS.some(
