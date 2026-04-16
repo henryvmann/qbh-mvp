@@ -245,20 +245,38 @@ function buildSuggestions(
 /* ── Session storage helpers ── */
 
 const STORAGE_KEY = "bns-dismissed";
+const DISMISS_EXPIRY_MS = 4 * 60 * 60 * 1000; // 4 hours — items come back
+
+type DismissedItem = { id: string; at: number };
 
 function getDismissed(): string[] {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const items: DismissedItem[] = JSON.parse(raw);
+    const now = Date.now();
+    // Filter out expired dismissals
+    const active = items.filter((i) => now - i.at < DISMISS_EXPIRY_MS);
+    if (active.length !== items.length) {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(active));
+    }
+    return active.map((i) => i.id);
   } catch {
     return [];
   }
 }
 
 function addDismissed(id: string) {
-  const list = getDismissed();
-  if (!list.includes(id)) list.push(id);
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const items: DismissedItem[] = raw ? JSON.parse(raw) : [];
+    if (!items.some((i) => i.id === id)) {
+      items.push({ id, at: Date.now() });
+    }
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    // ignore
+  }
 }
 
 /* ── Component ── */
@@ -296,7 +314,13 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
   if (!loaded) return null;
 
   const current = suggestions.find((s) => !dismissed.includes(s.id));
-  if (!current && chips.length === 0) return null;
+
+  // Always show at least chips — never return null
+  const defaultChips: PromptChip[] = chips.length > 0 ? chips : [
+    { id: "chat", label: "Chat with Kate", href: "#kate-chat" },
+    { id: "providers", label: "View providers", href: "/providers" },
+    { id: "notes", label: "Add a note", href: "/notes" },
+  ];
 
   function handleDismiss() {
     if (!current) return;
@@ -427,31 +451,40 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
         </div>
       )}
 
-      {/* Contextual prompt chips */}
-      {chips.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {chips.map((chip) => (
-            <button
-              key={chip.id}
-              type="button"
-              onClick={() => {
-                if (chip.id === "chat-kate") {
-                  window.dispatchEvent(new CustomEvent("kate-quick-action", { detail: { message: "Hi Kate!" } }));
-                } else {
-                  router.push(chip.href);
-                }
-              }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs font-medium text-[#5C6B5C] shadow-sm transition hover:bg-[#F0F2F5] hover:border-[#5C6B5C]"
-            >
-              {chip.id === "prep-tomorrow" && <CalendarCheck size={12} />}
-              {chip.id === "add-visit-notes" && <FileText size={12} />}
-              {chip.id === "book-overdue" && <Clock size={12} />}
-              {chip.id === "chat-kate" && <MessageSquare size={12} />}
-              {chip.label}
-            </button>
-          ))}
+      {/* All-dismissed fallback */}
+      {!current && suggestions.length > 0 && (
+        <div className="rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-3 flex items-center gap-3">
+          <img src="/kate-avatar.png" alt="Kate" width={28} height={28} className="rounded-full shrink-0" />
+          <span className="text-xs text-[#7A7F8A]">
+            You&apos;re on track! Here are some things you can do:
+          </span>
         </div>
       )}
+
+      {/* Contextual prompt chips — ALWAYS visible */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {defaultChips.map((chip) => (
+          <button
+            key={chip.id}
+            type="button"
+            onClick={() => {
+              if (chip.id === "chat-kate" || chip.id === "chat" || chip.href === "#kate-chat") {
+                window.dispatchEvent(new CustomEvent("kate-quick-action", { detail: { message: "What should I focus on today?" } }));
+              } else {
+                router.push(chip.href);
+              }
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs font-medium text-[#5C6B5C] shadow-sm transition hover:bg-[#F0F2F5] hover:border-[#5C6B5C]"
+          >
+            {(chip.id === "prep-tomorrow") && <CalendarCheck size={12} />}
+            {(chip.id === "add-visit-notes" || chip.id === "notes") && <FileText size={12} />}
+            {(chip.id === "book-overdue") && <Clock size={12} />}
+            {(chip.id === "chat-kate" || chip.id === "chat") && <MessageSquare size={12} />}
+            {(chip.id === "providers") && <ArrowRight size={12} />}
+            {chip.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
