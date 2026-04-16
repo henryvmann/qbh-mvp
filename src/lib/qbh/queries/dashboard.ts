@@ -129,6 +129,7 @@ type ProviderRow = {
   id: string;
   app_user_id: string;
   name: string;
+  display_name: string | null;
   status: string;
   created_at: string;
   phone_number: string | null;
@@ -637,7 +638,7 @@ export async function getDashboardProvidersForUser(
 
   const { data: providers, error: providersError } = await supabaseAdmin
     .from("providers")
-    .select("id,name,status,created_at,app_user_id,phone_number,specialty,doctor_name,notes,provider_type,source")
+    .select("id,name,display_name,status,created_at,app_user_id,phone_number,specialty,doctor_name,notes,provider_type,source")
     .eq("app_user_id", cleanedUserId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
@@ -789,7 +790,8 @@ export async function getDashboardProvidersForUser(
   return providerRows.map((pRow): ProviderDashboardSnapshot => {
     const provider: Provider = {
       id: pRow.id,
-      name: pRow.name,
+      name: pRow.display_name || pRow.name,
+      display_name: pRow.display_name || null,
       phone: pRow.phone_number || null,
       specialty: pRow.specialty || null,
       location: null,

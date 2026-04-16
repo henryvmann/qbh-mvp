@@ -647,7 +647,8 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <div style={{ paddingLeft: 56 }}>
+        <div className="sticky bottom-0 z-20 pb-4" style={{ paddingLeft: 56 }}>
+          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
           <GoldButton onClick={() => setStep(1)}>Let&apos;s get started &rarr;</GoldButton>
         </div>
       </Shell>
@@ -682,12 +683,15 @@ export default function OnboardingPage() {
             />
           ))}
         </div>
-        <GoldButton
-          onClick={() => setStep(3)}
-          disabled={survey.step1.length === 0}
-        >
-          Continue &rarr;
-        </GoldButton>
+        <div className="sticky bottom-0 z-20 pb-4">
+          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
+          <GoldButton
+            onClick={() => setStep(3)}
+            disabled={survey.step1.length === 0}
+          >
+            Continue &rarr;
+          </GoldButton>
+        </div>
       </Shell>
     );
   }
@@ -726,12 +730,15 @@ export default function OnboardingPage() {
             />
           ))}
         </div>
-        <GoldButton
-          onClick={() => setStep(4)}
-          disabled={survey.step2.length === 0}
-        >
-          Continue &rarr;
-        </GoldButton>
+        <div className="sticky bottom-0 z-20 pb-4">
+          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
+          <GoldButton
+            onClick={() => setStep(4)}
+            disabled={survey.step2.length === 0}
+          >
+            Continue &rarr;
+          </GoldButton>
+        </div>
       </Shell>
     );
   }
@@ -764,12 +771,15 @@ export default function OnboardingPage() {
             />
           ))}
         </div>
-        <GoldButton
-          onClick={() => setStep(5)}
-          disabled={survey.step3.length === 0}
-        >
-          Continue &rarr;
-        </GoldButton>
+        <div className="sticky bottom-0 z-20 pb-4">
+          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
+          <GoldButton
+            onClick={() => setStep(5)}
+            disabled={survey.step3.length === 0}
+          >
+            Continue &rarr;
+          </GoldButton>
+        </div>
       </Shell>
     );
   }
@@ -800,12 +810,15 @@ export default function OnboardingPage() {
             />
           ))}
         </div>
-        <GoldButton
-          onClick={() => setStep(6)}
-          disabled={survey.step4.length === 0}
-        >
-          Continue &rarr;
-        </GoldButton>
+        <div className="sticky bottom-0 z-20 pb-4">
+          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
+          <GoldButton
+            onClick={() => setStep(6)}
+            disabled={survey.step4.length === 0}
+          >
+            Continue &rarr;
+          </GoldButton>
+        </div>
       </Shell>
     );
   }

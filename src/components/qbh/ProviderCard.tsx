@@ -9,6 +9,7 @@ import type {
   SystemActionItem,
 } from "../../app/lib/QBH/types";
 import AppointmentPrep from "./AppointmentPrep";
+import { FileText, Plus, Trash2 } from "lucide-react";
 
 type ProviderCardProps = {
   snapshot: ProviderDashboardSnapshot;
@@ -294,11 +295,31 @@ export default function ProviderCard({
 
   // Provider detail editing
   const [showDetails, setShowDetails] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState(provider.display_name || "");
   const [editDoctorName, setEditDoctorName] = useState(provider.doctor_name || "");
   const [editSpecialty, setEditSpecialty] = useState(provider.specialty || "");
   const [editNotes, setEditNotes] = useState(provider.notes || "");
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsSaved, setDetailsSaved] = useState(false);
+
+  // Notes for this provider
+  const [providerNotes, setProviderNotes] = useState<Array<{ id: string; title: string; body: string; note_type: string; created_at: string }>>([]);
+  const [showAddNote, setShowAddNote] = useState(false);
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteBody, setNoteBody] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [notesLoaded, setNotesLoaded] = useState(false);
+
+  // Fetch notes for this provider
+  useState(() => {
+    apiFetch(`/api/notes?provider_id=${provider.id}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.ok) setProviderNotes(data.notes || []);
+        setNotesLoaded(true);
+      })
+      .catch(() => setNotesLoaded(true));
+  });
 
   const saveDetails = useCallback(async () => {
     setSavingDetails(true);
@@ -308,6 +329,7 @@ export default function ProviderCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           provider_id: provider.id,
+          display_name: editDisplayName.trim() || null,
           doctor_name: editDoctorName.trim() || null,
           specialty: editSpecialty.trim() || null,
           notes: editNotes.trim() || null,
@@ -320,7 +342,40 @@ export default function ProviderCard({
     } finally {
       setSavingDetails(false);
     }
-  }, [provider.id, editDoctorName, editSpecialty, editNotes]);
+  }, [provider.id, editDisplayName, editDoctorName, editSpecialty, editNotes]);
+
+  async function handleSaveNote() {
+    if (!noteTitle.trim() || !noteBody.trim()) return;
+    setSavingNote(true);
+    try {
+      const res = await apiFetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider_id: provider.id,
+          title: noteTitle.trim(),
+          body: noteBody.trim(),
+          note_type: "question",
+        }),
+      });
+      const data = await res.json();
+      if (data?.ok && data.note) {
+        setProviderNotes((prev) => [data.note, ...prev]);
+        setNoteTitle("");
+        setNoteBody("");
+        setShowAddNote(false);
+      }
+    } catch {}
+    finally { setSavingNote(false); }
+  }
+
+  async function handleDeleteNote(noteId: string) {
+    const res = await apiFetch(`/api/notes?id=${noteId}`, { method: "DELETE" });
+    const data = await res.json();
+    if (data?.ok) {
+      setProviderNotes((prev) => prev.filter((n) => n.id !== noteId));
+    }
+  }
 
   const detailInputClass =
     "w-full rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]";
@@ -369,6 +424,16 @@ export default function ProviderCard({
             Provider details
           </div>
           <div className="mt-3 flex flex-col gap-2.5">
+            <div>
+              <label className="mb-1 block text-xs text-[#7A7F8A]">Display name</label>
+              <input
+                type="text"
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+                placeholder="e.g. Stamford Health, My PCP"
+                className={detailInputClass}
+              />
+            </div>
             <div>
               <label className="mb-1 block text-xs text-[#7A7F8A]">Doctor&apos;s name</label>
               <input
@@ -429,6 +494,82 @@ export default function ProviderCard({
           providerId={provider.id}
           providerName={provider.name}
         />
+      )}
+
+      {/* Provider notes */}
+      {!isPharmacy && (
+        <div className="mt-3">
+          {providerNotes.length > 0 && (
+            <div className="mb-2 space-y-1.5">
+              {providerNotes.slice(0, 3).map((note) => (
+                <div key={note.id} className="group flex items-start gap-2 rounded-lg bg-[#F0F2F5] px-3 py-2">
+                  <FileText size={12} className="mt-0.5 shrink-0 text-[#7A7F8A]" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-medium text-[#1A1D2E]">{note.title}</span>
+                    <p className="text-xs text-[#7A7F8A] line-clamp-1">{note.body}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteNote(note.id)}
+                    className="shrink-0 p-0.5 text-[#B0B4BC] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                </div>
+              ))}
+              {providerNotes.length > 3 && (
+                <a href="/notes" className="text-xs text-[#5C6B5C] hover:underline">
+                  View all {providerNotes.length} notes
+                </a>
+              )}
+            </div>
+          )}
+          {showAddNote ? (
+            <div className="rounded-xl bg-[#F0F2F5] p-3 border border-[#EBEDF0]">
+              <input
+                type="text"
+                value={noteTitle}
+                onChange={(e) => setNoteTitle(e.target.value)}
+                placeholder="Note title"
+                className="w-full rounded-lg bg-white px-2.5 py-1.5 text-xs text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] mb-2"
+              />
+              <input
+                type="text"
+                value={noteBody}
+                onChange={(e) => setNoteBody(e.target.value)}
+                placeholder="Write your note..."
+                className="w-full rounded-lg bg-white px-2.5 py-1.5 text-xs text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] mb-2"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  disabled={savingNote || !noteTitle.trim() || !noteBody.trim()}
+                  className="rounded-lg px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                  style={{ backgroundColor: "#5C6B5C" }}
+                >
+                  {savingNote ? "..." : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddNote(false)}
+                  className="rounded-lg px-3 py-1 text-xs text-[#7A7F8A] hover:bg-white"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAddNote(true)}
+              className="flex items-center gap-1 text-xs font-medium text-[#5C6B5C] hover:underline"
+            >
+              <Plus size={12} />
+              Add note
+            </button>
+          )}
+        </div>
       )}
 
       {currentAction ? (

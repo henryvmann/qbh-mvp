@@ -27,6 +27,7 @@ const NAV_LINKS = [
   { label: "Goals", href: "/goals" },
   { label: "Visits", href: "/visits" },
   { label: "Calendar", href: "/calendar-view" },
+  { label: "Notes", href: "/notes" },
   { label: "Timeline", href: "/timeline" },
 ];
 

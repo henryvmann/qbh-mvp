@@ -6,6 +6,7 @@ import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-i
 
 type UpdateBody = {
   provider_id?: string;
+  display_name?: string | null;
   doctor_name?: string | null;
   specialty?: string | null;
   phone_number?: string | null;
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
   }
 
   const updates: Record<string, unknown> = {};
+  if (body.display_name !== undefined) updates.display_name = body.display_name;
   if (body.doctor_name !== undefined) updates.doctor_name = body.doctor_name;
   if (body.specialty !== undefined) updates.specialty = body.specialty;
   if (body.phone_number !== undefined) updates.phone_number = body.phone_number;

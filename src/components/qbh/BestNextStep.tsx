@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, X, Clock, FileText, CalendarCheck, MessageSquare } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 
 /* ── Types ── */
@@ -23,6 +23,12 @@ type DashboardData = {
   hasGoogleCalendarConnection: boolean;
 };
 
+type PromptChip = {
+  id: string;
+  label: string;
+  href: string;
+};
+
 type PatientProfile = {
   date_of_birth?: string | null;
   insurance_provider?: string | null;
@@ -35,12 +41,114 @@ type BestNextStepContext = "dashboard" | "providers" | "visits" | "goals";
 
 /* ── Priority logic ── */
 
+function buildPromptChips(
+  dashboard: DashboardData,
+): PromptChip[] {
+  const chips: PromptChip[] = [];
+  const now = Date.now();
+
+  // Check for appointment within 24 hours
+  for (const s of dashboard.snapshots) {
+    if (s.futureConfirmedEvent?.start_at) {
+      const diff = new Date(s.futureConfirmedEvent.start_at).getTime() - now;
+      if (diff > 0 && diff < 24 * 60 * 60 * 1000) {
+        chips.push({ id: "prep-tomorrow", label: "Prep for tomorrow", href: "/providers" });
+        break;
+      }
+    }
+  }
+
+  // Check for recent appointment (past 48h) — suggest visit notes
+  for (const s of dashboard.snapshots) {
+    if (s.booking_state?.appointmentStart) {
+      const start = new Date(s.booking_state.appointmentStart).getTime();
+      if (start < now && now - start < 48 * 60 * 60 * 1000) {
+        chips.push({ id: "add-visit-notes", label: "Add visit notes", href: "/notes" });
+        break;
+      }
+    }
+  }
+
+  // Overdue provider
+  const overdue = dashboard.snapshots.find(
+    (s: any) =>
+      s.provider?.provider_type !== "pharmacy" &&
+      s.followUpNeeded &&
+      s.booking_state?.status !== "BOOKED" &&
+      s.booking_state?.status !== "IN_PROGRESS"
+  );
+  if (overdue) {
+    chips.push({ id: "book-overdue", label: `Book ${overdue.provider.name.split(" ")[0]}`, href: "/dashboard" });
+  }
+
+  // Default: chat with Kate
+  if (chips.length < 3) {
+    chips.push({ id: "chat-kate", label: "Chat with Kate", href: "/kate" });
+  }
+
+  return chips.slice(0, 3);
+}
+
 function buildSuggestions(
   dashboard: DashboardData,
   profile: PatientProfile,
   context: BestNextStepContext = "dashboard"
 ): Suggestion[] {
   const suggestions: Suggestion[] = [];
+  const now = Date.now();
+
+  // HIGHEST PRIORITY: Appointment within 24 hours
+  for (const s of dashboard.snapshots) {
+    if (s.futureConfirmedEvent?.start_at) {
+      const start = new Date(s.futureConfirmedEvent.start_at).getTime();
+      const diff = start - now;
+      if (diff > 0 && diff < 24 * 60 * 60 * 1000) {
+        suggestions.push({
+          id: `appt-tomorrow-${s.provider.id}`,
+          text: `Your appointment with ${s.provider.name} is tomorrow -- want to prep?`,
+          actionLabel: "Prep now",
+          actionType: "link",
+          actionHref: "/providers",
+        });
+        break;
+      }
+    }
+  }
+
+  // SECOND: Appointment completed in past 48 hours (no notes captured)
+  for (const s of dashboard.snapshots) {
+    if (s.booking_state?.appointmentStart) {
+      const start = new Date(s.booking_state.appointmentStart).getTime();
+      if (start < now && now - start < 48 * 60 * 60 * 1000) {
+        suggestions.push({
+          id: `post-visit-${s.provider.id}`,
+          text: `How did your visit with ${s.provider.name} go? Capture notes while it's fresh`,
+          actionLabel: "Add notes",
+          actionType: "link",
+          actionHref: "/notes",
+        });
+        break;
+      }
+    }
+  }
+
+  // THIRD: Provider just booked (within past 2 hours) via schedule_attempts
+  for (const s of dashboard.snapshots) {
+    if (s.latestAttempt?.status === "BOOKED_CONFIRMED" || s.latestAttempt?.status === "CONFIRMED") {
+      const createdAt = new Date(s.latestAttempt.created_at).getTime();
+      if (now - createdAt < 2 * 60 * 60 * 1000) {
+        const displayTime = s.booking_state?.displayTime || "your appointment";
+        suggestions.push({
+          id: `just-booked-${s.provider.id}`,
+          text: `Kate booked you for ${displayTime}. Want to add questions for your visit?`,
+          actionLabel: "Add questions",
+          actionType: "link",
+          actionHref: "/notes",
+        });
+        break;
+      }
+    }
+  }
 
   // 1. Missing DOB or insurance
   if (!profile.date_of_birth?.trim() || !profile.insurance_provider?.trim()) {
@@ -158,6 +266,7 @@ function addDismissed(id: string) {
 export default function BestNextStep({ context = "dashboard" }: { context?: BestNextStepContext }) {
   const router = useRouter();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [chips, setChips] = useState<PromptChip[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [phoneValue, setPhoneValue] = useState("");
@@ -179,6 +288,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
         const profile: PatientProfile = profileJson?.profile || {};
         const built = buildSuggestions(dashJson as DashboardData, profile, context);
         setSuggestions(built);
+        setChips(buildPromptChips(dashJson as DashboardData));
       })
       .finally(() => setLoaded(true));
   }, [context]);
@@ -186,7 +296,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
   if (!loaded) return null;
 
   const current = suggestions.find((s) => !dismissed.includes(s.id));
-  if (!current) return null;
+  if (!current && chips.length === 0) return null;
 
   function handleDismiss() {
     if (!current) return;
@@ -222,96 +332,120 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
   }
 
   return (
-    <div
-      className="animate-slideIn mt-4 rounded-2xl bg-white shadow-sm"
-      style={{
-        borderLeft: "3px solid #5C6B5C",
-        animation: "slideIn 0.4s ease-out both",
-      }}
-    >
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(-12px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
-
-      <div className="flex items-start gap-3 p-4">
-        {/* Kate avatar */}
-        <Image
-          src="/kate-avatar.png"
-          alt="Kate"
-          width={36}
-          height={36}
-          className="shrink-0 rounded-full"
-        />
-
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-[#1A1D2E] leading-snug">
-            {current.text}
-          </p>
-
-          {/* Inline phone input */}
-          {current.actionType === "inline-phone" && (
-            <div className="mt-2 flex gap-2">
-              <input
-                type="tel"
-                value={phoneValue}
-                onChange={(e) => setPhoneValue(e.target.value)}
-                placeholder="(555) 123-4567"
-                className="flex-1 rounded-lg border border-[#EBEDF0] px-3 py-1.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-              />
-              <button
-                type="button"
-                onClick={handleSavePhone}
-                disabled={savingPhone || !phoneValue.trim()}
-                className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
-                style={{ backgroundColor: "#5C6B5C" }}
-              >
-                {savingPhone ? "..." : "Save"}
-              </button>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          {current.actionType !== "inline-phone" && (
-            <div className="mt-2.5 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleAction}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95"
-                style={{ backgroundColor: "#5C6B5C" }}
-              >
-                {current.actionLabel}
-                <ArrowRight size={12} />
-              </button>
-              <button
-                type="button"
-                onClick={handleDismiss}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#7A7F8A] transition hover:bg-[#F0F2F5]"
-              >
-                Later
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Dismiss X */}
-        <button
-          type="button"
-          onClick={handleDismiss}
-          className="shrink-0 p-0.5 text-[#B0B4BC] transition hover:text-[#7A7F8A]"
-          aria-label="Dismiss"
+    <div className="mt-4">
+      {current && (
+        <div
+          className="animate-slideIn rounded-2xl bg-white shadow-sm"
+          style={{
+            borderLeft: "3px solid #5C6B5C",
+            animation: "slideIn 0.4s ease-out both",
+          }}
         >
-          <X size={14} />
-        </button>
-      </div>
+          <style jsx>{`
+            @keyframes slideIn {
+              from {
+                opacity: 0;
+                transform: translateX(-12px);
+              }
+              to {
+                opacity: 1;
+                transform: translateX(0);
+              }
+            }
+          `}</style>
+
+          <div className="flex items-start gap-3 p-4">
+            {/* Kate avatar */}
+            <Image
+              src="/kate-avatar.png"
+              alt="Kate"
+              width={36}
+              height={36}
+              className="shrink-0 rounded-full"
+            />
+
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[#1A1D2E] leading-snug">
+                {current.text}
+              </p>
+
+              {/* Inline phone input */}
+              {current.actionType === "inline-phone" && (
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="tel"
+                    value={phoneValue}
+                    onChange={(e) => setPhoneValue(e.target.value)}
+                    placeholder="(555) 123-4567"
+                    className="flex-1 rounded-lg border border-[#EBEDF0] px-3 py-1.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSavePhone}
+                    disabled={savingPhone || !phoneValue.trim()}
+                    className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+                    style={{ backgroundColor: "#5C6B5C" }}
+                  >
+                    {savingPhone ? "..." : "Save"}
+                  </button>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              {current.actionType !== "inline-phone" && (
+                <div className="mt-2.5 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAction}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95"
+                    style={{ backgroundColor: "#5C6B5C" }}
+                  >
+                    {current.actionLabel}
+                    <ArrowRight size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDismiss}
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#7A7F8A] transition hover:bg-[#F0F2F5]"
+                  >
+                    Later
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Dismiss X */}
+            <button
+              type="button"
+              onClick={handleDismiss}
+              className="shrink-0 p-0.5 text-[#B0B4BC] transition hover:text-[#7A7F8A]"
+              aria-label="Dismiss"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Contextual prompt chips */}
+      {chips.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {chips.map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => router.push(chip.href)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs font-medium text-[#5C6B5C] shadow-sm transition hover:bg-[#F0F2F5] hover:border-[#5C6B5C]"
+            >
+              {chip.id === "prep-tomorrow" && <CalendarCheck size={12} />}
+              {chip.id === "add-visit-notes" && <FileText size={12} />}
+              {chip.id === "book-overdue" && <Clock size={12} />}
+              {chip.id === "chat-kate" && <MessageSquare size={12} />}
+              {chip.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

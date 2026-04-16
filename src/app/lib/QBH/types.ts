@@ -1,6 +1,7 @@
 export type Provider = {
   id: string;
   name: string;
+  display_name?: string | null;
   phone?: string | null;
   specialty?: string | null;
   location?: string | null;
