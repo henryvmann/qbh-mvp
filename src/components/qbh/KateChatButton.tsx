@@ -38,22 +38,6 @@ export default function KateChatButton() {
     }
   }, [open, hasGreeted, messages.length]);
 
-  // Listen for kate-quick-action events from other components
-  useEffect(() => {
-    function handleQuickAction(e: Event) {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.message) {
-        setOpen(true);
-        // Small delay to let the panel open, then send the message
-        setTimeout(() => {
-          sendQuickAction(detail.message);
-        }, 100);
-      }
-    }
-    window.addEventListener("kate-quick-action", handleQuickAction);
-    return () => window.removeEventListener("kate-quick-action", handleQuickAction);
-  }, [sendQuickAction]);
-
   const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || streaming) return;
@@ -131,6 +115,21 @@ export default function KateChatButton() {
       setStreaming(false);
     }
   }, [streaming]);
+
+  // Listen for kate-quick-action events from other components
+  useEffect(() => {
+    function handleQuickAction(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.message) {
+        setOpen(true);
+        setTimeout(() => {
+          sendQuickAction(detail.message);
+        }, 100);
+      }
+    }
+    window.addEventListener("kate-quick-action", handleQuickAction);
+    return () => window.removeEventListener("kate-quick-action", handleQuickAction);
+  }, [sendQuickAction]);
 
   return (
     <>
