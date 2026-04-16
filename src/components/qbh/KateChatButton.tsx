@@ -33,11 +33,26 @@ export default function KateChatButton() {
     if (open && inputRef.current) {
       inputRef.current.focus();
     }
-    // Show greeting on first open
     if (open && !hasGreeted && messages.length === 0) {
       setHasGreeted(true);
     }
   }, [open, hasGreeted, messages.length]);
+
+  // Listen for kate-quick-action events from other components
+  useEffect(() => {
+    function handleQuickAction(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.message) {
+        setOpen(true);
+        // Small delay to let the panel open, then send the message
+        setTimeout(() => {
+          sendQuickAction(detail.message);
+        }, 100);
+      }
+    }
+    window.addEventListener("kate-quick-action", handleQuickAction);
+    return () => window.removeEventListener("kate-quick-action", handleQuickAction);
+  }, [sendQuickAction]);
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
