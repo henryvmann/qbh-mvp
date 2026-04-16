@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { logAudit } from "../../../../lib/audit";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -24,7 +25,9 @@ type CallScorecard = {
 };
 
 // GET: Fetch scorecards for recent calls
-export async function GET() {
+export async function GET(req: Request) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+  logAudit({ appUserId: "admin", action: "admin_view_call_quality", resourceType: "admin", ipAddress: ip });
   const { data: rawNotes, error } = await supabaseAdmin
     .from("call_notes")
     .select("attempt_id, transcript, summary, booking_summary, follow_up_notes, created_at")

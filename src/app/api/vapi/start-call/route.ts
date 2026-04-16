@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { getAvailabilityContext } from "../../../../lib/availability";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
+import { logAudit } from "../../../../lib/audit";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -314,6 +315,9 @@ export async function POST(req: Request) {
   if (!app_user_id) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+  logAudit({ appUserId: app_user_id, action: "initiate_call", resourceType: "call", resourceId: provider_id, ipAddress: ip });
 
   // Fetch patient profile for the call
   const { data: userRow } = await supabaseAdmin

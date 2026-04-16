@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     const appUserId = String(body?.app_user_id || "").trim();
     const name = String(body?.name || "").trim();
     const surveyAnswers = body?.survey_answers || null;
+    const consents = body?.consents || null;
 
     if (!email || !password || !appUserId) {
       return NextResponse.json(
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
         name,
         app_user_id: appUserId,
         survey_answers: surveyAnswers,
+        consents: consents || undefined,
       },
     });
 
@@ -56,7 +58,11 @@ export async function POST(req: NextRequest) {
       const { error: upsertError } = await supabaseAdmin
         .from("app_users")
         .upsert(
-          { id: appUserId, auth_user_id: userData.user.id },
+          {
+            id: appUserId,
+            auth_user_id: userData.user.id,
+            ...(consents ? { consents } : {}),
+          },
           { onConflict: "id" }
         );
 

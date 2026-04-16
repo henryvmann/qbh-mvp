@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../lib/supabase-server";
 import { getSessionAppUserId } from "../../../lib/auth/get-session-app-user-id";
+import { logAudit } from "../../../lib/audit";
 
 export async function GET(req: NextRequest) {
   let appUserId = await getSessionAppUserId(req);
@@ -13,6 +14,9 @@ export async function GET(req: NextRequest) {
   if (!appUserId) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+  logAudit({ appUserId, action: "view_profile", resourceType: "patient_profile", ipAddress: ip });
 
   const { data, error } = await supabaseAdmin
     .from("app_users")
@@ -37,6 +41,9 @@ export async function POST(req: NextRequest) {
   if (!appUserId) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+  logAudit({ appUserId, action: "update_profile", resourceType: "patient_profile", ipAddress: ip });
 
   const incoming = body?.profile || {};
 

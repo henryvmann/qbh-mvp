@@ -7,6 +7,7 @@ import {
   getDashboardDiscoverySummaryForUser,
   getGoogleCalendarConnectionForUser,
 } from "../../../../lib/qbh/queries/dashboard";
+import { logAudit } from "../../../../lib/audit";
 
 async function getUserInfo(appUserId: string): Promise<{ displayName: string | null; fullName: string | null }> {
   const { data: appUser } = await supabaseAdmin
@@ -39,6 +40,9 @@ export async function GET(req: Request) {
   if (!appUserId) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+  logAudit({ appUserId, action: "view_dashboard", resourceType: "dashboard", ipAddress: ip });
 
   const [snapshots, discoverySummary, hasGoogleCalendarConnection, userInfo] =
     await Promise.all([

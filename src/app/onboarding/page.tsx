@@ -250,6 +250,11 @@ export default function OnboardingPage() {
   const [healthFactFading, setHealthFactFading] = useState(false);
   const [providerExisting, setProviderExisting] = useState<Record<string, boolean>>({});
 
+  const [consentCalls, setConsentCalls] = useState(false);
+  const [consentPhi, setConsentPhi] = useState(false);
+  const [consentTerms, setConsentTerms] = useState(false);
+  const allConsentsGiven = consentCalls && consentPhi && consentTerms;
+
   const [plaidAutoAdvance, setPlaidAutoAdvance] = useState(false);
   const plaidHandlerRef = useRef<{ open: () => void } | null>(null);
 
@@ -360,7 +365,7 @@ export default function OnboardingPage() {
 
   /* ---- Step 7 continue: create user ---- */
   const handleStep7Continue = useCallback(async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6) return;
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6 || !allConsentsGiven) return;
     setError(null);
 
     try {
@@ -374,6 +379,12 @@ export default function OnboardingPage() {
           app_user_id: userId,
           name: name.trim(),
           survey_answers: JSON.stringify(survey),
+          consents: {
+            ai_calls: true,
+            phi_sharing: true,
+            terms: true,
+            consented_at: new Date().toISOString(),
+          },
         }),
       });
       const signupData = await signupRes.json();
@@ -393,16 +404,16 @@ export default function OnboardingPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
     }
-  }, [firstName, lastName, email, password, userId, survey]);
+  }, [firstName, lastName, email, password, userId, survey, allConsentsGiven]);
 
   /* ---- Auto-advance after Plaid connects ---- */
   useEffect(() => {
     if (!plaidAutoAdvance) return;
-    if (firstName.trim() && lastName.trim() && email.trim() && password.length >= 6) {
+    if (firstName.trim() && lastName.trim() && email.trim() && password.length >= 6 && allConsentsGiven) {
       handleStep7Continue();
     }
     setPlaidAutoAdvance(false);
-  }, [plaidAutoAdvance, handleStep7Continue, firstName, lastName, email, password]);
+  }, [plaidAutoAdvance, handleStep7Continue, firstName, lastName, email, password, allConsentsGiven]);
 
   /* ---- Step 8: run discovery ---- */
   useEffect(() => {
@@ -553,7 +564,7 @@ export default function OnboardingPage() {
 
   /* ---- Manual path: handle continue ---- */
   const handleManualContinue = useCallback(async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6) return;
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6 || !allConsentsGiven) return;
     setError(null);
 
     try {
@@ -567,6 +578,12 @@ export default function OnboardingPage() {
           app_user_id: userId,
           name: name.trim(),
           survey_answers: JSON.stringify(survey),
+          consents: {
+            ai_calls: true,
+            phi_sharing: true,
+            terms: true,
+            consented_at: new Date().toISOString(),
+          },
         }),
       });
       const signupData = await signupRes.json();
@@ -605,7 +622,7 @@ export default function OnboardingPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
     }
-  }, [firstName, lastName, email, password, userId, survey, manualProviders]);
+  }, [firstName, lastName, email, password, userId, survey, manualProviders, allConsentsGiven]);
 
   /* ---- render per step ---- */
 
@@ -884,7 +901,7 @@ export default function OnboardingPage() {
 
   // Step 7 (manual path): Account setup + NPI provider search
   if (step === 7 && manualPath) {
-    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
+    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && allConsentsGiven;
 
     // Build person options from step 3 survey answers
     const personLabelMap: Record<string, string> = {
@@ -1106,6 +1123,46 @@ export default function OnboardingPage() {
           </div>
         </div>
 
+        {/* Consent Checkboxes */}
+        <div className="mt-5 space-y-3">
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consentCalls}
+              onChange={(e) => setConsentCalls(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+            />
+            <span className="text-xs text-[#7A7F8A] leading-relaxed">
+              I authorize Quarterback Health to make phone calls to healthcare offices on my behalf
+            </span>
+          </label>
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consentPhi}
+              onChange={(e) => setConsentPhi(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+            />
+            <span className="text-xs text-[#7A7F8A] leading-relaxed">
+              I understand my health information will be shared with AI services to provide scheduling assistance
+            </span>
+          </label>
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consentTerms}
+              onChange={(e) => setConsentTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+            />
+            <span className="text-xs text-[#7A7F8A] leading-relaxed">
+              I agree to the{" "}
+              <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Terms of Service</a>
+              {" "}and{" "}
+              <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Privacy Policy</a>
+            </span>
+          </label>
+        </div>
+
         {error && (
           <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
             {error}
@@ -1135,7 +1192,7 @@ export default function OnboardingPage() {
 
   // Step 7: Account setup + Plaid connection (was step 5)
   if (step === 7) {
-    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6;
+    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && allConsentsGiven;
     return (
       <Shell>
         <div className="mb-6">
@@ -1212,6 +1269,46 @@ export default function OnboardingPage() {
               We&apos;ll prompt you to connect Google Calendar once your account is verified.
             </p>
           )}
+        </div>
+
+        {/* Consent Checkboxes */}
+        <div className="mt-5 space-y-3">
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consentCalls}
+              onChange={(e) => setConsentCalls(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+            />
+            <span className="text-xs text-[#7A7F8A] leading-relaxed">
+              I authorize Quarterback Health to make phone calls to healthcare offices on my behalf
+            </span>
+          </label>
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consentPhi}
+              onChange={(e) => setConsentPhi(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+            />
+            <span className="text-xs text-[#7A7F8A] leading-relaxed">
+              I understand my health information will be shared with AI services to provide scheduling assistance
+            </span>
+          </label>
+          <label className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consentTerms}
+              onChange={(e) => setConsentTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+            />
+            <span className="text-xs text-[#7A7F8A] leading-relaxed">
+              I agree to the{" "}
+              <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Terms of Service</a>
+              {" "}and{" "}
+              <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Privacy Policy</a>
+            </span>
+          </label>
         </div>
 
         {error && (

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { logAudit } from "../../../../lib/audit";
 
 type AdminUser = {
   app_user_id: string;
@@ -20,8 +21,11 @@ type AdminUser = {
   last_activity: string | null;
 };
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+    logAudit({ appUserId: "admin", action: "admin_view_users", resourceType: "admin", ipAddress: ip });
+
     // 1. Get all app_users
     const { data: appUsers, error: appUsersError } = await supabaseAdmin
       .from("app_users")

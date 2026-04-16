@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "../../lib/supabase/client";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
+import { AlertTriangle } from "lucide-react";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -30,6 +31,12 @@ export default function AccountPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Delete account
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -273,7 +280,104 @@ export default function AccountPage() {
             </div>
           )}
         </div>
+
+        {/* Delete Account */}
+        <div className="mt-4 rounded-2xl bg-white shadow-sm p-6 border-2 border-red-300">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-red-600 mb-2">
+                Delete Account
+              </h2>
+              <p className="text-sm text-[#7A7F8A]">
+                This will permanently delete your account and all data. This cannot be undone.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                className="mt-4 rounded-xl bg-red-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+              >
+                Delete my account
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="h-6 w-6 text-red-500" />
+              <h3 className="text-lg font-semibold text-[#1A1D2E]">Are you sure?</h3>
+            </div>
+            <p className="text-sm text-[#7A7F8A] mb-4">
+              This action is irreversible. All your data, providers, call history, and profile information will be permanently deleted.
+            </p>
+            <p className="text-sm font-medium text-[#1A1D2E] mb-2">
+              Type <span className="font-mono font-bold text-red-600">DELETE</span> to confirm:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE"
+              className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-red-400 focus:outline-none focus:ring-1 focus:ring-red-400"
+            />
+
+            {deleteError && (
+              <div className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="mt-4 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText("");
+                  setDeleteError(null);
+                }}
+                className="flex-1 rounded-xl border border-[#EBEDF0] px-4 py-2.5 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteConfirmText !== "DELETE" || deleting}
+                onClick={async () => {
+                  setDeleting(true);
+                  setDeleteError(null);
+                  try {
+                    const res = await apiFetch("/api/account/delete", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ confirm: true }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data?.ok) {
+                      throw new Error(data?.error || "Failed to delete account.");
+                    }
+                    // Sign out and redirect
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                    router.push("/");
+                  } catch (err) {
+                    setDeleteError(err instanceof Error ? err.message : "Failed to delete account.");
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+              >
+                {deleting ? "Deleting..." : "Permanently delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
