@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import TopNav from "../../components/qbh/TopNav";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import { apiFetch } from "../../lib/api";
 import ProviderCard from "../../components/qbh/ProviderCard";
+import { Plus, Search, X, Check } from "lucide-react";
 import type { ProviderDashboardSnapshot } from "../lib/QBH/types";
 
 function getStatusLabel(snapshot: ProviderDashboardSnapshot): { label: string; className: string } {
@@ -48,15 +49,168 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
+/* ── Add Provider Form ── */
+
+type NpiResult = {
+  npi: string | null;
+  name: string;
+  specialty: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+};
+
+function AddProviderForm({
+  userId,
+  initialSearch,
+  onClose,
+  onAdded,
+}: {
+  userId: string;
+  initialSearch?: string;
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const [query, setQuery] = useState(initialSearch || "");
+  const [results, setResults] = useState<NpiResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [adding, setAdding] = useState<string | null>(null);
+  const [added, setAdded] = useState<Set<string>>(new Set());
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!query || query.length < 2) {
+      setResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await apiFetch(`/api/npi/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data.ok) setResults(data.results || []);
+      } catch {
+        // best effort
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  async function handleAdd(result: NpiResult) {
+    setAdding(result.name);
+    try {
+      const res = await apiFetch("/api/providers/add-manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          app_user_id: userId,
+          name: result.name,
+          phone_number: result.phone,
+          specialty: result.specialty,
+          npi: result.npi,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setAdded((prev) => new Set([...prev, result.name]));
+        onAdded();
+      }
+    } catch {
+      // best effort
+    } finally {
+      setAdding(null);
+    }
+  }
+
+  return (
+    <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-[#EBEDF0]">
+        <span className="text-sm font-semibold text-[#1A1D2E]">Add a provider</span>
+        <button type="button" onClick={onClose} className="p-1 text-[#B0B4BC] hover:text-[#7A7F8A]">
+          <X size={16} />
+        </button>
+      </div>
+      <div className="px-5 py-3">
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B0B4BC]" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, specialty, or location..."
+            className="w-full rounded-xl border border-[#EBEDF0] py-2.5 pl-9 pr-4 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+          />
+          {searching && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#7A7F8A]">Searching...</span>
+          )}
+        </div>
+
+        {results.length > 0 && (
+          <div className="mt-2 max-h-72 overflow-y-auto divide-y divide-[#EBEDF0]">
+            {results.map((result) => {
+              const isAdded = added.has(result.name);
+              const isAdding = adding === result.name;
+              return (
+                <div
+                  key={result.npi || result.name}
+                  className="flex items-center justify-between gap-3 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-[#1A1D2E] truncate">{result.name}</div>
+                    <div className="text-xs text-[#7A7F8A] truncate">
+                      {[result.specialty, result.city, result.state].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                  {isAdded ? (
+                    <span className="flex items-center gap-1 text-xs font-medium text-[#5C6B5C]">
+                      <Check size={12} /> Added
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleAdd(result)}
+                      disabled={!!adding}
+                      className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+                      style={{ backgroundColor: "#5C6B5C" }}
+                    >
+                      {isAdding ? "Adding..." : "Add"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {query.length >= 2 && !searching && results.length === 0 && (
+          <div className="py-4 text-center text-xs text-[#7A7F8A]">
+            No results found. Try a different search term.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ProvidersInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [snapshots, setSnapshots] = useState<ProviderDashboardSnapshot[]>([]);
   const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
   const [hasCalendar, setHasCalendar] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [initialSearch, setInitialSearch] = useState("");
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     apiFetch("/api/dashboard/data")
       .then((res) => {
         if (res.status === 401) {
@@ -74,6 +228,19 @@ function ProvidersInner() {
       })
       .finally(() => setLoading(false));
   }, [router]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Auto-open add form if ?add=true is in URL
+  useEffect(() => {
+    if (searchParams.get("add") === "true") {
+      setShowAddForm(true);
+      const search = searchParams.get("search") || "";
+      if (search) setInitialSearch(search);
+    }
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -105,6 +272,27 @@ function ProvidersInner() {
         </p>
 
         <BestNextStep context="providers" />
+
+        {/* Add Provider */}
+        <div className="mt-4">
+          {showAddForm ? (
+            <AddProviderForm
+              userId={userId}
+              initialSearch={initialSearch}
+              onClose={() => { setShowAddForm(false); setInitialSearch(""); }}
+              onAdded={() => loadData()}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center gap-2 rounded-xl border border-dashed border-[#C0C8D0] px-4 py-2.5 text-sm font-medium text-[#5C6B5C] transition hover:bg-white hover:border-[#5C6B5C]"
+            >
+              <Plus size={16} />
+              Add provider
+            </button>
+          )}
+        </div>
 
         {doctors.length === 0 && pharmacies.length === 0 ? (
           <div className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">

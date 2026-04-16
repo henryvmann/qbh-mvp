@@ -40,12 +40,12 @@ function getGoalLink(goal: { title: string; category: string; providerId?: strin
 
   // If it mentions a provider type, link to provider search
   if (PROVIDER_TYPE_KEYWORDS.some((kw) => t.includes(kw))) {
-    return { href: "/providers", label: "Find providers" };
+    return { href: "/providers?add=true", label: "Find providers" };
   }
 
   // Booking-related
   if (t.includes("book") || t.includes("schedule") || t.includes("appointment")) {
-    return { href: "/providers", label: "Find providers" };
+    return { href: "/providers?add=true", label: "Find providers" };
   }
 
   return null;

@@ -83,7 +83,7 @@ function buildPromptChips(
 
   // Default: chat with Kate
   if (chips.length < 3) {
-    chips.push({ id: "chat-kate", label: "Chat with Kate", href: "/kate" });
+    chips.push({ id: "chat-kate", label: "Chat with Kate", href: "/dashboard" });
   }
 
   return chips.slice(0, 3);
@@ -434,7 +434,13 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
             <button
               key={chip.id}
               type="button"
-              onClick={() => router.push(chip.href)}
+              onClick={() => {
+                if (chip.id === "chat-kate") {
+                  window.dispatchEvent(new CustomEvent("kate-quick-action", { detail: { message: "Hi Kate!" } }));
+                } else {
+                  router.push(chip.href);
+                }
+              }}
               className="inline-flex items-center gap-1.5 rounded-full border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs font-medium text-[#5C6B5C] shadow-sm transition hover:bg-[#F0F2F5] hover:border-[#5C6B5C]"
             >
               {chip.id === "prep-tomorrow" && <CalendarCheck size={12} />}

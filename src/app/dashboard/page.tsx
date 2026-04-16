@@ -297,7 +297,6 @@ function DashboardInner() {
   const overdueCount = overdueSnapshots.length;
   const upcomingCount = nonPharmacySnapshots.filter(hasConfirmedBooking).length;
   const providerCount = snapshots.length;
-  const healthScore = computeHealthScore(snapshots);
 
   const topOverdue = overdueSnapshots[0] ?? null;
   const topOverdueMonths = topOverdue ? monthsSinceLastVisit(topOverdue) : null;
@@ -323,11 +322,6 @@ function DashboardInner() {
         {/* ── Best Next Step ── */}
         <div className="px-7">
           <BestNextStep />
-        </div>
-
-        {/* ── Urgent Care ── */}
-        <div className="mt-3 px-7">
-          <UrgentCareButton />
         </div>
 
         {/* ── 2. Week Strip with dates ── */}
@@ -534,14 +528,19 @@ function DashboardInner() {
             )}
           </div>
         </div>
+        {/* ── Urgent Care (subtle bar) ── */}
+        <div className="mt-8 px-7">
+          <UrgentCareButton />
+        </div>
+
         {/* ── 6. Color Hub — At a Glance ── */}
         <div className="mt-10 px-7">
           <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
             AT A GLANCE
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-3 gap-3">
             {/* Providers */}
-            <Link href="/visits" className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#C2D9B8] p-5 transition hover:brightness-95">
+            <Link href="/providers" className="flex min-h-[100px] flex-col justify-between rounded-2xl bg-[#C2D9B8] p-5 transition hover:brightness-95">
               <div className="text-4xl font-extralight text-[#3D5A3D]">
                 {providerCount}
               </div>
@@ -551,7 +550,7 @@ function DashboardInner() {
             </Link>
 
             {/* Overdue */}
-            <Link href="/visits" className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#F0B8B0] p-5 transition hover:brightness-95">
+            <Link href="/visits" className="flex min-h-[100px] flex-col justify-between rounded-2xl bg-[#F0B8B0] p-5 transition hover:brightness-95">
               <div className="text-4xl font-extralight text-[#C03020]">
                 {overdueCount}
               </div>
@@ -561,20 +560,12 @@ function DashboardInner() {
             </Link>
 
             {/* Upcoming */}
-            <Link href="/visits" className="flex min-h-[110px] flex-col justify-between rounded-2xl bg-[#B0D0E8] p-5 transition hover:brightness-95">
+            <Link href="/visits" className="flex min-h-[100px] flex-col justify-between rounded-2xl bg-[#B0D0E8] p-5 transition hover:brightness-95">
               <div className="text-4xl font-extralight text-[#2A6090]">
                 {upcomingCount}
               </div>
               <div className="text-sm font-semibold text-[#2A6090]/80">
                 Upcoming
-              </div>
-            </Link>
-
-            {/* Score */}
-            <Link href="/goals" className="flex min-h-[110px] flex-col items-center justify-center rounded-2xl bg-[#C8B8E0] p-5 transition hover:brightness-95">
-              <ScoreRing score={healthScore} />
-              <div className="mt-1 text-sm font-semibold text-[#5C4A8A]/80">
-                Score
               </div>
             </Link>
           </div>
