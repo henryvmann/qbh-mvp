@@ -26,6 +26,7 @@ export default function AccountPage() {
 
   // Password section
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -79,6 +80,11 @@ export default function AccountPage() {
     e.preventDefault();
     if (!password.trim()) return;
 
+    if (!currentPassword.trim()) {
+      setError("Please enter your current password.");
+      return;
+    }
+
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
@@ -94,10 +100,26 @@ export default function AccountPage() {
       setError(null);
 
       const supabase = createClient();
+
+      // Verify current password first
+      if (!email) {
+        setError("Unable to verify current password. Email not found.");
+        return;
+      }
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      });
+      if (signInError) {
+        setError("Current password is incorrect.");
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) throw error;
       setDone(true);
+      setCurrentPassword("");
       setPassword("");
       setConfirm("");
     } catch (err) {
@@ -245,6 +267,15 @@ export default function AccountPage() {
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <input
                     type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Current password"
+                    required
+                    className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  />
+
+                  <input
+                    type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="New password"
@@ -263,7 +294,7 @@ export default function AccountPage() {
 
                   <button
                     type="submit"
-                    disabled={submitting || !password.trim() || !confirm.trim()}
+                    disabled={submitting || !currentPassword.trim() || !password.trim() || !confirm.trim()}
                     className="w-full rounded-xl px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                     style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
                   >

@@ -38,24 +38,24 @@ const priorityBorder: Record<string, string> = {
   low: "border-l-[#B0D0E8]",
 };
 
-/** Map insight type to a relevant Kate chat prompt */
-function getChatPrompt(insight: Insight): string {
-  const base = encodeURIComponent(insight.title);
+/** Build a chat prompt string for the given insight type */
+function getChatMessage(insight: Insight): string {
+  const title = insight.title;
   switch (insight.type) {
     case "upcoming_prep":
-      return `/kate?prompt=Help me prepare for: ${base}`;
+      return `Help me prepare for: ${title}`;
     case "care_gap":
-      return `/kate?prompt=Tell me more about this care gap: ${base}`;
+      return `Tell me more about this care gap: ${title}`;
     case "action_needed":
-      return `/kate?prompt=What should I do about: ${base}`;
+      return `What should I do about: ${title}`;
     case "tip":
-      return `/kate?prompt=Expand on this tip: ${base}`;
+      return `Expand on this tip: ${title}`;
     case "encouragement":
-      return `/kate?prompt=Tell me more about: ${base}`;
+      return `Tell me more about: ${title}`;
     case "connection":
-      return `/kate?prompt=Help me with: ${base}`;
+      return `Help me with: ${title}`;
     default:
-      return `/kate?prompt=Tell me more about: ${base}`;
+      return `Tell me more about: ${title}`;
   }
 }
 
@@ -110,7 +110,11 @@ export default function KateInsights() {
     if (insight.action_href) {
       router.push(insight.action_href);
     } else {
-      router.push(getChatPrompt(insight));
+      window.dispatchEvent(
+        new CustomEvent("kate-quick-action", {
+          detail: { message: getChatMessage(insight) },
+        })
+      );
     }
   }
 

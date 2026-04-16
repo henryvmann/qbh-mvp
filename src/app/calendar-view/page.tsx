@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Calendar, Link2, CheckCircle, XCircle } from "lucide-react";
 import TopNav from "../../components/qbh/TopNav";
 import { apiFetch } from "../../lib/api";
 
@@ -77,21 +78,46 @@ export default function CalendarViewPage() {
   const [past, setPast] = useState<PastVisit[]>([]);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasCalendar, setHasCalendar] = useState(false);
+  const [userId, setUserId] = useState("");
+
+  // Calendar events that look like doctor appointments for confirmation
+  const [calendarEvents, setCalendarEvents] = useState<Array<{
+    id: string;
+    summary: string;
+    start: string;
+    confirmed: boolean | null; // null = pending, true = yes, false = skipped
+  }>>([]);
 
   useEffect(() => {
-    apiFetch("/api/visits/data")
-      .then((res) => {
-        if (res.status === 401) {
-          router.push("/login");
-          return null;
-        }
+    Promise.all([
+      apiFetch("/api/visits/data").then((res) => {
+        if (res.status === 401) { router.push("/login"); return null; }
         return res.json();
-      })
-      .then((json) => {
-        if (json?.ok) {
-          setUpcoming(json.upcoming ?? []);
-          setPast(json.past ?? []);
-          setFollowUps(json.followUps ?? []);
+      }),
+      apiFetch("/api/dashboard/data").then((res) => res.ok ? res.json() : null),
+    ])
+      .then(([visitsJson, dashJson]) => {
+        if (visitsJson?.ok) {
+          setUpcoming(visitsJson.upcoming ?? []);
+          setPast(visitsJson.past ?? []);
+          setFollowUps(visitsJson.followUps ?? []);
+        }
+        if (dashJson?.ok) {
+          setHasCalendar(!!dashJson.hasGoogleCalendarConnection);
+          setUserId(dashJson.appUserId ?? "");
+
+          // Check for calendar events that look like doctor appointments
+          const doctorKeywords = /\b(dr\.?|doctor|dentist|dental|therapy|therapist|dermatolog|cardio|ophthalm|optom|pediatr|psychiatr|psycholog|orthop|gyno|obgyn|ob-gyn|ent|chiro|podiatr|physic|urgent care|clinic|medical|health|wellness|check.?up|annual|physical|appointment|consult)\b/i;
+          const possibleAppointments = (dashJson.calendarEvents ?? [])
+            .filter((evt: any) => doctorKeywords.test(evt.summary || ""))
+            .map((evt: any) => ({
+              id: evt.id,
+              summary: evt.summary,
+              start: evt.start?.dateTime || evt.start?.date || "",
+              confirmed: null as boolean | null,
+            }));
+          setCalendarEvents(possibleAppointments);
         }
       })
       .finally(() => setLoading(false));
@@ -186,6 +212,109 @@ export default function CalendarViewPage() {
             Calendar
           </h1>
         </div>
+
+        {/* Connect calendar card */}
+        {!hasCalendar && (
+          <div className="mb-6 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
+            <div className="flex items-start gap-3">
+              <Link2 size={20} strokeWidth={1.5} className="text-[#5C6B5C] mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold text-[#1A1D2E]">
+                  Connect your calendar
+                </h2>
+                <p className="mt-1 text-xs text-[#7A7F8A]">
+                  Link your calendar so Kate can find the best times for your appointments and avoid conflicts.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <Link
+                    href={userId ? `/calendar-connect?user_id=${userId}` : "/calendar-connect"}
+                    className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold text-white transition hover:brightness-95"
+                    style={{ backgroundColor: "#5C6B5C" }}
+                  >
+                    Connect Google Calendar
+                  </Link>
+                  <Link
+                    href="/calendar-connect"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[#EBEDF0] px-4 py-2 text-xs font-semibold text-[#5C6B5C] transition hover:bg-[#F0F2F5]"
+                  >
+                    Connect Outlook
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Calendar event confirmation */}
+        {hasCalendar && calendarEvents.filter((e) => e.confirmed === null).length > 0 && (
+          <div className="mb-6 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
+            <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
+              Confirm doctor appointments
+            </h2>
+            <p className="text-xs text-[#7A7F8A] mb-4">
+              We found these calendar events that look like doctor appointments. Can you confirm?
+            </p>
+            <div className="space-y-3">
+              {calendarEvents.filter((e) => e.confirmed === null).map((evt) => (
+                <div
+                  key={evt.id}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] p-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-[#1A1D2E] truncate">{evt.summary}</div>
+                    <div className="text-xs text-[#7A7F8A]">
+                      {evt.start ? new Date(evt.start).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      }) : "No date"}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setCalendarEvents((prev) =>
+                          prev.map((e) => e.id === evt.id ? { ...e, confirmed: true } : e)
+                        );
+                        try {
+                          await apiFetch("/api/providers/add-manual", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              app_user_id: userId,
+                              name: evt.summary.replace(/\b(appointment|visit|checkup|check-up|consult|consultation)\b/gi, "").trim(),
+                              source: "calendar_event",
+                            }),
+                          });
+                        } catch { /* best effort */ }
+                      }}
+                      className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95"
+                      style={{ backgroundColor: "#5C6B5C" }}
+                    >
+                      <CheckCircle size={12} />
+                      Yes, this is a doctor
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCalendarEvents((prev) =>
+                          prev.map((e) => e.id === evt.id ? { ...e, confirmed: false } : e)
+                        );
+                      }}
+                      className="flex items-center gap-1 rounded-lg border border-[#EBEDF0] px-3 py-1.5 text-xs font-medium text-[#7A7F8A] transition hover:bg-[#F0F2F5]"
+                    >
+                      <XCircle size={12} />
+                      No, skip
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Month navigation */}
         <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] overflow-hidden">

@@ -24,11 +24,11 @@ function CheckmarkIcon({ className }: { className?: string }) {
 const NAV_LINKS = [
   { label: "Home", href: "/dashboard" },
   { label: "Providers", href: "/providers" },
-  { label: "Goals", href: "/goals" },
   { label: "Visits", href: "/visits" },
   { label: "Calendar", href: "/calendar-view" },
-  { label: "Notes", href: "/notes" },
   { label: "Timeline", href: "/timeline" },
+  { label: "Goals", href: "/goals" },
+  { label: "Notes", href: "/notes" },
 ];
 
 export default function TopNav() {
@@ -132,13 +132,6 @@ export default function TopNav() {
 
                 {/* Settings links */}
                 <Link
-                  href="/settings"
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]"
-                >
-                  Kate Settings
-                </Link>
-                <Link
                   href="/account"
                   onClick={() => setMenuOpen(false)}
                   className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]"
@@ -146,18 +139,11 @@ export default function TopNav() {
                   Account
                 </Link>
                 <Link
-                  href="/calendar-connect"
+                  href="/settings"
                   onClick={() => setMenuOpen(false)}
                   className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]"
                 >
-                  Calendar Connections
-                </Link>
-                <Link
-                  href="/medications"
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]"
-                >
-                  Medications
+                  Settings
                 </Link>
                 <Link
                   href="/analytics"

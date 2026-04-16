@@ -78,12 +78,12 @@ function buildPromptChips(
       s.booking_state?.status !== "IN_PROGRESS"
   );
   if (overdue) {
-    chips.push({ id: "book-overdue", label: `Book ${overdue.provider.name.split(" ")[0]}`, href: "/dashboard" });
+    chips.push({ id: "book-overdue", label: `Book ${overdue.provider.name.split(" ")[0]}`, href: "/providers" });
   }
 
   // Default: chat with Kate
   if (chips.length < 3) {
-    chips.push({ id: "chat-kate", label: "Chat with Kate", href: "/dashboard" });
+    chips.push({ id: "chat-kate", label: "Chat with Kate", href: "#kate-chat" });
   }
 
   return chips.slice(0, 3);
@@ -179,7 +179,7 @@ function buildSuggestions(
       text: `Book your overdue appointment with ${first.provider.name}`,
       actionLabel: "Book now",
       actionType: "link",
-      actionHref: "/dashboard",
+      actionHref: "/providers",
     });
   }
 

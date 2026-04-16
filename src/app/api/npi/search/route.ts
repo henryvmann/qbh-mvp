@@ -6,6 +6,68 @@ import { lookupPlacePhone } from "../../../../lib/google/places-lookup";
 // Common US state names and abbreviations for detecting location in queries
 const STATE_PATTERNS = /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|ALABAMA|ALASKA|ARIZONA|ARKANSAS|CALIFORNIA|COLORADO|CONNECTICUT|DELAWARE|FLORIDA|GEORGIA|HAWAII|IDAHO|ILLINOIS|INDIANA|IOWA|KANSAS|KENTUCKY|LOUISIANA|MAINE|MARYLAND|MASSACHUSETTS|MICHIGAN|MINNESOTA|MISSISSIPPI|MISSOURI|MONTANA|NEBRASKA|NEVADA|NEW HAMPSHIRE|NEW JERSEY|NEW MEXICO|NEW YORK|NORTH CAROLINA|NORTH DAKOTA|OHIO|OKLAHOMA|OREGON|PENNSYLVANIA|RHODE ISLAND|SOUTH CAROLINA|SOUTH DAKOTA|TENNESSEE|TEXAS|UTAH|VERMONT|VIRGINIA|WASHINGTON|WEST VIRGINIA|WISCONSIN|WYOMING)\b/i;
 
+// Common specialty keywords that should be searched via taxonomy_description
+const SPECIALTY_KEYWORDS: Record<string, string> = {
+  dentist: "Dentist",
+  dental: "Dentist",
+  dermatologist: "Dermatology",
+  dermatology: "Dermatology",
+  doctor: "Internal Medicine",
+  cardiologist: "Cardiology",
+  cardiology: "Cardiology",
+  pediatrician: "Pediatrics",
+  pediatrics: "Pediatrics",
+  psychiatrist: "Psychiatry",
+  psychiatry: "Psychiatry",
+  psychologist: "Psychologist",
+  therapist: "Mental Health",
+  orthopedic: "Orthopaedic Surgery",
+  orthopedics: "Orthopaedic Surgery",
+  ophthalmologist: "Ophthalmology",
+  ophthalmology: "Ophthalmology",
+  optometrist: "Optometry",
+  optometry: "Optometry",
+  gynecologist: "Obstetrics & Gynecology",
+  obgyn: "Obstetrics & Gynecology",
+  "ob-gyn": "Obstetrics & Gynecology",
+  urologist: "Urology",
+  urology: "Urology",
+  neurologist: "Neurology",
+  neurology: "Neurology",
+  gastroenterologist: "Gastroenterology",
+  gastroenterology: "Gastroenterology",
+  pulmonologist: "Pulmonary Disease",
+  ent: "Otolaryngology",
+  allergist: "Allergy & Immunology",
+  endocrinologist: "Endocrinology",
+  rheumatologist: "Rheumatology",
+  oncologist: "Oncology",
+  chiropractor: "Chiropractic",
+  chiropractic: "Chiropractic",
+  podiatrist: "Podiatry",
+  podiatry: "Podiatry",
+  pharmacy: "Pharmacy",
+  "physical therapy": "Physical Therapy",
+  "physical therapist": "Physical Therapy",
+};
+
+function detectSpecialty(query: string): { specialty: string; remaining: string } | null {
+  const lower = query.toLowerCase().trim();
+  const words = lower.split(/\s+/);
+  // Check multi-word specialties first
+  for (const [keyword, taxonomy] of Object.entries(SPECIALTY_KEYWORDS)) {
+    if (lower.startsWith(keyword + " ") || lower === keyword) {
+      const remaining = lower.slice(keyword.length).trim();
+      return { specialty: taxonomy, remaining };
+    }
+  }
+  // Check single first word
+  if (SPECIALTY_KEYWORDS[words[0]]) {
+    return { specialty: SPECIALTY_KEYWORDS[words[0]], remaining: words.slice(1).join(" ") };
+  }
+  return null;
+}
+
 function splitNameAndLocation(query: string): { name: string; city: string | null; state: string | null } {
   const trimmed = query.trim();
 
@@ -87,6 +149,25 @@ export async function GET(req: NextRequest) {
       if (state) indParams.set("state", state);
       if (city && !state) indParams.set("city", `${city}*`);
       searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${indParams}`, { signal: AbortSignal.timeout(5000) }));
+    }
+
+    // Search by specialty + location if the query starts with a known specialty word
+    const specialtyMatch = detectSpecialty(query);
+    if (specialtyMatch) {
+      const locParsed = splitNameAndLocation(specialtyMatch.remaining || query);
+      const specCity = locParsed.city;
+      const specState = locParsed.state || state;
+
+      // Taxonomy description search (individual providers)
+      const taxParams = new URLSearchParams({
+        version: "2.1",
+        taxonomy_description: specialtyMatch.specialty,
+        limit: "10",
+      });
+      if (specState) taxParams.set("state", specState);
+      if (specCity) taxParams.set("city", `${specCity}*`);
+      else if (city) taxParams.set("city", `${city}*`);
+      searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${taxParams}`, { signal: AbortSignal.timeout(5000) }));
     }
 
     // If we detected a city without state, also try without city filter (broader search)

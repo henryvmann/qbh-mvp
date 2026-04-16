@@ -43,6 +43,7 @@ export default function SettingsPage() {
   const [commStyle, setCommStyle] = useState("friend");
   const [proactivity, setProactivity] = useState("balanced");
   const [focusAreas, setFocusAreas] = useState<string[]>(["booking", "reminders"]);
+  const [calendarFlexibility, setCalendarFlexibility] = useState<"flexible" | "balanced" | "strict">("balanced");
 
   useEffect(() => {
     apiFetch("/api/patient-profile")
@@ -60,6 +61,7 @@ export default function SettingsPage() {
           setCommStyle(p.kate_communication_style || "friend");
           setProactivity(p.kate_proactivity || "balanced");
           setFocusAreas(p.kate_focus_areas || ["booking", "reminders"]);
+          setCalendarFlexibility(p.calendar_flexibility || "balanced");
         }
       })
       .finally(() => setLoading(false));
@@ -78,6 +80,7 @@ export default function SettingsPage() {
             kate_communication_style: commStyle,
             kate_proactivity: proactivity,
             kate_focus_areas: focusAreas,
+            calendar_flexibility: calendarFlexibility,
           },
         }),
       });
@@ -229,6 +232,47 @@ export default function SettingsPage() {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Calendar Flexibility */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
+          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
+            Calendar Flexibility
+          </h2>
+          <p className="text-xs text-[#7A7F8A] mb-4">
+            How should Kate handle scheduling around your existing calendar events?
+          </p>
+          <div className="space-y-2">
+            {([
+              { value: "flexible" as const, label: "I'm flexible", desc: "Book at the earliest time and I'll adjust my calendar" },
+              { value: "balanced" as const, label: "Usually up to date", desc: "Avoid conflicts, but take earliest if nothing in 2 weeks" },
+              { value: "strict" as const, label: "My calendar is set in stone", desc: "Never book over any event" },
+            ]).map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setCalendarFlexibility(option.value)}
+                className={`w-full flex items-center gap-3 rounded-xl p-4 text-left transition ${
+                  calendarFlexibility === option.value
+                    ? "bg-[#5C6B5C]/10 border border-[#5C6B5C]"
+                    : "bg-[#F0F2F5] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
+                }`}
+              >
+                <div
+                  className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
+                    calendarFlexibility === option.value ? "border-[#5C6B5C]" : "border-[#B0B4BC]"
+                  }`}
+                >
+                  {calendarFlexibility === option.value && (
+                    <div className="h-2 w-2 rounded-full bg-[#5C6B5C]" />
+                  )}
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-[#1A1D2E]">{option.label}</div>
+                  <div className="text-xs text-[#7A7F8A]">{option.desc}</div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
 
