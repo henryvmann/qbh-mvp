@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../lib/supabase/client";
-import { getAuthClient } from "../../lib/api";
 import { apiFetch } from "../../lib/api";
 import { CharacterWithBubble } from "../../components/qbh/CharacterBubble";
 import WhyWeAsk from "../../components/qbh/WhyWeAsk";
@@ -393,15 +392,13 @@ export default function OnboardingPage() {
         throw new Error(signupData?.error || "Failed to create account.");
       }
 
-      // Sign in to create client session — use shared auth client so apiFetch can read the token
-      const authClient = getAuthClient();
-      if (authClient) {
-        const { error: signInError } = await authClient.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        if (signInError) throw signInError;
-      }
+      // Sign in to create client session
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (signInError) throw signInError;
 
       setStep(8);
     } catch (err) {
@@ -594,9 +591,9 @@ export default function OnboardingPage() {
         throw new Error(signupData?.error || "Failed to create account.");
       }
 
-      // Sign in to create client session — use shared auth client
-      const authClient2 = getAuthClient();
-      const { error: signInError } = await authClient2!.auth.signInWithPassword({
+      // Sign in to create client session
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });

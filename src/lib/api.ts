@@ -1,24 +1,13 @@
 import { Capacitor } from '@capacitor/core';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient } from './supabase/client';
 
 const VERCEL_URL = 'https://qbh-mvp.vercel.app';
 
-// Singleton Supabase client for auth — persists session in localStorage
-let _supabase: ReturnType<typeof createSupabaseClient> | null = null;
-export function getAuthClient() {
-  if (typeof window === "undefined") return null;
-  if (!_supabase) {
-    _supabase = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-  }
-  return _supabase;
-}
-
 /**
  * Thin fetch wrapper for all internal API calls.
- * Always sends Bearer token from Supabase session (localStorage-based).
+ * - Prefixes the Vercel URL when running in the native app
+ * - Injects the Supabase bearer token when running in the native app
+ * - On web, path is relative and no auth header is added (cookies handle it)
  */
 export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const baseUrl = Capacitor.isNativePlatform() ? VERCEL_URL : '';
@@ -27,18 +16,16 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
     ...authHeaders,
     ...(init?.headers as Record<string, string> ?? {}),
   };
-  return fetch(baseUrl + path, { ...init, headers, credentials: 'same-origin' });
+  return fetch(baseUrl + path, { ...init, headers, credentials: 'include' });
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
-  try {
-    const supabase = getAuthClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) {
-      return { Authorization: `Bearer ${session.access_token}` };
-    }
-  } catch {
-    // No session available
-  }
-  return {};
+  if (!Capacitor.isNativePlatform()) return {};
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return {};
+  return { Authorization: `Bearer ${session.access_token}` };
 }
+
+// Re-export for components that need the auth client directly
+export { createClient as getAuthClient } from './supabase/client';
