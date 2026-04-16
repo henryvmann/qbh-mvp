@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../../lib/api";
-import { Stethoscope, SmilePlus, Eye, Microscope, Heart } from "lucide-react";
+import Link from "next/link";
+import { Stethoscope, SmilePlus, Eye, Microscope, Heart, Search } from "lucide-react";
 
 type CareGap = {
   type: string;
@@ -19,36 +20,41 @@ const careGapIconMap: Record<string, React.ComponentType<any>> = {
   obgyn: Heart,
 };
 
-const CARE_GAP_TYPES: CareGap[] = [
+const CARE_GAP_TYPES: (CareGap & { searchTerm: string })[] = [
   {
     type: "pcp",
     label: "Primary Care",
     description: "Annual checkups, preventive screenings, and general health",
     iconKey: "pcp",
+    searchTerm: "primary care physician",
   },
   {
     type: "dentist",
     label: "Dentist",
     description: "Dental cleanings and checkups every 6 months",
     iconKey: "dentist",
+    searchTerm: "dentist",
   },
   {
     type: "eye",
     label: "Eye Doctor",
     description: "Vision exams and eye health screenings",
     iconKey: "eye",
+    searchTerm: "optometrist",
   },
   {
     type: "dermatologist",
     label: "Dermatologist",
     description: "Skin checks and annual mole screenings",
     iconKey: "dermatologist",
+    searchTerm: "dermatologist",
   },
   {
     type: "obgyn",
     label: "OB/GYN",
     description: "Gynecological exams and reproductive health",
     iconKey: "obgyn",
+    searchTerm: "obgyn",
   },
 ];
 
@@ -138,6 +144,23 @@ export default function CareGaps() {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href={`/onboarding?search=${encodeURIComponent((gap as any).searchTerm || gap.label)}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  // Open Kate chat to help find this provider type
+                  window.dispatchEvent(
+                    new CustomEvent("kate-quick-action", {
+                      detail: { message: `I need to find a ${gap.label.toLowerCase()} near me. Can you help?` },
+                    })
+                  );
+                }}
+                className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              >
+                <Search size={12} />
+                Find one
+              </Link>
               <button
                 onClick={() => setDismissed((prev) => new Set([...prev, gap.type]))}
                 className="text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
