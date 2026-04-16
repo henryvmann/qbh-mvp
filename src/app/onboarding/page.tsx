@@ -1144,7 +1144,7 @@ export default function OnboardingPage() {
               className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I understand my health information will be shared with AI services to provide scheduling assistance
+              I agree that Quarterback Health may use my information to schedule appointments, organize my care, and provide personalized health recommendations
             </span>
           </label>
           <label className="flex items-start gap-2.5 cursor-pointer">
@@ -1292,7 +1292,7 @@ export default function OnboardingPage() {
               className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I understand my health information will be shared with AI services to provide scheduling assistance
+              I agree that Quarterback Health may use my information to schedule appointments, organize my care, and provide personalized health recommendations
             </span>
           </label>
           <label className="flex items-start gap-2.5 cursor-pointer">
