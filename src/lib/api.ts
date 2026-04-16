@@ -16,13 +16,20 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
     ...authHeaders,
     ...(init?.headers as Record<string, string> ?? {}),
   };
-  return fetch(baseUrl + path, { ...init, headers });
+  return fetch(baseUrl + path, { ...init, headers, credentials: 'same-origin' });
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
-  if (!Capacitor.isNativePlatform()) return {};
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return {};
-  return { Authorization: `Bearer ${session.access_token}` };
+  // Always try to get the Bearer token — cookies alone may not work
+  // immediately after sign-in due to async cookie propagation
+  try {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      return { Authorization: `Bearer ${session.access_token}` };
+    }
+  } catch {
+    // Fall through to no auth headers — cookies will handle it
+  }
+  return {};
 }
