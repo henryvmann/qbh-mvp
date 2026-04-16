@@ -1124,35 +1124,35 @@ export default function OnboardingPage() {
         </div>
 
         {/* Consent Checkboxes */}
-        <div className="mt-5 space-y-3">
-          <label className="flex items-start gap-2.5 cursor-pointer">
+        <div className="mt-5 space-y-2">
+          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
             <input
               type="checkbox"
               checked={consentCalls}
               onChange={(e) => setConsentCalls(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
               I authorize Quarterback Health to make phone calls to healthcare offices on my behalf
             </span>
           </label>
-          <label className="flex items-start gap-2.5 cursor-pointer">
+          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
             <input
               type="checkbox"
               checked={consentPhi}
               onChange={(e) => setConsentPhi(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I agree that Quarterback Health may use my information to schedule appointments, organize my care, and provide personalized health recommendations
+              I agree that Quarterback Health may use my information to schedule appointments and organize my care
             </span>
           </label>
-          <label className="flex items-start gap-2.5 cursor-pointer">
+          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
             <input
               type="checkbox"
               checked={consentTerms}
               onChange={(e) => setConsentTerms(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
               I agree to the{" "}
@@ -1272,35 +1272,35 @@ export default function OnboardingPage() {
         </div>
 
         {/* Consent Checkboxes */}
-        <div className="mt-5 space-y-3">
-          <label className="flex items-start gap-2.5 cursor-pointer">
+        <div className="mt-5 space-y-2">
+          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
             <input
               type="checkbox"
               checked={consentCalls}
               onChange={(e) => setConsentCalls(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
               I authorize Quarterback Health to make phone calls to healthcare offices on my behalf
             </span>
           </label>
-          <label className="flex items-start gap-2.5 cursor-pointer">
+          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
             <input
               type="checkbox"
               checked={consentPhi}
               onChange={(e) => setConsentPhi(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I agree that Quarterback Health may use my information to schedule appointments, organize my care, and provide personalized health recommendations
+              I agree that Quarterback Health may use my information to schedule appointments and organize my care
             </span>
           </label>
-          <label className="flex items-start gap-2.5 cursor-pointer">
+          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
             <input
               type="checkbox"
               checked={consentTerms}
               onChange={(e) => setConsentTerms(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#EBEDF0] accent-[#5C6B5C]"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
               I agree to the{" "}
