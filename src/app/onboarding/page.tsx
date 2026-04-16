@@ -1865,7 +1865,7 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main
-      className="relative min-h-screen overflow-x-hidden text-[#1A1D2E]"
+      className="relative min-h-screen text-[#1A1D2E]"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
       <DecorativeCircle />
