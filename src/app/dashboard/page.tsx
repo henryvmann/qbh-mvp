@@ -245,20 +245,34 @@ function DashboardInner() {
   const [bookingAllDone, setBookingAllDone] = useState(false);
 
   useEffect(() => {
-    apiFetch("/api/dashboard/data")
-      .then((res) => {
-        console.log("[dashboard] API response status:", res.status);
-        if (res.status === 401) {
-          console.log("[dashboard] Got 401 — redirecting to login");
-          router.push("/login");
-          return null;
-        }
-        return res.json();
-      })
-      .then((json) => {
-        if (json?.ok) setData(json);
-      })
-      .finally(() => setLoading(false));
+    async function load() {
+      let res = await apiFetch("/api/dashboard/data");
+
+      // If 401, wait and retry — session may still be propagating
+      if (res.status === 401) {
+        console.log("[dashboard] First attempt 401 — retrying in 1.5s");
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await apiFetch("/api/dashboard/data");
+      }
+
+      // If still 401, try one more time with a longer delay
+      if (res.status === 401) {
+        console.log("[dashboard] Second attempt 401 — retrying in 3s");
+        await new Promise((r) => setTimeout(r, 3000));
+        res = await apiFetch("/api/dashboard/data");
+      }
+
+      if (res.status === 401) {
+        console.log("[dashboard] All retries failed — redirecting to login");
+        router.push("/login");
+        return;
+      }
+
+      const json = await res.json();
+      if (json?.ok) setData(json);
+      setLoading(false);
+    }
+    load().catch(() => setLoading(false));
   }, [router]);
 
   if (loading) {
