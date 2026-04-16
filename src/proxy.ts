@@ -3,7 +3,14 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Pages that do not require authentication.
 // Everything else redirects to /login if unauthenticated.
-const PUBLIC_PATHS = ["/", "/login", "/start", "/auth", "/connect", "/plaid/oauth", "/onboarding", "/handle-first"];
+// All paths are effectively public — auth is handled client-side via Bearer tokens.
+// The proxy only refreshes session cookies; it no longer redirects.
+const PUBLIC_PATHS = [
+  "/", "/login", "/start", "/auth", "/connect", "/plaid/oauth", "/onboarding",
+  "/handle-first", "/dashboard", "/providers", "/visits", "/goals", "/timeline",
+  "/notes", "/calendar-view", "/calendar-connect", "/settings", "/account",
+  "/medications", "/recordings", "/analytics", "/admin", "/portal-connect",
+];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
