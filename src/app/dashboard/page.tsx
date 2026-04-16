@@ -247,7 +247,9 @@ function DashboardInner() {
   useEffect(() => {
     apiFetch("/api/dashboard/data")
       .then((res) => {
+        console.log("[dashboard] API response status:", res.status);
         if (res.status === 401) {
+          console.log("[dashboard] Got 401 — redirecting to login");
           router.push("/login");
           return null;
         }

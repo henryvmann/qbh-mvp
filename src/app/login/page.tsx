@@ -21,12 +21,20 @@ export default function LoginPage() {
       setError(null);
 
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
       if (error) throw error;
+
+      // Verify session is actually set before navigating
+      const { data: sessionCheck } = await supabase.auth.getSession();
+      console.log("[login] signIn success, session:", sessionCheck?.session ? "exists" : "null", "token:", sessionCheck?.session?.access_token?.slice(0, 20));
+
+      // Small delay to ensure cookies are written by the browser client
+      await new Promise((r) => setTimeout(r, 500));
+
       window.location.href = "/dashboard";
     } catch (err) {
       setError(
