@@ -29,6 +29,7 @@ const NAV_LINKS = [
   { label: "Timeline", href: "/timeline" },
   { label: "Goals", href: "/goals" },
   { label: "Notes", href: "/notes" },
+  { label: "Progress", href: "/analytics" },
 ];
 
 export default function TopNav() {
@@ -146,11 +147,11 @@ export default function TopNav() {
                   Settings
                 </Link>
                 <Link
-                  href="/analytics"
+                  href="/recordings"
                   onClick={() => setMenuOpen(false)}
                   className="block px-4 py-3 text-sm text-[#1A1D2E] hover:bg-[#F0F2F5] border-b border-[#EBEDF0]"
                 >
-                  Your Progress
+                  Recordings
                 </Link>
 
                 {/* Logout */}

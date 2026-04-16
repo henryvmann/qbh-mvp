@@ -4,6 +4,26 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
+import { Plus, Trash2, Pill, Phone, RefreshCw } from "lucide-react";
+
+type Medication = {
+  id: string;
+  name: string;
+  dosage: string | null;
+  frequency: string | null;
+  provider_id: string | null;
+  pharmacy_id: string | null;
+  prescribed_date: string | null;
+  created_at: string;
+};
+
+type ProviderInfo = {
+  id: string;
+  name: string;
+  display_name?: string | null;
+  provider_type?: string;
+  phone?: string | null;
+};
 
 type PharmacyVisit = {
   provider_name: string;
@@ -12,9 +32,9 @@ type PharmacyVisit = {
 };
 
 function formatDate(iso: string | null): string {
-  if (!iso) return "Unknown date";
+  if (!iso) return "";
   return new Date(iso).toLocaleDateString("en-US", {
-    month: "long",
+    month: "short",
     day: "numeric",
     year: "numeric",
   });
@@ -27,26 +47,104 @@ function formatAmount(cents: number | null): string | null {
 
 export default function MedicationsPage() {
   const router = useRouter();
+  const [medications, setMedications] = useState<Medication[]>([]);
   const [pharmacyVisits, setPharmacyVisits] = useState<PharmacyVisit[]>([]);
+  const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [refillMessage, setRefillMessage] = useState<string | null>(null);
+
+  // Form state
+  const [formName, setFormName] = useState("");
+  const [formDosage, setFormDosage] = useState("");
+  const [formFrequency, setFormFrequency] = useState("");
+  const [formProviderId, setFormProviderId] = useState("");
+  const [formPharmacyId, setFormPharmacyId] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const pharmacies = providers.filter((p) => p.provider_type === "pharmacy");
+  const nonPharmacyProviders = providers.filter((p) => p.provider_type !== "pharmacy");
 
   useEffect(() => {
-    apiFetch("/api/medications/data")
-      .then((res) => {
-        if (res.status === 401) {
+    Promise.all([
+      apiFetch("/api/medications").then((r) => (r.ok ? r.json() : null)),
+      apiFetch("/api/medications/data").then((r) => {
+        if (r.status === 401) {
           router.replace("/login");
           return null;
         }
-        return res.json();
-      })
-      .then((data) => {
-        if (data?.ok) {
-          setPharmacyVisits(data.pharmacyVisits ?? []);
+        return r.json();
+      }),
+      apiFetch("/api/dashboard/data").then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([medsData, pharmacyData, dashData]) => {
+        if (medsData?.ok) setMedications(medsData.medications ?? []);
+        if (pharmacyData?.ok) setPharmacyVisits(pharmacyData.pharmacyVisits ?? []);
+        if (dashData?.ok && dashData.snapshots) {
+          const provs: ProviderInfo[] = dashData.snapshots.map((s: any) => ({
+            id: s.provider.id,
+            name: s.provider.name,
+            display_name: s.provider.display_name,
+            provider_type: s.provider.provider_type,
+            phone: s.provider.phone,
+          }));
+          setProviders(provs);
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [router]);
+
+  async function handleAddMedication() {
+    if (!formName.trim()) return;
+    setSaving(true);
+    try {
+      const res = await apiFetch("/api/medications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formName.trim(),
+          dosage: formDosage.trim() || null,
+          frequency: formFrequency.trim() || null,
+          provider_id: formProviderId || null,
+          pharmacy_id: formPharmacyId || null,
+        }),
+      });
+      const data = await res.json();
+      if (data?.ok && data.medication) {
+        setMedications((prev) => [...prev, data.medication]);
+        setFormName("");
+        setFormDosage("");
+        setFormFrequency("");
+        setFormProviderId("");
+        setFormPharmacyId("");
+        setShowForm(false);
+      }
+    } catch {}
+    finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(medId: string) {
+    const res = await apiFetch(`/api/medications?id=${medId}`, { method: "DELETE" });
+    const data = await res.json();
+    if (data?.ok) {
+      setMedications((prev) => prev.filter((m) => m.id !== medId));
+    }
+  }
+
+  function handleRefill(med: Medication) {
+    // Coming soon — will wire up VAPI REFILL mode later
+    setRefillMessage(`Refill request for ${med.name} — coming soon! Kate will be able to call your pharmacy to request refills.`);
+    setTimeout(() => setRefillMessage(null), 4000);
+  }
+
+  function getProviderName(providerId: string | null): string | null {
+    if (!providerId) return null;
+    const p = providers.find((pr) => pr.id === providerId);
+    return p?.display_name || p?.name || null;
+  }
 
   return (
     <main
@@ -55,15 +153,177 @@ export default function MedicationsPage() {
     >
       <TopNav />
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
-        <div>
-          <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
-            Medications
-          </h1>
-          <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
-            View your detected pharmacy visits and track medications as part of
-            your care plan.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
+              Medications
+            </h1>
+            <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
+              Track your medications and request refills through Kate.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+            style={{ backgroundColor: "#5C6B5C" }}
+          >
+            <Plus size={16} />
+            Add medication
+          </button>
         </div>
+
+        {/* Refill toast */}
+        {refillMessage && (
+          <div className="mt-4 rounded-xl bg-[#5C6B5C]/10 border border-[#5C6B5C]/30 px-4 py-3 text-sm text-[#5C6B5C] font-medium">
+            {refillMessage}
+          </div>
+        )}
+
+        {/* Add Medication Form */}
+        {showForm && (
+          <div className="mt-6 rounded-2xl bg-white p-5 border border-[#EBEDF0] shadow-sm">
+            <h3 className="text-sm font-semibold text-[#1A1D2E] mb-3">New medication</h3>
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="Medication name (e.g. Lisinopril)"
+                className="w-full rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              />
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={formDosage}
+                  onChange={(e) => setFormDosage(e.target.value)}
+                  placeholder="Dosage (e.g. 10mg)"
+                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                />
+                <input
+                  type="text"
+                  value={formFrequency}
+                  onChange={(e) => setFormFrequency(e.target.value)}
+                  placeholder="Frequency (e.g. Once daily)"
+                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                />
+              </div>
+              <div className="flex gap-3">
+                <select
+                  value={formProviderId}
+                  onChange={(e) => setFormProviderId(e.target.value)}
+                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                >
+                  <option value="">Prescribing provider (optional)</option>
+                  {nonPharmacyProviders.map((p) => (
+                    <option key={p.id} value={p.id}>{p.display_name || p.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={formPharmacyId}
+                  onChange={(e) => setFormPharmacyId(e.target.value)}
+                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                >
+                  <option value="">Pharmacy (optional)</option>
+                  {pharmacies.map((p) => (
+                    <option key={p.id} value={p.id}>{p.display_name || p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddMedication}
+                  disabled={saving || !formName.trim()}
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition hover:brightness-95"
+                  style={{ backgroundColor: "#5C6B5C" }}
+                >
+                  {saving ? "Saving..." : "Save medication"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="rounded-lg px-4 py-2 text-sm text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Your Medications */}
+        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+          <h2 className="font-serif text-xl text-[#1A1D2E]">
+            Your medications
+          </h2>
+
+          {loading ? (
+            <div className="mt-4 flex items-center gap-2 text-sm text-[#7A7F8A]">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+              Loading...
+            </div>
+          ) : medications.length === 0 ? (
+            <div className="mt-4 rounded-xl bg-[#F0F2F5] p-5 border border-[#EBEDF0] text-center">
+              <Pill size={32} className="mx-auto text-[#B0B4BC]" />
+              <p className="mt-2 text-sm text-[#7A7F8A]">
+                No medications added yet. Use the button above to add your first medication.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {medications.map((med) => {
+                const providerName = getProviderName(med.provider_id);
+                const pharmacyName = getProviderName(med.pharmacy_id);
+                return (
+                  <div
+                    key={med.id}
+                    className="group flex items-start justify-between rounded-xl bg-[#F0F2F5] px-5 py-4 border border-[#EBEDF0]"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/15 mt-0.5">
+                        <Pill size={16} className="text-[#5C6B5C]" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-[#1A1D2E]">
+                          {med.name}
+                          {med.dosage && (
+                            <span className="ml-2 font-normal text-[#7A7F8A]">{med.dosage}</span>
+                          )}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#7A7F8A]">
+                          {med.frequency && <span>{med.frequency}</span>}
+                          {providerName && <span>Prescribed by {providerName}</span>}
+                          {pharmacyName && <span>Pharmacy: {pharmacyName}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {med.pharmacy_id && (
+                        <button
+                          type="button"
+                          onClick={() => handleRefill(med)}
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-[#5C6B5C] bg-[#5C6B5C]/10 hover:bg-[#5C6B5C]/20 transition"
+                        >
+                          <RefreshCw size={12} />
+                          Refill with Kate
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(med.id)}
+                        className="shrink-0 p-1.5 text-[#B0B4BC] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
+                        aria-label="Delete medication"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
         {/* Pharmacy Visits Section */}
         <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
@@ -76,8 +336,7 @@ export default function MedicationsPage() {
             </span>
           </div>
           <p className="mt-2 text-sm text-[#7A7F8A]">
-            Pharmacy transactions detected from your connected financial
-            accounts.
+            Pharmacy transactions detected from your connected financial accounts.
           </p>
 
           {loading ? (
@@ -86,7 +345,7 @@ export default function MedicationsPage() {
               Loading pharmacy visits...
             </div>
           ) : pharmacyVisits.length === 0 ? (
-            <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
+            <div className="mt-6 rounded-xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
               <p className="text-sm text-[#7A7F8A]">
                 No pharmacy visits detected yet. Once you connect a financial
                 account, transactions at pharmacies like CVS, Walgreens, and
@@ -98,23 +357,11 @@ export default function MedicationsPage() {
               {pharmacyVisits.map((visit, i) => (
                 <div
                   key={`${visit.provider_name}-${visit.visit_date}-${i}`}
-                  className="flex items-center justify-between rounded-2xl bg-[#F0F2F5] px-5 py-4 border border-[#EBEDF0]"
+                  className="flex items-center justify-between rounded-xl bg-[#F0F2F5] px-5 py-4 border border-[#EBEDF0]"
                 >
                   <div className="flex items-center gap-4">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#5C6B5C]/15">
-                      <svg
-                        className="h-4 w-4 text-[#5C6B5C]"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                        />
-                      </svg>
+                      <Phone size={14} className="text-[#5C6B5C]" />
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-[#1A1D2E]">
@@ -134,49 +381,6 @@ export default function MedicationsPage() {
               ))}
             </div>
           )}
-        </section>
-
-        {/* Your Medications Section */}
-        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
-          <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl text-[#1A1D2E]">
-              Your medications
-            </h2>
-            <span className="rounded-full bg-[#F0F2F5] px-3 py-1 text-xs font-semibold text-[#7A7F8A] ring-1 ring-[#EBEDF0]">
-              Coming soon
-            </span>
-          </div>
-
-          <div className="mt-4 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
-            <div className="flex items-start gap-4">
-              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/15">
-                <svg
-                  className="h-4 w-4 text-[#5C6B5C]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-[#1A1D2E] font-medium">
-                  Track your medications here
-                </p>
-                <p className="mt-2 text-sm text-[#7A7F8A] leading-relaxed">
-                  This feature is coming soon — we are working on connecting
-                  with health portals to automatically detect your
-                  prescriptions. In the meantime, pharmacy visits from your
-                  financial data are shown above.
-                </p>
-              </div>
-            </div>
-          </div>
         </section>
       </div>
     </main>

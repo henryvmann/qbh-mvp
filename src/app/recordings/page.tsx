@@ -1,0 +1,196 @@
+"use client";
+
+import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { apiFetch } from "../../lib/api";
+import TopNav from "../../components/qbh/TopNav";
+import { Upload, Mic, FileAudio, Clock } from "lucide-react";
+
+type Recording = {
+  id: string;
+  title: string;
+  body: string;
+  created_at: string;
+};
+
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+export default function RecordingsPage() {
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  useEffect(() => {
+    apiFetch("/api/recordings")
+      .then((res) => {
+        if (res.status === 401) {
+          router.replace("/login");
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.ok) {
+          setRecordings(data.recordings ?? []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [router]);
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadSuccess(false);
+
+    try {
+      const formData = new FormData();
+      formData.append("audio", file);
+      formData.append("title", file.name.replace(/\.[^/.]+$/, "") || "Visit Recording");
+
+      const res = await apiFetch("/api/recordings", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data?.ok) {
+        setUploadSuccess(true);
+        // Refresh recordings list
+        const refreshRes = await apiFetch("/api/recordings");
+        const refreshData = await refreshRes.json();
+        if (refreshData?.ok) {
+          setRecordings(refreshData.recordings ?? []);
+        }
+        setTimeout(() => setUploadSuccess(false), 3000);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
+  return (
+    <main
+      className="min-h-screen text-[#1A1D2E]"
+      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
+    >
+      <TopNav />
+      <div className="mx-auto max-w-3xl px-6 pt-10 pb-16">
+        <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
+          Visit Recordings
+        </h1>
+        <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
+          Upload a recording from a doctor visit and Kate will summarize it for you.
+        </p>
+
+        {/* Upload area */}
+        <div className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-8">
+          <div
+            className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F0F2F5] p-10 transition hover:border-[#5C6B5C] hover:bg-[#5C6B5C]/5 cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".mp3,.m4a,.wav,.webm,audio/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            {uploading ? (
+              <>
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+                <p className="mt-3 text-sm font-medium text-[#1A1D2E]">Processing...</p>
+                <p className="mt-1 text-xs text-[#7A7F8A]">Uploading your recording</p>
+              </>
+            ) : (
+              <>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#5C6B5C]/15">
+                  <Upload size={20} className="text-[#5C6B5C]" />
+                </div>
+                <p className="mt-3 text-sm font-medium text-[#1A1D2E]">
+                  Click to upload a recording
+                </p>
+                <p className="mt-1 text-xs text-[#7A7F8A]">
+                  Accepts MP3, M4A, WAV, and WebM files
+                </p>
+              </>
+            )}
+          </div>
+
+          {uploadSuccess && (
+            <div className="mt-4 rounded-xl bg-[#5C6B5C]/10 border border-[#5C6B5C]/30 px-4 py-3 text-sm text-[#5C6B5C] font-medium">
+              Recording uploaded — Kate will analyze this shortly.
+            </div>
+          )}
+        </div>
+
+        {/* Recordings list */}
+        <section className="mt-8">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7A7F8A] mb-3">
+            Your recordings
+          </h2>
+
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-[#7A7F8A]">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+              Loading...
+            </div>
+          ) : recordings.length === 0 ? (
+            <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-8 text-center">
+              <Mic size={32} className="mx-auto text-[#B0B4BC]" />
+              <p className="mt-3 text-sm text-[#7A7F8A]">
+                No recordings yet. Upload a recording from your next doctor visit and Kate will summarize it.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recordings.map((rec) => (
+                <div
+                  key={rec.id}
+                  className="rounded-xl bg-white shadow-sm border border-[#EBEDF0] px-5 py-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/15 mt-0.5">
+                      <FileAudio size={16} className="text-[#5C6B5C]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-[#1A1D2E]">{rec.title}</div>
+                      <p className="mt-1 text-sm text-[#7A7F8A]">{rec.body}</p>
+                      <div className="mt-2 flex items-center gap-1.5 text-xs text-[#B0B4BC]">
+                        <Clock size={11} />
+                        {formatDate(rec.created_at)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}

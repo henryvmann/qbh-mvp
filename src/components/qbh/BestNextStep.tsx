@@ -12,8 +12,9 @@ type Suggestion = {
   id: string;
   text: string;
   actionLabel: string;
-  actionType: "link" | "inline-phone";
+  actionType: "link" | "inline-phone" | "kate-action";
   actionHref?: string;
+  katePrompt?: string;
 };
 
 type DashboardData = {
@@ -105,10 +106,10 @@ function buildSuggestions(
       if (diff > 0 && diff < 24 * 60 * 60 * 1000) {
         suggestions.push({
           id: `appt-tomorrow-${s.provider.id}`,
-          text: `Your appointment with ${s.provider.name} is tomorrow -- want to prep?`,
-          actionLabel: "Prep now",
-          actionType: "link",
-          actionHref: "/providers",
+          text: `Your appointment with ${s.provider.name} is tomorrow — want Kate to help you prepare?`,
+          actionLabel: "Get Kate's help",
+          actionType: "kate-action",
+          katePrompt: `Help me prepare for my appointment with ${s.provider.name} tomorrow. Suggest some questions I should ask and things I should bring.`,
         });
         break;
       }
@@ -122,10 +123,10 @@ function buildSuggestions(
       if (start < now && now - start < 48 * 60 * 60 * 1000) {
         suggestions.push({
           id: `post-visit-${s.provider.id}`,
-          text: `How did your visit with ${s.provider.name} go? Capture notes while it's fresh`,
-          actionLabel: "Add notes",
-          actionType: "link",
-          actionHref: "/notes",
+          text: `How did your visit with ${s.provider.name} go? Tell Kate and she'll organize your notes`,
+          actionLabel: "Let Kate handle this",
+          actionType: "kate-action",
+          katePrompt: `I just had a visit with ${s.provider.name}. Help me capture what happened — ask me about what the doctor said, any new prescriptions, follow-up steps, and things I should remember.`,
         });
         break;
       }
@@ -140,10 +141,10 @@ function buildSuggestions(
         const displayTime = s.booking_state?.displayTime || "your appointment";
         suggestions.push({
           id: `just-booked-${s.provider.id}`,
-          text: `Kate booked you for ${displayTime}. Want to add questions for your visit?`,
-          actionLabel: "Add questions",
-          actionType: "link",
-          actionHref: "/notes",
+          text: `Kate booked you for ${displayTime}. Want Kate to help you prepare?`,
+          actionLabel: "Get Kate's help",
+          actionType: "kate-action",
+          katePrompt: `I have an upcoming appointment at ${displayTime} with ${s.provider.name}. Help me prepare — suggest questions I should ask and things I should bring.`,
         });
         break;
       }
@@ -157,8 +158,8 @@ function buildSuggestions(
     if (!profile.insurance_provider?.trim()) missing.push("insurance");
     suggestions.push({
       id: "complete-profile",
-      text: `Complete your health profile (add ${missing.join(", ")})`,
-      actionLabel: "Update profile",
+      text: `Kate needs your ${missing.join(" and ")} to book for you — add ${missing.length > 1 ? "them" : "it"} now?`,
+      actionLabel: "Add now",
       actionType: "link",
       actionHref: "/settings",
     });
@@ -176,8 +177,8 @@ function buildSuggestions(
     const first = overdueSnapshots[0];
     suggestions.push({
       id: `book-overdue-${first.provider.id}`,
-      text: `Book your overdue appointment with ${first.provider.name}`,
-      actionLabel: "Book now",
+      text: `Kate can book ${first.provider.name} for you — let her handle it?`,
+      actionLabel: "Let Kate book",
       actionType: "link",
       actionHref: "/providers",
     });
@@ -187,8 +188,8 @@ function buildSuggestions(
   if (!dashboard.hasGoogleCalendarConnection) {
     suggestions.push({
       id: "connect-calendar",
-      text: "Connect your Google Calendar for better scheduling",
-      actionLabel: "Connect",
+      text: "Want Kate to check your calendar for conflicts? Connect it now.",
+      actionLabel: "Connect calendar",
       actionType: "link",
       actionHref: `/calendar-connect?user_id=${dashboard.appUserId}`,
     });
@@ -198,7 +199,7 @@ function buildSuggestions(
   if (!profile.callback_phone?.trim()) {
     suggestions.push({
       id: "add-phone",
-      text: "Add your phone number so offices can reach you",
+      text: "Offices may need to call you back — add your number?",
       actionLabel: "Add phone",
       actionType: "inline-phone",
     });
@@ -330,7 +331,9 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
 
   function handleAction() {
     if (!current) return;
-    if (current.actionType === "link" && current.actionHref) {
+    if (current.actionType === "kate-action" && current.katePrompt) {
+      window.dispatchEvent(new CustomEvent("kate-quick-action", { detail: { message: current.katePrompt } }));
+    } else if (current.actionType === "link" && current.actionHref) {
       router.push(current.actionHref);
     }
     // inline-phone is handled by the input
@@ -416,7 +419,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
               )}
 
               {/* Action buttons */}
-              {current.actionType !== "inline-phone" && (
+              {current.actionType !== "inline-phone" && current.actionType && (
                 <div className="mt-2.5 flex items-center gap-2">
                   <button
                     type="button"

@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import TopNav from "../../components/qbh/TopNav";
 import { apiFetch } from "../../lib/api";
+import { Plus, Trash2, Users } from "lucide-react";
+
+type CareRecipient = {
+  id: string;
+  name: string;
+  relationship: string;
+  dob?: string | null;
+};
 
 type KateSettings = {
   display_name?: string;
@@ -44,6 +52,11 @@ export default function SettingsPage() {
   const [proactivity, setProactivity] = useState("balanced");
   const [focusAreas, setFocusAreas] = useState<string[]>(["booking", "reminders"]);
   const [calendarFlexibility, setCalendarFlexibility] = useState<"flexible" | "balanced" | "strict">("balanced");
+  const [careRecipients, setCareRecipients] = useState<CareRecipient[]>([]);
+  const [showAddPerson, setShowAddPerson] = useState(false);
+  const [newPersonName, setNewPersonName] = useState("");
+  const [newPersonRelationship, setNewPersonRelationship] = useState("Parent");
+  const [newPersonDob, setNewPersonDob] = useState("");
 
   useEffect(() => {
     apiFetch("/api/patient-profile")
@@ -62,6 +75,7 @@ export default function SettingsPage() {
           setProactivity(p.kate_proactivity || "balanced");
           setFocusAreas(p.kate_focus_areas || ["booking", "reminders"]);
           setCalendarFlexibility(p.calendar_flexibility || "balanced");
+          setCareRecipients(p.care_recipients || []);
         }
       })
       .finally(() => setLoading(false));
@@ -81,6 +95,7 @@ export default function SettingsPage() {
             kate_proactivity: proactivity,
             kate_focus_areas: focusAreas,
             calendar_flexibility: calendarFlexibility,
+            care_recipients: careRecipients,
           },
         }),
       });
@@ -115,6 +130,129 @@ export default function SettingsPage() {
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-8">
           Settings
         </h1>
+
+        {/* Care Recipients */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-semibold text-[#1A1D2E]">
+              Care Recipients
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowAddPerson(!showAddPerson)}
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-[#5C6B5C] hover:bg-[#5C6B5C]/10 transition"
+            >
+              <Plus size={14} />
+              Add person
+            </button>
+          </div>
+          <p className="text-xs text-[#7A7F8A] mb-4">
+            People you manage care for. Kate can help book and track appointments for everyone here.
+          </p>
+
+          {showAddPerson && (
+            <div className="mb-4 rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0]">
+              <div className="flex flex-col gap-2.5">
+                <input
+                  type="text"
+                  value={newPersonName}
+                  onChange={(e) => setNewPersonName(e.target.value)}
+                  placeholder="Name"
+                  className="w-full rounded-lg bg-white px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                />
+                <div className="flex gap-2.5">
+                  <select
+                    value={newPersonRelationship}
+                    onChange={(e) => setNewPersonRelationship(e.target.value)}
+                    className="flex-1 rounded-lg bg-white px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  >
+                    <option value="Parent">Parent</option>
+                    <option value="Child">Child</option>
+                    <option value="Partner">Partner</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <input
+                    type="date"
+                    value={newPersonDob}
+                    onChange={(e) => setNewPersonDob(e.target.value)}
+                    placeholder="DOB (optional)"
+                    className="flex-1 rounded-lg bg-white px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!newPersonName.trim()) return;
+                      const newRecipient: CareRecipient = {
+                        id: crypto.randomUUID(),
+                        name: newPersonName.trim(),
+                        relationship: newPersonRelationship,
+                        dob: newPersonDob || null,
+                      };
+                      setCareRecipients((prev) => [...prev, newRecipient]);
+                      setNewPersonName("");
+                      setNewPersonRelationship("Parent");
+                      setNewPersonDob("");
+                      setShowAddPerson(false);
+                    }}
+                    disabled={!newPersonName.trim()}
+                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition hover:brightness-95"
+                    style={{ backgroundColor: "#5C6B5C" }}
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPerson(false)}
+                    className="rounded-lg px-3 py-1.5 text-xs text-[#7A7F8A] hover:bg-white transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {careRecipients.length === 0 && !showAddPerson ? (
+            <div className="rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0] text-center">
+              <Users size={24} className="mx-auto text-[#B0B4BC]" />
+              <p className="mt-2 text-xs text-[#7A7F8A]">
+                No care recipients added yet. Add people you manage care for.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {careRecipients.map((person) => (
+                <div
+                  key={person.id}
+                  className="group flex items-center justify-between rounded-xl bg-[#F0F2F5] px-4 py-3 border border-[#EBEDF0]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/15">
+                      <Users size={14} className="text-[#5C6B5C]" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-[#1A1D2E]">{person.name}</div>
+                      <div className="text-xs text-[#7A7F8A]">
+                        {person.relationship}
+                        {person.dob && ` — Born ${new Date(person.dob).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCareRecipients((prev) => prev.filter((r) => r.id !== person.id))}
+                    className="shrink-0 p-1.5 text-[#B0B4BC] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
+                    aria-label="Remove person"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Nickname */}
         <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
