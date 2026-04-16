@@ -207,7 +207,13 @@ export default function HandleFirstPage() {
 
     async function load() {
       try {
-        const res = await apiFetch("/api/dashboard/data");
+        let res = await apiFetch("/api/dashboard/data");
+
+        // Retry once after a delay — session cookie may not be propagated yet after signup
+        if (res.status === 401) {
+          await new Promise((r) => setTimeout(r, 1500));
+          res = await apiFetch("/api/dashboard/data");
+        }
 
         if (res.status === 401) {
           router.replace("/login");

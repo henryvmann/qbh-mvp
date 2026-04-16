@@ -27,7 +27,7 @@ export default function LoginPage() {
       });
 
       if (error) throw error;
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Invalid email or password."
