@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import { Send, CalendarPlus, FileText, Stethoscope, HelpCircle } from "lucide-react";
 
@@ -17,6 +18,7 @@ const QUICK_ACTIONS = [
 ];
 
 export default function KateChatButton() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -52,7 +54,7 @@ export default function KateChatButton() {
       const res = await apiFetch("/api/kate/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: newMessages, page: pathname }),
       });
 
       if (!res.ok || !res.body) {
@@ -77,7 +79,7 @@ export default function KateChatButton() {
     } finally {
       setStreaming(false);
     }
-  }, [input, messages, streaming]);
+  }, [input, messages, streaming, pathname]);
 
   const sendQuickAction = useCallback(async (prompt: string) => {
     if (streaming) return;
@@ -90,7 +92,7 @@ export default function KateChatButton() {
       const res = await apiFetch("/api/kate/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: newMessages, page: pathname }),
       });
 
       if (!res.ok || !res.body) {
@@ -114,7 +116,7 @@ export default function KateChatButton() {
     } finally {
       setStreaming(false);
     }
-  }, [streaming]);
+  }, [streaming, pathname]);
 
   // Listen for kate-quick-action events from other components
   useEffect(() => {

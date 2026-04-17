@@ -6,7 +6,6 @@ import Link from "next/link";
 import { apiFetch } from "../../lib/api";
 import { Check } from "lucide-react";
 import HandleItButton from "../../components/qbh/HandleItButton";
-import KateChatButton from "../../components/qbh/KateChatButton";
 import KateInsights from "../../components/qbh/KateInsights";
 import CareGaps from "../../components/qbh/CareGaps";
 import KateFollowUp from "../../components/qbh/KateFollowUp";
@@ -588,8 +587,7 @@ function DashboardInner() {
         </div>
       </div>
 
-      {/* ── 7. Kate Chat ── */}
-      <KateChatButton />
+      {/* Kate Chat is now in the root layout */}
     </main>
   );
 }

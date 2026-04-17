@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const messages: ChatMessage[] = body.messages || [];
+  const page: string = body.page || "/dashboard";
 
   if (messages.length === 0) {
     return new Response(JSON.stringify({ error: "No messages" }), {
@@ -111,10 +112,25 @@ export async function POST(req: NextRequest) {
 
   const context = await buildContext(appUserId);
 
+  const pageContext = {
+    "/dashboard": "The user is on their main dashboard — they can see their health score, overdue providers, and upcoming appointments.",
+    "/providers": "The user is viewing their providers list — they can see all their doctors, book appointments, and add new providers.",
+    "/visits": "The user is on the visits page — they can see their visit history and spending.",
+    "/goals": "The user is on their health goals page.",
+    "/timeline": "The user is viewing their health timeline.",
+    "/notes": "The user is on their notes page — they can create and review health notes.",
+    "/settings": "The user is in settings — they can update their profile, care recipients, and preferences.",
+    "/calendar-view": "The user is viewing their health calendar.",
+    "/medications": "The user is viewing their medications.",
+    "/recordings": "The user is on the recordings page for doctor visit recordings.",
+  }[page] || `The user is on the ${page} page.`;
+
   const systemPrompt = `You are Kate, a friendly and helpful healthcare assistant for Quarterback Health. You help users manage their healthcare — tracking providers, booking appointments, understanding their health data, staying on top of visits, and preparing for appointments.
 
 Here is the user's current information:
 ${context}
+
+Current page context: ${pageContext}
 
 What you can help with:
 - Book appointments (suggest they click "Book" on the dashboard or you can explain the process)

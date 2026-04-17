@@ -2,6 +2,7 @@ import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CapacitorInit from "../components/CapacitorInit";
+import KateChatWrapper from "../components/qbh/KateChatWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
         </Script>
         <CapacitorInit />
         {children}
+        <KateChatWrapper />
       </body>
     </html>
   );

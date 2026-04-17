@@ -28,6 +28,7 @@ type PromptChip = {
   id: string;
   label: string;
   href: string;
+  katePrompt?: string;
 };
 
 type PatientProfile = {
@@ -53,7 +54,12 @@ function buildPromptChips(
     if (s.futureConfirmedEvent?.start_at) {
       const diff = new Date(s.futureConfirmedEvent.start_at).getTime() - now;
       if (diff > 0 && diff < 24 * 60 * 60 * 1000) {
-        chips.push({ id: "prep-tomorrow", label: "Prep for tomorrow", href: "/providers" });
+        chips.push({
+          id: "prep-tomorrow",
+          label: "Prep for tomorrow",
+          href: "#kate-prep",
+          katePrompt: "Help me prepare for my appointment tomorrow. What should I bring and what questions should I ask?",
+        });
         break;
       }
     }
@@ -79,7 +85,12 @@ function buildPromptChips(
       s.booking_state?.status !== "IN_PROGRESS"
   );
   if (overdue) {
-    chips.push({ id: "book-overdue", label: `Book ${overdue.provider.name.split(" ")[0]}`, href: "/providers" });
+    chips.push({
+      id: "book-overdue",
+      label: `Book ${overdue.provider.name.split(" ")[0]}`,
+      href: "#kate-book",
+      katePrompt: `I need to book an appointment with ${overdue.provider.name}. Can you help?`,
+    });
   }
 
   // Default: chat with Kate
@@ -179,8 +190,8 @@ function buildSuggestions(
       id: `book-overdue-${first.provider.id}`,
       text: `Kate can book ${first.provider.name} for you — let her handle it?`,
       actionLabel: "Let Kate book",
-      actionType: "link",
-      actionHref: "/providers",
+      actionType: "kate-action",
+      katePrompt: `I need to book an appointment with ${first.provider.name}. Can you help me schedule it?`,
     });
   }
 
@@ -471,8 +482,10 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
             key={chip.id}
             type="button"
             onClick={() => {
-              if (chip.id === "chat-kate" || chip.id === "chat" || chip.href === "#kate-chat") {
-                window.dispatchEvent(new CustomEvent("kate-quick-action", { detail: { message: "What should I focus on today?" } }));
+              if (chip.katePrompt || chip.id === "chat-kate" || chip.id === "chat" || chip.href === "#kate-chat") {
+                window.dispatchEvent(new CustomEvent("kate-quick-action", {
+                  detail: { message: chip.katePrompt || "What should I focus on today?" },
+                }));
               } else {
                 router.push(chip.href);
               }
