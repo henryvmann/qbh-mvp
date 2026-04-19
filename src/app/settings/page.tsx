@@ -48,6 +48,8 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
+  const [dob, setDob] = useState("");
+  const [insuranceProvider, setInsuranceProvider] = useState("");
   const [commStyle, setCommStyle] = useState("friend");
   const [proactivity, setProactivity] = useState("balanced");
   const [focusAreas, setFocusAreas] = useState<string[]>(["booking", "reminders"]);
@@ -71,6 +73,8 @@ export default function SettingsPage() {
         if (data?.ok && data.profile) {
           const p = data.profile;
           setDisplayName(p.display_name || p.nickname || "");
+          setDob(p.date_of_birth || "");
+          setInsuranceProvider(p.insurance_provider || "");
           setCommStyle(p.kate_communication_style || "friend");
           setProactivity(p.kate_proactivity || "balanced");
           setFocusAreas(p.kate_focus_areas || ["booking", "reminders"]);
@@ -91,6 +95,8 @@ export default function SettingsPage() {
         body: JSON.stringify({
           profile: {
             display_name: displayName.trim() || null,
+            date_of_birth: dob.trim() || null,
+            insurance_provider: insuranceProvider.trim() || null,
             kate_communication_style: commStyle,
             kate_proactivity: proactivity,
             kate_focus_areas: focusAreas,
@@ -130,6 +136,37 @@ export default function SettingsPage() {
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-8">
           Settings
         </h1>
+
+        {/* Your Info */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
+          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
+            Your Info
+          </h2>
+          <p className="text-xs text-[#7A7F8A] mb-4">
+            Kate needs these to book appointments on your behalf.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Date of Birth</label>
+              <input
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Insurance Provider</label>
+              <input
+                type="text"
+                value={insuranceProvider}
+                onChange={(e) => setInsuranceProvider(e.target.value)}
+                placeholder="e.g. Aetna, Blue Cross, United"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Care Recipients */}
         <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
