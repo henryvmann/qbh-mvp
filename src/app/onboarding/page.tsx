@@ -1321,10 +1321,14 @@ export default function OnboardingPage() {
           <GoldButton id="step7-continue-btn" onClick={handleStep7Continue} disabled={!canContinue}>
             Continue &rarr;
           </GoldButton>
-        ) : (
-          <GoldButton onClick={() => { if (canContinue) openPlaidLink(); }} disabled={!canContinue}>
+        ) : canContinue ? (
+          <GoldButton onClick={() => openPlaidLink()}>
             Connect your bank &rarr;
           </GoldButton>
+        ) : (
+          <div className="mt-8 text-center text-sm text-[#7A7F8A]">
+            Fill in your info above to continue
+          </div>
         )}
       </Shell>
     );

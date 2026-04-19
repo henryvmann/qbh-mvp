@@ -324,9 +324,26 @@ export default function HandleFirstPage() {
   }
 
   const { appUserId, userName, snapshots, hasGoogleCalendarConnection } = data;
-  const overdueProviders = getOverdueProviders(snapshots);
-  const currentProviders = snapshots.filter(
-    (s) => !overdueProviders.includes(s)
+
+  // Detect recurring providers (therapists, etc.) — 4+ visits suggests standing schedule
+  const recurringProviders = snapshots.filter((s) => {
+    if (s.provider.provider_type === "pharmacy") return false;
+    return s.visitCount >= 4;
+  });
+  const recurringIds = new Set(recurringProviders.map((s) => s.provider.id));
+
+  // One-off specialists — 1 visit, specialty suggests one-time (cardio, ortho, etc.)
+  const SPECIALIST_KEYWORDS = /cardio|neuro|ortho|gastro|endo|pulmon|oncol|urol|nephro|surg|radiol|allerg/i;
+  const oneOffSpecialists = snapshots.filter((s) => {
+    if (s.provider.provider_type === "pharmacy") return false;
+    if (recurringIds.has(s.provider.id)) return false;
+    return s.visitCount === 1 && SPECIALIST_KEYWORDS.test(s.provider.name);
+  });
+
+  const nonPharmacySnapshots = snapshots.filter((s) => s.provider.provider_type !== "pharmacy");
+  const overdueProviders = getOverdueProviders(nonPharmacySnapshots.filter((s) => !recurringIds.has(s.provider.id)));
+  const currentProviders = nonPharmacySnapshots.filter(
+    (s) => !overdueProviders.includes(s) && !recurringIds.has(s.provider.id)
   );
   const hasOverdue = overdueProviders.length > 0;
 
@@ -480,17 +497,50 @@ export default function HandleFirstPage() {
         advance();
         return null;
 
-      /* ---- Screen 3: Overdue ---- */
+      /* ---- Screen 3: Overdue + recurring + one-off detection ---- */
       case 3:
         return (
           <>
             <CharacterWithBubble pose="thinking">
               {hasOverdue
-                ? "Based on your visit history, these providers haven't seen you in a while."
+                ? "Based on your visit history, some providers haven\u2019t seen you in a while."
                 : "You look pretty current! All your providers have been seen recently."}
             </CharacterWithBubble>
 
             <div className="mt-6 space-y-5">
+              {/* Recurring providers (therapist, etc.) */}
+              {recurringProviders.length > 0 && (
+                <div>
+                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#6A4A8A]">
+                    Standing schedule
+                  </h3>
+                  <div className="space-y-2">
+                    {recurringProviders.map((s) => (
+                      <div
+                        key={s.provider.id}
+                        className="rounded-xl border border-[#D0B8E0] bg-[#F0E8F5] shadow-sm px-4 py-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-[#1A1D2E]">{s.provider.name}</p>
+                            <p className="text-xs text-[#6A4A8A]">
+                              {s.visitCount} visits &middot; Looks like a regular schedule
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-[#6A4A8A]/15 px-2.5 py-0.5 text-xs font-medium text-[#6A4A8A]">
+                            Tracking
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-[#7A7F8A]">
+                          Kate won&apos;t try to schedule these &mdash; she&apos;ll track your visits and offer to take notes after each one.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Overdue providers */}
               {hasOverdue && (
                 <div>
                   <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#5C6B5C]">
@@ -505,7 +555,7 @@ export default function HandleFirstPage() {
                         <span className="text-sm font-medium text-[#1A1D2E]">
                           {s.provider.name}
                         </span>
-                        <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-400">
+                        <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-600">
                           {s.lastVisitDate
                             ? `${monthsAgo(s.lastVisitDate)} months ago`
                             : "Overdue"}
@@ -516,9 +566,56 @@ export default function HandleFirstPage() {
                 </div>
               )}
 
+              {/* One-off specialists */}
+              {oneOffSpecialists.length > 0 && (
+                <div>
+                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#305080]">
+                    One-time visits
+                  </h3>
+                  <div className="space-y-2">
+                    {oneOffSpecialists.map((s) => (
+                      <div
+                        key={s.provider.id}
+                        className="rounded-xl border border-[#B0C8E8] bg-[#F0F5FF] shadow-sm px-4 py-3"
+                      >
+                        <p className="text-sm font-medium text-[#1A1D2E]">{s.provider.name}</p>
+                        <p className="mt-1 text-xs text-[#7A7F8A]">
+                          You visited once ({formatDate(s.lastVisitDate)}). Do you need to see them again?
+                        </p>
+                        <div className="mt-2 flex gap-2">
+                          {[
+                            { label: "Yes", value: "keep" },
+                            { label: "No", value: "dismiss" },
+                            { label: "Not sure", value: "check" },
+                          ].map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => {
+                                if (opt.value === "dismiss") handleDismissProvider(s.provider.id);
+                                // "Not sure" = keep tracking, Kate will offer to call
+                              }}
+                              className="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+                              style={{
+                                backgroundColor: opt.value === "dismiss" ? "#FEF2F2" : "#F0F5FF",
+                                color: opt.value === "dismiss" ? "#DC2626" : "#305080",
+                                border: `1px solid ${opt.value === "dismiss" ? "#FECACA" : "#B0C8E8"}`,
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Current / looking good */}
               {currentProviders.length > 0 && (
                 <div>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-emerald-400">
+                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-emerald-500">
                     Looking good
                   </h3>
                   <div className="space-y-2">
@@ -530,20 +627,9 @@ export default function HandleFirstPage() {
                         <span className="text-sm font-medium text-[#1A1D2E]">
                           {s.provider.name}
                         </span>
-                        <span className="text-emerald-400">
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                          >
-                            <path
-                              d="M3 8.5L6.5 12L13 4"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
+                        <span className="text-emerald-500">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 8.5L6.5 12L13 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </span>
                       </div>
@@ -554,7 +640,7 @@ export default function HandleFirstPage() {
             </div>
 
             <GoldButton onClick={advance}>
-              {hasOverdue ? "Let's fix that →" : "Next →"}
+              {hasOverdue ? "Let\u2019s fix that \u2192" : "Next \u2192"}
             </GoldButton>
           </>
         );

@@ -9,7 +9,7 @@ type TimelineEvent = {
   title: string;
   detail: string;
   tag: string;
-  eventType: "visit" | "booked" | "discovered";
+  eventType: "visit" | "booked" | "discovered" | "upcoming";
 };
 
 export async function GET(req: Request) {
@@ -98,7 +98,41 @@ export async function GET(req: Request) {
     }
   }
 
-  // 3. Provider discoveries
+  // 3. Upcoming calendar events (confirmed appointments)
+  if (providerIds.length > 0) {
+    const { data: calEvents } = await supabaseAdmin
+      .from("calendar_events")
+      .select("id, provider_id, start_at, end_at, status")
+      .eq("app_user_id", appUserId)
+      .eq("status", "confirmed")
+      .in("provider_id", providerIds)
+      .order("start_at", { ascending: true })
+      .limit(50);
+
+    for (const ce of calEvents ?? []) {
+      const name = providerNameMap.get(ce.provider_id) ?? "Unknown Provider";
+      const start = new Date(ce.start_at);
+      const isFuture = start.getTime() > Date.now();
+      const timeStr = start.toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+
+      events.push({
+        id: `cal-${ce.id}`,
+        date: ce.start_at,
+        title: `${isFuture ? "Upcoming" : "Past"} appointment with ${name}`,
+        detail: timeStr,
+        tag: isFuture ? "Upcoming" : "Past Appointment",
+        eventType: isFuture ? "upcoming" : "visit",
+      });
+    }
+  }
+
+  // 4. Provider discoveries
   for (const p of providerRows) {
     events.push({
       id: `discovered-${p.id}`,
