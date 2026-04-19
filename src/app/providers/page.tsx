@@ -31,6 +31,35 @@ function getStatusLabel(snapshot: ProviderDashboardSnapshot): { label: string; c
   return { label: "Tracked", className: "bg-[#F0F2F5] text-[#7A7F8A] ring-1 ring-[#EBEDF0]" };
 }
 
+/** Color palette for provider specialty types */
+const SPECIALTY_COLORS: Record<string, { bg: string; border: string; accent: string; label: string }> = {
+  pcp:        { bg: "#E8F5E8", border: "#C2D9B8", accent: "#3D5A3D", label: "Primary Care" },
+  dentist:    { bg: "#E0F0FF", border: "#B0D0E8", accent: "#2A6090", label: "Dentist" },
+  therapist:  { bg: "#F0E8F5", border: "#D0B8E0", accent: "#6A4A8A", label: "Therapist" },
+  eye:        { bg: "#FFF5E0", border: "#E8D0A0", accent: "#8A6A20", label: "Eye Care" },
+  dermatology:{ bg: "#FFF0E8", border: "#E8C8B0", accent: "#8A5030", label: "Dermatology" },
+  obgyn:      { bg: "#FFE8F0", border: "#E8B0C8", accent: "#8A3060", label: "OB/GYN" },
+  specialist: { bg: "#F0F5FF", border: "#B0C8E8", accent: "#305080", label: "Specialist" },
+  pharmacy:   { bg: "#F5F5F5", border: "#E0E0E0", accent: "#7A7F8A", label: "Pharmacy" },
+  default:    { bg: "#F5F8F5", border: "#D0D8D0", accent: "#5C6B5C", label: "Provider" },
+};
+
+function getSpecialtyColor(snapshot: ProviderDashboardSnapshot) {
+  const specialty = (snapshot.provider.specialty || "").toLowerCase();
+  const name = (snapshot.provider.name || "").toLowerCase();
+  const type = (snapshot.provider.provider_type || "").toLowerCase();
+
+  if (type === "pharmacy") return SPECIALTY_COLORS.pharmacy;
+  if (/\b(therap|psych|counsel|mental|behav)\b/.test(specialty + name)) return SPECIALTY_COLORS.therapist;
+  if (/\b(dent|dds|oral|ortho)\b/.test(specialty + name)) return SPECIALTY_COLORS.dentist;
+  if (/\b(eye|vision|ophthal|optom)\b/.test(specialty + name)) return SPECIALTY_COLORS.eye;
+  if (/\b(derm|skin)\b/.test(specialty + name)) return SPECIALTY_COLORS.dermatology;
+  if (/\b(obgyn|ob\/gyn|gynec|obstet)\b/.test(specialty + name)) return SPECIALTY_COLORS.obgyn;
+  if (/\b(primary|family|internal|general|pcp)\b/.test(specialty + name)) return SPECIALTY_COLORS.pcp;
+  if (/\b(cardio|neuro|ortho|gastro|endo|pulmon|oncol|urol|nephro)\b/.test(specialty)) return SPECIALTY_COLORS.specialist;
+  return SPECIALTY_COLORS.default;
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -303,11 +332,12 @@ function ProvidersInner() {
           </div>
         ) : (
           <>
-            {/* Doctors / Specialists — compact list */}
+            {/* Doctors / Specialists — color-coded cards */}
             {doctors.length > 0 && (
-              <div className="mt-6 rounded-2xl bg-white border border-[#EBEDF0] shadow-sm overflow-hidden divide-y divide-[#EBEDF0]">
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {doctors.map((snapshot) => {
                   const status = getStatusLabel(snapshot);
+                  const colors = getSpecialtyColor(snapshot);
                   const isExpanded = expandedId === snapshot.provider.id;
                   const subtitle = snapshot.provider.doctor_name
                     ? `Dr. ${snapshot.provider.doctor_name}${snapshot.provider.specialty ? ` · ${snapshot.provider.specialty}` : ""}`
@@ -316,50 +346,56 @@ function ProvidersInner() {
                   const hasNotes = !!(snapshot.latestNote?.office_instructions || snapshot.latestNote?.follow_up_notes);
 
                   return (
-                    <div key={snapshot.provider.id}>
+                    <div
+                      key={snapshot.provider.id}
+                      className="rounded-2xl shadow-sm overflow-hidden transition-shadow hover:shadow-md"
+                      style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
+                    >
                       <button
                         type="button"
                         onClick={() => toggleExpand(snapshot.provider.id)}
-                        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left hover:bg-[#F8F9FA] transition-colors"
+                        className="w-full text-left p-5"
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-[#1A1D2E] truncate">
-                              {snapshot.provider.name}
-                            </span>
-                            {hasNotes && (
-                              <span className="text-[10px] text-amber-600 bg-amber-50 rounded px-1.5 py-0.5 font-medium shrink-0">
-                                Notes
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-[10px] font-bold uppercase tracking-wider"
+                                style={{ color: colors.accent }}
+                              >
+                                {colors.label}
                               </span>
+                              {hasNotes && (
+                                <span className="text-[10px] text-amber-600 bg-amber-50 rounded px-1.5 py-0.5 font-medium shrink-0">
+                                  Notes
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-1.5 text-base font-semibold text-[#1A1D2E] leading-tight">
+                              {snapshot.provider.name}
+                            </div>
+                            {subtitle && (
+                              <div className="text-xs mt-1" style={{ color: colors.accent + "99" }}>
+                                {subtitle}
+                              </div>
                             )}
                           </div>
-                          {subtitle && (
-                            <div className="text-xs text-[#7A7F8A] truncate mt-0.5">
-                              {subtitle}
-                            </div>
-                          )}
-                          {/* Show brief note preview */}
-                          {snapshot.latestNote?.summary && !isExpanded && (
-                            <div className="text-xs text-[#B0B4BC] truncate mt-1">
-                              {snapshot.latestNote.summary.slice(0, 100)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>
-                            {status.label}
-                          </span>
-                          <span className="text-[#B0B4BC]">
-                            <ChevronIcon open={isExpanded} />
-                          </span>
+                          <div className="flex flex-col items-end gap-1.5 shrink-0">
+                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>
+                              {status.label}
+                            </span>
+                            <span style={{ color: colors.accent + "80" }}>
+                              <ChevronIcon open={isExpanded} />
+                            </span>
+                          </div>
                         </div>
                       </button>
 
                       {isExpanded && (
-                        <div className="px-4 pb-4 space-y-3">
+                        <div className="px-5 pb-5 space-y-3 border-t" style={{ borderColor: colors.border }}>
                           {/* Office notes section */}
                           {(snapshot.latestNote?.office_instructions || snapshot.latestNote?.follow_up_notes) && (
-                            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4">
+                            <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-4">
                               <div className="text-xs font-semibold text-amber-700 mb-2">Important Notes from Office</div>
                               {snapshot.latestNote.office_instructions && (
                                 <div className="text-sm text-amber-900">{snapshot.latestNote.office_instructions}</div>
@@ -369,11 +405,13 @@ function ProvidersInner() {
                               )}
                             </div>
                           )}
-                          <ProviderCard
-                            snapshot={snapshot}
-                            userId={userId}
-                            hasGoogleCalendarConnection={hasCalendar}
-                          />
+                          <div className="mt-3">
+                            <ProviderCard
+                              snapshot={snapshot}
+                              userId={userId}
+                              hasGoogleCalendarConnection={hasCalendar}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
