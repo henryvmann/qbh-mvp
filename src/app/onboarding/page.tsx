@@ -1747,28 +1747,28 @@ export default function OnboardingPage() {
     );
   }
 
-  // Step 9: NEW — Celebration + summary screen
+  // Step 9: Celebration — skip counts (they're unreliable here) and go straight to review
   if (step === 9) {
     const isManualOnboarding = manualPath;
-    const totalProviders = approvedCount + followUpCount;
-    // Manual providers all need follow-up (they need booking)
-    const displayFollowUp = isManualOnboarding ? totalProviders : followUpCount;
+    const totalProviders = approvedCount + followUpCount + (isManualOnboarding ? manualProviders.length : 0);
 
     return (
       <Shell>
         <div className="mt-8">
           <CharacterWithBubble pose="celebrating">
             {isManualOnboarding
-              ? `Great — I\u2019ve got your ${totalProviders} provider${totalProviders !== 1 ? "s" : ""} saved. I\u2019ll start working on getting you booked.`
-              : `You\u2019re all set! Here\u2019s what I found from your records. Let\u2019s get your healthcare on track.`}
+              ? `Great — I\u2019ve got your providers saved. Let\u2019s get your healthcare on track!`
+              : totalProviders > 0
+                ? `Nice! I found ${totalProviders} provider${totalProviders !== 1 ? "s" : ""} from your records. Let\u2019s take a look and get you set up.`
+                : `You\u2019re all set! Let\u2019s get your healthcare on track.`}
           </CharacterWithBubble>
         </div>
 
         {/* Summary cards */}
         <div className="mt-8 flex flex-col gap-3">
           {[
-            { value: String(totalProviders), label: isManualOnboarding ? "providers added" : "providers identified" },
-            { value: String(displayFollowUp), label: "ready to book" },
+            { value: "\u2713", label: "Account created" },
+            { value: "\u2713", label: isManualOnboarding ? "Providers saved" : "Records scanned" },
             { value: "\u2713", label: "Health timeline started" },
           ].map((card) => (
             <div
@@ -1788,7 +1788,7 @@ export default function OnboardingPage() {
         </div>
 
         <GoldButton onClick={() => window.location.href = "/handle-first"}>
-          See your dashboard &rarr;
+          See your providers &rarr;
         </GoldButton>
       </Shell>
     );

@@ -347,10 +347,40 @@ export default function HandleFirstPage() {
     });
   }
 
+  async function handleDismissProvider(providerId: string) {
+    // Remove from local state immediately
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        snapshots: prev.snapshots.filter((s) => s.provider.id !== providerId),
+      };
+    });
+    setSelectedProviders((prev) => {
+      const next = new Set(prev);
+      next.delete(providerId);
+      return next;
+    });
+    // Dismiss in backend
+    try {
+      await apiFetch("/api/providers/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider_id: providerId,
+          action: "dismiss",
+          app_user_id: appUserId,
+        }),
+      });
+    } catch {
+      // Best effort — already removed from UI
+    }
+  }
+
   /* ---- Render current screen ---- */
   function renderScreen() {
     switch (step) {
-      /* ---- Screen 1: Providers found ---- */
+      /* ---- Screen 1: Providers found (merged with visit history) ---- */
       case 1:
         return (
           <>
@@ -358,61 +388,52 @@ export default function HandleFirstPage() {
               Hey{userName ? `, ${userName}` : ""}! We found{" "}
               {snapshots.length} healthcare provider
               {snapshots.length === 1 ? "" : "s"} from your records.
+              Take a look and remove anything that doesn&apos;t belong.
             </CharacterWithBubble>
 
             <div className="mt-6 space-y-3">
-              {snapshots.map((s) => (
-                <div
-                  key={s.provider.id}
-                  className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
-                >
-                  <span className="text-sm font-medium text-[#1A1D2E]">
-                    {s.provider.name}
-                  </span>
-                  <span className="rounded-full bg-[#F0F2F5] px-2.5 py-0.5 text-xs text-[#7A7F8A]">
-                    {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <GoldButton onClick={advance}>This look right? →</GoldButton>
-          </>
-        );
-
-      /* ---- Screen 2: Visit history ---- */
-      case 2:
-        return (
-          <>
-            <CharacterWithBubble pose="pointing">
-              We pulled your last 12 months of healthcare visits. Here&apos;s
-              what we see.
-            </CharacterWithBubble>
-
-            <div className="mt-6 space-y-3">
-              {snapshots.map((s) => (
-                <div
-                  key={s.provider.id}
-                  className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-[#1A1D2E]">
-                      {s.provider.name}
-                    </p>
-                    <p className="text-xs text-[#7A7F8A]">
-                      {formatDate(s.lastVisitDate)}
-                    </p>
+              {snapshots.map((s) => {
+                const name = s.provider.name.toUpperCase();
+                const isChainStore = ["CVS", "WALGREENS", "RITE AID", "DUANE READE",
+                  "WALMART", "COSTCO", "TARGET", "KROGER", "PUBLIX", "SAFEWAY",
+                  "ALBERTSONS", "SAM'S CLUB", "HEB", "MEIJER"].some(
+                  (chain) => name.includes(chain)
+                );
+                return (
+                  <div
+                    key={s.provider.id}
+                    className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-[#1A1D2E]">
+                          {s.provider.name}
+                        </p>
+                        <p className="text-xs text-[#7A7F8A]">
+                          {formatDate(s.lastVisitDate)} &middot; {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDismissProvider(s.provider.id)}
+                        className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[#B0B4BC] hover:text-red-500 hover:bg-red-50 transition"
+                      >
+                        {isChainStore ? "I just shop here" : "Not a provider"}
+                      </button>
+                    </div>
                   </div>
-                  <span className="rounded-full bg-[#F0F2F5] px-2.5 py-0.5 text-xs text-[#7A7F8A]">
-                    {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            <GoldButton onClick={advance}>Continue →</GoldButton>
+            <GoldButton onClick={() => goToStep(3)}>Looks good →</GoldButton>
           </>
         );
+
+      /* Screen 2 merged into Screen 1 — skip directly to 3 */
+      case 2:
+        advance();
+        return null;
 
       /* ---- Screen 3: Overdue ---- */
       case 3:
