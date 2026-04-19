@@ -50,6 +50,8 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [dob, setDob] = useState("");
   const [insuranceProvider, setInsuranceProvider] = useState("");
+  const [insuranceMemberId, setInsuranceMemberId] = useState("");
+  const [callbackPhone, setCallbackPhone] = useState("");
   const [commStyle, setCommStyle] = useState("friend");
   const [proactivity, setProactivity] = useState("balanced");
   const [focusAreas, setFocusAreas] = useState<string[]>(["booking", "reminders"]);
@@ -75,6 +77,8 @@ export default function SettingsPage() {
           setDisplayName(p.display_name || p.nickname || "");
           setDob(p.date_of_birth || "");
           setInsuranceProvider(p.insurance_provider || "");
+          setInsuranceMemberId(p.insurance_member_id || "");
+          setCallbackPhone(p.callback_phone || "");
           setCommStyle(p.kate_communication_style || "friend");
           setProactivity(p.kate_proactivity || "balanced");
           setFocusAreas(p.kate_focus_areas || ["booking", "reminders"]);
@@ -97,6 +101,8 @@ export default function SettingsPage() {
             display_name: displayName.trim() || null,
             date_of_birth: dob.trim() || null,
             insurance_provider: insuranceProvider.trim() || null,
+            insurance_member_id: insuranceMemberId.trim() || null,
+            callback_phone: callbackPhone.trim() || null,
             kate_communication_style: commStyle,
             kate_proactivity: proactivity,
             kate_focus_areas: focusAreas,
@@ -162,6 +168,26 @@ export default function SettingsPage() {
                 value={insuranceProvider}
                 onChange={(e) => setInsuranceProvider(e.target.value)}
                 placeholder="e.g. Aetna, Blue Cross, United"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Member / Policy Number</label>
+              <input
+                type="text"
+                value={insuranceMemberId}
+                onChange={(e) => setInsuranceMemberId(e.target.value)}
+                placeholder="Found on your insurance card"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Callback Phone Number</label>
+              <input
+                type="tel"
+                value={callbackPhone}
+                onChange={(e) => setCallbackPhone(e.target.value)}
+                placeholder="Number the office can reach you at"
                 className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
               />
             </div>
