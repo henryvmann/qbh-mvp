@@ -12,7 +12,7 @@ import WhyWeAsk from "../../components/qbh/WhyWeAsk";
 /* ------------------------------------------------------------------ */
 
 type Snapshot = {
-  provider: { id: string; name: string; phone: string | null };
+  provider: { id: string; name: string; phone: string | null; provider_type?: string | null };
   followUpNeeded: boolean;
   booking_state: {
     status: string;
@@ -381,7 +381,10 @@ export default function HandleFirstPage() {
   function renderScreen() {
     switch (step) {
       /* ---- Screen 1: Providers found (merged with visit history) ---- */
-      case 1:
+      case 1: {
+        const doctors = snapshots.filter((s) => s.provider.provider_type !== "pharmacy");
+        const pharmacies = snapshots.filter((s) => s.provider.provider_type === "pharmacy");
+
         return (
           <>
             <CharacterWithBubble pose="waving">
@@ -391,44 +394,86 @@ export default function HandleFirstPage() {
               Take a look and remove anything that doesn&apos;t belong.
             </CharacterWithBubble>
 
-            <div className="mt-6 space-y-3">
-              {snapshots.map((s) => {
-                const name = s.provider.name.toUpperCase();
-                const isChainStore = ["CVS", "WALGREENS", "RITE AID", "DUANE READE",
-                  "WALMART", "COSTCO", "TARGET", "KROGER", "PUBLIX", "SAFEWAY",
-                  "ALBERTSONS", "SAM'S CLUB", "HEB", "MEIJER"].some(
-                  (chain) => name.includes(chain)
-                );
-                return (
-                  <div
-                    key={s.provider.id}
-                    className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-[#1A1D2E]">
-                          {s.provider.name}
-                        </p>
-                        <p className="text-xs text-[#7A7F8A]">
-                          {formatDate(s.lastVisitDate)} &middot; {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleDismissProvider(s.provider.id)}
-                        className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[#B0B4BC] hover:text-red-500 hover:bg-red-50 transition"
+            {doctors.length > 0 && (
+              <div className="mt-6">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#5C6B5C]">
+                  Providers
+                </div>
+                <div className="space-y-3">
+                  {doctors.map((s) => {
+                    const name = s.provider.name.toUpperCase();
+                    const isChainStore = ["CVS", "WALGREENS", "RITE AID", "DUANE READE",
+                      "WALMART", "COSTCO", "TARGET", "KROGER", "PUBLIX", "SAFEWAY",
+                      "ALBERTSONS", "SAM'S CLUB", "HEB", "MEIJER"].some(
+                      (chain) => name.includes(chain)
+                    );
+                    return (
+                      <div
+                        key={s.provider.id}
+                        className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
                       >
-                        {isChainStore ? "I just shop here" : "Not a provider"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-[#1A1D2E]">
+                              {s.provider.name}
+                            </p>
+                            <p className="text-xs text-[#7A7F8A]">
+                              {formatDate(s.lastVisitDate)} &middot; {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDismissProvider(s.provider.id)}
+                            className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[#B0B4BC] hover:text-red-500 hover:bg-red-50 transition"
+                          >
+                            {isChainStore ? "I just shop here" : "Not a provider"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-            <GoldButton onClick={() => goToStep(3)}>Looks good →</GoldButton>
+            {pharmacies.length > 0 && (
+              <div className="mt-6">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#7A7F8A]">
+                  Pharmacies
+                </div>
+                <div className="space-y-3">
+                  {pharmacies.map((s) => (
+                    <div
+                      key={s.provider.id}
+                      className="rounded-xl border border-[#EBEDF0] bg-[#F8F9FA] shadow-sm px-4 py-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-[#1A1D2E]">
+                            {s.provider.name}
+                          </p>
+                          <p className="text-xs text-[#7A7F8A]">
+                            {s.visitCount} visit{s.visitCount === 1 ? "" : "s"} &middot; Pharmacy
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDismissProvider(s.provider.id)}
+                          className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[#B0B4BC] hover:text-red-500 hover:bg-red-50 transition"
+                        >
+                          I just shop here
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <GoldButton onClick={() => goToStep(3)}>Looks good &rarr;</GoldButton>
           </>
         );
+      }
 
       /* Screen 2 merged into Screen 1 — skip directly to 3 */
       case 2:

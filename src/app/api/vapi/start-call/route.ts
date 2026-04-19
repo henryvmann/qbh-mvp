@@ -347,6 +347,20 @@ export async function POST(req: Request) {
     );
   }
 
+  // Enforce calling hours: only place calls between 9 AM and 6 PM ET
+  const nowET = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+  const hourET = nowET.getHours();
+  const dayOfWeek = nowET.getDay(); // 0=Sun, 6=Sat
+  if (hourET < 9 || hourET >= 18 || dayOfWeek === 0 || dayOfWeek === 6) {
+    const nextOpen = hourET >= 18 || dayOfWeek === 6 || dayOfWeek === 0
+      ? "Monday at 9 AM ET"
+      : "9 AM ET today";
+    return Response.json(
+      { ok: false, error: `Kate only calls offices during business hours (9 AM – 6 PM ET, Mon–Fri). She'll call ${nextOpen}.` },
+      { status: 400 }
+    );
+  }
+
   // office_number validated after provider lookup + demo fallback (below)
 
   if (!provider_id) {

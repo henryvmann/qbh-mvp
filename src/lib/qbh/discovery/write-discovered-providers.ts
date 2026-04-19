@@ -14,6 +14,23 @@ function cleanName(input: string): string {
   return input.trim().toLowerCase();
 }
 
+/**
+ * Check if two provider names are likely the same entity.
+ * e.g. "Weston Pharmacy" and "Weston Pharmacy Gifts" → true
+ */
+function isFuzzyDuplicate(existingName: string, newName: string): boolean {
+  const a = cleanName(existingName);
+  const b = cleanName(newName);
+  if (a === b) return true;
+  // If shorter name is a prefix of the longer (with word boundary)
+  const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
+  if (longer.startsWith(shorter + " ") || longer.startsWith(shorter + "/")) return true;
+  // Strip common suffixes and compare
+  const strip = (s: string) => s.replace(/\s+(gifts?|shop|store|pharmacy|rx|inc|llc|pc|pllc|pa|md|dds)\s*$/g, "").trim();
+  if (strip(a) === strip(b)) return true;
+  return false;
+}
+
 export async function writeDiscoveredProviders({
   userId,
   providers,
@@ -58,8 +75,16 @@ export async function writeDiscoveredProviders({
     .filter((provider) => {
       const key = cleanName(provider.provider_name);
       if (!key) return false;
+      // Exact match with existing
       if (existingByName.has(key)) return false;
-      if (seenInsertNames.has(key)) return false;
+      // Fuzzy match with existing
+      for (const existingName of existingByName.keys()) {
+        if (isFuzzyDuplicate(existingName, key)) return false;
+      }
+      // Fuzzy match with already-queued inserts
+      for (const seenName of seenInsertNames) {
+        if (isFuzzyDuplicate(seenName, key)) return false;
+      }
       seenInsertNames.add(key);
       return true;
     })
