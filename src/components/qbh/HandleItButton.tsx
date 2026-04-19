@@ -24,6 +24,7 @@ type PatientProfile = {
 
 function isProfileComplete(p: PatientProfile): boolean {
   return !!(
+    p.full_name?.trim()?.includes(" ") &&
     p.date_of_birth?.trim() &&
     p.insurance_provider?.trim()
   );
@@ -46,6 +47,7 @@ export default function HandleItButton({
   // Pre-call info collection
   const [showForm, setShowForm] = React.useState(false);
   const [profileChecked, setProfileChecked] = React.useState(false);
+  const [fullName, setFullName] = React.useState("");
   const [dob, setDob] = React.useState("");
   const [insuranceProvider, setInsuranceProvider] = React.useState("");
   const [insuranceMemberId, setInsuranceMemberId] = React.useState("");
@@ -74,6 +76,7 @@ export default function HandleItButton({
         startCall();
       } else {
         // Pre-fill whatever we have
+        setFullName(profile.full_name || "");
         setDob(profile.date_of_birth || "");
         setInsuranceProvider(profile.insurance_provider || "");
         setInsuranceMemberId(profile.insurance_member_id || "");
@@ -98,6 +101,7 @@ export default function HandleItButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           profile: {
+            full_name: fullName.trim() || null,
             date_of_birth: dob.trim() || null,
             insurance_provider: insuranceProvider.trim() || null,
             insurance_member_id: insuranceMemberId.trim() || null,
@@ -189,6 +193,19 @@ export default function HandleItButton({
           </div>
 
           <div className="mt-4 flex flex-col gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[#7A7F8A]">
+                Full name (first and last)
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="e.g. Jenny Mann"
+                className={inputClass}
+              />
+            </div>
+
             <div>
               <label className="mb-1 block text-xs font-medium text-[#7A7F8A]">
                 Date of birth
@@ -323,10 +340,26 @@ export default function HandleItButton({
             "mt-2 rounded-xl px-3 py-2 text-xs shadow-sm " +
             (toast.kind === "ok"
               ? "bg-[#5C6B5C]/15 text-[#5C6B5C]"
-              : "bg-red-50 text-red-600")
+              : "bg-amber-50 text-[#1A1D2E] border border-amber-200")
           }
         >
-          {toast.text}
+          {toast.kind === "error" && toast.text.toLowerCase().includes("name") ? (
+            <span>
+              Kate needs your full name to call. {" "}
+              <a href="/settings" className="font-semibold text-[#5C6B5C] underline underline-offset-2">
+                Add it in Settings →
+              </a>
+            </span>
+          ) : toast.kind === "error" && (toast.text.toLowerCase().includes("profile") || toast.text.toLowerCase().includes("dob") || toast.text.toLowerCase().includes("insurance")) ? (
+            <span>
+              {toast.text} {" "}
+              <a href="/settings" className="font-semibold text-[#5C6B5C] underline underline-offset-2">
+                Update in Settings →
+              </a>
+            </span>
+          ) : (
+            toast.text
+          )}
         </div>
       ) : null}
     </div>

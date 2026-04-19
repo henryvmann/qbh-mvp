@@ -48,6 +48,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [dob, setDob] = useState("");
   const [insuranceProvider, setInsuranceProvider] = useState("");
   const [insuranceMemberId, setInsuranceMemberId] = useState("");
@@ -75,6 +76,7 @@ export default function SettingsPage() {
         if (data?.ok && data.profile) {
           const p = data.profile;
           setDisplayName(p.display_name || p.nickname || "");
+          setFullName(p.full_name || "");
           setDob(p.date_of_birth || "");
           setInsuranceProvider(p.insurance_provider || "");
           setInsuranceMemberId(p.insurance_member_id || "");
@@ -99,6 +101,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           profile: {
             display_name: displayName.trim() || null,
+            full_name: fullName.trim() || null,
             date_of_birth: dob.trim() || null,
             insurance_provider: insuranceProvider.trim() || null,
             insurance_member_id: insuranceMemberId.trim() || null,
@@ -152,6 +155,16 @@ export default function SettingsPage() {
             Kate needs these to book appointments on your behalf.
           </p>
           <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Full Name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="First and last name"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              />
+            </div>
             <div>
               <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Date of Birth</label>
               <input
