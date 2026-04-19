@@ -108,7 +108,34 @@ export default function LoginPage() {
             ) : null}
           </form>
 
-          <div className="mt-8 text-center text-sm text-[#B0B4BC]">
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={async () => {
+                if (!email.trim()) {
+                  setError("Enter your email address first, then click Forgot password.");
+                  return;
+                }
+                try {
+                  setError(null);
+                  const supabase = createClient();
+                  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                    redirectTo: `${window.location.origin}/account`,
+                  });
+                  if (error) throw error;
+                  setError("Password reset link sent! Check your email.");
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "Failed to send reset link.");
+                }
+              }}
+              className="text-sm underline underline-offset-4 hover:text-[#7A7F8A]"
+              style={{ color: "#5C6B5C" }}
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          <div className="mt-6 text-center text-sm text-[#B0B4BC]">
             New here?{" "}
             <a
               href="/onboarding"

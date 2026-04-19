@@ -537,7 +537,7 @@ export default function OnboardingPage() {
     const interval = window.setInterval(() => {
       setHealthFactFading(true);
       setTimeout(() => {
-        setHealthFactIndex((prev) => (prev + 1) % 7);
+        setHealthFactIndex((prev) => (prev + 1) % 23);
         setHealthFactFading(false);
       }, 400);
     }, 5000);
@@ -1662,6 +1662,22 @@ export default function OnboardingPage() {
       "The average American sees 7 different healthcare providers",
       "Staying on top of screenings reduces hospitalization risk by 40%",
       "Most insurance plans cover preventive care at no extra cost",
+      "Skin cancer screenings are recommended annually starting at age 30",
+      "Blood pressure should be checked at least once every two years",
+      "Women should begin mammograms at age 40, or earlier with family history",
+      "Cholesterol should be checked every 4-6 years for adults over 20",
+      "A colonoscopy is recommended starting at age 45",
+      "Flu shots are recommended annually for everyone over 6 months old",
+      "Regular dental visits can reduce your risk of heart disease",
+      "Vision prescriptions should be updated every 1-2 years",
+      "Adults need 7-9 hours of sleep for optimal health",
+      "Walking 30 minutes a day reduces the risk of chronic disease by 30-40%",
+      "Dermatologists recommend a full-body skin check once a year",
+      "Mental health checkups are just as important as physical ones",
+      "Keeping a list of medications helps prevent dangerous interactions",
+      "Bone density screening is recommended for women starting at age 65",
+      "Having a primary care physician reduces ER visits by 33%",
+      "Regular hearing tests are recommended starting at age 50",
     ];
 
     return (

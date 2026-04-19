@@ -12,9 +12,11 @@ type Suggestion = {
   id: string;
   text: string;
   actionLabel: string;
-  actionType: "link" | "inline-phone" | "kate-action";
+  actionType: "link" | "inline-phone" | "kate-action" | "vapi-call";
   actionHref?: string;
   katePrompt?: string;
+  providerId?: string;
+  providerName?: string;
 };
 
 type DashboardData = {
@@ -190,8 +192,9 @@ function buildSuggestions(
       id: `book-overdue-${first.provider.id}`,
       text: `Kate can book ${first.provider.name} for you — let her handle it?`,
       actionLabel: "Let Kate book",
-      actionType: "kate-action",
-      katePrompt: `I need to book an appointment with ${first.provider.name}. Can you help me schedule it?`,
+      actionType: "vapi-call",
+      providerId: first.provider.id,
+      providerName: first.provider.name,
     });
   }
 
@@ -301,6 +304,8 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
   const [loaded, setLoaded] = useState(false);
   const [phoneValue, setPhoneValue] = useState("");
   const [savingPhone, setSavingPhone] = useState(false);
+  const [callingProvider, setCallingProvider] = useState(false);
+  const [callStatus, setCallStatus] = useState<string | null>(null);
 
   useEffect(() => {
     setDismissed(getDismissed());
@@ -340,9 +345,41 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
     setDismissed((prev) => [...prev, current.id]);
   }
 
-  function handleAction() {
+  async function handleAction() {
     if (!current) return;
-    if (current.actionType === "kate-action" && current.katePrompt) {
+    if (current.actionType === "vapi-call" && current.providerId) {
+      setCallingProvider(true);
+      setCallStatus(null);
+      try {
+        const res = await apiFetch("/api/vapi/start-call", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider_id: current.providerId,
+            provider_name: current.providerName,
+            mode: "BOOK",
+          }),
+        });
+        if (res.ok) {
+          setCallStatus("Kate is calling — she'll handle it from here!");
+          setTimeout(() => handleDismiss(), 3000);
+        } else {
+          const data = await res.json().catch(() => null);
+          const errMsg = data?.error || "Couldn't start the call";
+          if (errMsg.toLowerCase().includes("name")) {
+            setCallStatus(null);
+            setCallingProvider(false);
+            router.push("/settings");
+            return;
+          }
+          setCallStatus(errMsg);
+        }
+      } catch {
+        setCallStatus("Couldn't connect — try again.");
+      } finally {
+        setCallingProvider(false);
+      }
+    } else if (current.actionType === "kate-action" && current.katePrompt) {
       window.dispatchEvent(new CustomEvent("kate-quick-action", { detail: { message: current.katePrompt } }));
     } else if (current.actionType === "link" && current.actionHref) {
       router.push(current.actionHref);
@@ -430,16 +467,23 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
               )}
 
               {/* Action buttons */}
-              {current.actionType !== "inline-phone" && current.actionType && (
+              {callStatus && (
+                <div className="mt-2 rounded-lg bg-[#5C6B5C]/10 px-3 py-1.5 text-xs text-[#5C6B5C]">
+                  {callStatus}
+                </div>
+              )}
+
+              {current.actionType !== "inline-phone" && current.actionType && !callStatus && (
                 <div className="mt-2.5 flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleAction}
-                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95"
+                    disabled={callingProvider}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
                     style={{ backgroundColor: "#5C6B5C" }}
                   >
-                    {current.actionLabel}
-                    <ArrowRight size={12} />
+                    {callingProvider ? "Starting call..." : current.actionLabel}
+                    {!callingProvider && <ArrowRight size={12} />}
                   </button>
                   <button
                     type="button"
