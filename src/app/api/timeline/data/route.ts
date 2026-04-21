@@ -132,16 +132,24 @@ export async function GET(req: Request) {
     }
   }
 
-  // 4. Provider discoveries
-  for (const p of providerRows) {
-    events.push({
-      id: `discovered-${p.id}`,
-      date: p.created_at,
-      title: `${p.name} discovered`,
-      detail: "Provider found through financial data analysis",
-      tag: "Discovered",
-      eventType: "discovered",
-    });
+  // 4. Provider additions (only show if no visits exist for that provider — avoids noise)
+  const providerIdsWithVisits = new Set(events.map((e) => {
+    const match = e.id.match(/^visit-/);
+    return match ? e.id : null;
+  }).filter(Boolean));
+
+  if (events.length === 0) {
+    // Only show "profile started" if there's nothing else to show
+    for (const p of providerRows) {
+      events.push({
+        id: `discovered-${p.id}`,
+        date: p.created_at,
+        title: `${p.name} added`,
+        detail: "Provider added to your health profile",
+        tag: "Added",
+        eventType: "discovered",
+      });
+    }
   }
 
   // Sort by date descending

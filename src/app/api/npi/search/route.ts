@@ -110,7 +110,14 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { name, city, state } = splitNameAndLocation(query);
+    // Handle "LastName, FirstName" format
+    let normalizedQuery = query;
+    if (query.includes(",")) {
+      const [last, first] = query.split(",").map((s) => s.trim());
+      if (first && last) normalizedQuery = `${first} ${last}`;
+    }
+
+    const { name, city, state } = splitNameAndLocation(normalizedQuery);
 
     // Split name into potential first/last
     const nameParts = name.split(" ").filter(Boolean);

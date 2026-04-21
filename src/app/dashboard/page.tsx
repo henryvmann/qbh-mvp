@@ -339,26 +339,42 @@ function DashboardInner() {
           <BestNextStep />
         </div>
 
-        {/* ── 2. Week Strip with dates ── */}
-        <div className="mt-6 flex items-center justify-center gap-2">
+        {/* ── 2. Week Strip with dates — links to calendar ── */}
+        <Link href="/calendar-view" className="mt-6 flex items-center justify-center gap-2 group">
           {weekDays.map((day, i) => (
             <div
               key={i}
-              className={`flex flex-col items-center gap-1 rounded-xl px-2.5 py-2 ${
+              className={`flex flex-col items-center gap-1 rounded-xl px-2.5 py-2 transition ${
                 day.isToday
                   ? "bg-[#5C6B5C] text-white"
-                  : "text-[#B0B4BC]"
+                  : "text-[#B0B4BC] group-hover:text-[#7A7F8A]"
               }`}
             >
               <span className="text-[10px] font-medium">{day.abbrev}</span>
               <span className="text-sm font-semibold">{day.date}</span>
             </div>
           ))}
-        </div>
+        </Link>
 
         {/* ── 3. Hero Section ── */}
         <div className="mt-3 px-7">
-          {overdueCount > 0 ? (
+          {providerCount === 0 ? (
+            <>
+              <div className="text-3xl font-light text-[#1A1D2E]">
+                Let&apos;s build your health profile
+              </div>
+              <div className="mt-2 text-base text-[#7A7F8A]">
+                Start by adding your providers &mdash; who&apos;s your primary care doctor? Dentist? Therapist?
+              </div>
+              <Link
+                href="/providers?add=true"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              >
+                Add your first provider
+              </Link>
+            </>
+          ) : overdueCount > 0 ? (
             <>
               <div
                 className="font-extralight leading-none text-[#1A1D2E]"
@@ -381,7 +397,7 @@ function DashboardInner() {
                 className="font-extralight leading-none text-[#5C6B5C]"
                 style={{ fontSize: "96px" }}
               >
-                ✓
+                &#10003;
               </div>
               <div className="text-3xl font-light text-[#7A7F8A]">
                 All caught up

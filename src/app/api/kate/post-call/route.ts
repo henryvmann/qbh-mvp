@@ -46,16 +46,8 @@ export async function GET(req: NextRequest) {
     options?: string[];
   }> = [];
 
-  // Check for missing callback phone
-  if (!patientProfile.callback_phone) {
-    questions.push({
-      id: "callback_phone",
-      type: "input",
-      provider_id: null,
-      provider_name: null,
-      question: "What's the best phone number for offices to reach you at?",
-    });
-  }
+  // callback_phone is now collected via HandleItButton pre-call form or Settings
+  // No longer asked post-call to avoid duplicate prompts
 
   // Check providers where we don't know if new/existing
   for (const provider of providers || []) {
