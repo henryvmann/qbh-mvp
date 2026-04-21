@@ -348,12 +348,19 @@ export default function GoalsPage() {
         <div className="mt-4" />
 
         {/* Hero Health Score */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
-          <HeroGauge score={healthScore} />
-          <p className="text-center text-sm text-[#7A7F8A] mt-2">
-            {onTrackCount} of {goals.length} goals on track
-          </p>
-        </div>
+        {goals.length > 0 ? (
+          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
+            <HeroGauge score={healthScore} />
+            <p className="text-center text-sm text-[#7A7F8A] mt-2">
+              {onTrackCount} of {goals.length} goal{goals.length !== 1 ? "s" : ""} on track
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6 text-center">
+            <p className="text-lg font-light text-[#1A1D2E]">No goals set yet</p>
+            <p className="mt-1 text-sm text-[#7A7F8A]">Tell Kate what you want to work on below and she&apos;ll help you get organized.</p>
+          </div>
+        )}
 
         {/* What's important to you */}
         <div className="mb-6 rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]">

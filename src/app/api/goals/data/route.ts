@@ -240,7 +240,7 @@ export async function GET(req: Request) {
       title: "Schedule dental checkup",
       category: "preventive",
       progress: 0,
-      detail: "No dentist found in your providers. Regular dental checkups are recommended every 6 months.",
+      detail: "No dentist found in your providers. Add one so Kate can help you stay on top of visits.",
     });
   } else {
     // Check if any dental provider has a visit in the last 6 months
@@ -272,7 +272,7 @@ export async function GET(req: Request) {
       title: "Schedule eye exam",
       category: "preventive",
       progress: 0,
-      detail: "No eye care provider found. Annual eye exams are recommended.",
+      detail: "No eye care provider found. Add one so Kate can help you track appointments.",
     });
   } else {
     const eyeProviders = providerRows.filter((p) =>
