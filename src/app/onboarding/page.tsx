@@ -1120,35 +1120,17 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Consent Checkboxes */}
-        <div className="mt-5 space-y-2">
+        {/* Consent — single checkbox */}
+        <div className="mt-5">
           <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
             <input
               type="checkbox"
-              checked={consentCalls}
-              onChange={(e) => setConsentCalls(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
-            />
-            <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I authorize Quarterback Health to make phone calls to healthcare offices on my behalf
-            </span>
-          </label>
-          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
-            <input
-              type="checkbox"
-              checked={consentPhi}
-              onChange={(e) => setConsentPhi(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
-            />
-            <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I agree that Quarterback Health may use my information to schedule appointments and organize my care
-            </span>
-          </label>
-          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
-            <input
-              type="checkbox"
-              checked={consentTerms}
-              onChange={(e) => setConsentTerms(e.target.checked)}
+              checked={consentCalls && consentPhi && consentTerms}
+              onChange={(e) => {
+                setConsentCalls(e.target.checked);
+                setConsentPhi(e.target.checked);
+                setConsentTerms(e.target.checked);
+              }}
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
@@ -1156,6 +1138,7 @@ export default function OnboardingPage() {
               <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Terms of Service</a>
               {" "}and{" "}
               <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Privacy Policy</a>
+              , and authorize QB to call offices and use my info to organize my care
             </span>
           </label>
         </div>
@@ -1276,35 +1259,17 @@ export default function OnboardingPage() {
           )}
         </div>
 
-        {/* Consent Checkboxes */}
-        <div className="mt-5 space-y-2">
+        {/* Consent — single checkbox */}
+        <div className="mt-5">
           <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
             <input
               type="checkbox"
-              checked={consentCalls}
-              onChange={(e) => setConsentCalls(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
-            />
-            <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I authorize Quarterback Health to make phone calls to healthcare offices on my behalf
-            </span>
-          </label>
-          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
-            <input
-              type="checkbox"
-              checked={consentPhi}
-              onChange={(e) => setConsentPhi(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
-            />
-            <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I agree that Quarterback Health may use my information to schedule appointments and organize my care
-            </span>
-          </label>
-          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
-            <input
-              type="checkbox"
-              checked={consentTerms}
-              onChange={(e) => setConsentTerms(e.target.checked)}
+              checked={consentCalls && consentPhi && consentTerms}
+              onChange={(e) => {
+                setConsentCalls(e.target.checked);
+                setConsentPhi(e.target.checked);
+                setConsentTerms(e.target.checked);
+              }}
               className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
@@ -1312,6 +1277,7 @@ export default function OnboardingPage() {
               <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Terms of Service</a>
               {" "}and{" "}
               <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Privacy Policy</a>
+              , and authorize QB to call offices and use my info to organize my care
             </span>
           </label>
         </div>

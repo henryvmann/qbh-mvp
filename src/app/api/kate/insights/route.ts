@@ -58,6 +58,7 @@ async function buildUserContext(appUserId: string) {
     const lastVisit = visits.find((v) => v.provider_id === p.id);
     const upcoming = upcomingEvents.find((e) => e.provider_id === p.id);
     return {
+      id: p.id,
       name: p.name,
       type: p.provider_type || "doctor",
       doctor_name: p.doctor_name,
@@ -152,7 +153,7 @@ Generate insights as JSON array. Each insight has:
 - title: Short title (under 60 chars)
 - body: 1-2 sentence detail. Be warm, specific, use provider names. Not generic.
 - action_label: Optional button text (e.g., "Book now", "View details", "Add provider")
-- action_href: Optional link path (e.g., "/visits", "/goals", "/dashboard")
+- action_href: Optional link path. Use "/providers/[id]" with a real provider ID from the data when the insight is about a specific provider. Otherwise use "/visits", "/goals", "/providers?add=true", etc.
 - priority: "high" (needs action), "medium" (good to know), "low" (encouragement/tip)
 
 Rules:

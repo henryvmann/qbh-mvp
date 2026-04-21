@@ -7,6 +7,7 @@ import TopNav from "../../components/qbh/TopNav";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import ProviderLink from "../../components/qbh/ProviderLink";
+import { Pencil, Trash2, X as XIcon } from "lucide-react";
 
 type UpcomingVisit = {
   eventId: string;
@@ -73,6 +74,9 @@ function VisitsInner() {
   const [past, setPast] = useState<PastVisit[]>([]);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     apiFetch("/api/visits/data")
@@ -251,12 +255,75 @@ function VisitsInner() {
                     className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]"
                   >
                     <div className="flex items-center justify-between gap-4">
-                      <div className="text-sm font-semibold text-[#B0B4BC]">
-                        {formatDate(visit.visitDate)}
+                      {editingId === visit.id ? (
+                        <input
+                          type="date"
+                          value={editDate}
+                          onChange={(e) => setEditDate(e.target.value)}
+                          className="rounded-lg border border-[#EBEDF0] bg-white px-2 py-1 text-sm text-[#1A1D2E]"
+                        />
+                      ) : (
+                        <div className="text-sm font-semibold text-[#B0B4BC]">
+                          {formatDate(visit.visitDate)}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        {editingId === visit.id ? (
+                          <>
+                            <button
+                              onClick={async () => {
+                                if (!editDate) return;
+                                setSaving(true);
+                                try {
+                                  await apiFetch("/api/visits/manage", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ action: "update", visit_id: visit.id, visit_date: editDate }),
+                                  });
+                                  setPast((prev) => prev.map((v) => v.id === visit.id ? { ...v, visitDate: editDate } : v));
+                                  setEditingId(null);
+                                } finally { setSaving(false); }
+                              }}
+                              disabled={saving}
+                              className="rounded-lg px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
+                              style={{ backgroundColor: "#5C6B5C" }}
+                            >
+                              {saving ? "..." : "Save"}
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="rounded-lg p-1 text-[#7A7F8A] hover:bg-white"
+                            >
+                              <XIcon size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => { setEditingId(visit.id); setEditDate(visit.visitDate || ""); }}
+                              className="rounded-lg p-1.5 text-[#B0B4BC] hover:text-[#7A7F8A] hover:bg-white transition"
+                              title="Edit date"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm("Remove this visit?")) return;
+                                await apiFetch("/api/visits/manage", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ action: "delete", visit_id: visit.id }),
+                                });
+                                setPast((prev) => prev.filter((v) => v.id !== visit.id));
+                              }}
+                              className="rounded-lg p-1.5 text-[#B0B4BC] hover:text-red-500 hover:bg-red-50 transition"
+                              title="Remove visit"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </>
+                        )}
                       </div>
-                      <span className="rounded-full bg-[#F0F2F5] px-3 py-1 text-xs font-semibold text-[#7A7F8A] ring-1 ring-[#EBEDF0]">
-                        Completed
-                      </span>
                     </div>
                     <div className="mt-2 font-semibold">
                       {visit.providerId ? (
