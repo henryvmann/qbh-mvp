@@ -139,19 +139,16 @@ export default function UrgentCareButton() {
                 </div>
 
                 <div className="space-y-3">
-                  {/* 911 */}
-                  <a
-                    href="tel:911"
-                    className="flex items-center gap-4 rounded-2xl border border-red-200 px-5 py-4 transition hover:bg-red-50"
-                  >
+                  {/* 911 disclaimer — no tel: link */}
+                  <div className="flex items-center gap-4 rounded-2xl border border-red-200 bg-red-50/50 px-5 py-4">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100">
                       <Phone size={18} className="text-red-600" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-red-700">Call 911 for emergencies</div>
-                      <div className="text-xs text-red-400">Life-threatening situations</div>
+                      <div className="text-sm font-semibold text-red-700">If this is a medical emergency, call 911</div>
+                      <div className="text-xs text-red-400">Quarterback Health is not an emergency service</div>
                     </div>
-                  </a>
+                  </div>
 
                   {/* Urgent Care — in-app search */}
                   <button
@@ -192,7 +189,7 @@ export default function UrgentCareButton() {
                       setOpen(false);
                       window.dispatchEvent(
                         new CustomEvent("kate-quick-action", {
-                          detail: { message: "I'm sick \u2014 what should I do?" },
+                          detail: { message: "I need to find care nearby \u2014 where should I go?" },
                         })
                       );
                     }}
@@ -204,9 +201,9 @@ export default function UrgentCareButton() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-[#2A6090]">
-                        Ask Kate: &ldquo;I&apos;m sick &mdash; what should I do?&rdquo;
+                        Ask Kate to help find care nearby
                       </div>
-                      <div className="text-xs text-[#7A7F8A]">Get guidance from your health assistant</div>
+                      <div className="text-xs text-[#7A7F8A]">Your care coordinator can help you find options</div>
                     </div>
                   </button>
                 </div>

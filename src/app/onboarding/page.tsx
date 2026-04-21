@@ -1101,7 +1101,6 @@ export default function OnboardingPage() {
                   style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
                 />
               </div>
-              <WhyWeAsk text="Kate uses your full name when calling offices on your behalf" />
             </div>
             <input
               type="email"
