@@ -58,6 +58,12 @@ export default function ProviderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editPhone, setEditPhone] = useState("");
+  const [editSpecialty, setEditSpecialty] = useState("");
+  const [editDoctorName, setEditDoctorName] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     apiFetch(`/api/providers/detail?id=${providerId}`)
@@ -176,8 +182,97 @@ export default function ProviderDetailPage() {
               )}
             </div>
 
-            {provider.notes && (
+            {provider.notes && !editing && (
               <p className="mt-3 text-xs text-[#7A7F8A] italic">{provider.notes}</p>
+            )}
+
+            {/* Edit toggle */}
+            {!editing ? (
+              <button
+                onClick={() => {
+                  setEditPhone(provider.phone_number || "");
+                  setEditSpecialty(provider.specialty || "");
+                  setEditDoctorName(provider.doctor_name || "");
+                  setEditNotes(provider.notes || "");
+                  setEditing(true);
+                }}
+                className="mt-3 text-xs font-medium underline underline-offset-2 transition"
+                style={{ color: colors.accent }}
+              >
+                Edit details
+              </button>
+            ) : (
+              <div className="mt-4 space-y-2.5">
+                <input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="Phone number"
+                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                />
+                <input
+                  type="text"
+                  value={editDoctorName}
+                  onChange={(e) => setEditDoctorName(e.target.value)}
+                  placeholder="Doctor name (e.g. Sarah Chen)"
+                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                />
+                <input
+                  type="text"
+                  value={editSpecialty}
+                  onChange={(e) => setEditSpecialty(e.target.value)}
+                  placeholder="Specialty (e.g. Family Medicine)"
+                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                />
+                <textarea
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="Notes about this provider..."
+                  rows={2}
+                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] resize-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      setSavingEdit(true);
+                      try {
+                        await apiFetch("/api/providers/update", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            provider_id: provider.id,
+                            phone_number: editPhone.trim() || null,
+                            doctor_name: editDoctorName.trim() || null,
+                            specialty: editSpecialty.trim() || null,
+                            notes: editNotes.trim() || null,
+                          }),
+                        });
+                        setProvider({
+                          ...provider,
+                          phone_number: editPhone.trim() || null,
+                          doctor_name: editDoctorName.trim() || null,
+                          specialty: editSpecialty.trim() || null,
+                          notes: editNotes.trim() || null,
+                        });
+                        setEditing(false);
+                      } finally {
+                        setSavingEdit(false);
+                      }
+                    }}
+                    disabled={savingEdit}
+                    className="rounded-lg px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                    style={{ backgroundColor: "#5C6B5C" }}
+                  >
+                    {savingEdit ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="rounded-lg px-4 py-1.5 text-xs text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 

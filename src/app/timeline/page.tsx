@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
+import ProviderLink from "../../components/qbh/ProviderLink";
 import { Sparkles, Lightbulb, Target, Star as StarIcon, Trophy, Calendar } from "lucide-react";
 
 type TimelineEvent = {
@@ -12,7 +13,8 @@ type TimelineEvent = {
   title: string;
   detail: string;
   tag: string;
-  eventType: "visit" | "booked" | "discovered";
+  eventType: "visit" | "booked" | "discovered" | "upcoming";
+  providerId?: string;
 };
 
 const tagConfig: Record<
@@ -21,7 +23,8 @@ const tagConfig: Record<
 > = {
   visit: { bg: "bg-[#B0D0E8]/30", text: "text-[#2A6090]", dot: "#2A6090", label: "Past Visit" },
   booked: { bg: "bg-[#C2D9B8]/30", text: "text-[#3D5A3D]", dot: "#5C6B5C", label: "Booked" },
-  discovered: { bg: "bg-[#C8B8E0]/30", text: "text-[#5C4A8A]", dot: "#5C4A8A", label: "Discovered" },
+  upcoming: { bg: "bg-emerald-500/10", text: "text-emerald-600", dot: "#059669", label: "Upcoming" },
+  discovered: { bg: "bg-[#C8B8E0]/30", text: "text-[#5C4A8A]", dot: "#5C4A8A", label: "Added" },
 };
 
 function formatEventDate(iso: string): string {
@@ -244,7 +247,9 @@ export default function TimelinePage() {
                         </div>
 
                         <div className="mt-2 text-sm font-semibold text-[#1A1D2E]">
-                          {event.title}
+                          {event.providerId ? (
+                            <ProviderLink providerId={event.providerId} providerName={event.title} />
+                          ) : event.title}
                         </div>
 
                         <p className="mt-1 text-xs text-[#7A7F8A]">

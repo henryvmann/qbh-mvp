@@ -46,8 +46,9 @@ export async function GET(req: Request) {
     }
   }
 
-  const upcoming: Array<{ eventId: string; providerName: string; startAt: string; endAt: string; timezone: string | null }> = (upcomingEvents ?? []).map((e) => ({
+  const upcoming: Array<{ eventId: string; providerId: string; providerName: string; startAt: string; endAt: string; timezone: string | null }> = (upcomingEvents ?? []).map((e) => ({
     eventId: e.id,
+    providerId: e.provider_id,
     providerName: providerNameMap.get(e.provider_id) ?? "Unknown Provider",
     startAt: e.start_at,
     endAt: e.end_at,
@@ -81,6 +82,7 @@ export async function GET(req: Request) {
 
   const past = (pastVisitRows ?? []).map((v) => ({
     id: v.id,
+    providerId: v.provider_id,
     providerName: providerNameMap.get(v.provider_id) ?? "Unknown Provider",
     visitDate: v.visit_date,
     amount: v.amount ?? null,
@@ -161,6 +163,7 @@ export async function GET(req: Request) {
 
           upcoming.push({
             eventId: `gcal-${event.id || startAt}`,
+            providerId: "",
             providerName,
             startAt,
             endAt,

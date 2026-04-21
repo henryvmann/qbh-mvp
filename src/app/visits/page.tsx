@@ -6,9 +6,11 @@ import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import HandleItButton from "../../components/qbh/HandleItButton";
+import ProviderLink from "../../components/qbh/ProviderLink";
 
 type UpcomingVisit = {
   eventId: string;
+  providerId?: string;
   providerName: string;
   startAt: string | null;
   endAt: string | null;
@@ -17,6 +19,7 @@ type UpcomingVisit = {
 
 type PastVisit = {
   id: string;
+  providerId?: string;
   providerName: string;
   visitDate: string | null;
   amount: number | null;
@@ -133,8 +136,10 @@ function VisitsInner() {
                   className="flex flex-col gap-2 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0] md:flex-row md:items-center md:justify-between"
                 >
                   <div>
-                    <div className="font-semibold text-[#1A1D2E]">
-                      {visit.providerName}
+                    <div className="font-semibold">
+                      {visit.providerId ? (
+                        <ProviderLink providerId={visit.providerId} providerName={visit.providerName} />
+                      ) : visit.providerName}
                     </div>
                     <div className="mt-1 text-sm text-[#7A7F8A]">
                       {formatVisitDateTime(visit.startAt, visit.providerName)}
@@ -191,8 +196,8 @@ function VisitsInner() {
                     className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]"
                   >
                     <div className="flex items-center justify-between gap-4">
-                      <div className="font-semibold text-[#1A1D2E]">
-                        {fu.providerName}
+                      <div className="font-semibold">
+                        <ProviderLink providerId={fu.providerId} providerName={fu.providerName} />
                       </div>
                       <span className="rounded-full bg-[#F0B8B0]/30 px-3 py-1 text-xs font-semibold text-[#C03020] ring-1 ring-[#F0B8B0]">
                         Needs booking
@@ -253,8 +258,10 @@ function VisitsInner() {
                         Completed
                       </span>
                     </div>
-                    <div className="mt-2 font-semibold text-[#1A1D2E]">
-                      {visit.providerName}
+                    <div className="mt-2 font-semibold">
+                      {visit.providerId ? (
+                        <ProviderLink providerId={visit.providerId} providerName={visit.providerName} />
+                      ) : visit.providerName}
                     </div>
                     {visit.amount != null && (
                       <p className="mt-1 text-sm text-[#7A7F8A]">

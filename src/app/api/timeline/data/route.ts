@@ -10,6 +10,7 @@ type TimelineEvent = {
   detail: string;
   tag: string;
   eventType: "visit" | "booked" | "discovered" | "upcoming";
+  providerId?: string;
 };
 
 export async function GET(req: Request) {
@@ -59,6 +60,7 @@ export async function GET(req: Request) {
         detail: `Completed visit${amountStr}`,
         tag: "Visit",
         eventType: "visit",
+        providerId: v.provider_id,
       });
     }
 
@@ -94,6 +96,7 @@ export async function GET(req: Request) {
         detail: displayTime ?? "Appointment confirmed by QBH",
         tag: "Booked",
         eventType: "booked",
+        providerId: a.provider_id,
       });
     }
   }
@@ -128,6 +131,7 @@ export async function GET(req: Request) {
         detail: timeStr,
         tag: isFuture ? "Upcoming" : "Past Appointment",
         eventType: isFuture ? "upcoming" : "visit",
+        providerId: ce.provider_id,
       });
     }
   }
@@ -148,6 +152,7 @@ export async function GET(req: Request) {
         detail: "Provider added to your health profile",
         tag: "Added",
         eventType: "discovered",
+        providerId: p.id,
       });
     }
   }
