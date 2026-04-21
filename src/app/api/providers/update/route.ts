@@ -11,6 +11,7 @@ type UpdateBody = {
   specialty?: string | null;
   phone_number?: string | null;
   notes?: string | null;
+  care_team?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
   if (body.specialty !== undefined) updates.specialty = body.specialty;
   if (body.phone_number !== undefined) updates.phone_number = body.phone_number;
   if (body.notes !== undefined) updates.notes = body.notes;
+  if (body.care_team !== undefined) updates.care_team = body.care_team;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ ok: true, message: "Nothing to update" });

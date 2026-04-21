@@ -19,6 +19,7 @@ type Provider = {
   notes?: string | null;
   provider_type?: string | null;
   npi?: string | null;
+  care_team?: string | null;
   source?: string | null;
   status?: string | null;
   created_at?: string | null;
@@ -62,6 +63,7 @@ export default function ProviderDetailPage() {
   const [editPhone, setEditPhone] = useState("");
   const [editSpecialty, setEditSpecialty] = useState("");
   const [editDoctorName, setEditDoctorName] = useState("");
+  const [editCareTeam, setEditCareTeam] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -162,6 +164,11 @@ export default function ProviderDetailPage() {
                 {subtitle}
               </p>
             )}
+            {provider.care_team && (
+              <span className="mt-2 inline-block rounded-full bg-[#5C6B5C]/10 px-3 py-1 text-xs font-medium text-[#5C6B5C]">
+                {provider.care_team}
+              </span>
+            )}
 
             {/* Contact details */}
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -193,6 +200,7 @@ export default function ProviderDetailPage() {
                   setEditPhone(provider.phone_number || "");
                   setEditSpecialty(provider.specialty || "");
                   setEditDoctorName(provider.doctor_name || "");
+                  setEditCareTeam(provider.care_team || "");
                   setEditNotes(provider.notes || "");
                   setEditing(true);
                 }}
@@ -224,6 +232,32 @@ export default function ProviderDetailPage() {
                   placeholder="Specialty (e.g. Family Medicine)"
                   className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
+                <div>
+                  <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Care Team</label>
+                  <div className="flex flex-wrap gap-1.5 mb-1.5">
+                    {["General Health", "Cancer Care", "Mental Health", "Women's Health", "Pediatrics", "Chronic Care"].map((team) => (
+                      <button
+                        key={team}
+                        type="button"
+                        onClick={() => setEditCareTeam(team)}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                          editCareTeam === team
+                            ? "bg-[#5C6B5C] text-white"
+                            : "bg-[#F0F2F5] text-[#7A7F8A] hover:bg-[#E8EBF0]"
+                        }`}
+                      >
+                        {team}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={editCareTeam}
+                    onChange={(e) => setEditCareTeam(e.target.value)}
+                    placeholder="Or type a custom team name..."
+                    className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  />
+                </div>
                 <textarea
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
@@ -244,6 +278,7 @@ export default function ProviderDetailPage() {
                             phone_number: editPhone.trim() || null,
                             doctor_name: editDoctorName.trim() || null,
                             specialty: editSpecialty.trim() || null,
+                            care_team: editCareTeam.trim() || null,
                             notes: editNotes.trim() || null,
                           }),
                         });
@@ -252,6 +287,7 @@ export default function ProviderDetailPage() {
                           phone_number: editPhone.trim() || null,
                           doctor_name: editDoctorName.trim() || null,
                           specialty: editSpecialty.trim() || null,
+                          care_team: editCareTeam.trim() || null,
                           notes: editNotes.trim() || null,
                         });
                         setEditing(false);

@@ -9,6 +9,7 @@ export type Provider = {
   notes?: string | null;
   provider_type?: string | null;
   npi?: string | null;
+  care_team?: string | null;
 };
 
 export type LastVisitCategory =

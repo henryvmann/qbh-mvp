@@ -280,8 +280,22 @@ function ProvidersInner() {
     );
   }
 
-  const doctors = snapshots.filter((s) => s.provider.provider_type !== "pharmacy" && s.provider.provider_type !== "calendar");
+  const allDoctors = snapshots.filter((s) => s.provider.provider_type !== "pharmacy" && s.provider.provider_type !== "calendar");
   const pharmacies = snapshots.filter((s) => s.provider.provider_type === "pharmacy");
+
+  // Group doctors by care team
+  const careTeams = new Map<string, typeof allDoctors>();
+  const ungrouped: typeof allDoctors = [];
+  for (const s of allDoctors) {
+    const team = s.provider.care_team;
+    if (team) {
+      if (!careTeams.has(team)) careTeams.set(team, []);
+      careTeams.get(team)!.push(s);
+    } else {
+      ungrouped.push(s);
+    }
+  }
+  const doctors = ungrouped; // backwards compat — ungrouped renders in the existing grid
 
   function toggleExpand(id: string) {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -333,7 +347,57 @@ function ProvidersInner() {
           </div>
         ) : (
           <>
-            {/* Doctors / Specialists — color-coded cards */}
+            {/* Care Team Groups */}
+            {careTeams.size > 0 && Array.from(careTeams.entries()).map(([teamName, teamDoctors]) => (
+              <div key={teamName} className="mt-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C]">
+                    {teamName}
+                  </span>
+                  <span className="text-[10px] text-[#B0B4BC]">
+                    {teamDoctors.length} provider{teamDoctors.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {teamDoctors.map((snapshot) => {
+                    const status = getStatusLabel(snapshot);
+                    const colors = getSpecialtyColor(snapshot);
+                    const subtitle = snapshot.provider.doctor_name
+                      ? `Dr. ${snapshot.provider.doctor_name}${snapshot.provider.specialty ? ` · ${snapshot.provider.specialty}` : ""}`
+                      : snapshot.provider.specialty || null;
+
+                    return (
+                      <div
+                        key={snapshot.provider.id}
+                        className="rounded-2xl shadow-sm overflow-hidden transition-shadow hover:shadow-md"
+                        style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
+                      >
+                        <div className="p-5">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.accent }}>
+                                {colors.label}
+                              </span>
+                              <div className="mt-1.5 text-base font-semibold leading-tight">
+                                <ProviderLink providerId={snapshot.provider.id} providerName={snapshot.provider.name} />
+                              </div>
+                              {subtitle && (
+                                <div className="text-xs mt-1" style={{ color: colors.accent + "99" }}>{subtitle}</div>
+                              )}
+                            </div>
+                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium shrink-0 ${status.className}`}>
+                              {status.label}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {/* Ungrouped Doctors / Specialists — color-coded cards */}
             {doctors.length > 0 && (
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {doctors.map((snapshot) => {
