@@ -12,6 +12,7 @@ import KateFollowUp from "../../components/qbh/KateFollowUp";
 import TopNav from "../../components/qbh/TopNav";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import UrgentCareButton from "../../components/qbh/UrgentCareButton";
+import ProviderLink from "../../components/qbh/ProviderLink";
 
 /* ── Types ── */
 
@@ -528,8 +529,8 @@ function DashboardInner() {
                       }}
                     />
                     <div>
-                      <span className="text-sm font-medium text-[#1A1D2E]">
-                        {s.provider.name}
+                      <span className="text-sm font-medium">
+                        <ProviderLink providerId={s.provider.id} providerName={s.provider.name} />
                       </span>
                       {isPharmacy && (
                         <span className="ml-2 text-xs text-[#A0C8E8]">Pharmacy</span>

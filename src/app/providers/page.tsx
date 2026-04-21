@@ -7,6 +7,7 @@ import BestNextStep from "../../components/qbh/BestNextStep";
 import { apiFetch } from "../../lib/api";
 import ProviderCard from "../../components/qbh/ProviderCard";
 import { Plus, Search, X, Check } from "lucide-react";
+import ProviderLink from "../../components/qbh/ProviderLink";
 import type { ProviderDashboardSnapshot } from "../lib/QBH/types";
 
 function getStatusLabel(snapshot: ProviderDashboardSnapshot): { label: string; className: string } {
@@ -371,8 +372,8 @@ function ProvidersInner() {
                                 </span>
                               )}
                             </div>
-                            <div className="mt-1.5 text-base font-semibold text-[#1A1D2E] leading-tight">
-                              {snapshot.provider.name}
+                            <div className="mt-1.5 text-base font-semibold leading-tight">
+                              <ProviderLink providerId={snapshot.provider.id} providerName={snapshot.provider.name} />
                             </div>
                             {subtitle && (
                               <div className="text-xs mt-1" style={{ color: colors.accent + "99" }}>
