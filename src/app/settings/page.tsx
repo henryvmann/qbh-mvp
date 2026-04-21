@@ -237,16 +237,19 @@ export default function SettingsPage() {
                   className="w-full rounded-lg bg-white px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
                 <div className="flex gap-2.5">
-                  <select
-                    value={newPersonRelationship}
-                    onChange={(e) => setNewPersonRelationship(e.target.value)}
-                    className="flex-1 rounded-lg bg-white px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                  >
-                    <option value="Parent">Parent</option>
-                    <option value="Child">Child</option>
-                    <option value="Partner">Partner</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Relationship to you</label>
+                    <select
+                      value={newPersonRelationship}
+                      onChange={(e) => setNewPersonRelationship(e.target.value)}
+                      className="w-full rounded-lg bg-white px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    >
+                      <option value="Parent">Parent</option>
+                      <option value="Child">Child</option>
+                      <option value="Partner">Partner</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
                   <input
                     type="date"
                     value={newPersonDob}

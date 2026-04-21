@@ -167,8 +167,8 @@ export default function TimelinePage() {
             { value: "future", label: "Upcoming" },
             { value: "past", label: "Past" },
             { value: "visit", label: "Visits" },
+            { value: "upcoming", label: "Upcoming" },
             { value: "booked", label: "Booked" },
-            { value: "discovered", label: "Discovered" },
           ].map((f) => (
             <button
               key={f.value}
