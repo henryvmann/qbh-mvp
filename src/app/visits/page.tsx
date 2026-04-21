@@ -149,12 +149,18 @@ function VisitsInner() {
           ) : (
             <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
               <div className="font-semibold text-[#1A1D2E]">
-                No confirmed upcoming appointments yet
+                No upcoming appointments yet
               </div>
               <p className="mt-2 text-sm text-[#7A7F8A]">
-                As QBH books care through the live scheduling loop, upcoming
-                visits will appear here automatically.
+                Appointments will appear here when Kate books them, or you can add one manually.
               </p>
+              <a
+                href="/calendar-view"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                style={{ backgroundColor: "#5C6B5C" }}
+              >
+                View calendar
+              </a>
             </div>
           )}
         </section>
