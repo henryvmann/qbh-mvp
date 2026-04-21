@@ -9,6 +9,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,14 +84,23 @@ export default function LoginPage() {
               className="w-full rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
             />
 
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-              className="w-full rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                required
+                className="w-full rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3 pr-14 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#7A7F8A] hover:text-[#1A1D2E]"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
 
             <button
               type="submit"
@@ -136,13 +146,13 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-6 text-center text-sm text-[#B0B4BC]">
-            New here?{" "}
+            First time here?{" "}
             <a
               href="/onboarding"
               className="underline underline-offset-4 hover:text-[#7A7F8A]"
               style={{ color: "#5C6B5C" }}
             >
-              Get started
+              Create your account
             </a>
           </div>
         </div>

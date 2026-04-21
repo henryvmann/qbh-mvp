@@ -35,6 +35,7 @@ const STEP1_OPTIONS = [
   "My child's health",
   "My parent's health",
   "Medical history",
+  "All of the above",
 ];
 
 const STEP2_OPTIONS = [
@@ -44,6 +45,7 @@ const STEP2_OPTIONS = [
   "Organizing records",
   "Knowing what's due",
   "Advocating for myself",
+  "All of the above",
 ];
 
 const STEP3_OPTIONS = [
@@ -60,6 +62,7 @@ const STEP4_OPTIONS = [
   "Book appointments automatically",
   "Provide insights",
   "Thread care together",
+  "All of the above",
 ];
 
 const ACCENT = "#5C6B5C";
@@ -224,6 +227,7 @@ export default function OnboardingPage() {
   const name = `${firstName.trim()} ${lastName.trim()}`.trim();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [userId, setUserId] = useState("");
   const [plaidConnected, setPlaidConnected] = useState(false);
   const [calendarConnected] = useState(false); // deferred to after auth
@@ -286,14 +290,30 @@ export default function OnboardingPage() {
     key: "step1" | "step2" | "step3" | "step4",
     value: string
   ) {
+    const optionsMap: Record<string, string[]> = {
+      step1: STEP1_OPTIONS,
+      step2: STEP2_OPTIONS,
+      step3: STEP3_OPTIONS,
+      step4: STEP4_OPTIONS,
+    };
+
     setSurvey((prev) => {
       const arr = prev[key];
-      return {
-        ...prev,
-        [key]: arr.includes(value)
-          ? arr.filter((v) => v !== value)
-          : [...arr, value],
-      };
+
+      // "All of the above" toggles everything
+      if (value === "All of the above") {
+        const allOpts = optionsMap[key].filter((o) => o !== "All of the above");
+        const allSelected = allOpts.every((o) => arr.includes(o));
+        return {
+          ...prev,
+          [key]: allSelected ? [] : [...allOpts, "All of the above"],
+        };
+      }
+
+      const next = arr.includes(value)
+        ? arr.filter((v) => v !== value && v !== "All of the above")
+        : [...arr, value];
+      return { ...prev, [key]: next };
     });
   }
 
@@ -632,25 +652,20 @@ export default function OnboardingPage() {
       <Shell>
         <div className="mt-8">
           <CharacterWithBubble pose="waving">
-            Hey! I&apos;m Kate and I&apos;ll walk you through this.
-            Quarterback&apos;s here to help manage your health journey. After a
-            few questions we&apos;ll get all your current providers, find out if
-            you need to book appointments and help you (or your kids or your
-            parents) stay on top of your visits. And that&apos;s just the
-            beginning... Welcome to Quarterback Health.
+            Hey! I&apos;m Kate. Welcome to Quarterback Health.
           </CharacterWithBubble>
         </div>
 
-        {/* Preview cards — aligned with bubble right edge */}
-        <div className="mt-8 flex justify-end gap-3" style={{ paddingLeft: 56 }}>
+        {/* What QB does — informational, not clickable */}
+        <div className="mt-8 space-y-3" style={{ paddingLeft: 56 }}>
           {[
-            { icon: Search, label: "Find providers" },
-            { icon: Calendar, label: "Book appointments" },
-            { icon: CheckCircle, label: "Stay on track" },
+            { icon: Search, label: "Find your providers", detail: "From your records or added manually" },
+            { icon: Calendar, label: "Book appointments", detail: "Kate calls offices and schedules for you" },
+            { icon: CheckCircle, label: "Stay on track", detail: "Reminders, follow-ups, and care gaps" },
           ].map((card) => (
             <div
               key={card.label}
-              className="flex flex-1 flex-col items-center gap-2 rounded-xl px-4 py-3 shadow-sm"
+              className="flex items-center gap-3 rounded-xl px-4 py-3"
               style={{
                 backgroundColor: CARD_BG,
                 borderWidth: 1,
@@ -658,8 +673,11 @@ export default function OnboardingPage() {
                 borderColor: CARD_BORDER,
               }}
             >
-              <card.icon size={20} strokeWidth={1.5} color="#5C6B5C" />
-              <span className="text-xs text-[#1A1D2E]">{card.label}</span>
+              <card.icon size={18} strokeWidth={1.5} color="#5C6B5C" className="shrink-0" />
+              <div>
+                <span className="text-sm font-medium text-[#1A1D2E]">{card.label}</span>
+                <p className="text-xs text-[#7A7F8A]">{card.detail}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -676,19 +694,11 @@ export default function OnboardingPage() {
   if (step === 1) {
     return (
       <Shell>
-        <div className="mb-6">
-          <CharacterWithBubble pose="waving">
-            We can be as involved or as removed as you want! This helps me
-            understand what part of Quarterback is going to be the most helpful
-            for you. Just let me know whether you want help booking appointments,
-            collecting your medical history into one place, or managing your
-            child or parent&apos;s health.
-          </CharacterWithBubble>
-        </div>
         <StepCounter current={SURVEY_STEP_MAP[1]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What do you want help staying on top of?
         </h1>
+        <p className="mt-2 text-sm text-[#7A7F8A]">Select as many as you&apos;d like</p>
         <div className="mt-6 flex flex-col gap-3">
           {STEP1_OPTIONS.map((opt) => (
             <OptionRow
@@ -724,18 +734,11 @@ export default function OnboardingPage() {
   if (step === 3) {
     return (
       <Shell>
-        <div className="mb-6">
-          <CharacterWithBubble pose="thinking">
-            No judgment here &mdash; healthcare is a lot to keep track of.
-            Knowing what feels hardest right now helps me figure out where to
-            jump in first. I&apos;ll focus on the stuff that&apos;s slipping
-            through the cracks.
-          </CharacterWithBubble>
-        </div>
         <StepCounter current={SURVEY_STEP_MAP[3]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What&apos;s hardest to manage today?
         </h1>
+        <p className="mt-2 text-sm text-[#7A7F8A]">This helps Kate prioritize where to jump in first</p>
         <div className="mt-6 flex flex-col gap-3">
           {STEP2_OPTIONS.map((opt) => (
             <OptionRow
@@ -764,19 +767,11 @@ export default function OnboardingPage() {
   if (step === 4) {
     return (
       <Shell>
-        <div className="mb-6">
-          <CharacterWithBubble pose="pointing">
-            A lot of people aren&apos;t just managing their own health &mdash;
-            they&apos;re keeping track of their kids&apos; checkups or their
-            parents&apos; specialists too. Let me know who I&apos;m helping you
-            look after so I can keep everything organized by person.
-          </CharacterWithBubble>
-        </div>
         <StepCounter current={SURVEY_STEP_MAP[4]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           Who are you managing care for?
         </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">Choose as many as you&apos;d like</p>
+        <p className="mt-2 text-sm text-[#7A7F8A]">Choose as many as you&apos;d like — Kate can organize by person</p>
         <div className="mt-6 flex flex-col gap-3">
           {STEP3_OPTIONS.map((opt) => (
             <OptionRow
@@ -805,17 +800,11 @@ export default function OnboardingPage() {
   if (step === 5) {
     return (
       <Shell>
-        <div className="mb-6">
-          <CharacterWithBubble pose="waving">
-            Last question! This is the fun part &mdash; tell me what you actually
-            want me to do. Some people just want reminders. Others want me to
-            pick up the phone and book everything. There&apos;s no wrong answer.
-          </CharacterWithBubble>
-        </div>
         <StepCounter current={SURVEY_STEP_MAP[5]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          What would you want QB to handle?
+          In an ideal world, what would magically get handled?
         </h1>
+        <p className="mt-2 text-sm text-[#7A7F8A]">Select as many as you&apos;d like</p>
         <div className="mt-6 flex flex-col gap-3">
           {STEP4_OPTIONS.map((opt) => (
             <OptionRow
@@ -846,17 +835,17 @@ export default function OnboardingPage() {
       {
         num: 1,
         title: "Connect your bank",
-        desc: "We\u2019ll scan your transactions to find healthcare providers. Read-only \u2014 we can\u2019t move money.",
+        desc: "Using Plaid, we\u2019ll securely identify healthcare co-pays from your past transactions to find your providers. Access is read-only.",
       },
       {
         num: 2,
-        title: "Review your providers",
-        desc: "You\u2019ll see everyone we found and choose which ones to keep.",
+        title: "Organize your providers",
+        desc: "We\u2019ll build your provider hub \u2014 all of your doctor\u2019s info in one place.",
       },
       {
         num: 3,
         title: "QB gets to work",
-        desc: "We\u2019ll check what\u2019s overdue, find phone numbers, and start booking.",
+        desc: "We\u2019ll see where you\u2019re at, what needs attention, and start handling it.",
       },
     ];
 
@@ -1110,15 +1099,24 @@ export default function OnboardingPage() {
               className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
               style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
             />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
-              minLength={6}
-              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a password"
+                minLength={6}
+                className="w-full rounded-xl border px-4 py-3 pr-12 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#7A7F8A] hover:text-[#1A1D2E]"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1197,9 +1195,8 @@ export default function OnboardingPage() {
         <div className="mb-6">
           <CharacterWithBubble pose="pointing">
             Almost there! I just need a few basics to create your account.
-            Then we&apos;ll connect your bank so I can find your healthcare
-            providers automatically. Don&apos;t worry &mdash; it&apos;s
-            read-only. I can&apos;t move money or see your balances.
+            Then we&apos;ll use Plaid to securely identify your healthcare
+            providers from past co-pays. Access is strictly read-only.
           </CharacterWithBubble>
         </div>
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
@@ -1242,18 +1239,27 @@ export default function OnboardingPage() {
               borderColor: CARD_BORDER,
             }}
           />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Create a password"
-            minLength={6}
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-            style={{
-              backgroundColor: CARD_BG,
-              borderColor: CARD_BORDER,
-            }}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create a password"
+              minLength={6}
+              className="w-full rounded-xl border px-4 py-3 pr-12 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+              style={{
+                backgroundColor: CARD_BG,
+                borderColor: CARD_BORDER,
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#7A7F8A] hover:text-[#1A1D2E]"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 flex flex-col gap-3">
