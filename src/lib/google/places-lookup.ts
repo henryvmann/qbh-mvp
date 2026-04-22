@@ -1,34 +1,37 @@
 /**
- * Uses Google Places API to find a business phone number.
+ * Uses Google Places API to find a business phone number and address.
  * Requires GOOGLE_PLACES_API_KEY environment variable.
  */
-export async function lookupPlacePhone(
+
+type PlaceLookupResult = {
+  phone: string | null;
+  address: string | null;
+};
+
+export async function lookupPlaceDetails(
   businessName: string,
   city?: string,
   state?: string
-): Promise<string | null> {
+): Promise<PlaceLookupResult> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    console.warn("[places-lookup] GOOGLE_PLACES_API_KEY not set");
-    return null;
+    return { phone: null, address: null };
   }
 
   try {
     const query =
       city && state ? `${businessName} ${city} ${state}` : businessName;
 
-    // Use Places Text Search to find the place
     const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&type=health&key=${apiKey}`;
     const searchRes = await fetch(searchUrl, {
       signal: AbortSignal.timeout(5000),
     });
     const searchData = await searchRes.json();
 
-    if (!searchData.results?.[0]?.place_id) return null;
+    if (!searchData.results?.[0]?.place_id) return { phone: null, address: null };
 
-    // Get place details including phone number
     const placeId = searchData.results[0].place_id;
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=formatted_phone_number,international_phone_number&key=${apiKey}`;
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=formatted_phone_number,international_phone_number,formatted_address&key=${apiKey}`;
     const detailsRes = await fetch(detailsUrl, {
       signal: AbortSignal.timeout(5000),
     });
@@ -37,13 +40,25 @@ export async function lookupPlacePhone(
     const phone =
       detailsData.result?.international_phone_number ||
       detailsData.result?.formatted_phone_number;
-    if (!phone) return null;
+    const address = detailsData.result?.formatted_address || null;
 
-    // Normalize to E.164
-    return normalizePhoneE164(phone);
+    return {
+      phone: phone ? normalizePhoneE164(phone) : null,
+      address,
+    };
   } catch {
-    return null;
+    return { phone: null, address: null };
   }
+}
+
+/** Backwards-compatible wrapper */
+export async function lookupPlacePhone(
+  businessName: string,
+  city?: string,
+  state?: string
+): Promise<string | null> {
+  const result = await lookupPlaceDetails(businessName, city, state);
+  return result.phone;
 }
 
 function normalizePhoneE164(phone: string): string | null {

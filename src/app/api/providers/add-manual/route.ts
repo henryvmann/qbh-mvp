@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
+import { lookupPlaceDetails } from "../../../../lib/google/places-lookup";
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,6 +54,21 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error("[add-manual] error:", error);
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    }
+
+    // Auto-lookup phone and address if missing
+    if (!phone) {
+      try {
+        const placeInfo = await lookupPlaceDetails(name);
+        const updates: Record<string, string> = {};
+        if (placeInfo.phone) updates.phone_number = placeInfo.phone;
+        if (placeInfo.address) updates.address = placeInfo.address;
+        if (Object.keys(updates).length > 0) {
+          await supabaseAdmin.from("providers").update(updates).eq("id", data.id);
+        }
+      } catch {
+        // Best effort — provider is already created
+      }
     }
 
     return NextResponse.json({ ok: true, provider_id: data.id });

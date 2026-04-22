@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../../supabase-server";
+import { lookupPlaceDetails } from "../../google/places-lookup";
 import type {
   DiscoveredProvider,
   PlaidDiscoveryTransaction,
@@ -122,6 +123,26 @@ export async function writeDiscoveredProviders({
     }
 
     insertedProviders = data || [];
+
+    // Auto-lookup phone numbers and addresses for providers without them
+    for (const p of insertedProviders) {
+      const insertedRow = providersToInsert.find(
+        (pi) => pi.name.toLowerCase() === p.name.toLowerCase()
+      );
+      if (!insertedRow?.phone_number) {
+        try {
+          const placeInfo = await lookupPlaceDetails(p.name);
+          const updates: Record<string, string> = {};
+          if (placeInfo.phone) updates.phone_number = placeInfo.phone;
+          if (placeInfo.address) updates.address = placeInfo.address;
+          if (Object.keys(updates).length > 0) {
+            await supabaseAdmin.from("providers").update(updates).eq("id", p.id);
+          }
+        } catch {
+          // Best effort
+        }
+      }
+    }
   }
 
   const providerIdByName = new Map<string, string>();
