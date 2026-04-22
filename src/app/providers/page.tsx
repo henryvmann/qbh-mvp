@@ -479,6 +479,14 @@ function ProvidersInner() {
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>
                               {status.label}
                             </span>
+                            <a
+                              href={`/providers/${snapshot.provider.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-[10px] font-medium underline underline-offset-2 transition"
+                              style={{ color: colors.accent }}
+                            >
+                              Edit
+                            </a>
                             <span style={{ color: colors.accent + "80" }}>
                               <ChevronIcon open={isExpanded} />
                             </span>

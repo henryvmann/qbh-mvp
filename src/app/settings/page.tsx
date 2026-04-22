@@ -239,6 +239,44 @@ export default function SettingsPage() {
             rows={4}
             className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] resize-none"
           />
+
+          {/* Document upload */}
+          <div className="mt-4 rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F8F9FA] p-4 text-center">
+            <p className="text-xs font-medium text-[#7A7F8A] mb-2">Or upload a health document</p>
+            <p className="text-[10px] text-[#B0B4BC] mb-3">PDF, text, or image of medical records — Kate will summarize it</p>
+            <label className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white cursor-pointer transition hover:brightness-95" style={{ backgroundColor: "#5C6B5C" }}>
+              Upload Document
+              <input
+                type="file"
+                accept=".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const formData = new FormData();
+                  formData.append("file", file);
+                  try {
+                    const res = await apiFetch("/api/health-docs", { method: "POST", body: formData });
+                    const data = await res.json();
+                    if (data.ok && data.summary) {
+                      // Refresh health history to include the summary
+                      const profileRes = await apiFetch("/api/patient-profile");
+                      const profileData = await profileRes.json();
+                      if (profileData?.profile?.health_history) {
+                        setHealthHistory(profileData.profile.health_history);
+                      }
+                      alert("Document uploaded and summarized! Review your health history above.");
+                    } else {
+                      alert(data.error || "Failed to process document");
+                    }
+                  } catch {
+                    alert("Upload failed — please try again");
+                  }
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         </div>
 
         {/* Care Recipients */}
