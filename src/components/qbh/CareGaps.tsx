@@ -101,6 +101,44 @@ export default function CareGaps() {
         }
       }
 
+      // Age-based care gap recommendations from patient profile
+      try {
+        const profileRes = await apiFetch("/api/patient-profile");
+        const profileData = await profileRes.json();
+        const dob = profileData?.profile?.date_of_birth;
+        if (dob) {
+          const age = Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          if (age >= 45 && !/gastro|colon/.test(providerText)) {
+            detected.push({
+              type: "gastro" as any,
+              label: "GI / Colonoscopy",
+              description: "Talk to your doctor about colon cancer screening",
+              iconKey: "pcp",
+              searchTerm: "gastroenterologist",
+            } as any);
+          }
+          if (age >= 40 && !/mammo|breast|obgyn|ob\/gyn|gynecol/.test(providerText)) {
+            // Only suggest if user might be female (has OB/GYN gap)
+            const hasObgynGap = detected.some((g) => g.type === "obgyn");
+            if (!hasObgynGap) {
+              // They have an OB/GYN already, but check for mammogram provider
+              // Don't add — they already have an OB
+            }
+          }
+          if (age >= 50 && !/cardio|heart/.test(providerText)) {
+            detected.push({
+              type: "cardio" as any,
+              label: "Cardiologist",
+              description: "Heart health checkups become more important over 50",
+              iconKey: "pcp",
+              searchTerm: "cardiologist",
+            } as any);
+          }
+        }
+      } catch {
+        // Profile fetch is best-effort for care gaps
+      }
+
       setGaps(detected);
     } catch {
       // Non-critical
