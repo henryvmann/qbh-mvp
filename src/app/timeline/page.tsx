@@ -221,7 +221,10 @@ export default function TimelinePage() {
                     <span className="text-xs text-[#B0B4BC]">{section.events.length} event{section.events.length !== 1 ? "s" : ""}</span>
                     <div className="flex-1 h-px bg-[#EBEDF0]" />
                   </div>
-                  <div className="space-y-3">
+                  <div className="relative space-y-3 pl-6">
+                    {/* Timeline line */}
+                    <div className="absolute left-2 top-2 bottom-2 w-px bg-[#EBEDF0]" />
+
                     {section.events.map((event) => {
                       const cfg = tagConfig[event.eventType] ?? tagConfig.discovered;
                       const isFuture = new Date(event.date) >= now;
@@ -229,7 +232,12 @@ export default function TimelinePage() {
                       const isExpanded = expandedId === event.id;
 
                       return (
-                        <div key={event.id}>
+                        <div key={event.id} className="relative">
+                          {/* Timeline dot */}
+                          <div
+                            className={`absolute -left-[17px] top-6 h-2.5 w-2.5 rounded-full ring-2 ${isFuture ? "ring-[#C2D9B8]" : "ring-white"}`}
+                            style={{ backgroundColor: cfg.dot }}
+                          />
 
                     <div
                       className={`rounded-2xl bg-white shadow-sm border transition cursor-pointer hover:shadow-md ${

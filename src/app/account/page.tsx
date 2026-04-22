@@ -23,6 +23,10 @@ export default function AccountPage() {
   // Insurance / patient profile
   const [insuranceProvider, setInsuranceProvider] = useState<string | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
+  const [editingInsurance, setEditingInsurance] = useState(false);
+  const [editInsProvider, setEditInsProvider] = useState("");
+  const [editMemberId, setEditMemberId] = useState("");
+  const [savingInsurance, setSavingInsurance] = useState(false);
 
   // Password section
   const [passwordOpen, setPasswordOpen] = useState(false);
@@ -204,12 +208,88 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Insurance Info */}
+        {/* Insurance Info — editable */}
         <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C] mb-4">
-            Insurance
-          </h2>
-          {insuranceProvider || memberId ? (
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C]">
+              Insurance
+            </h2>
+            {!editingInsurance && (
+              <button
+                onClick={() => {
+                  setEditInsProvider(insuranceProvider || "");
+                  setEditMemberId(memberId || "");
+                  setEditingInsurance(true);
+                }}
+                className="text-xs text-[#5C6B5C] underline underline-offset-2"
+              >
+                Edit
+              </button>
+            )}
+          </div>
+          {editingInsurance ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-[#7A7F8A] mb-1">Insurance Provider</label>
+                <input
+                  type="text"
+                  value={editInsProvider}
+                  onChange={(e) => setEditInsProvider(e.target.value)}
+                  placeholder="e.g. Blue Cross, Aetna"
+                  list="account-insurance-providers"
+                  className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                />
+                <datalist id="account-insurance-providers">
+                  {["Aetna","Anthem","Blue Cross Blue Shield","Cigna","Humana","Kaiser Permanente","Medicare","Medicaid","Oscar Health","United Healthcare"].map((ins) => <option key={ins} value={ins} />)}
+                </datalist>
+              </div>
+              <div>
+                <label className="block text-xs text-[#7A7F8A] mb-1">Member / Policy ID</label>
+                <input
+                  type="text"
+                  value={editMemberId}
+                  onChange={(e) => setEditMemberId(e.target.value)}
+                  placeholder="Found on your insurance card"
+                  className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    setSavingInsurance(true);
+                    try {
+                      await apiFetch("/api/patient-profile", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          profile: {
+                            insurance_provider: editInsProvider.trim() || null,
+                            insurance_member_id: editMemberId.trim() || null,
+                          },
+                        }),
+                      });
+                      setInsuranceProvider(editInsProvider.trim() || null);
+                      setMemberId(editMemberId.trim() || null);
+                      setEditingInsurance(false);
+                    } finally {
+                      setSavingInsurance(false);
+                    }
+                  }}
+                  disabled={savingInsurance}
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                  style={{ backgroundColor: "#5C6B5C" }}
+                >
+                  {savingInsurance ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={() => setEditingInsurance(false)}
+                  className="rounded-xl px-4 py-2 text-xs text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : insuranceProvider || memberId ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[#7A7F8A]">Provider</span>
@@ -226,9 +306,15 @@ export default function AccountPage() {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-[#7A7F8A]">
-              No insurance information on file. You can add this through your health profile or by talking to Kate.
-            </p>
+            <div>
+              <p className="text-sm text-[#7A7F8A]">No insurance on file.</p>
+              <button
+                onClick={() => setEditingInsurance(true)}
+                className="mt-2 text-xs font-semibold text-[#5C6B5C] underline underline-offset-2"
+              >
+                Add Insurance
+              </button>
+            </div>
           )}
         </div>
 

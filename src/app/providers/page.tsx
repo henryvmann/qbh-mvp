@@ -107,10 +107,22 @@ function AddProviderForm({
   const [searching, setSearching] = useState(false);
   const [adding, setAdding] = useState<string | null>(null);
   const [added, setAdded] = useState<Set<string>>(new Set());
+  const [userLocation, setUserLocation] = useState<string>("");
+  const [nearbyLoading, setNearbyLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Detect user location via IP for nearby provider suggestions
   useEffect(() => {
     inputRef.current?.focus();
+    // Fetch user location
+    fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
+      .then((r) => r.json())
+      .then((geo) => {
+        if (geo?.city && geo?.region_code) {
+          setUserLocation(`${geo.city}, ${geo.region_code}`);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -121,7 +133,10 @@ function AddProviderForm({
     const timer = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await apiFetch(`/api/npi/search?q=${encodeURIComponent(query)}`);
+        // Auto-append user location if query doesn't include a state/city
+        const hasLocation = /\b[A-Z]{2}\b/.test(query) || /,/.test(query);
+        const searchQuery = hasLocation || !userLocation ? query : `${query} ${userLocation}`;
+        const res = await apiFetch(`/api/npi/search?q=${encodeURIComponent(searchQuery)}`);
         const data = await res.json();
         if (data.ok) setResults(data.results || []);
       } catch {
@@ -187,6 +202,11 @@ function AddProviderForm({
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#7A7F8A]">Searching...</span>
           )}
         </div>
+        {userLocation && !query && (
+          <p className="mt-1.5 text-[10px] text-[#B0B4BC]">
+            Searching near {userLocation}. Include a city or state for other areas.
+          </p>
+        )}
 
         {results.length > 0 && (
           <div className="mt-2 max-h-72 overflow-y-auto divide-y divide-[#EBEDF0]">
