@@ -358,7 +358,7 @@ function ProvidersInner() {
                     {teamDoctors.length} provider{teamDoctors.length !== 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                   {teamDoctors.map((snapshot) => {
                     const status = getStatusLabel(snapshot);
                     const colors = getSpecialtyColor(snapshot);
@@ -399,7 +399,7 @@ function ProvidersInner() {
 
             {/* Ungrouped Doctors / Specialists — color-coded cards */}
             {doctors.length > 0 && (
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                 {doctors.map((snapshot) => {
                   const status = getStatusLabel(snapshot);
                   const colors = getSpecialtyColor(snapshot);
@@ -509,6 +509,49 @@ function ProvidersInner() {
                 </div>
               </div>
             )}
+
+            {/* Missing specialty placeholders */}
+            {(() => {
+              const allProviderText = allDoctors.map((s) =>
+                `${s.provider.name} ${s.provider.specialty || ""} ${s.provider.provider_type || ""}`.toLowerCase()
+              ).join(" ");
+              const missing: { label: string; color: string; border: string; keywords: RegExp }[] = [];
+              if (!/primary|pcp|internal|family|general/.test(allProviderText))
+                missing.push({ label: "Primary Care", color: "#E8F5E8", border: "#C2D9B8", keywords: /primary care/ });
+              if (!/dent|dds|oral/.test(allProviderText))
+                missing.push({ label: "Dentist", color: "#E0F0FF", border: "#B0D0E8", keywords: /dentist/ });
+              if (!/eye|vision|optom|ophthal/.test(allProviderText))
+                missing.push({ label: "Eye Doctor", color: "#FFF5E0", border: "#E8D0A0", keywords: /eye/ });
+              if (!/therap|psych|counsel|mental/.test(allProviderText))
+                missing.push({ label: "Therapist", color: "#F0E8F5", border: "#D0B8E0", keywords: /therapist/ });
+              if (!/derm|skin/.test(allProviderText))
+                missing.push({ label: "Dermatologist", color: "#FFF0E8", border: "#E8C8B0", keywords: /dermatologist/ });
+
+              if (missing.length === 0) return null;
+              return (
+                <div className="mt-8">
+                  <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">
+                    Build Your Care Team
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {missing.map((m) => (
+                      <a
+                        key={m.label}
+                        href={`/providers?add=true&search=${encodeURIComponent(m.label.toLowerCase())}`}
+                        className="flex items-center justify-between rounded-2xl border-2 border-dashed p-5 transition hover:shadow-sm"
+                        style={{ borderColor: m.border, backgroundColor: m.color + "40" }}
+                      >
+                        <div>
+                          <div className="text-sm font-semibold text-[#1A1D2E]">Your {m.label}</div>
+                          <div className="text-xs text-[#7A7F8A]">Add one to your care team</div>
+                        </div>
+                        <Plus size={18} className="text-[#B0B4BC]" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </>
         )}
       </div>
