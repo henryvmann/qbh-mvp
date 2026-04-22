@@ -172,6 +172,37 @@ export default function AnalyticsPage() {
           <StatCard value={data.visitCount} label="Past Visits" color="#5C4A8A" />
         </div>
 
+        {/* Kate's Health Summary */}
+        <div className="mt-6 rounded-2xl bg-[#5C6B5C]/5 border border-[#5C6B5C]/10 p-5">
+          <div className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">
+            Your Health Summary
+          </div>
+          <div className="space-y-2 text-sm text-[#1A1D2E]">
+            {data.providerCount === 0 ? (
+              <p>You haven&apos;t added any providers yet. Start building your care team to get the most out of Quarterback.</p>
+            ) : (
+              <>
+                <p>
+                  You have <strong>{data.providerCount - data.pharmacyCount}</strong> provider{data.providerCount - data.pharmacyCount !== 1 ? "s" : ""} on your care team
+                  {data.pharmacyCount > 0 ? ` and ${data.pharmacyCount} pharmac${data.pharmacyCount !== 1 ? "ies" : "y"}` : ""}.
+                  {data.overdueCount > 0
+                    ? ` ${data.overdueCount} ${data.overdueCount === 1 ? "is" : "are"} overdue for a visit.`
+                    : " Everyone is current."}
+                </p>
+                {data.bookedCount > 0 && (
+                  <p>You have <strong>{data.bookedCount}</strong> upcoming appointment{data.bookedCount !== 1 ? "s" : ""} scheduled.</p>
+                )}
+                {data.visitCount > 0 && (
+                  <p>Kate has tracked <strong>{data.visitCount}</strong> past visit{data.visitCount !== 1 ? "s" : ""} across your providers.</p>
+                )}
+                {!data.calendarConnected && (
+                  <p>Connect your calendar so Kate can check for scheduling conflicts.</p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Goals progress */}
         <div className="mt-6 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
           <div className="flex items-center justify-between mb-3">
