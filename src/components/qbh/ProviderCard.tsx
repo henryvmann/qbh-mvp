@@ -296,6 +296,7 @@ export default function ProviderCard({
   // Provider detail editing
   const [showDetails, setShowDetails] = useState(false);
   const [editDisplayName, setEditDisplayName] = useState(provider.display_name || "");
+  const [editPhone, setEditPhone] = useState(provider.phone || "");
   const [editDoctorName, setEditDoctorName] = useState(provider.doctor_name || "");
   const [editSpecialty, setEditSpecialty] = useState(provider.specialty || "");
   const [editNotes, setEditNotes] = useState(provider.notes || "");
@@ -330,6 +331,7 @@ export default function ProviderCard({
         body: JSON.stringify({
           provider_id: provider.id,
           display_name: editDisplayName.trim() || null,
+          phone_number: editPhone.trim() || null,
           doctor_name: editDoctorName.trim() || null,
           specialty: editSpecialty.trim() || null,
           notes: editNotes.trim() || null,
@@ -431,6 +433,16 @@ export default function ProviderCard({
                 value={editDisplayName}
                 onChange={(e) => setEditDisplayName(e.target.value)}
                 placeholder="e.g. Stamford Health, My PCP"
+                className={detailInputClass}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-[#7A7F8A]">Office phone number</label>
+              <input
+                type="tel"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                placeholder="(555) 123-4567"
                 className={detailInputClass}
               />
             </div>
