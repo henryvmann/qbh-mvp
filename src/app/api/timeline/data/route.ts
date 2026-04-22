@@ -3,14 +3,31 @@ import { NextResponse } from "next/server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 
-type TimelineEvent = {
+type TimelineVisit = {
   id: string;
   date: string;
-  title: string;
+  amount: number | null;
+  source: string;
+};
+
+type TimelineProvider = {
+  providerId: string;
+  providerName: string;
+  visits: TimelineVisit[];
+};
+
+type TimelineYear = {
+  year: string;
+  providers: TimelineProvider[];
+  totalVisits: number;
+};
+
+type UpcomingEvent = {
+  id: string;
+  providerId: string;
+  providerName: string;
+  date: string;
   detail: string;
-  tag: string;
-  eventType: "visit" | "booked" | "discovered" | "upcoming";
-  providerId?: string;
 };
 
 export async function GET(req: Request) {
@@ -23,10 +40,10 @@ export async function GET(req: Request) {
     );
   }
 
-  // Get all active providers for name lookup
+  // Get all active providers
   const { data: providers } = await supabaseAdmin
     .from("providers")
-    .select("id, name, created_at")
+    .select("id, name, specialty, provider_type")
     .eq("app_user_id", appUserId)
     .eq("status", "active");
 
@@ -37,133 +54,93 @@ export async function GET(req: Request) {
   }
 
   const providerIds = providerRows.map((p) => p.id);
-  const events: TimelineEvent[] = [];
 
-  if (providerIds.length > 0) {
-    // 1. Provider visits
-    const { data: visits } = await supabaseAdmin
-      .from("provider_visits")
-      .select("id, provider_id, visit_date, amount")
-      .eq("app_user_id", appUserId)
-      .in("provider_id", providerIds)
-      .order("visit_date", { ascending: false })
-      .limit(100);
+  // Fetch all visits
+  const { data: visits } = providerIds.length > 0
+    ? await supabaseAdmin
+        .from("provider_visits")
+        .select("id, provider_id, visit_date, amount, source")
+        .eq("app_user_id", appUserId)
+        .in("provider_id", providerIds)
+        .order("visit_date", { ascending: false })
+        .limit(200)
+    : { data: [] };
 
-    for (const v of visits ?? []) {
-      const name = providerNameMap.get(v.provider_id) ?? "Unknown Provider";
-      const amountStr =
-        v.amount != null ? ` — $${Number(v.amount).toFixed(2)}` : "";
-      events.push({
-        id: `visit-${v.id}`,
-        date: v.visit_date ?? "",
-        title: `Visit to ${name}`,
-        detail: `Completed visit${amountStr}`,
-        tag: "Visit",
-        eventType: "visit",
-        providerId: v.provider_id,
-      });
-    }
+  // Fetch upcoming calendar events
+  const { data: calEvents } = providerIds.length > 0
+    ? await supabaseAdmin
+        .from("calendar_events")
+        .select("id, provider_id, start_at, end_at, status")
+        .eq("app_user_id", appUserId)
+        .eq("status", "confirmed")
+        .gte("start_at", new Date().toISOString())
+        .in("provider_id", providerIds)
+        .order("start_at", { ascending: true })
+        .limit(20)
+    : { data: [] };
 
-    // 2. Booked schedule attempts
-    const { data: attempts } = await supabaseAdmin
-      .from("schedule_attempts")
-      .select("id, provider_id, created_at, metadata")
-      .eq("app_user_id", appUserId)
-      .eq("status", "BOOKED_CONFIRMED")
-      .in("provider_id", providerIds)
-      .order("created_at", { ascending: false })
-      .limit(100);
+  // Build upcoming events
+  const upcoming: UpcomingEvent[] = (calEvents ?? []).map((ce) => ({
+    id: ce.id,
+    providerId: ce.provider_id,
+    providerName: providerNameMap.get(ce.provider_id) ?? "Unknown Provider",
+    date: ce.start_at,
+    detail: new Date(ce.start_at).toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }),
+  }));
 
-    for (const a of attempts ?? []) {
-      const name = providerNameMap.get(a.provider_id) ?? "Unknown Provider";
-      const meta =
-        a.metadata && typeof a.metadata === "object"
-          ? (a.metadata as Record<string, unknown>)
-          : null;
-      const bookingSummary =
-        meta?.booking_summary && typeof meta.booking_summary === "object"
-          ? (meta.booking_summary as Record<string, unknown>)
-          : null;
-      const displayTime =
-        typeof bookingSummary?.display_time === "string"
-          ? bookingSummary.display_time
-          : null;
+  // Group visits by year, then by provider
+  const yearMap = new Map<string, Map<string, TimelineVisit[]>>();
 
-      events.push({
-        id: `booked-${a.id}`,
-        date: a.created_at,
-        title: `Appointment booked with ${name}`,
-        detail: displayTime ?? "Appointment confirmed by QBH",
-        tag: "Booked",
-        eventType: "booked",
-        providerId: a.provider_id,
-      });
-    }
+  for (const v of visits ?? []) {
+    if (!v.visit_date) continue;
+    const year = new Date(v.visit_date).getFullYear().toString();
+    if (!yearMap.has(year)) yearMap.set(year, new Map());
+    const provMap = yearMap.get(year)!;
+    const pid = v.provider_id;
+    if (!provMap.has(pid)) provMap.set(pid, []);
+    provMap.get(pid)!.push({
+      id: String(v.id),
+      date: v.visit_date,
+      amount: v.amount != null ? Number(v.amount) : null,
+      source: v.source || "unknown",
+    });
   }
 
-  // 3. Upcoming calendar events (confirmed appointments)
-  if (providerIds.length > 0) {
-    const { data: calEvents } = await supabaseAdmin
-      .from("calendar_events")
-      .select("id, provider_id, start_at, end_at, status")
-      .eq("app_user_id", appUserId)
-      .eq("status", "confirmed")
-      .in("provider_id", providerIds)
-      .order("start_at", { ascending: true })
-      .limit(50);
+  // Build year sections sorted descending
+  const years: TimelineYear[] = [];
+  const sortedYears = [...yearMap.keys()].sort((a, b) => Number(b) - Number(a));
 
-    for (const ce of calEvents ?? []) {
-      const name = providerNameMap.get(ce.provider_id) ?? "Unknown Provider";
-      const start = new Date(ce.start_at);
-      const isFuture = start.getTime() > Date.now();
-      const timeStr = start.toLocaleString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      });
+  for (const year of sortedYears) {
+    const provMap = yearMap.get(year)!;
+    const yearProviders: TimelineProvider[] = [];
+    let totalVisits = 0;
 
-      events.push({
-        id: `cal-${ce.id}`,
-        date: ce.start_at,
-        title: `${isFuture ? "Upcoming" : "Past"} appointment with ${name}`,
-        detail: timeStr,
-        tag: isFuture ? "Upcoming" : "Past Appointment",
-        eventType: isFuture ? "upcoming" : "visit",
-        providerId: ce.provider_id,
+    for (const [pid, pvVisits] of provMap) {
+      const name = providerNameMap.get(pid) ?? "Unknown Provider";
+      yearProviders.push({
+        providerId: pid,
+        providerName: name,
+        visits: pvVisits,
       });
+      totalVisits += pvVisits.length;
     }
+
+    // Sort providers by visit count descending
+    yearProviders.sort((a, b) => b.visits.length - a.visits.length);
+
+    years.push({ year, providers: yearProviders, totalVisits });
   }
 
-  // 4. Provider additions (only show if no visits exist for that provider — avoids noise)
-  const providerIdsWithVisits = new Set(events.map((e) => {
-    const match = e.id.match(/^visit-/);
-    return match ? e.id : null;
-  }).filter(Boolean));
-
-  if (events.length === 0) {
-    // Only show "profile started" if there's nothing else to show
-    for (const p of providerRows) {
-      events.push({
-        id: `discovered-${p.id}`,
-        date: p.created_at,
-        title: `${p.name} added`,
-        detail: "Provider added to your health profile",
-        tag: "Added",
-        eventType: "discovered",
-        providerId: p.id,
-      });
-    }
-  }
-
-  // Sort by date descending
-  events.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-
-  // Limit to 100
-  const limited = events.slice(0, 100);
-
-  return NextResponse.json({ ok: true, events: limited });
+  return NextResponse.json({
+    ok: true,
+    upcoming,
+    years,
+    providerCount: providerRows.length,
+  });
 }
