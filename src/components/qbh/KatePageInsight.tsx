@@ -52,9 +52,8 @@ export default function KatePageInsight() {
           if (done) break;
           text += decoder.decode(value, { stream: true });
         }
-        // Take only the first sentence
-        const firstSentence = text.split(/[.!?]\s/)[0] + (text.match(/[.!?]/) ? text.match(/[.!?]/)![0] : ".");
-        const clean = firstSentence.slice(0, 200);
+        // Use the full response — don't truncate
+        const clean = text.trim();
         setInsight(clean);
         sessionStorage.setItem(cacheKey, clean);
       })
