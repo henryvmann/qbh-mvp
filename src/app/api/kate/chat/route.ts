@@ -79,9 +79,15 @@ async function buildContext(appUserId: string): Promise<string> {
     ? `\nUser's priority health focus areas: ${focusAreas}\nEmphasize these areas when giving suggestions, asking follow-ups, or offering proactive help.\n`
     : "";
 
+  // Health history from patient profile
+  const healthHistory = profile.health_history || null;
+  const healthHistorySection = healthHistory
+    ? `\nUser's health history (shared by them): ${healthHistory}\nUse this context to make better suggestions. For example, if they mention stomach issues and don't have a GI doctor, suggest finding one.\n`
+    : "";
+
   return `User's name: ${displayName} (full name: ${profile.full_name || "Unknown"})
 Today: ${now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-${focusSection}
+${focusSection}${healthHistorySection}
 Providers on file:
 ${providerList || "No providers yet."}
 

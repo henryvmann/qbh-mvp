@@ -56,6 +56,7 @@ export default function SettingsPage() {
   const [proactivity, setProactivity] = useState("balanced");
   const [focusAreas, setFocusAreas] = useState<string[]>(["booking", "reminders"]);
   const [calendarFlexibility, setCalendarFlexibility] = useState<"flexible" | "balanced" | "strict">("balanced");
+  const [healthHistory, setHealthHistory] = useState("");
   const [careRecipients, setCareRecipients] = useState<CareRecipient[]>([]);
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [newPersonName, setNewPersonName] = useState("");
@@ -82,6 +83,7 @@ export default function SettingsPage() {
           setCallbackPhone(p.callback_phone || "");
           setCommStyle(p.kate_communication_style || "friend");
           setProactivity(p.kate_proactivity || "balanced");
+          setHealthHistory(p.health_history || "");
           setFocusAreas(p.kate_focus_areas || ["booking", "reminders"]);
           setCalendarFlexibility(p.calendar_flexibility || "balanced");
           setCareRecipients(p.care_recipients || []);
@@ -109,6 +111,7 @@ export default function SettingsPage() {
             kate_proactivity: proactivity,
             kate_focus_areas: focusAreas,
             calendar_flexibility: calendarFlexibility,
+            health_history: healthHistory.trim() || null,
             care_recipients: careRecipients,
           },
         }),
@@ -205,6 +208,23 @@ export default function SettingsPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Health History */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
+          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
+            Your Health History
+          </h2>
+          <p className="text-xs text-[#7A7F8A] mb-4">
+            Tell Kate about your health background — conditions, surgeries, ongoing concerns, anything relevant. She&apos;ll use this to give you better, more personalized suggestions.
+          </p>
+          <textarea
+            value={healthHistory}
+            onChange={(e) => setHealthHistory(e.target.value)}
+            placeholder="e.g. I've had issues with my stomach for years, had knee surgery in 2023, currently managing high blood pressure..."
+            rows={4}
+            className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] resize-none"
+          />
         </div>
 
         {/* Care Recipients */}
