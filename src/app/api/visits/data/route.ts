@@ -20,6 +20,13 @@ export async function GET(req: Request) {
 
   const nowIso = new Date().toISOString();
 
+  // Fetch all active providers for calendar event matching
+  const { data: allProviders } = await supabaseAdmin
+    .from("providers")
+    .select("id, name, specialty, provider_type")
+    .eq("app_user_id", appUserId)
+    .eq("status", "active");
+
   // 1. Upcoming visits from calendar_events
   const { data: upcomingEvents } = await supabaseAdmin
     .from("calendar_events")
@@ -142,6 +149,42 @@ export async function GET(req: Request) {
           )
         );
 
+        // Build provider name lookup for matching calendar events to existing providers
+        const providerNameIndex = (allProviders ?? []).map((p) => ({
+          id: p.id,
+          name: p.name,
+          lower: p.name.toLowerCase(),
+          words: p.name.toLowerCase().split(/\s+/),
+        }));
+
+        function matchCalendarToProvider(eventSummary: string): { id: string; name: string } | null {
+          const lower = eventSummary.toLowerCase();
+          // Exact match
+          for (const p of providerNameIndex) {
+            if (lower.includes(p.lower) || p.lower.includes(lower)) return { id: p.id, name: p.name };
+          }
+          // Partial match: any two-word overlap
+          const eventWords = lower.split(/\s+/).filter((w) => w.length > 2);
+          for (const p of providerNameIndex) {
+            const matchCount = p.words.filter((w) => w.length > 2 && eventWords.some((ew) => ew.includes(w) || w.includes(ew))).length;
+            if (matchCount >= 2 || (p.words.length === 1 && matchCount >= 1)) return { id: p.id, name: p.name };
+          }
+          // Specialty keyword match: "eye appointment" → eye doctor provider
+          const specialtyMap: Record<string, RegExp> = {
+            "eye": /eye|vision|optom|ophthal/i,
+            "dental": /dent|dds|oral/i,
+            "therapy": /therap|psych|counsel|mental/i,
+            "derma": /derm|skin/i,
+          };
+          for (const [keyword, pattern] of Object.entries(specialtyMap)) {
+            if (lower.includes(keyword)) {
+              const match = providerNameIndex.find((p) => pattern.test(p.lower));
+              if (match) return { id: match.id, name: match.name };
+            }
+          }
+          return null;
+        }
+
         for (const event of gcalData.items || []) {
           const summary = event.summary || "";
           if (!HEALTH_PATTERN.test(summary)) continue;
@@ -157,18 +200,22 @@ export async function GET(req: Request) {
             ""
           );
 
+          // Try to match to an existing provider
+          const matched = matchCalendarToProvider(providerName);
+
           const dedupeKey = `${providerName.toLowerCase()}|${new Date(startAt).getTime()}`;
           if (existingKeys.has(dedupeKey)) continue;
           existingKeys.add(dedupeKey);
 
           upcoming.push({
             eventId: `gcal-${event.id || startAt}`,
-            providerId: "",
-            providerName,
+            providerId: matched?.id || "",
+            providerName: matched?.name || providerName,
             startAt,
             endAt,
             timezone: event.start?.timeZone || null,
-          });
+            needsProviderMatch: !matched,
+          } as any);
         }
 
         // Re-sort by start time

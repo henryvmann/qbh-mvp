@@ -17,6 +17,7 @@ type UpcomingVisit = {
   startAt: string | null;
   endAt: string | null;
   timezone: string | null;
+  needsProviderMatch?: boolean;
 };
 
 type PastVisit = {
@@ -138,21 +139,37 @@ function VisitsInner() {
               {upcoming.map((visit) => (
                 <div
                   key={visit.eventId}
-                  className="flex flex-col gap-2 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0] md:flex-row md:items-center md:justify-between"
+                  className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]"
                 >
-                  <div>
-                    <div className="font-semibold">
-                      {visit.providerId ? (
-                        <ProviderLink providerId={visit.providerId} providerName={visit.providerName} />
-                      ) : visit.providerName}
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <div className="font-semibold">
+                        {visit.providerId ? (
+                          <ProviderLink providerId={visit.providerId} providerName={visit.providerName} />
+                        ) : visit.providerName}
+                      </div>
+                      <div className="mt-1 text-sm text-[#7A7F8A]">
+                        {formatVisitDateTime(visit.startAt, visit.providerName)}
+                      </div>
                     </div>
-                    <div className="mt-1 text-sm text-[#7A7F8A]">
-                      {formatVisitDateTime(visit.startAt, visit.providerName)}
-                    </div>
+                    <span className="inline-flex items-center rounded-full bg-[#5C6B5C]/15 px-3 py-1 text-xs font-semibold text-[#5C6B5C] ring-1 ring-[#5C6B5C]/30">
+                      {visit.providerId ? "Confirmed" : "From Calendar"}
+                    </span>
                   </div>
-                  <span className="inline-flex items-center rounded-full bg-[#5C6B5C]/15 px-3 py-1 text-xs font-semibold text-[#5C6B5C] ring-1 ring-[#5C6B5C]/30">
-                    Confirmed
-                  </span>
+                  {visit.needsProviderMatch && !visit.providerId && (
+                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5">
+                      <span className="text-xs text-amber-700">
+                        Who is this appointment with?
+                      </span>
+                      <a
+                        href="/providers?add=true"
+                        className="rounded-lg px-3 py-1 text-xs font-semibold text-white"
+                        style={{ backgroundColor: "#5C6B5C" }}
+                      >
+                        Assign Provider
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
