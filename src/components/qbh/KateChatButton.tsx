@@ -220,7 +220,16 @@ export default function KateChatButton() {
                     : "bg-[#F0F2F5] text-[#1A1D2E] rounded-bl-md"
                 }`}
               >
-                {msg.content || (
+                {msg.content ? (
+                  <div
+                    className="whitespace-pre-wrap [&>p]:mb-2 [&>p:last-child]:mb-0"
+                    dangerouslySetInnerHTML={{
+                      __html: msg.content
+                        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                        .replace(/\n/g, "<br />"),
+                    }}
+                  />
+                ) : (
                   <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
                 )}
               </div>
