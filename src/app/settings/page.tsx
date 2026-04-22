@@ -21,24 +21,23 @@ type KateSettings = {
 };
 
 const COMM_STYLES = [
-  { value: "friend", label: "Like a friend", desc: "Casual, warm, conversational" },
+  { value: "friend", label: "Like a Friend", desc: "Casual, warm, conversational" },
   { value: "professional", label: "Professional", desc: "Clear, organized, to-the-point" },
-  { value: "expert", label: "Health expert", desc: "Detailed, thorough, educational" },
 ];
 
 const PROACTIVITY_LEVELS = [
-  { value: "proactive", label: "Stay on top of me", desc: "Daily insights, reminders, suggestions" },
+  { value: "proactive", label: "Stay On Top Of Me", desc: "Daily insights, reminders, and assistance" },
   { value: "balanced", label: "Balanced", desc: "Key updates and when things need attention" },
-  { value: "minimal", label: "I'll come to you", desc: "Only when I ask or something urgent" },
+  { value: "minimal", label: "I'll Come To You", desc: "Only when I ask for your help" },
 ];
 
 const FOCUS_AREAS = [
-  { value: "booking", label: "Booking appointments" },
-  { value: "history", label: "Medical history & records" },
-  { value: "prep", label: "Visit preparation" },
-  { value: "reminders", label: "Reminders & follow-ups" },
-  { value: "insights", label: "Health insights & connections" },
-  { value: "family", label: "Family/caregiver coordination" },
+  { value: "booking", label: "Booking Appointments" },
+  { value: "history", label: "Medical History & Records" },
+  { value: "prep", label: "Visit Preparation" },
+  { value: "reminders", label: "Reminders & Follow-ups" },
+  { value: "insights", label: "Health Insights & Connections" },
+  { value: "family", label: "Family/Caregiver Coordination" },
 ];
 
 export default function SettingsPage() {
@@ -115,6 +114,7 @@ export default function SettingsPage() {
         }),
       });
       setSaved(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       setTimeout(() => setSaved(false), 2000);
     } finally {
       setSaving(false);
@@ -333,122 +333,101 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* Nickname */}
+        {/* Kate Preferences — all in one card */}
         <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
           <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
-            What should Kate call you?
+            Kate Preferences
           </h2>
-          <p className="text-xs text-[#7A7F8A] mb-4">
-            Kate uses your full name for calls with offices, but this is how she&apos;ll greet you on the site.
+          <p className="text-xs text-[#7A7F8A] mb-5">
+            Customize how Kate works for you.
           </p>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="e.g. Jenny, Hank, Dr. J"
-            className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-          />
-        </div>
 
-        {/* Communication style */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
-          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
-            How should Kate talk to you?
-          </h2>
-          <p className="text-xs text-[#7A7F8A] mb-4">
-            This affects how Kate communicates in chat and insights.
-          </p>
-          <div className="space-y-2">
-            {COMM_STYLES.map((style) => (
-              <button
-                key={style.value}
-                onClick={() => setCommStyle(style.value)}
-                className={`w-full flex items-center gap-3 rounded-xl p-4 text-left transition ${
-                  commStyle === style.value
-                    ? "bg-[#5C6B5C]/10 border border-[#5C6B5C]"
-                    : "bg-[#F0F2F5] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
-                }`}
-              >
-                <div
-                  className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
-                    commStyle === style.value ? "border-[#5C6B5C]" : "border-[#B0B4BC]"
+          {/* Nickname */}
+          <div className="mb-5">
+            <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">What Should Kate Call You?</label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="e.g. Jenny, Hank, Dr. J"
+              className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+            />
+          </div>
+
+          {/* Communication style */}
+          <div className="border-t border-[#EBEDF0] pt-5 mb-5">
+            <label className="block text-xs font-medium text-[#7A7F8A] mb-2">How Should Kate Talk To You?</label>
+            <div className="flex gap-2">
+              {COMM_STYLES.map((style) => (
+                <button
+                  key={style.value}
+                  onClick={() => setCommStyle(style.value)}
+                  className={`flex-1 rounded-xl p-3 text-left transition ${
+                    commStyle === style.value
+                      ? "bg-[#5C6B5C]/10 border border-[#5C6B5C]"
+                      : "bg-[#F0F2F5] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
                   }`}
                 >
-                  {commStyle === style.value && (
-                    <div className="h-2 w-2 rounded-full bg-[#5C6B5C]" />
-                  )}
-                </div>
-                <div>
                   <div className="text-sm font-medium text-[#1A1D2E]">{style.label}</div>
                   <div className="text-xs text-[#7A7F8A]">{style.desc}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Proactivity */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
-          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
-            How involved should Kate be?
-          </h2>
-          <p className="text-xs text-[#7A7F8A] mb-4">
-            Controls how often Kate surfaces insights and suggestions.
-          </p>
-          <div className="space-y-2">
-            {PROACTIVITY_LEVELS.map((level) => (
-              <button
-                key={level.value}
-                onClick={() => setProactivity(level.value)}
-                className={`w-full flex items-center gap-3 rounded-xl p-4 text-left transition ${
-                  proactivity === level.value
-                    ? "bg-[#5C6B5C]/10 border border-[#5C6B5C]"
-                    : "bg-[#F0F2F5] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
-                }`}
-              >
-                <div
-                  className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
-                    proactivity === level.value ? "border-[#5C6B5C]" : "border-[#B0B4BC]"
-                  }`}
-                >
-                  {proactivity === level.value && (
-                    <div className="h-2 w-2 rounded-full bg-[#5C6B5C]" />
-                  )}
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-[#1A1D2E]">{level.label}</div>
-                  <div className="text-xs text-[#7A7F8A]">{level.desc}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Focus areas */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
-          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
-            What should Kate focus on?
-          </h2>
-          <p className="text-xs text-[#7A7F8A] mb-4">
-            Select what matters most to you. Kate will prioritize these areas.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {FOCUS_AREAS.map((area) => {
-              const selected = focusAreas.includes(area.value);
-              return (
-                <button
-                  key={area.value}
-                  onClick={() => toggleFocus(area.value)}
-                  className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${
-                    selected
-                      ? "bg-[#5C6B5C] text-white"
-                      : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
-                  }`}
-                >
-                  {area.label}
                 </button>
-              );
-            })}
+              ))}
+            </div>
+          </div>
+
+          {/* Proactivity */}
+          <div className="border-t border-[#EBEDF0] pt-5 mb-5">
+            <label className="block text-xs font-medium text-[#7A7F8A] mb-2">How Involved Should Kate Be?</label>
+            <div className="space-y-2">
+              {PROACTIVITY_LEVELS.map((level) => (
+                <button
+                  key={level.value}
+                  onClick={() => setProactivity(level.value)}
+                  className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition ${
+                    proactivity === level.value
+                      ? "bg-[#5C6B5C]/10 border border-[#5C6B5C]"
+                      : "bg-[#F0F2F5] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
+                  }`}
+                >
+                  <div
+                    className={`h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center ${
+                      proactivity === level.value ? "border-[#5C6B5C]" : "border-[#B0B4BC]"
+                    }`}
+                  >
+                    {proactivity === level.value && (
+                      <div className="h-2 w-2 rounded-full bg-[#5C6B5C]" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-[#1A1D2E]">{level.label}</div>
+                    <div className="text-xs text-[#7A7F8A]">{level.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Focus areas */}
+          <div className="border-t border-[#EBEDF0] pt-5">
+            <label className="block text-xs font-medium text-[#7A7F8A] mb-2">What Should Kate Focus On?</label>
+            <div className="flex flex-wrap gap-2">
+              {FOCUS_AREAS.map((area) => {
+                const selected = focusAreas.includes(area.value);
+                return (
+                  <button
+                    key={area.value}
+                    onClick={() => toggleFocus(area.value)}
+                    className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+                      selected
+                        ? "bg-[#5C6B5C] text-white"
+                        : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
+                    }`}
+                  >
+                    {area.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
