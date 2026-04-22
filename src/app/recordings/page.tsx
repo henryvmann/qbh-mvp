@@ -35,8 +35,22 @@ export default function RecordingsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [providers, setProviders] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedProvider, setSelectedProvider] = useState("");
 
   useEffect(() => {
+    apiFetch("/api/dashboard/data")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.ok) {
+          const provs = (data.snapshots || [])
+            .filter((s: any) => s.provider.provider_type !== "pharmacy")
+            .map((s: any) => ({ id: s.provider.id, name: s.provider.name }));
+          setProviders(provs);
+        }
+      })
+      .catch(() => {});
+
     apiFetch("/api/recordings")
       .then((res) => {
         if (res.status === 401) {
@@ -64,7 +78,8 @@ export default function RecordingsPage() {
     try {
       const formData = new FormData();
       formData.append("audio", file);
-      formData.append("title", file.name.replace(/\.[^/.]+$/, "") || "Visit Recording");
+      formData.append("title", selectedProvider ? `Recording — ${selectedProvider}` : file.name.replace(/\.[^/.]+$/, "") || "Visit Recording");
+      if (selectedProvider) formData.append("provider_name", selectedProvider);
 
       const res = await apiFetch("/api/recordings", {
         method: "POST",
@@ -131,6 +146,23 @@ export default function RecordingsPage() {
 
         {/* Upload area */}
         <div className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-8">
+          {/* Provider selector */}
+          {providers.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">Which provider is this recording from?</label>
+              <select
+                value={selectedProvider}
+                onChange={(e) => setSelectedProvider(e.target.value)}
+                className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              >
+                <option value="">Select a provider (optional)</option>
+                {providers.map((p) => (
+                  <option key={p.id} value={p.name}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div
             className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F0F2F5] p-10 transition hover:border-[#5C6B5C] hover:bg-[#5C6B5C]/5 cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
