@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import TopNav from "../../components/qbh/TopNav";
 import { apiFetch } from "../../lib/api";
+import NextSteps from "../../components/qbh/NextSteps";
 import { Plus, Trash2, Users } from "lucide-react";
 
 type CareRecipient = {
@@ -517,6 +518,7 @@ export default function SettingsPage() {
         >
           {saving ? "Saving..." : saved ? "Saved!" : "Save settings"}
         </button>
+        <NextSteps />
       </div>
     </main>
   );

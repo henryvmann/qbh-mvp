@@ -260,7 +260,7 @@ export default function KateChatButton() {
       </div>
 
       {/* Floating K button + label */}
-      <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2">
+      <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2" data-wizard="kate-chat">
         {!open && (
           <div className="rounded-xl bg-white px-3 py-1.5 text-xs font-medium text-[#1A1D2E] shadow-md border border-[#EBEDF0]">
             Let&apos;s chat

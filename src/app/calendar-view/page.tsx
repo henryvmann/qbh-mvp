@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Calendar, Link2, CheckCircle, XCircle } from "lucide-react";
 import TopNav from "../../components/qbh/TopNav";
+import NextSteps from "../../components/qbh/NextSteps";
 import { apiFetch } from "../../lib/api";
 
 /* ── Types ── */
@@ -482,6 +483,7 @@ export default function CalendarViewPage() {
             </p>
           </div>
         )}
+        <NextSteps />
       </div>
     </main>
   );

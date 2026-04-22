@@ -7,6 +7,7 @@ import TopNav from "../../components/qbh/TopNav";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import ProviderLink from "../../components/qbh/ProviderLink";
+import NextSteps from "../../components/qbh/NextSteps";
 import { Pencil, Trash2, X as XIcon } from "lucide-react";
 
 type UpcomingVisit = {
@@ -350,6 +351,7 @@ function VisitsInner() {
             )}
           </div>
         </section>
+        <NextSteps />
       </div>
     </main>
   );

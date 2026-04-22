@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
 import ProviderLink from "../../components/qbh/ProviderLink";
+import NextSteps from "../../components/qbh/NextSteps";
 import { Sparkles, Lightbulb, Target, Star as StarIcon, Trophy, Calendar } from "lucide-react";
 
 type TimelineEvent = {
@@ -301,6 +302,7 @@ export default function TimelinePage() {
             })()}
           </div>
         )}
+        <NextSteps />
       </div>
     </main>
   );

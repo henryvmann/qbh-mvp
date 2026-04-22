@@ -7,6 +7,7 @@ import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import HandleItButton from "../../components/qbh/HandleItButton";
+import NextSteps from "../../components/qbh/NextSteps";
 
 /* ---------- helpers ---------- */
 
@@ -585,6 +586,7 @@ export default function GoalsPage() {
           </section>
         )}
 
+        <NextSteps />
       </div>
     </main>
   );

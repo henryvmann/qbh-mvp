@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
+import NextSteps from "../../components/qbh/NextSteps";
 import { Plus, Trash2, Pill, Phone, RefreshCw } from "lucide-react";
 
 type Medication = {
@@ -382,6 +383,7 @@ export default function MedicationsPage() {
             </div>
           )}
         </section>
+        <NextSteps />
       </div>
     </main>
   );

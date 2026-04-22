@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
+import NextSteps from "../../components/qbh/NextSteps";
 import { Upload, Mic, FileAudio, Clock } from "lucide-react";
 
 type Recording = {
@@ -212,6 +213,7 @@ export default function RecordingsPage() {
             </div>
           )}
         </section>
+        <NextSteps />
       </div>
     </main>
   );

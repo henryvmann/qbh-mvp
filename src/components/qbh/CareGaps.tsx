@@ -101,13 +101,21 @@ export default function CareGaps() {
         }
       }
 
-      // Age-based care gap recommendations from patient profile
+      // Age and gender-based care gap recommendations from patient profile
       try {
         const profileRes = await apiFetch("/api/patient-profile");
         const profileData = await profileRes.json();
-        const dob = profileData?.profile?.date_of_birth;
+        const profile = profileData?.profile || {};
+        const dob = profile.date_of_birth;
+        const gender = (profile.gender || profile.sex || "").toLowerCase();
+        const isFemale = gender === "female" || gender === "f" ||
+          // Infer from existing providers — if they have an OB/GYN, likely female
+          /obgyn|ob\/gyn|gynecol|obstet|women.*health/.test(providerText);
+
         if (dob) {
           const age = Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+
+          // 45+ → GI / colonoscopy
           if (age >= 45 && !/gastro|colon/.test(providerText)) {
             detected.push({
               type: "gastro" as any,
@@ -117,21 +125,38 @@ export default function CareGaps() {
               searchTerm: "gastroenterologist",
             } as any);
           }
-          if (age >= 40 && !/mammo|breast|obgyn|ob\/gyn|gynecol/.test(providerText)) {
-            // Only suggest if user might be female (has OB/GYN gap)
-            const hasObgynGap = detected.some((g) => g.type === "obgyn");
-            if (!hasObgynGap) {
-              // They have an OB/GYN already, but check for mammogram provider
-              // Don't add — they already have an OB
-            }
-          }
+
+          // 50+ → Cardiologist
           if (age >= 50 && !/cardio|heart/.test(providerText)) {
             detected.push({
               type: "cardio" as any,
               label: "Cardiologist",
-              description: "Heart health checkups become more important over 50",
+              description: "Heart health becomes more important — consider having one on your team",
               iconKey: "pcp",
               searchTerm: "cardiologist",
+            } as any);
+          }
+
+          // Women 40+ → Mammogram / breast care
+          if (isFemale && age >= 40 && !/mammo|breast|oncol/.test(providerText)) {
+            detected.push({
+              type: "mammogram" as any,
+              label: "Breast Health",
+              description: "Ask your doctor about breast cancer screening",
+              iconKey: "obgyn",
+              searchTerm: "mammogram",
+            } as any);
+          }
+
+          // Women without OB/GYN (already handled above, but reinforce)
+          // Men 50+ → Urologist
+          if (!isFemale && age >= 50 && !/urol/.test(providerText)) {
+            detected.push({
+              type: "urology" as any,
+              label: "Urologist",
+              description: "Prostate health checkups are important — talk to your doctor",
+              iconKey: "pcp",
+              searchTerm: "urologist",
             } as any);
           }
         }

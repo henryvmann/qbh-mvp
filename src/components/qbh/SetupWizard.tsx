@@ -1,34 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 
-const WIZARD_STEPS = [
+type WizardStep = {
+  title: string;
+  body: string;
+  targetSelector: string; // CSS selector for the element to highlight
+  position: "top" | "bottom" | "center"; // where tooltip appears relative to target
+};
+
+const WIZARD_STEPS: WizardStep[] = [
   {
     title: "Welcome to Your Dashboard",
-    body: "This is your home base. You'll see your providers, what's overdue, and what Kate recommends next.",
-    page: "/dashboard",
+    body: "This is your home base. You'll see what needs attention, your providers, and what Kate recommends you do next.",
+    targetSelector: "[data-wizard='hero']",
+    position: "bottom",
+  },
+  {
+    title: "Kate's Suggestions",
+    body: "Kate watches your health data and makes suggestions here. Tap any suggestion to take action — or dismiss it.",
+    targetSelector: "[data-wizard='best-next-step']",
+    position: "bottom",
   },
   {
     title: "Your Providers",
-    body: "Tap any provider card to see their full details — contact info, visit history, notes, and more. Missing a doctor? Use the placeholder cards to add one.",
-    page: "/providers",
+    body: "See all your doctors below. Each provider name is clickable — tap it for full details, notes, and visit history.",
+    targetSelector: "[data-wizard='providers']",
+    position: "top",
   },
   {
     title: "Chat With Kate",
-    body: "Kate is your care coordinator. Tap the chat bubble in the bottom right to ask her anything — find a provider, prep for a visit, or organize your health.",
-    page: "/dashboard",
+    body: "Tap this bubble anytime to chat. Kate can search for new providers, help you prep for visits, and answer questions about your health care.",
+    targetSelector: "[data-wizard='kate-chat']",
+    position: "top",
   },
   {
-    title: "Your Health Timeline",
-    body: "Everything lives here — past visits, upcoming appointments, and provider history. It builds automatically as you use QB.",
-    page: "/timeline",
-  },
-  {
-    title: "Settings & Health History",
-    body: "Head to Settings to tell Kate your health background, update your insurance, and customize how Kate works for you.",
-    page: "/settings",
+    title: "What To Do Next",
+    body: "Every page ends with suggestions for where to go next. No dead ends — you'll always know the next step.",
+    targetSelector: "[data-wizard='next-steps']",
+    position: "top",
   },
 ];
 
@@ -39,16 +51,79 @@ export default function SetupWizard() {
   const [currentStep, setCurrentStep] = useState(0);
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const [highlightStyle, setHighlightStyle] = useState<React.CSSProperties>({});
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Only show on dashboard, only if not completed
     if (pathname !== "/dashboard") return;
     const done = localStorage.getItem(STORAGE_KEY);
     if (done) return;
-    // Small delay so the page renders first
     const timer = setTimeout(() => setVisible(true), 1500);
     return () => clearTimeout(timer);
   }, [pathname]);
+
+  const positionTooltip = useCallback(() => {
+    if (!visible || dismissed) return;
+    const step = WIZARD_STEPS[currentStep];
+    const target = document.querySelector(step.targetSelector);
+
+    if (!target) {
+      // Element not found — show centered
+      setHighlightStyle({ display: "none" });
+      setTooltipStyle({
+        position: "fixed",
+        bottom: "100px",
+        left: "50%",
+        transform: "translateX(-50%)",
+      });
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const padding = 8;
+
+    // Highlight the target element
+    setHighlightStyle({
+      position: "fixed",
+      top: rect.top - padding,
+      left: rect.left - padding,
+      width: rect.width + padding * 2,
+      height: rect.height + padding * 2,
+      borderRadius: "16px",
+      boxShadow: "0 0 0 4000px rgba(0,0,0,0.35)",
+      zIndex: 60,
+      pointerEvents: "none" as const,
+    });
+
+    // Scroll target into view
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Position tooltip
+    if (step.position === "bottom" || rect.top > window.innerHeight / 2) {
+      // Show above the element
+      setTooltipStyle({
+        position: "fixed",
+        bottom: `${window.innerHeight - rect.top + 16}px`,
+        left: "50%",
+        transform: "translateX(-50%)",
+      });
+    } else {
+      // Show below the element
+      setTooltipStyle({
+        position: "fixed",
+        top: `${rect.bottom + 16}px`,
+        left: "50%",
+        transform: "translateX(-50%)",
+      });
+    }
+  }, [currentStep, visible, dismissed]);
+
+  useEffect(() => {
+    positionTooltip();
+    window.addEventListener("resize", positionTooltip);
+    return () => window.removeEventListener("resize", positionTooltip);
+  }, [positionTooltip]);
 
   if (!visible || dismissed) return null;
 
@@ -71,12 +146,16 @@ export default function SetupWizard() {
 
   return (
     <>
-      {/* Overlay */}
-      <div className="fixed inset-0 z-[60] bg-black/30" />
+      {/* Highlight cutout */}
+      <div style={highlightStyle} />
 
-      {/* Tooltip card */}
-      <div className="fixed inset-x-0 bottom-24 z-[61] flex justify-center px-6">
-        <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-[#EBEDF0] overflow-hidden">
+      {/* Tooltip */}
+      <div
+        ref={tooltipRef}
+        className="z-[61] w-[calc(100%-48px)] max-w-md"
+        style={tooltipStyle}
+      >
+        <div className="rounded-2xl bg-white shadow-2xl border border-[#EBEDF0] overflow-hidden">
           {/* Progress bar */}
           <div className="h-1 bg-[#EBEDF0]">
             <div

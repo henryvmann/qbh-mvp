@@ -8,6 +8,7 @@ import { apiFetch } from "../../lib/api";
 import ProviderCard from "../../components/qbh/ProviderCard";
 import { Plus, Search, X, Check } from "lucide-react";
 import ProviderLink from "../../components/qbh/ProviderLink";
+import NextSteps from "../../components/qbh/NextSteps";
 import type { ProviderDashboardSnapshot } from "../lib/QBH/types";
 
 function getStatusLabel(snapshot: ProviderDashboardSnapshot): { label: string; className: string } {
@@ -563,6 +564,7 @@ function ProvidersInner() {
             })()}
           </>
         )}
+        <NextSteps />
       </div>
     </main>
   );

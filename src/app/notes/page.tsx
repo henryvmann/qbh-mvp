@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../lib/api";
 import TopNav from "../../components/qbh/TopNav";
+import NextSteps from "../../components/qbh/NextSteps";
 import { FileText, Plus, Trash2, MessageSquare, ChevronDown, ChevronRight } from "lucide-react";
 
 type PatientNote = {
@@ -326,6 +327,7 @@ export default function NotesPage() {
               </div>
             </div>
           )}
+          <NextSteps />
         </div>
       </main>
     </>

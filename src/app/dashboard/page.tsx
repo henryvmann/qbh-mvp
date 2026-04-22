@@ -336,7 +336,7 @@ function DashboardInner() {
         </div>
 
         {/* ── Best Next Step ── */}
-        <div className="px-7">
+        <div className="px-7" data-wizard="best-next-step">
           <BestNextStep />
         </div>
 
@@ -358,7 +358,7 @@ function DashboardInner() {
         </Link>
 
         {/* ── 3. Hero Section ── */}
-        <div className="mt-3 px-7">
+        <div className="mt-3 px-7" data-wizard="hero">
           {providerCount === 0 ? (
             <>
               <div className="text-3xl font-light text-[#1A1D2E]">
@@ -494,7 +494,7 @@ function DashboardInner() {
         <CareGaps />
 
         {/* ── 7. Provider List ── */}
-        <div className="mt-10 px-7">
+        <div className="mt-10 px-7" data-wizard="providers">
           <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
             YOUR PROVIDERS
           </div>
@@ -599,7 +599,7 @@ function DashboardInner() {
       </div>
 
       {/* ── What To Do Next ── */}
-      <div className="mt-10 px-7 pb-8">
+      <div className="mt-10 px-7 pb-8" data-wizard="next-steps">
         <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-4">
           What To Do Next
         </div>
