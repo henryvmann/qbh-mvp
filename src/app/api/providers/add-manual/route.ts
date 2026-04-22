@@ -2,11 +2,16 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const appUserId = String(body?.app_user_id || "").trim();
+    // Support both body-provided and session-based app_user_id
+    let appUserId = String(body?.app_user_id || "").trim();
+    if (!appUserId) {
+      appUserId = await getSessionAppUserId(req) || "";
+    }
     const name = String(body?.name || "").trim();
     const phone = String(body?.phone_number || "").trim() || null;
     const specialty = String(body?.specialty || "").trim() || null;

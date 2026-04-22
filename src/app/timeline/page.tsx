@@ -192,24 +192,43 @@ export default function TimelinePage() {
             </p>
           </div>
         ) : (
-          <div className="relative mt-8">
-            {/* Timeline line */}
-            <div className="absolute left-4 top-0 bottom-0 w-px bg-[#EBEDF0]" />
+          <div className="mt-8 space-y-6">
+            {(() => {
+              // Group events by year
+              const byYear = new Map<string, typeof filtered>();
+              const futureGroup: typeof filtered = [];
+              for (const event of filtered) {
+                if (new Date(event.date) >= now) {
+                  futureGroup.push(event);
+                } else {
+                  const year = new Date(event.date).getFullYear().toString();
+                  if (!byYear.has(year)) byYear.set(year, []);
+                  byYear.get(year)!.push(event);
+                }
+              }
 
-            <div className="space-y-4">
-              {filtered.map((event) => {
-                const cfg = tagConfig[event.eventType] ?? tagConfig.discovered;
-                const isFuture = new Date(event.date) >= now;
-                const relative = getRelativeDate(event.date);
-                const isExpanded = expandedId === event.id;
+              const yearSections: Array<{ label: string; events: typeof filtered }> = [];
+              if (futureGroup.length > 0) yearSections.push({ label: "Upcoming", events: futureGroup });
+              for (const [year, yearEvents] of byYear) {
+                yearSections.push({ label: year, events: yearEvents });
+              }
 
-                return (
-                  <div key={event.id} className="relative pl-12">
-                    {/* Timeline dot */}
-                    <div
-                      className={`absolute left-2.5 top-6 h-3 w-3 rounded-full ring-2 ${isFuture ? "ring-[#C2D9B8]" : "ring-white"}`}
-                      style={{ backgroundColor: cfg.dot }}
-                    />
+              return yearSections.map((section) => (
+                <div key={section.label}>
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="text-sm font-bold text-[#5C6B5C]">{section.label}</span>
+                    <span className="text-xs text-[#B0B4BC]">{section.events.length} event{section.events.length !== 1 ? "s" : ""}</span>
+                    <div className="flex-1 h-px bg-[#EBEDF0]" />
+                  </div>
+                  <div className="space-y-3">
+                    {section.events.map((event) => {
+                      const cfg = tagConfig[event.eventType] ?? tagConfig.discovered;
+                      const isFuture = new Date(event.date) >= now;
+                      const relative = getRelativeDate(event.date);
+                      const isExpanded = expandedId === event.id;
+
+                      return (
+                        <div key={event.id}>
 
                     <div
                       className={`rounded-2xl bg-white shadow-sm border transition cursor-pointer hover:shadow-md ${
@@ -273,10 +292,13 @@ export default function TimelinePage() {
                         </div>
                       )}
                     </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              ));
+            })()}
           </div>
         )}
       </div>

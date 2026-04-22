@@ -163,111 +163,83 @@ function CalendarConnectPageInner() {
           <div className="text-xs text-[#B0B4BC]">Calendar</div>
         </header>
 
-        <section className="mt-12">
-          <h1 className="text-4xl tracking-tight sm:text-5xl">
+        <section className="mt-10">
+          <h1 className="text-3xl font-light tracking-tight">
             Connect Your Calendar
           </h1>
-
-          <p className="mt-4 max-w-2xl text-lg text-[#7A7F8A]">
-            Connect your calendar so Quarterback can avoid conflicts, understand
-            your real availability, and schedule safely on your behalf.
+          <p className="mt-2 text-base text-[#7A7F8A]">
+            Kate checks your calendar before booking so appointments never conflict.
           </p>
 
-          <div className="mt-10 rounded-2xl bg-white shadow-sm p-8 border border-[#EBEDF0]">
-            <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr]">
-              <div>
-                <div className="text-sm font-medium text-[#1A1D2E]">
-                  Why this matters
-                </div>
-
-                <div className="mt-4 space-y-4 text-sm text-[#7A7F8A]">
-                  <div className="rounded-2xl bg-[#F0F2F5] px-4 py-3">
-                    QBH uses your calendar to avoid proposing or confirming
-                    appointment times that conflict with your day.
-                  </div>
-
-                  <div className="rounded-2xl bg-[#F0F2F5] px-4 py-3">
-                    Access is read-only. QBH reads calendar availability so it
-                    can protect your schedule before booking starts.
-                  </div>
-
-                  <div className="rounded-2xl bg-[#F0F2F5] px-4 py-3">
-                    You can connect this now or come back later. QBH works best
-                    when it has real availability context.
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex flex-col justify-between rounded-2xl border border-[#EBEDF0] bg-[#F0F2F5] p-6">
-                  <div>
-                    <div className="text-sm font-medium text-[#1A1D2E]">
-                      Google Calendar
-                    </div>
-                    <div className="mt-2 text-sm text-[#7A7F8A]">
-                      Read-only calendar access for conflict-aware scheduling.
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    {googleConnected ? (
-                      <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
-                        Connected &#10003;
-                      </div>
-                    ) : (
-                      <button
-                        onClick={startGoogleCalendarConnect}
-                        disabled={!userId || submitting || submittingOutlook}
-                        className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
-                        style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
-                      >
-                        {submitting
-                          ? "Redirecting to Google..."
-                          : "Connect Google Calendar"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-col justify-between rounded-2xl border border-[#EBEDF0] bg-[#F0F2F5] p-6">
-                  <div>
-                    <div className="text-sm font-medium text-[#1A1D2E]">
-                      Outlook Calendar
-                    </div>
-                    <div className="mt-2 text-sm text-[#7A7F8A]">
-                      Read-only calendar access for conflict-aware scheduling.
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    {outlookConnected ? (
-                      <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
-                        Connected &#10003;
-                      </div>
-                    ) : (
-                      <button
-                        onClick={startOutlookCalendarConnect}
-                        disabled={!userId || submitting || submittingOutlook}
-                        className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
-                        style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
-                      >
-                        {submittingOutlook
-                          ? "Redirecting to Microsoft..."
-                          : "Connect Outlook Calendar"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <Link
-                  href="/dashboard"
-                  className="block text-center text-sm text-[#B0B4BC] underline underline-offset-4"
-                >
-                  Return to dashboard
-                </Link>
-              </div>
+          {/* Visual — what happens */}
+          <div className="mt-8 grid grid-cols-3 gap-4 text-center">
+            <div className="rounded-xl bg-white border border-[#EBEDF0] p-4">
+              <div className="text-2xl mb-2">1</div>
+              <div className="text-xs font-medium text-[#1A1D2E]">Connect</div>
+              <div className="text-[10px] text-[#7A7F8A] mt-1">One click to link your calendar</div>
+            </div>
+            <div className="rounded-xl bg-white border border-[#EBEDF0] p-4">
+              <div className="text-2xl mb-2">2</div>
+              <div className="text-xs font-medium text-[#1A1D2E]">Kate Checks</div>
+              <div className="text-[10px] text-[#7A7F8A] mt-1">She reads your free/busy times</div>
+            </div>
+            <div className="rounded-xl bg-white border border-[#EBEDF0] p-4">
+              <div className="text-2xl mb-2">3</div>
+              <div className="text-xs font-medium text-[#1A1D2E]">No Conflicts</div>
+              <div className="text-[10px] text-[#7A7F8A] mt-1">Appointments booked around your schedule</div>
             </div>
           </div>
+
+          <div className="mt-3 text-center text-[10px] text-[#B0B4BC]">
+            Read-only access &middot; Your data stays private
+          </div>
+
+          {/* Calendar buttons */}
+          <div className="mt-8 space-y-4">
+            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-6">
+              <div className="text-sm font-medium text-[#1A1D2E] mb-3">Google Calendar</div>
+              {googleConnected ? (
+                <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
+                  Connected &#10003;
+                </div>
+              ) : (
+                <button
+                  onClick={startGoogleCalendarConnect}
+                  disabled={!userId || submitting || submittingOutlook}
+                  className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                >
+                  {submitting ? "Redirecting..." : "Connect Google Calendar"}
+                </button>
+              )}
+            </div>
+
+            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-6">
+              <div className="text-sm font-medium text-[#1A1D2E] mb-3">Outlook Calendar</div>
+              {outlookConnected ? (
+                <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
+                  Connected &#10003;
+                </div>
+              ) : (
+                <button
+                  onClick={startOutlookCalendarConnect}
+                  disabled={!userId || submitting || submittingOutlook}
+                  className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                >
+                  {submittingOutlook ? "Redirecting..." : "Connect Outlook Calendar"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Return button — prominent */}
+          <Link
+            href="/dashboard"
+            className="mt-6 block w-full rounded-2xl border border-[#EBEDF0] bg-white px-6 py-3 text-center text-sm font-medium text-[#7A7F8A] shadow-sm transition hover:bg-[#F0F2F5]"
+          >
+            Return To Dashboard
+          </Link>
 
           {error ? (
             <div className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">

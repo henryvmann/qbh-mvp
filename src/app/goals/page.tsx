@@ -446,16 +446,27 @@ export default function GoalsPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {sections.map((section) => (
+            {sections.map((section) => {
+              const completed = section.items.filter((g) => g.progress >= 100);
+              const outstanding = section.items.filter((g) => g.progress < 100);
+
+              return (
               <section key={section.category}>
                 <h2
                   className="mb-3 text-sm font-semibold uppercase tracking-wider"
                   style={{ color: section.config.color }}
                 >
                   {section.config.sectionTitle}
+                  {completed.length > 0 && (
+                    <span className="ml-2 text-xs font-normal text-[#B0B4BC]">
+                      {completed.length} completed
+                    </span>
+                  )}
                 </h2>
+
+                {/* Outstanding goals first */}
                 <div className="space-y-3">
-                  {section.items.map((goal) => {
+                  {outstanding.map((goal) => {
                     const goalLink = getGoalLink(goal);
                     return (
                     <div
@@ -526,8 +537,31 @@ export default function GoalsPage() {
                     );
                   })}
                 </div>
+
+                {/* Completed goals — collapsed */}
+                {completed.length > 0 && (
+                  <div className="mt-3">
+                    <div className="text-xs text-[#B0B4BC] font-medium mb-2">Completed</div>
+                    <div className="space-y-2">
+                      {completed.map((goal) => (
+                        <div
+                          key={goal.id}
+                          className="flex items-center gap-3 rounded-xl bg-[#F0F2F5] px-4 py-2.5 border border-[#EBEDF0]"
+                        >
+                          <div className="h-5 w-5 rounded-full bg-[#5C6B5C] flex items-center justify-center shrink-0">
+                            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 8.5L6.5 12L13 4" />
+                            </svg>
+                          </div>
+                          <span className="text-sm text-[#7A7F8A] line-through">{goal.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </section>
-            ))}
+              );
+            })}
           </div>
         )}
 

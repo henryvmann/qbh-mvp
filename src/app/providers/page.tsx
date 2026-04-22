@@ -132,14 +132,17 @@ function AddProviderForm({
     return () => clearTimeout(timer);
   }, [query]);
 
+  const [addError, setAddError] = useState<string | null>(null);
+
   async function handleAdd(result: NpiResult) {
     setAdding(result.name);
+    setAddError(null);
     try {
       const res = await apiFetch("/api/providers/add-manual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          app_user_id: userId,
+          ...(userId ? { app_user_id: userId } : {}),
           name: result.name,
           phone_number: result.phone,
           specialty: result.specialty,
@@ -150,9 +153,11 @@ function AddProviderForm({
       if (data.ok) {
         setAdded((prev) => new Set([...prev, result.name]));
         onAdded();
+      } else {
+        setAddError(data.error || "Failed to add provider");
       }
     } catch {
-      // best effort
+      setAddError("Network error — please try again");
     } finally {
       setAdding(null);
     }
@@ -222,6 +227,12 @@ function AddProviderForm({
         {query.length >= 2 && !searching && results.length === 0 && (
           <div className="py-4 text-center text-xs text-[#7A7F8A]">
             No results found. Try a different search term.
+          </div>
+        )}
+
+        {addError && (
+          <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 ring-1 ring-red-200">
+            {addError}
           </div>
         )}
       </div>
