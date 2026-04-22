@@ -263,12 +263,10 @@ function ProvidersInner() {
     loadData();
   }, [loadData]);
 
-  // Auto-open add form if ?add=true is in URL
+  // Auto-open add form if ?add=true is in URL (search bar always starts blank)
   useEffect(() => {
     if (searchParams.get("add") === "true") {
       setShowAddForm(true);
-      const search = searchParams.get("search") || "";
-      if (search) setInitialSearch(search);
     }
   }, [searchParams]);
 

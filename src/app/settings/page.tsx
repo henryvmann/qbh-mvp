@@ -177,15 +177,28 @@ export default function SettingsPage() {
                 className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
               />
             </div>
-            <div>
+            <div className="relative">
               <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Insurance Provider</label>
               <input
                 type="text"
                 value={insuranceProvider}
                 onChange={(e) => setInsuranceProvider(e.target.value)}
-                placeholder="e.g. Aetna, Blue Cross, United"
+                placeholder="Start typing your insurance..."
+                autoComplete="off"
+                list="insurance-providers"
                 className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
               />
+              <datalist id="insurance-providers">
+                {["Aetna", "Anthem", "Blue Cross Blue Shield", "Cigna", "Humana",
+                  "Kaiser Permanente", "Medicaid", "Medicare", "Molina Healthcare",
+                  "Oscar Health", "Oxford", "United Healthcare", "WellCare",
+                  "Ambetter", "Centene", "CareFirst", "EmblemHealth", "Excellus",
+                  "Florida Blue", "Geisinger", "Harvard Pilgrim", "Health Net",
+                  "Highmark", "Horizon BCBS", "Independence Blue Cross",
+                  "Medical Mutual", "Premera Blue Cross", "Priority Health",
+                  "Regence", "SelectHealth", "Tufts Health Plan", "TRICARE",
+                ].map((ins) => <option key={ins} value={ins} />)}
+              </datalist>
             </div>
             <div>
               <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Member / Policy Number</label>

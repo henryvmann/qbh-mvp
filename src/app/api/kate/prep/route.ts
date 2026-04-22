@@ -95,33 +95,44 @@ export async function POST(req: NextRequest) {
   try {
     const context = await buildPrepContext(appUserId, providerId);
 
-    const prompt = `You are Kate, a healthcare assistant. Generate a pre-appointment preparation report for the user's upcoming visit.
+    const visitCount = context.providerVisits.length;
+    const isRecurring = visitCount >= 4;
+    const isFirstVisit = visitCount === 0;
+    const healthHistory = context.profile.health_history || "";
+
+    const prompt = `You are Kate, a care coordinator. Generate a HIGHLY CONTEXTUAL pre-appointment preparation report.
 
 Context:
 ${JSON.stringify(context, null, 2)}
+${healthHistory ? `\nPatient's health history: ${healthHistory}` : ""}
+
+This patient has visited this provider ${visitCount} time(s).
+${isRecurring ? "This is a RECURRING provider (like a therapist or regular doctor). Do NOT suggest bringing an insurance card or arriving early for paperwork — they've been here many times." : ""}
+${isFirstVisit ? "This appears to be a FIRST VISIT. Include new patient prep items." : ""}
 
 Generate a JSON response with:
 {
   "provider_name": "Name of the provider/doctor",
   "appointment_date": "Date if known, or null",
-  "visit_type": "What type of visit this likely is (e.g., annual checkup, follow-up, specialist consultation)",
-  "history_summary": "1-2 sentence summary of past visits with this provider based on available data. Be honest if data is limited.",
-  "related_care": "How this visit connects to other providers/care the patient is receiving. If no clear connections, say so.",
-  "questions_to_ask": ["Array of 4-6 specific, useful questions the patient should consider asking their doctor. Make them relevant to the provider type and specialty."],
-  "things_to_bring": ["Array of items to bring (e.g., insurance card, medication list, previous test results, specific concerns)"],
-  "prep_notes": "Any preparation advice (fasting, arriving early for paperwork, etc.)",
-  "kate_note": "A brief encouraging personal note from Kate"
+  "visit_type": "What type of visit this likely is",
+  "history_summary": "1-2 sentence summary. If limited data, say 'Tell us more about this provider for better prep next time.'",
+  "related_care": "How this visit connects to other providers. Only include if there's a real connection — otherwise omit.",
+  "questions_to_ask": ["2-4 SPECIFIC questions relevant to this provider type, visit history, and patient's health background. NOT generic questions."],
+  "things_to_bring": ["Only items actually relevant. For recurring visits, skip obvious items like insurance card."],
+  "prep_notes": "ONLY include if genuinely applicable (e.g., fasting for blood work). For routine or recurring visits, leave empty string.",
+  "kate_note": "Brief warm note from Kate (1 sentence)"
 }
 
-Rules:
-- Be specific and practical, not generic
-- If data is limited, acknowledge it: "Based on what I know so far..."
-- Questions should be genuinely useful for this type of provider
-- Include at least one question about follow-ups or preventive care
-- The kate_note should be warm and brief (1 sentence)`;
+CRITICAL RULES:
+- If you don't have enough information to be specific, return FEWER items rather than generic ones
+- NEVER suggest "arrive 15 minutes early for paperwork" for a provider they see regularly
+- NEVER suggest "bring insurance card" for a recurring provider
+- Questions should reference their actual health history or provider specialty when possible
+- If no useful questions can be generated, return an empty array with a note to "tell Kate more about this provider for better prep"
+- Empty/null fields are better than generic filler`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       temperature: 0.6,
       response_format: { type: "json_object" },
       messages: [{ role: "user", content: prompt }],
