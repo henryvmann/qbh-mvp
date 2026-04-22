@@ -140,6 +140,11 @@ export async function GET(req: Request) {
       ? (appUser.patient_profile as Record<string, unknown>)
       : {};
 
+  // Check dismissed provider types ("I don't have one")
+  const dismissedTypes = Array.isArray(patientProfile.dismissed_provider_types)
+    ? (patientProfile.dismissed_provider_types as string[])
+    : [];
+
   // --- Generate goals ---
 
   let hasDental = false;
@@ -234,15 +239,16 @@ export async function GET(req: Request) {
   }
 
   // Rule 3: Dental checkup
-  if (!hasDental) {
+  if (!hasDental && !dismissedTypes.includes("dentist")) {
     goals.push({
       id: "dental-checkup",
       title: "Schedule dental checkup",
       category: "preventive",
       progress: 0,
       detail: "No dentist found in your providers. Add one so Kate can help you stay on top of visits.",
-    });
-  } else {
+      dismissKey: "dentist",
+    } as any);
+  } else if (hasDental) {
     // Check if any dental provider has a visit in the last 6 months
     const dentalProviders = providerRows.filter((p) =>
       nameMatches(p.name, DENTAL_KEYWORDS)
@@ -266,15 +272,16 @@ export async function GET(req: Request) {
   }
 
   // Rule 4: Eye exam
-  if (!hasEye) {
+  if (!hasEye && !dismissedTypes.includes("eye")) {
     goals.push({
       id: "eye-exam",
       title: "Schedule eye exam",
       category: "preventive",
       progress: 0,
       detail: "No eye care provider found. Add one so Kate can help you track appointments.",
-    });
-  } else {
+      dismissKey: "eye",
+    } as any);
+  } else if (hasEye) {
     const eyeProviders = providerRows.filter((p) =>
       nameMatches(p.name, EYE_KEYWORDS)
     );

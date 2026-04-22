@@ -69,6 +69,7 @@ type Goal = {
   detail: string;
   providerName?: string;
   providerId?: string;
+  dismissKey?: string;
 };
 
 type UserGoal = {
@@ -523,6 +524,31 @@ export default function GoalsPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                               </svg>
                             </Link>
+                          )}
+                          {goal.dismissKey && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const profileRes = await apiFetch("/api/patient-profile");
+                                  const profileData = await profileRes.json();
+                                  const existing = profileData?.profile?.dismissed_provider_types || [];
+                                  await apiFetch("/api/patient-profile", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      profile: {
+                                        dismissed_provider_types: [...existing, goal.dismissKey],
+                                      },
+                                    }),
+                                  });
+                                  fetchGoals();
+                                } catch {}
+                              }}
+                              className="mt-2 text-xs text-[#B0B4BC] hover:text-[#7A7F8A] underline underline-offset-2"
+                            >
+                              I don&apos;t have one
+                            </button>
                           )}
                         </div>
                         {(goal.progress > 0 || goal.category === "setup") && (
