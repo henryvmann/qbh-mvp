@@ -121,13 +121,93 @@ export default function TimelinePage() {
                       Upcoming
                     </span>
                   </div>
-                  {evt.needsProviderMatch && (
-                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5">
-                      <span className="text-xs text-amber-700">Who is this appointment with?</span>
-                      <a href="/providers?add=true" className="rounded-lg px-3 py-1 text-xs font-semibold text-white" style={{ backgroundColor: "#5C6B5C" }}>
-                        Assign Provider
-                      </a>
-                    </div>
+                  {evt.needsProviderMatch && !addedProviders.has(evt.id) && (
+                    addingProvider === evt.id ? (
+                      <div className="mt-3 space-y-2">
+                        <input
+                          type="text"
+                          value={addProviderName}
+                          onChange={(e) => setAddProviderName(e.target.value)}
+                          placeholder="Provider name (e.g. Dr. Echelman)"
+                          className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                        />
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={addProviderSpecialty}
+                            onChange={(e) => setAddProviderSpecialty(e.target.value)}
+                            placeholder="Specialty (optional)"
+                            className="flex-1 rounded-lg border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                          />
+                          <input
+                            type="tel"
+                            value={addProviderPhone}
+                            onChange={(e) => setAddProviderPhone(e.target.value)}
+                            placeholder="Phone (optional)"
+                            className="flex-1 rounded-lg border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={!addProviderName.trim() || savingProvider}
+                            onClick={async () => {
+                              setSavingProvider(true);
+                              try {
+                                const res = await apiFetch("/api/providers/add-manual", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    name: addProviderName.trim(),
+                                    specialty: addProviderSpecialty.trim() || null,
+                                    phone_number: addProviderPhone.trim() || null,
+                                  }),
+                                });
+                                const data = await res.json();
+                                if (data.ok) {
+                                  setAddedProviders((prev) => new Set([...prev, evt.id]));
+                                  setAddingProvider(null);
+                                  setAddProviderName("");
+                                  setAddProviderSpecialty("");
+                                  setAddProviderPhone("");
+                                }
+                              } finally {
+                                setSavingProvider(false);
+                              }
+                            }}
+                            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                            style={{ backgroundColor: "#5C6B5C" }}
+                          >
+                            {savingProvider ? "Adding..." : "Add Provider"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAddingProvider(null)}
+                            className="rounded-lg px-3 py-1.5 text-xs text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddProviderName(evt.providerName);
+                          setAddProviderSpecialty("");
+                          setAddProviderPhone("");
+                          setAddingProvider(evt.id);
+                        }}
+                        className="mt-3 inline-flex items-center gap-1 rounded-lg bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 transition"
+                      >
+                        Add As Provider
+                      </button>
+                    )
+                  )}
+                  {addedProviders.has(evt.id) && (
+                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                      ✓ Added
+                    </span>
                   )}
                 </div>
               ))}
