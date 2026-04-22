@@ -296,17 +296,7 @@ export async function GET(req: Request) {
     }
   }
 
-  // Rule 5: Calendar not connected
-  if (!calIntegration) {
-    goals.push({
-      id: "connect-calendar",
-      title: "Connect calendar for smarter booking",
-      category: "setup",
-      progress: 0,
-      detail:
-        "Link your calendar so QBH can check availability and confirm appointments automatically.",
-    });
-  }
+  // Calendar connection removed from goals — handled on calendar page
 
   // Rule 6: Incomplete health profile
   const profileFields = [
