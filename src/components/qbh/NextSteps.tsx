@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import KatePageInsight from "./KatePageInsight";
 
 type NextStep = {
   href: string;
@@ -61,8 +60,7 @@ export default function NextSteps() {
 
   return (
     <div className="mt-10 pb-8">
-      <KatePageInsight />
-      <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-4 mt-6">
+      <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-4">
         What To Do Next
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
