@@ -50,7 +50,7 @@ Each goal should be:
 
 The user's current providers: ${providerNames || "none listed yet"}
 
-Return JSON: { "goals": [{ "title": "short goal title", "detail": "one sentence explaining what QB will help with" }] }
+Return JSON: { "response": "A 1-2 sentence warm response from Kate acknowledging what the user wants and explaining how QB can help. Be specific to their input.", "goals": [{ "title": "short goal title", "detail": "one sentence explaining what QB will help with" }] }
 
 Examples of GOOD goals (care coordination):
 - "Add your primary care doctor" — "Having your PCP on file lets Kate help manage your visits."
@@ -79,7 +79,7 @@ NEVER prescribe visit frequencies, health habits, lifestyle changes, or screenin
     }
 
     const parsed = JSON.parse(content);
-    return NextResponse.json({ ok: true, goals: parsed.goals || [] });
+    return NextResponse.json({ ok: true, goals: parsed.goals || [], response: parsed.response || null });
   } catch (err) {
     console.error("[goals/suggest] error:", err);
     return NextResponse.json({ ok: false, error: "Failed to generate suggestions" }, { status: 500 });

@@ -28,7 +28,6 @@ const NAV_LINKS = [
   { label: "Calendar", href: "/calendar-view" },
   { label: "Timeline", href: "/timeline" },
   { label: "Goals", href: "/goals" },
-  { label: "Notes", href: "/notes" },
   { label: "Progress", href: "/analytics" },
 ];
 

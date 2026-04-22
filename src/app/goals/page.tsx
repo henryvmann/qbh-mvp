@@ -222,6 +222,7 @@ export default function GoalsPage() {
   const [newGoalText, setNewGoalText] = useState("");
   const [addingGoal, setAddingGoal] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<Array<{ title: string; detail: string }>>([]);
+  const [kateResponse, setKateResponse] = useState<string | null>(null);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const fetchGoals = useCallback(() => {
@@ -276,6 +277,7 @@ export default function GoalsPage() {
     if (!input || loadingSuggestions) return;
     setLoadingSuggestions(true);
     setAiSuggestions([]);
+    setKateResponse(null);
     try {
       const res = await apiFetch("/api/goals/suggest", {
         method: "POST",
@@ -283,8 +285,9 @@ export default function GoalsPage() {
         body: JSON.stringify({ input }),
       });
       const json = await res.json();
-      if (json?.ok && json.goals) {
-        setAiSuggestions(json.goals);
+      if (json?.ok) {
+        if (json.goals) setAiSuggestions(json.goals);
+        if (json.response) setKateResponse(json.response);
       }
     } catch {
       // Non-critical
@@ -348,15 +351,7 @@ export default function GoalsPage() {
 
         <div className="mt-4" />
 
-        {/* Hero Health Score */}
-        {goals.length > 0 ? (
-          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
-            <HeroGauge score={healthScore} />
-            <p className="text-center text-sm text-[#7A7F8A] mt-2">
-              {onTrackCount} of {goals.length} goal{goals.length !== 1 ? "s" : ""} on track
-            </p>
-          </div>
-        ) : (
+        {goals.length === 0 && (
           <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6 text-center">
             <p className="text-lg font-light text-[#1A1D2E]">No goals set yet</p>
             <p className="mt-1 text-sm text-[#7A7F8A]">Tell Kate what you want to work on below and she&apos;ll help you get organized.</p>
@@ -393,11 +388,18 @@ export default function GoalsPage() {
             </button>
           </div>
 
+          {/* Kate's response */}
+          {kateResponse && (
+            <div className="mt-4 rounded-xl bg-[#5C6B5C]/10 border border-[#5C6B5C]/20 p-4">
+              <p className="text-sm text-[#1A1D2E]">{kateResponse}</p>
+            </div>
+          )}
+
           {/* AI Suggestions */}
           {aiSuggestions.length > 0 && (
             <div className="mt-4 space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C]">
-                Kate suggests
+                Kate Suggests
               </p>
               {aiSuggestions.map((s, i) => (
                 <div

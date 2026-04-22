@@ -168,7 +168,6 @@ export default function TimelinePage() {
             { value: "future", label: "Upcoming" },
             { value: "past", label: "Past" },
             { value: "visit", label: "Visits" },
-            { value: "upcoming", label: "Upcoming" },
             { value: "booked", label: "Booked" },
           ].map((f) => (
             <button

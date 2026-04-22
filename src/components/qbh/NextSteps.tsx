@@ -28,12 +28,7 @@ const PAGE_NEXT_STEPS: Record<string, NextStep[]> = {
   "/timeline": [
     { href: "/visits", title: "Visits", description: "Upcoming and past appointments" },
     { href: "/providers", title: "Providers", description: "Your care team" },
-    { href: "/notes", title: "Notes", description: "Add health notes and reminders" },
-  ],
-  "/notes": [
-    { href: "/providers", title: "Providers", description: "See provider details and history" },
-    { href: "/visits", title: "Visits", description: "Your appointment history" },
-    { href: "/dashboard", title: "Dashboard", description: "Back to your home base" },
+    { href: "/settings", title: "Settings", description: "Update your profile and preferences" },
   ],
   "/settings": [
     { href: "/providers", title: "Providers", description: "Manage your care team" },
@@ -42,16 +37,16 @@ const PAGE_NEXT_STEPS: Record<string, NextStep[]> = {
   ],
   "/calendar-view": [
     { href: "/visits", title: "Visits", description: "See all appointments" },
-    { href: "/calendar-connect", title: "Connect Calendar", description: "Link Google or Outlook" },
     { href: "/providers", title: "Providers", description: "Your care team" },
+    { href: "/dashboard", title: "Dashboard", description: "Back to your home base" },
   ],
   "/medications": [
     { href: "/providers", title: "Providers", description: "Who prescribed what" },
-    { href: "/notes", title: "Notes", description: "Track medication changes" },
+    { href: "/settings", title: "Settings", description: "Update your health profile" },
     { href: "/dashboard", title: "Dashboard", description: "Back to your home base" },
   ],
   "/recordings": [
-    { href: "/notes", title: "Notes", description: "Add written notes too" },
+    { href: "/settings", title: "Settings", description: "Update your profile" },
     { href: "/providers", title: "Providers", description: "See provider details" },
     { href: "/dashboard", title: "Dashboard", description: "Back to your home base" },
   ],

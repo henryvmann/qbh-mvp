@@ -33,7 +33,7 @@ const STEP1_OPTIONS = [
   "My medications",
   "My test results",
   "My health",
-  "Medical history",
+  "My medical history",
   "All of the above",
 ];
 
@@ -650,10 +650,10 @@ export default function OnboardingPage() {
       <Shell>
         <div className="mt-8">
           <h1 className="text-3xl font-light text-[#1A1D2E] leading-tight">
-            Your healthcare,<br />handled.
+            Let&apos;s get your health organized.
           </h1>
           <p className="mt-3 text-base text-[#7A7F8A]">
-            Quarterback organizes your providers, books your appointments, and keeps your health on track &mdash; so you don&apos;t have to.
+            In a few minutes, we&apos;ll find your providers, see what&apos;s overdue, and set you up with a care coordinator who handles the rest.
           </p>
         </div>
 
@@ -1291,17 +1291,6 @@ export default function OnboardingPage() {
         </div>
 
         <div className="mt-6 flex flex-col gap-3">
-          <OptionRow
-            label="Connect Google Calendar after setup"
-            selected={calendarPending}
-            onClick={() => setCalendarPending((p) => !p)}
-            multi
-          />
-          {calendarPending && (
-            <p className="px-1 text-xs text-[#7A7F8A]">
-              We&apos;ll prompt you to connect Google Calendar once your account is verified.
-            </p>
-          )}
         </div>
 
         {/* Consent — single checkbox */}

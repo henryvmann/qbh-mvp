@@ -133,9 +133,9 @@ function AddProviderForm({
     const timer = setTimeout(async () => {
       setSearching(true);
       try {
-        // Auto-append user location if query doesn't include a state/city
-        const hasLocation = /\b[A-Z]{2}\b/.test(query) || /,/.test(query);
-        const searchQuery = hasLocation || !userLocation ? query : `${query} ${userLocation}`;
+        // Search with original query first — only append location for specialty-only searches
+        const isSpecialtyOnly = /^(dentist|doctor|therapist|cardiologist|dermatologist|optometrist|psychiatrist|pediatrician|obgyn|urologist|neurologist|allergist|chiropractor|podiatrist|ent)s?$/i.test(query.trim());
+        const searchQuery = isSpecialtyOnly && userLocation ? `${query} ${userLocation}` : query;
         const res = await apiFetch(`/api/npi/search?q=${encodeURIComponent(searchQuery)}`);
         const data = await res.json();
         if (data.ok) setResults(data.results || []);
@@ -573,10 +573,14 @@ function ProvidersInner() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {missing.map((m) => (
-                      <a
+                      <button
                         key={m.label}
-                        href={`/providers?add=true&search=${encodeURIComponent(m.label.toLowerCase())}`}
-                        className="flex items-center justify-between rounded-2xl border-2 border-dashed p-5 transition hover:shadow-sm"
+                        type="button"
+                        onClick={() => {
+                          setShowAddForm(true);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className="flex items-center justify-between rounded-2xl border-2 border-dashed p-5 transition hover:shadow-sm text-left"
                         style={{ borderColor: m.border, backgroundColor: m.color + "40" }}
                       >
                         <div>
@@ -584,7 +588,7 @@ function ProvidersInner() {
                           <div className="text-xs text-[#7A7F8A]">Add one to your care team</div>
                         </div>
                         <Plus size={18} className="text-[#B0B4BC]" />
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </div>
