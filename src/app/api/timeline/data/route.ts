@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { getStoredGoogleCalendarConnection, getValidGoogleCalendarAccessToken } from "../../../../lib/google-calendar";
 
 type TimelineVisit = {
   id: string;
@@ -28,6 +29,16 @@ type UpcomingEvent = {
   providerName: string;
   date: string;
   detail: string;
+  needsProviderMatch?: boolean;
+};
+
+type CalendarHealthEvent = {
+  id: string;
+  summary: string;
+  date: string;
+  providerId: string | null;
+  providerName: string | null;
+  needsProviderMatch: boolean;
 };
 
 export async function GET(req: Request) {
@@ -137,10 +148,161 @@ export async function GET(req: Request) {
     years.push({ year, providers: yearProviders, totalVisits });
   }
 
+  // Fetch Google Calendar events for timeline
+  const calendarEvents: CalendarHealthEvent[] = [];
+  try {
+    const gcalConn = await getStoredGoogleCalendarConnection(appUserId);
+    if (gcalConn) {
+      const connection = await getValidGoogleCalendarAccessToken(appUserId);
+      const timeMin = new Date();
+      timeMin.setFullYear(timeMin.getFullYear() - 2);
+      const timeMax = new Date();
+      timeMax.setMonth(timeMax.getMonth() + 3);
+
+      const params = new URLSearchParams({
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        singleEvents: "true",
+        orderBy: "startTime",
+        maxResults: "200",
+      });
+
+      const gcalRes = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`,
+        { headers: { Authorization: `Bearer ${connection.access_token}` }, cache: "no-store" }
+      );
+
+      if (gcalRes.ok) {
+        const gcalData = await gcalRes.json();
+        const HEALTH_PATTERN = /doctor|dr\.|dr |dentist|dental|medical|clinic|hospital|health|therapy|physical therapy|chiropractic|optom|eye exam|eye doctor|derma|cardio|ortho|urgent care|checkup|check-?up|appointment|annual exam|wellness visit|psychiatr|psycholog|nutrit/i;
+
+        for (const event of gcalData.items || []) {
+          const summary = event.summary || "";
+          if (!HEALTH_PATTERN.test(summary)) continue;
+
+          const startAt = event.start?.dateTime || event.start?.date || "";
+          if (!startAt) continue;
+
+          let providerName = summary.trim().replace(
+            /^(appointment|visit|checkup|check-?up|annual exam|wellness visit)\s*(with|at|[-:@])\s*/i, ""
+          );
+
+          // Try to match to existing provider
+          const lower = providerName.toLowerCase();
+          let matchedId: string | null = null;
+          let matchedName: string | null = null;
+
+          for (const p of providerRows) {
+            const pLower = p.name.toLowerCase();
+            if (lower.includes(pLower) || pLower.includes(lower)) {
+              matchedId = p.id;
+              matchedName = p.name;
+              break;
+            }
+          }
+
+          // Specialty keyword match
+          if (!matchedId) {
+            const specialtyMap: Record<string, RegExp> = {
+              eye: /eye|vision|optom|ophthal/i,
+              dental: /dent|dds|oral/i,
+              therapy: /therap|psych|counsel|mental/i,
+              derma: /derm|skin/i,
+            };
+            for (const [keyword, pattern] of Object.entries(specialtyMap)) {
+              if (lower.includes(keyword)) {
+                const match = providerRows.find((p) => pattern.test(p.name.toLowerCase()));
+                if (match) { matchedId = match.id; matchedName = match.name; break; }
+              }
+            }
+          }
+
+          calendarEvents.push({
+            id: event.id || startAt,
+            summary: providerName,
+            date: startAt,
+            providerId: matchedId,
+            providerName: matchedName,
+            needsProviderMatch: !matchedId,
+          });
+        }
+      }
+    }
+  } catch {
+    // Google Calendar is best-effort
+  }
+
+  // Add unmatched calendar events to year map as "calendar" source visits
+  for (const ce of calendarEvents) {
+    const eventDate = new Date(ce.date);
+    const isFuture = eventDate.getTime() > Date.now();
+
+    if (isFuture) {
+      // Add to upcoming if not already there
+      const alreadyInUpcoming = upcoming.some((u) =>
+        Math.abs(new Date(u.date).getTime() - eventDate.getTime()) < 3600000
+      );
+      if (!alreadyInUpcoming) {
+        upcoming.push({
+          id: `gcal-${ce.id}`,
+          providerId: ce.providerId || "",
+          providerName: ce.providerName || ce.summary,
+          date: ce.date,
+          detail: eventDate.toLocaleString("en-US", {
+            weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+          }),
+          needsProviderMatch: ce.needsProviderMatch,
+        });
+      }
+    } else {
+      // Add past events to year map
+      const year = eventDate.getFullYear().toString();
+      const displayName = ce.providerName || ce.summary;
+      const pid = ce.providerId || `gcal-${ce.summary.toLowerCase().replace(/\s+/g, "-")}`;
+
+      if (!yearMap.has(year)) yearMap.set(year, new Map());
+      const provMap = yearMap.get(year)!;
+      if (!provMap.has(pid)) provMap.set(pid, []);
+      provMap.get(pid)!.push({
+        id: `gcal-${ce.id}`,
+        date: ce.date.split("T")[0],
+        amount: null,
+        source: "calendar",
+      });
+
+      // Make sure provider name is in the map
+      if (!providerNameMap.has(pid)) {
+        providerNameMap.set(pid, displayName);
+      }
+    }
+  }
+
+  // Rebuild year sections with calendar events included
+  const finalYears: TimelineYear[] = [];
+  const allYearKeys = [...yearMap.keys()].sort((a, b) => Number(b) - Number(a));
+
+  for (const year of allYearKeys) {
+    const provMap = yearMap.get(year)!;
+    const yearProviders: TimelineProvider[] = [];
+    let totalVisits = 0;
+
+    for (const [pid, pvVisits] of provMap) {
+      const name = providerNameMap.get(pid) ?? "Unknown Provider";
+      yearProviders.push({ providerId: pid, providerName: name, visits: pvVisits });
+      totalVisits += pvVisits.length;
+    }
+
+    yearProviders.sort((a, b) => b.visits.length - a.visits.length);
+    finalYears.push({ year, providers: yearProviders, totalVisits });
+  }
+
+  // Sort upcoming by date
+  upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
   return NextResponse.json({
     ok: true,
     upcoming,
-    years,
+    years: finalYears,
     providerCount: providerRows.length,
   });
 }

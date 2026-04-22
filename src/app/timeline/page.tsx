@@ -11,7 +11,7 @@ import { Calendar, ChevronDown, ChevronRight } from "lucide-react";
 type Visit = { id: string; date: string; amount: number | null; source: string };
 type TimelineProvider = { providerId: string; providerName: string; visits: Visit[] };
 type TimelineYear = { year: string; providers: TimelineProvider[]; totalVisits: number };
-type UpcomingEvent = { id: string; providerId: string; providerName: string; date: string; detail: string };
+type UpcomingEvent = { id: string; providerId: string; providerName: string; date: string; detail: string; needsProviderMatch?: boolean };
 
 function formatDate(iso: string): string {
   if (!iso) return "";
@@ -101,16 +101,28 @@ export default function TimelinePage() {
             </div>
             <div className="space-y-3">
               {upcoming.map((evt) => (
-                <div key={evt.id} className="flex items-center justify-between rounded-2xl bg-white border border-emerald-500/20 shadow-sm px-5 py-4">
-                  <div>
-                    <div className="text-sm font-semibold">
-                      <ProviderLink providerId={evt.providerId} providerName={evt.providerName} />
+                <div key={evt.id} className="rounded-2xl bg-white border border-emerald-500/20 shadow-sm px-5 py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">
+                        {evt.providerId ? (
+                          <ProviderLink providerId={evt.providerId} providerName={evt.providerName} />
+                        ) : evt.providerName}
+                      </div>
+                      <div className="text-xs text-[#7A7F8A] mt-0.5">{formatDateTime(evt.date)}</div>
                     </div>
-                    <div className="text-xs text-[#7A7F8A] mt-0.5">{formatDateTime(evt.date)}</div>
+                    <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-600">
+                      Upcoming
+                    </span>
                   </div>
-                  <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-600">
-                    Upcoming
-                  </span>
+                  {evt.needsProviderMatch && (
+                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5">
+                      <span className="text-xs text-amber-700">Who is this appointment with?</span>
+                      <a href="/providers?add=true" className="rounded-lg px-3 py-1 text-xs font-semibold text-white" style={{ backgroundColor: "#5C6B5C" }}>
+                        Assign Provider
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -151,10 +163,19 @@ export default function TimelinePage() {
                           >
                             <div>
                               <div className="text-sm font-semibold text-[#1A1D2E]">
-                                <ProviderLink providerId={prov.providerId} providerName={prov.providerName} />
+                                {prov.providerId.startsWith("gcal-") ? (
+                                  <span>{prov.providerName}</span>
+                                ) : (
+                                  <ProviderLink providerId={prov.providerId} providerName={prov.providerName} />
+                                )}
                               </div>
                               <div className="text-xs text-[#7A7F8A] mt-0.5">
                                 {prov.visits.length} visit{prov.visits.length !== 1 ? "s" : ""} in {yearData.year}
+                                {prov.providerId.startsWith("gcal-") && (
+                                  <span className="ml-2 text-amber-600">
+                                    &middot; <a href="/providers?add=true" className="underline underline-offset-2">Assign Provider</a>
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
