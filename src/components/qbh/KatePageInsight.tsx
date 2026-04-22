@@ -6,12 +6,12 @@ import Image from "next/image";
 import { apiFetch } from "../../lib/api";
 
 const PAGE_PROMPTS: Record<string, string> = {
-  "/providers": "Looking at the user's providers page. Give ONE brief, contextual observation (1 sentence max). Examples: note a missing provider type, mention if someone is overdue, or encourage them if they're on track. Be specific to their actual data.",
-  "/visits": "Looking at the user's visits page. Give ONE brief observation (1 sentence). Examples: mention an upcoming appointment to prep for, note how long since their last visit, or suggest booking if overdue.",
-  "/goals": "Looking at the user's goals page. Give ONE brief motivational observation (1 sentence). Reference their actual goals or suggest one based on their providers.",
-  "/timeline": "Looking at the user's health timeline. Give ONE brief observation connecting their health story (1 sentence). Reference real providers or visits.",
-  "/settings": "Looking at the user's settings. Give ONE brief suggestion (1 sentence) about what to update or complete in their profile.",
-  "/calendar-view": "Looking at the user's calendar. Give ONE brief observation (1 sentence) about their upcoming schedule or suggest connecting a calendar if not connected.",
+  "/providers": "You are on the providers page. In EXACTLY one short sentence (under 15 words), note something about their providers. Do NOT elaborate.",
+  "/visits": "You are on the visits page. In EXACTLY one short sentence (under 15 words), note something about their visits. Do NOT elaborate.",
+  "/goals": "You are on the goals page. In EXACTLY one short sentence (under 15 words), give a motivational nudge. Do NOT elaborate.",
+  "/timeline": "You are on the timeline page. In EXACTLY one short sentence (under 15 words), connect something in their health story. Do NOT elaborate.",
+  "/settings": "You are on settings. In EXACTLY one short sentence (under 15 words), suggest what to update. Do NOT elaborate.",
+  "/calendar-view": "You are on the calendar. In EXACTLY one short sentence (under 15 words), note something about their schedule. Do NOT elaborate.",
   "/dashboard": "",
 };
 
@@ -26,9 +26,10 @@ export default function KatePageInsight() {
     if (!prompt) return;
 
     // Don't re-fetch on every render
-    const cacheKey = `kate_page_insight_v2_${pathname}`;
+    const cacheKey = `kate_page_insight_v3_${pathname}`;
     // Clear old cache keys
     try { sessionStorage.removeItem(`kate_page_insight_${pathname}`); } catch {}
+    try { sessionStorage.removeItem(`kate_page_insight_v2_${pathname}`); } catch {}
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       setInsight(cached);
