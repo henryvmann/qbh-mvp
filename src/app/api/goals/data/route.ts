@@ -238,72 +238,8 @@ export async function GET(req: Request) {
     }
   }
 
-  // Rule 3: Dental checkup
-  if (!hasDental && !dismissedTypes.includes("dentist")) {
-    goals.push({
-      id: "dental-checkup",
-      title: "Schedule dental checkup",
-      category: "preventive",
-      progress: 0,
-      detail: "No dentist found in your providers. Add one so Kate can help you stay on top of visits.",
-      dismissKey: "dentist",
-    } as any);
-  } else if (hasDental) {
-    // Check if any dental provider has a visit in the last 6 months
-    const dentalProviders = providerRows.filter((p) =>
-      nameMatches(p.name, DENTAL_KEYWORDS)
-    );
-    const hasRecentDental = dentalProviders.some((p) => {
-      const lv = visitsByProvider.get(p.id);
-      return lv && new Date(lv) >= sixMonthsAgo;
-    });
-    const hasFutureDental = dentalProviders.some((p) =>
-      futureConfirmedProviderIds.has(p.id)
-    );
-    if (!hasRecentDental && !hasFutureDental) {
-      goals.push({
-        id: "dental-checkup",
-        title: "Schedule dental checkup",
-        category: "preventive",
-        progress: 0,
-        detail: "It's been over 6 months since your last dental visit.",
-      });
-    }
-  }
-
-  // Rule 4: Eye exam
-  if (!hasEye && !dismissedTypes.includes("eye")) {
-    goals.push({
-      id: "eye-exam",
-      title: "Schedule eye exam",
-      category: "preventive",
-      progress: 0,
-      detail: "No eye care provider found. Add one so Kate can help you track appointments.",
-      dismissKey: "eye",
-    } as any);
-  } else if (hasEye) {
-    const eyeProviders = providerRows.filter((p) =>
-      nameMatches(p.name, EYE_KEYWORDS)
-    );
-    const hasRecentEye = eyeProviders.some((p) => {
-      const lv = visitsByProvider.get(p.id);
-      return lv && new Date(lv) >= twelveMonthsAgo;
-    });
-    const hasFutureEye = eyeProviders.some((p) =>
-      futureConfirmedProviderIds.has(p.id)
-    );
-    if (!hasRecentEye && !hasFutureEye) {
-      goals.push({
-        id: "eye-exam",
-        title: "Schedule eye exam",
-        category: "preventive",
-        progress: 0,
-        detail: "It's been over 12 months since your last eye exam.",
-      });
-    }
-  }
-
-  // Calendar connection removed from goals — handled on calendar page
+  // Preventive care (dental, eye) removed from goals — handled by
+  // CareGaps component on dashboard and "Build Your Care Team" on providers page
 
   // Rule 6: Incomplete health profile
   const profileFields = [
