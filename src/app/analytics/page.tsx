@@ -203,51 +203,62 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Goals progress */}
-        <div className="mt-6 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-semibold text-[#1A1D2E]">Goals Progress</div>
-            <span className="text-xs text-[#7A7F8A]">
-              {data.goalsOnTrack} of {data.goalsTotal} on track
-            </span>
-          </div>
-          <ProgressBar value={data.goalsOnTrack} max={data.goalsTotal || 1} color="#5C6B5C" />
+        {/* Achievements — grouped: Earned first, then Outstanding */}
+        {(() => {
+          const earned = achievements.filter((a) => a.earned);
+          const outstanding = achievements.filter((a) => !a.earned);
+          const actionLinks: Record<string, string> = {
+            "First Booking": "/providers",
+            "Health Historian": "/visits",
+            "Goal Setter": "/goals",
+            "Connected": "/calendar-connect",
+            "On Track": "/providers",
+            "Health Champion": "/providers?add=true",
+          };
 
-          <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm font-semibold text-[#1A1D2E]">Care Coverage</div>
-            <span className="text-xs text-[#7A7F8A]">
-              {data.providerCount - data.overdueCount} of {data.providerCount - data.pharmacyCount} current
-            </span>
-          </div>
-          <ProgressBar
-            value={data.providerCount - data.pharmacyCount - data.overdueCount}
-            max={data.providerCount - data.pharmacyCount || 1}
-            color="#2A6090"
-          />
-        </div>
+          return (
+            <>
+              {earned.length > 0 && (
+                <div className="mt-6">
+                  <div className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">
+                    Earned — {earned.length} of {achievements.length}
+                  </div>
+                  <div className="space-y-2">
+                    {earned.map((a) => (
+                      <AchievementBadge key={a.title} icon={a.icon} title={a.title} description={a.description} earned />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-        {/* Achievements */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC]">
-              Achievements
-            </div>
-            <span className="text-xs text-[#7A7F8A]">
-              {earnedCount} of {achievements.length} earned
-            </span>
-          </div>
-          <div className="space-y-2">
-            {achievements.map((a) => (
-              <AchievementBadge
-                key={a.title}
-                icon={a.icon}
-                title={a.title}
-                description={a.description}
-                earned={a.earned}
-              />
-            ))}
-          </div>
-        </div>
+              {outstanding.length > 0 && (
+                <div className="mt-6">
+                  <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">
+                    Still To Earn
+                  </div>
+                  <div className="space-y-2">
+                    {outstanding.map((a) => (
+                      <div key={a.title} className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <AchievementBadge icon={a.icon} title={a.title} description={a.description} earned={false} />
+                        </div>
+                        {actionLinks[a.title] && (
+                          <a
+                            href={actionLinks[a.title]}
+                            className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                            style={{ backgroundColor: "#5C6B5C" }}
+                          >
+                            Go
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
     </main>
   );
