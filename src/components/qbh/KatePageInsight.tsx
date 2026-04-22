@@ -79,12 +79,23 @@ export default function KatePageInsight() {
   useEffect(() => {
     if (pathname === "/dashboard") return;
 
+    // Set a fallback immediately while data loads
+    const fallbacks: Record<string, string> = {
+      "/providers": "Manage your care team and keep your providers up to date.",
+      "/visits": "Track your appointments and stay on top of your care.",
+      "/timeline": "Your health story — past visits, upcoming appointments, and connections.",
+      "/goals": "Set goals and let Kate help you track your progress.",
+      "/settings": "Keep your profile up to date for the best experience.",
+      "/calendar-view": "Your health calendar — see what's coming up.",
+    };
+    setInsight(fallbacks[pathname] || null);
+
     apiFetch("/api/dashboard/data")
       .then((r) => r.json())
       .then((data) => {
         if (data?.ok) {
           const text = generateInsight(pathname, data);
-          setInsight(text);
+          if (text) setInsight(text);
         }
       })
       .catch(() => {});
