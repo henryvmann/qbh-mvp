@@ -31,6 +31,12 @@ export default function TimelinePage() {
   const [providerCount, setProviderCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
+  const [addingProvider, setAddingProvider] = useState<string | null>(null);
+  const [addProviderName, setAddProviderName] = useState("");
+  const [addProviderSpecialty, setAddProviderSpecialty] = useState("");
+  const [addProviderPhone, setAddProviderPhone] = useState("");
+  const [savingProvider, setSavingProvider] = useState(false);
+  const [addedProviders, setAddedProviders] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     apiFetch("/api/timeline/data")
@@ -175,14 +181,95 @@ export default function TimelinePage() {
                                   <span className="ml-1 text-[#B0B4BC]">&middot; From calendar</span>
                                 )}
                               </div>
-                              {prov.providerId.startsWith("gcal-") && (
-                                <a
-                                  href={`/providers?add=true`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="mt-2 inline-flex items-center gap-1 rounded-lg bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 transition"
-                                >
-                                  Add as provider
-                                </a>
+                              {prov.providerId.startsWith("gcal-") && !addedProviders.has(prov.providerId) && (
+                                addingProvider === prov.providerId ? (
+                                  <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+                                    <input
+                                      type="text"
+                                      value={addProviderName}
+                                      onChange={(e) => setAddProviderName(e.target.value)}
+                                      placeholder="Provider name (e.g. Dr. Echelman)"
+                                      className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                                    />
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        value={addProviderSpecialty}
+                                        onChange={(e) => setAddProviderSpecialty(e.target.value)}
+                                        placeholder="Specialty (optional)"
+                                        className="flex-1 rounded-lg border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                                      />
+                                      <input
+                                        type="tel"
+                                        value={addProviderPhone}
+                                        onChange={(e) => setAddProviderPhone(e.target.value)}
+                                        placeholder="Phone (optional)"
+                                        className="flex-1 rounded-lg border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                                      />
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <button
+                                        type="button"
+                                        disabled={!addProviderName.trim() || savingProvider}
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          setSavingProvider(true);
+                                          try {
+                                            const res = await apiFetch("/api/providers/add-manual", {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({
+                                                name: addProviderName.trim(),
+                                                specialty: addProviderSpecialty.trim() || null,
+                                                phone_number: addProviderPhone.trim() || null,
+                                              }),
+                                            });
+                                            const data = await res.json();
+                                            if (data.ok) {
+                                              setAddedProviders((prev) => new Set([...prev, prov.providerId]));
+                                              setAddingProvider(null);
+                                              setAddProviderName("");
+                                              setAddProviderSpecialty("");
+                                              setAddProviderPhone("");
+                                            }
+                                          } finally {
+                                            setSavingProvider(false);
+                                          }
+                                        }}
+                                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                                        style={{ backgroundColor: "#5C6B5C" }}
+                                      >
+                                        {savingProvider ? "Adding..." : "Add Provider"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setAddingProvider(null); }}
+                                        className="rounded-lg px-3 py-1.5 text-xs text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAddProviderName(prov.providerName);
+                                      setAddProviderSpecialty("");
+                                      setAddProviderPhone("");
+                                      setAddingProvider(prov.providerId);
+                                    }}
+                                    className="mt-2 inline-flex items-center gap-1 rounded-lg bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 transition"
+                                  >
+                                    Add As Provider
+                                  </button>
+                                )
+                              )}
+                              {addedProviders.has(prov.providerId) && (
+                                <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                                  ✓ Added
+                                </span>
                               )}
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
