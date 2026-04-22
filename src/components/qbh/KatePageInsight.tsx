@@ -26,7 +26,9 @@ export default function KatePageInsight() {
     if (!prompt) return;
 
     // Don't re-fetch on every render
-    const cacheKey = `kate_page_insight_${pathname}`;
+    const cacheKey = `kate_page_insight_v2_${pathname}`;
+    // Clear old cache keys
+    try { sessionStorage.removeItem(`kate_page_insight_${pathname}`); } catch {}
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       setInsight(cached);
