@@ -84,7 +84,7 @@ export default function CareGaps() {
             found = /primary|pcp|internal medicine|family medicine|general practice|family practice/.test(providerText);
             break;
           case "dentist":
-            found = /dental|dentist|orthodon/.test(providerText);
+            found = /dental|dentist|orthodon|dds|d\.d\.s/.test(providerText);
             break;
           case "eye":
             found = /eye|vision|optom|ophthalm/.test(providerText);

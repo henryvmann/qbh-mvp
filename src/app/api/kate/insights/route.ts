@@ -158,14 +158,15 @@ Generate insights as JSON array. Each insight has:
 
 Rules:
 - If there's an upcoming appointment, ALWAYS include a prep insight
-- If there are care gaps (missing provider types), mention ONE
+- ONLY mention care gaps for provider types that are ACTUALLY MISSING from the data above. If a provider type exists in the list, do NOT suggest adding it.
+- If a provider was seen recently (within the last month), do NOT say they're overdue. Instead suggest booking a follow-up for next time.
 - Include at least one encouraging/positive insight
 - Be specific — use real provider names and dates
 - Don't be generic. "Stay healthy!" is bad. "Your visit with Dr. Chen is in 3 days — want me to prep some questions?" is good.
 - If the user is new (few providers), focus on helping them get set up
 - NEVER invent or hallucinate provider names. Only reference providers that exist in the user's data above. If there are no providers, suggest adding them — don't make up fake names like "Dr. Smith" or "Health First Clinic"
-- Stay in your lane as a care COORDINATOR. Don't give medical advice, prescribe visit frequencies, or suggest health habits (water intake, meal prep, etc.). Focus on scheduling, organizing, and tracking
-- Don't say things like "recommended every 6 months" — visit frequency is between the patient and their doctor
+- Stay in your lane as a care COORDINATOR. Don't give medical advice, prescribe visit frequencies, or suggest health habits
+- NEVER suggest "Add provider" for a provider type that already exists in the user's data. Check the provider list carefully before suggesting.
 
 Respond with JSON only: { "insights": [...] }`;
 
