@@ -598,7 +598,42 @@ function DashboardInner() {
         </div>
       </div>
 
-      {/* Kate Chat is now in the root layout */}
+      {/* ── What To Do Next ── */}
+      <div className="mt-10 px-7 pb-8">
+        <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-4">
+          What To Do Next
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Link
+            href="/providers"
+            className="rounded-2xl bg-white border border-[#EBEDF0] p-4 shadow-sm transition hover:shadow-md"
+          >
+            <div className="text-sm font-semibold text-[#1A1D2E]">Manage Providers</div>
+            <div className="text-xs text-[#7A7F8A] mt-1">Add, edit, or review your care team</div>
+          </Link>
+          <Link
+            href="/settings"
+            className="rounded-2xl bg-white border border-[#EBEDF0] p-4 shadow-sm transition hover:shadow-md"
+          >
+            <div className="text-sm font-semibold text-[#1A1D2E]">Your Profile</div>
+            <div className="text-xs text-[#7A7F8A] mt-1">Health history, insurance, preferences</div>
+          </Link>
+          <Link
+            href="/visits"
+            className="rounded-2xl bg-white border border-[#EBEDF0] p-4 shadow-sm transition hover:shadow-md"
+          >
+            <div className="text-sm font-semibold text-[#1A1D2E]">Visits</div>
+            <div className="text-xs text-[#7A7F8A] mt-1">Upcoming and past appointments</div>
+          </Link>
+          <Link
+            href="/goals"
+            className="rounded-2xl bg-white border border-[#EBEDF0] p-4 shadow-sm transition hover:shadow-md"
+          >
+            <div className="text-sm font-semibold text-[#1A1D2E]">Goals</div>
+            <div className="text-xs text-[#7A7F8A] mt-1">Set and track your health goals</div>
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }
