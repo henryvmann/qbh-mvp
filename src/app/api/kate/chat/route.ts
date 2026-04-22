@@ -7,6 +7,42 @@ import { supabaseAdmin } from "../../../../lib/supabase-server";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+/** Search for providers via NPI + Google Places */
+async function searchProviders(query: string, location?: string): Promise<string> {
+  try {
+    const searchQuery = location ? `${query} ${location}` : query;
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000";
+    const res = await fetch(`${baseUrl}/api/npi/search?q=${encodeURIComponent(searchQuery)}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json();
+    if (!data.ok || !data.results?.length) return "No providers found for that search. Try a different name or location.";
+    return data.results.slice(0, 5).map((r: any) =>
+      `- ${r.name}${r.specialty ? ` (${r.specialty})` : ""}${r.city && r.state ? ` — ${r.city}, ${r.state}` : ""}${r.phone ? ` — ${r.phone.replace(/^\+1/, "").replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3")}` : ""}`
+    ).join("\n");
+  } catch {
+    return "Search timed out. The user can try searching on the Providers page directly.";
+  }
+}
+
+const KATE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "search_providers",
+      description: "Search for healthcare providers (doctors, dentists, specialists) by name, specialty, or location. Use this when the user asks to find a provider.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Provider name, specialty, or type (e.g., 'dentist', 'cardiologist', 'Dr. Smith')" },
+          location: { type: "string", description: "City, state, or area to search in (e.g., 'Westport CT', 'near me')" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+];
+
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
@@ -158,7 +194,7 @@ Current page context: ${pageContext}
 
 What you CAN and SHOULD help with:
 - Book appointments — tell them to click "Book" on their provider card, or offer to have Kate call the office
-- Find new providers — if the user asks for a doctor, dentist, specialist near them, suggest they go to the Providers page and search. If you know their location (${userLocation || "unknown"}), mention they can search by location there.
+- Find new providers — you have a search_providers tool. USE IT when the user asks to find a doctor, dentist, or specialist. Search by specialty and their location (${userLocation || "unknown"}). Return actual results with names, specialties, and phone numbers. NEVER say "I can't search" — you CAN.
 - Summarize their health plan and what's pending
 - Prepare for upcoming appointments — specific questions to ask based on the provider type and their history, what to bring (be contextual, not generic)
 - Follow up after appointments — ask what happened, suggest logging notes
@@ -184,15 +220,83 @@ Guidelines:
 - If they have no providers, proactively help them add some — suggest they go to the Providers page.
 - When suggesting actions, be specific: link to pages, reference real names, give clear next steps.`;
 
+  const chatMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: "system", content: systemPrompt },
+    ...messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+  ];
+
+  // First pass: check if Kate wants to use tools
+  const toolCheck = await openai.chat.completions.create({
+    model: "gpt-4o",
+    temperature: 0.7,
+    max_tokens: 800,
+    tools: KATE_TOOLS,
+    messages: chatMessages,
+  });
+
+  const toolCalls = toolCheck.choices[0]?.message?.tool_calls;
+
+  if (toolCalls && toolCalls.length > 0) {
+    // Execute tool calls and build results
+    const toolMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      ...chatMessages,
+      toolCheck.choices[0].message as OpenAI.Chat.Completions.ChatCompletionMessageParam,
+    ];
+
+    for (const tc of toolCalls) {
+      const fn = (tc as any).function;
+      if (fn?.name === "search_providers") {
+        const args = JSON.parse(fn.arguments);
+        const searchLocation = args.location || userLocation || "";
+        const results = await searchProviders(args.query, searchLocation);
+        toolMessages.push({
+          role: "tool",
+          tool_call_id: tc.id,
+          content: results,
+        });
+      }
+    }
+
+    // Second pass: stream response with tool results
+    const stream = await openai.chat.completions.create({
+      model: "gpt-4o",
+      temperature: 0.7,
+      max_tokens: 800,
+      stream: true,
+      messages: toolMessages,
+    });
+
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of stream) {
+          const text = chunk.choices[0]?.delta?.content || "";
+          if (text) controller.enqueue(encoder.encode(text));
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(readable, {
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Transfer-Encoding": "chunked" },
+    });
+  }
+
+  // No tool calls — check if we got a direct response
+  const directContent = toolCheck.choices[0]?.message?.content;
+  if (directContent) {
+    return new Response(directContent, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
+  // Fallback: stream without tools
   const stream = await openai.chat.completions.create({
     model: "gpt-4o",
     temperature: 0.7,
     max_tokens: 800,
     stream: true,
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
-    ],
+    messages: chatMessages,
   });
 
   const encoder = new TextEncoder();
@@ -200,18 +304,13 @@ Guidelines:
     async start(controller) {
       for await (const chunk of stream) {
         const text = chunk.choices[0]?.delta?.content || "";
-        if (text) {
-          controller.enqueue(encoder.encode(text));
-        }
+        if (text) controller.enqueue(encoder.encode(text));
       }
       controller.close();
     },
   });
 
   return new Response(readable, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Transfer-Encoding": "chunked",
-    },
+    headers: { "Content-Type": "text/plain; charset=utf-8", "Transfer-Encoding": "chunked" },
   });
 }
