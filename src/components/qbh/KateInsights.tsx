@@ -194,14 +194,9 @@ export default function KateInsights() {
                 onClick={(e) => { e.stopPropagation(); handleNext(); }}
                 className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
               >
-                {currentIndex < insights.length - 1 ? "Next" : "Dismiss"}
+                Dismiss
               </button>
             </div>
-            {insights.length > 1 && (
-              <span className="text-[10px] text-[#B0B4BC]">
-                {currentIndex + 1} of {insights.length}
-              </span>
-            )}
           </div>
         </div>
       </div>

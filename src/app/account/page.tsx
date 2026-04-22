@@ -312,26 +312,15 @@ export default function AccountPage() {
           )}
         </div>
 
-        {/* Delete Account */}
-        <div className="mt-4 rounded-2xl bg-white shadow-sm p-6 border-2 border-red-300">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
-            <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-red-600 mb-2">
-                Delete Account
-              </h2>
-              <p className="text-sm text-[#7A7F8A]">
-                This will permanently delete your account and all data. This cannot be undone.
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(true)}
-                className="mt-4 rounded-xl bg-red-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-red-700 transition-colors"
-              >
-                Delete my account
-              </button>
-            </div>
-          </div>
+        {/* Delete Account — subtle, at the bottom */}
+        <div className="mt-8 text-center">
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="text-xs text-[#B0B4BC] underline underline-offset-4 hover:text-red-500 transition"
+          >
+            Delete my account
+          </button>
         </div>
       </div>
 

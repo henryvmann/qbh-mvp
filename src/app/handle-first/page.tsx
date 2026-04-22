@@ -640,7 +640,7 @@ export default function HandleFirstPage() {
             </div>
 
             <GoldButton onClick={advance}>
-              {hasOverdue ? "Let\u2019s fix that \u2192" : "Next \u2192"}
+              Continue &rarr;
             </GoldButton>
           </>
         );
@@ -671,8 +671,15 @@ export default function HandleFirstPage() {
             </div>
 
             <GoldButton onClick={advance}>
-              Schedule these ({selectedProviders.size}) →
+              Schedule Now ({selectedProviders.size}) &rarr;
             </GoldButton>
+            <button
+              type="button"
+              onClick={() => goToStep(5)}
+              className="mt-3 w-full rounded-2xl border border-[#EBEDF0] px-4 py-3 text-sm font-medium text-[#7A7F8A] transition hover:bg-[#F0F2F5]"
+            >
+              Continue Setup First
+            </button>
           </>
         );
 

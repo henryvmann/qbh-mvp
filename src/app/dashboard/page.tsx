@@ -394,17 +394,11 @@ function DashboardInner() {
             </>
           ) : (
             <>
-              <div
-                className="font-extralight leading-none text-[#5C6B5C]"
-                style={{ fontSize: "96px" }}
-              >
-                &#10003;
+              <div className="text-3xl font-light text-[#5C6B5C]">
+                You&apos;re all set
               </div>
-              <div className="text-3xl font-light text-[#7A7F8A]">
-                All caught up
-              </div>
-              <div className="mt-2 text-base text-[#B0B4BC]">
-                Every provider is current. Nice work.
+              <div className="mt-2 text-base text-[#7A7F8A]">
+                Nothing needs attention right now.
               </div>
             </>
           )}
