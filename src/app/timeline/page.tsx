@@ -161,7 +161,7 @@ export default function TimelinePage() {
                             onClick={() => toggleProvider(key)}
                             className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-[#F8F9FA] transition"
                           >
-                            <div>
+                            <div className="flex-1 min-w-0">
                               <div className="text-sm font-semibold text-[#1A1D2E]">
                                 {prov.providerId.startsWith("gcal-") ? (
                                   <span>{prov.providerName}</span>
@@ -171,12 +171,19 @@ export default function TimelinePage() {
                               </div>
                               <div className="text-xs text-[#7A7F8A] mt-0.5">
                                 {prov.visits.length} visit{prov.visits.length !== 1 ? "s" : ""} in {yearData.year}
-                                {prov.providerId.startsWith("gcal-") && (
-                                  <span className="ml-2 text-amber-600">
-                                    &middot; <a href="/providers?add=true" className="underline underline-offset-2">Assign Provider</a>
-                                  </span>
+                                {prov.visits.some((v) => v.source === "calendar") && (
+                                  <span className="ml-1 text-[#B0B4BC]">&middot; From calendar</span>
                                 )}
                               </div>
+                              {prov.providerId.startsWith("gcal-") && (
+                                <a
+                                  href={`/providers?add=true`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-2 inline-flex items-center gap-1 rounded-lg bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 transition"
+                                >
+                                  Add as provider
+                                </a>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span className="rounded-full bg-[#B0D0E8]/30 px-2.5 py-0.5 text-[10px] font-semibold text-[#2A6090]">
