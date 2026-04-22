@@ -116,8 +116,34 @@ export async function GET(req: NextRequest) {
     .order("priority", { ascending: true })
     .limit(10);
 
+  // Get provider names for filtering bad insights
+  const { data: userProviders } = await supabaseAdmin
+    .from("providers")
+    .select("name, specialty, provider_type")
+    .eq("app_user_id", appUserId)
+    .eq("status", "active");
+  const providerText = (userProviders || [])
+    .map((p) => `${p.name} ${p.specialty || ""} ${p.provider_type || ""}`.toLowerCase())
+    .join(" ");
+
+  // Filter out insights that suggest adding a provider type the user already has
+  function filterBadInsights(insights: any[]) {
+    return insights.filter((ins) => {
+      const title = (ins.title || "").toLowerCase();
+      const body = (ins.body || "").toLowerCase();
+      const text = title + " " + body;
+      // If it mentions "dentist" and user has a dentist, remove it
+      if (/dentist|dental/.test(text) && /dent|dds|d\.d\.s/.test(providerText)) return false;
+      if (/eye|optom|vision/.test(text) && /eye|optom|ophthal|vision/.test(providerText)) return false;
+      if (/primary care|pcp/.test(text) && /primary|pcp|internal|family/.test(providerText)) return false;
+      if (/derma|skin/.test(text) && /derm|skin/.test(providerText)) return false;
+      return true;
+    });
+  }
+
   if (existing && existing.length > 0) {
-    return NextResponse.json({ ok: true, insights: existing, cached: true });
+    const filtered = filterBadInsights(existing);
+    return NextResponse.json({ ok: true, insights: filtered, cached: true });
   }
 
   // Generate fresh insights
@@ -203,7 +229,7 @@ Respond with JSON only: { "insights": [...] }`;
         .insert(rows)
         .select("id, type, title, body, action_label, action_href, priority, generated_at");
 
-      return NextResponse.json({ ok: true, insights: inserted || rows });
+      return NextResponse.json({ ok: true, insights: filterBadInsights(inserted || rows) });
     }
 
     return NextResponse.json({ ok: true, insights: [] });
