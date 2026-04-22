@@ -144,6 +144,14 @@ export default function RecordingsPage() {
           </div>
         </div>
 
+        {/* Recording consent notice */}
+        <div className="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4">
+          <div className="text-xs font-semibold text-amber-700 mb-1">Before You Record</div>
+          <p className="text-xs text-amber-700 leading-relaxed">
+            Recording laws vary by state. Some states require all parties to consent before recording a conversation (two-party consent states include CA, CT, FL, IL, MA, MD, MI, MT, NH, OR, PA, WA). In one-party consent states, only you need to know. We recommend letting your provider know you&apos;d like to record for your own notes — most are happy to allow it. Recordings are stored securely and only accessible to you.
+          </p>
+        </div>
+
         {/* Upload area */}
         <div className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-8">
           {/* Provider selector */}
