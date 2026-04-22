@@ -185,7 +185,7 @@ export default function RecordingsPage() {
             <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-8 text-center">
               <Mic size={32} className="mx-auto text-[#B0B4BC]" />
               <p className="mt-3 text-sm text-[#7A7F8A]">
-                No recordings yet. Upload a recording from your next doctor visit and Kate will summarize it.
+                No recordings yet. Upload a recording and Kate will summarize it, helping you stay prepared for future appointments.
               </p>
             </div>
           ) : (
