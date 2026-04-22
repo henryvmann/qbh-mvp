@@ -502,12 +502,14 @@ export default function GoalsPage() {
                             </Link>
                           )}
                         </div>
-                        <div className="shrink-0">
-                          <MiniGauge
-                            value={goal.progress}
-                            color={section.config.color}
-                          />
-                        </div>
+                        {(goal.progress > 0 || goal.category === "setup") && (
+                          <div className="shrink-0">
+                            <MiniGauge
+                              value={goal.progress}
+                              color={section.config.color}
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {/* Handle It button for overdue goals with no progress */}

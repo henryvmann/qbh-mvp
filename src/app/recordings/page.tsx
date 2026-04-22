@@ -103,8 +103,30 @@ export default function RecordingsPage() {
           Visit Recordings
         </h1>
         <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
-          Upload a recording from a doctor visit and Kate will summarize it for you.
+          Record your doctor visits so you never forget what was discussed.
         </p>
+
+        {/* How it works */}
+        <div className="mt-6 rounded-2xl bg-[#F0F2F5] border border-[#EBEDF0] p-5">
+          <div className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">How It Works</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+            <div>
+              <Mic size={20} className="mx-auto text-[#5C6B5C]" />
+              <div className="mt-2 text-sm font-medium text-[#1A1D2E]">Record</div>
+              <div className="text-xs text-[#7A7F8A]">Use your phone&apos;s voice memo during a visit or telehealth call</div>
+            </div>
+            <div>
+              <Upload size={20} className="mx-auto text-[#5C6B5C]" />
+              <div className="mt-2 text-sm font-medium text-[#1A1D2E]">Upload</div>
+              <div className="text-xs text-[#7A7F8A]">Drop the audio file here — MP3, M4A, or WAV</div>
+            </div>
+            <div>
+              <FileAudio size={20} className="mx-auto text-[#5C6B5C]" />
+              <div className="mt-2 text-sm font-medium text-[#1A1D2E]">Review</div>
+              <div className="text-xs text-[#7A7F8A]">Kate transcribes and summarizes the key points for you</div>
+            </div>
+          </div>
+        </div>
 
         {/* Upload area */}
         <div className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-8">

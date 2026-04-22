@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       user: {
         client_user_id: appUserId,
       },
-      client_name: "QBHealth",
+      client_name: "Quarterback Health",
       products,
       country_codes: countryCodes,
       language: "en",
