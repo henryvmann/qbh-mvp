@@ -32,8 +32,7 @@ const STEP1_OPTIONS = [
   "My appointments",
   "My medications",
   "My test results",
-  "My child's health",
-  "My parent's health",
+  "My health",
   "Medical history",
   "All of the above",
 ];
@@ -41,9 +40,7 @@ const STEP1_OPTIONS = [
 const STEP2_OPTIONS = [
   "Booking appointments",
   "Remembering follow-ups",
-  "Coordinating doctors",
   "Organizing records",
-  "Knowing what's due",
   "Advocating for myself",
   "All of the above",
 ];
@@ -57,11 +54,11 @@ const STEP3_OPTIONS = [
 ];
 
 const STEP4_OPTIONS = [
-  "Keep everything organized",
-  "Tell me what's overdue",
-  "Book appointments automatically",
-  "Provide insights",
-  "Thread care together",
+  "Booking and scheduling appointments",
+  "Tracking when I'm overdue for visits",
+  "Organizing my providers and records",
+  "Following up after appointments",
+  "Connecting the dots between providers",
   "All of the above",
 ];
 
@@ -227,6 +224,7 @@ export default function OnboardingPage() {
   const name = `${firstName.trim()} ${lastName.trim()}`.trim();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [userId, setUserId] = useState("");
   const [plaidConnected, setPlaidConnected] = useState(false);
@@ -646,22 +644,25 @@ export default function OnboardingPage() {
 
   /* ---- render per step ---- */
 
-  // Step 0: Enhanced Splash
+  // Step 0: Enhanced Splash — elevator pitch first, Kate second
   if (step === 0) {
     return (
       <Shell>
         <div className="mt-8">
-          <CharacterWithBubble pose="waving">
-            Hey! I&apos;m Kate. Welcome to Quarterback Health.
-          </CharacterWithBubble>
+          <h1 className="text-3xl font-light text-[#1A1D2E] leading-tight">
+            Your healthcare,<br />handled.
+          </h1>
+          <p className="mt-3 text-base text-[#7A7F8A]">
+            Quarterback organizes your providers, books your appointments, and keeps your health on track &mdash; so you don&apos;t have to.
+          </p>
         </div>
 
-        {/* What QB does — informational, not clickable */}
-        <div className="mt-8 space-y-3" style={{ paddingLeft: 56 }}>
+        {/* What QB does — informational cards */}
+        <div className="mt-8 space-y-3">
           {[
-            { icon: Search, label: "Find your providers", detail: "From your records or added manually" },
-            { icon: Calendar, label: "Book appointments", detail: "Kate calls offices and schedules for you" },
-            { icon: CheckCircle, label: "Stay on track", detail: "Reminders, follow-ups, and care gaps" },
+            { icon: Search, label: "Find your providers", detail: "We identify your doctors from your records or you add them manually" },
+            { icon: Calendar, label: "Book appointments", detail: "Kate calls offices and schedules for you — hands-free" },
+            { icon: CheckCircle, label: "Stay on track", detail: "Reminders, follow-ups, and care gap alerts" },
           ].map((card) => (
             <div
               key={card.label}
@@ -682,9 +683,16 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <div className="sticky bottom-0 z-20 pb-4" style={{ paddingLeft: 56 }}>
+        {/* Kate intro — below the pitch */}
+        <div className="mt-8">
+          <CharacterWithBubble pose="waving">
+            Hey! I&apos;m Kate, your care coordinator. A few quick questions and I&apos;ll get everything set up for you.
+          </CharacterWithBubble>
+        </div>
+
+        <div className="sticky bottom-0 z-20 pb-4">
           <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
-          <GoldButton onClick={() => setStep(1)}>Let&apos;s get started &rarr;</GoldButton>
+          <GoldButton onClick={() => setStep(1)}>Get Started &rarr;</GoldButton>
         </div>
       </Shell>
     );
@@ -718,6 +726,9 @@ export default function OnboardingPage() {
           >
             Continue &rarr;
           </GoldButton>
+          <button type="button" onClick={() => setStep(0)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
+            &larr; Back
+          </button>
         </div>
       </Shell>
     );
@@ -758,6 +769,9 @@ export default function OnboardingPage() {
           >
             Continue &rarr;
           </GoldButton>
+          <button type="button" onClick={() => setStep(1)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
+            &larr; Back
+          </button>
         </div>
       </Shell>
     );
@@ -791,6 +805,9 @@ export default function OnboardingPage() {
           >
             Continue &rarr;
           </GoldButton>
+          <button type="button" onClick={() => setStep(3)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
+            &larr; Back
+          </button>
         </div>
       </Shell>
     );
@@ -802,7 +819,7 @@ export default function OnboardingPage() {
       <Shell>
         <StepCounter current={SURVEY_STEP_MAP[5]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          In an ideal world, what would magically get handled?
+          What health admin is no longer on your to-do list?
         </h1>
         <p className="mt-2 text-sm text-[#7A7F8A]">Select as many as you&apos;d like</p>
         <div className="mt-6 flex flex-col gap-3">
@@ -824,6 +841,9 @@ export default function OnboardingPage() {
           >
             Continue &rarr;
           </GoldButton>
+          <button type="button" onClick={() => setStep(4)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
+            &larr; Back
+          </button>
         </div>
       </Shell>
     );
@@ -839,8 +859,8 @@ export default function OnboardingPage() {
       },
       {
         num: 2,
-        title: "Organize your providers",
-        desc: "We\u2019ll build your provider hub \u2014 all of your doctor\u2019s info in one place.",
+        title: "Your provider hub",
+        desc: "The one place where all of your doctors are curated for you \u2014 contacts, notes, and history in one view.",
       },
       {
         num: 3,
@@ -890,7 +910,7 @@ export default function OnboardingPage() {
 
   // Step 7 (manual path): Account setup + NPI provider search
   if (step === 7 && manualPath) {
-    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && allConsentsGiven;
+    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && password === confirmPassword && allConsentsGiven;
 
     // Build person options from step 3 survey answers
     const personLabelMap: Record<string, string> = {
@@ -1117,6 +1137,17 @@ export default function OnboardingPage() {
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm password"
+              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+              style={{ backgroundColor: CARD_BG, borderColor: password && confirmPassword && password !== confirmPassword ? "#E04030" : CARD_BORDER }}
+            />
+            {password && confirmPassword && password !== confirmPassword && (
+              <p className="text-xs text-red-500 mt-1">Passwords don&apos;t match</p>
+            )}
           </div>
         </div>
 
@@ -1172,7 +1203,7 @@ export default function OnboardingPage() {
 
   // Step 7: Account setup + Plaid connection (was step 5)
   if (step === 7) {
-    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && allConsentsGiven;
+    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && password === confirmPassword && allConsentsGiven;
     return (
       <Shell>
         <div className="mb-6">
@@ -1243,11 +1274,25 @@ export default function OnboardingPage() {
               {showPassword ? "Hide" : "Show"}
             </button>
           </div>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm password"
+            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+            style={{
+              backgroundColor: CARD_BG,
+              borderColor: password && confirmPassword && password !== confirmPassword ? "#E04030" : CARD_BORDER,
+            }}
+          />
+          {password && confirmPassword && password !== confirmPassword && (
+            <p className="text-xs text-red-500 mt-1">Passwords don&apos;t match</p>
+          )}
         </div>
 
         <div className="mt-6 flex flex-col gap-3">
           <OptionRow
-            label="Connect Gmail Calendar after setup"
+            label="Connect Google Calendar after setup"
             selected={calendarPending}
             onClick={() => setCalendarPending((p) => !p)}
             multi
@@ -1660,9 +1705,7 @@ export default function OnboardingPage() {
         <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
           <div className="mb-8 text-left w-full">
             <CharacterWithBubble pose="thinking">
-              Give me just a moment &mdash; I&apos;m scanning your transactions
-              to find your healthcare providers. I&apos;ll match them against
-              medical databases to make sure I get it right.
+              I&apos;ll take a look through your records and identify what I find. Give me just a moment!
             </CharacterWithBubble>
           </div>
 
@@ -1759,8 +1802,8 @@ export default function OnboardingPage() {
         <div className="mt-8 flex flex-col gap-3">
           {[
             { value: "\u2713", label: "Account created" },
-            { value: "\u2713", label: isManualOnboarding ? "Providers saved" : "Records scanned" },
-            { value: "\u2713", label: "Health timeline started" },
+            { value: "\u2713", label: isManualOnboarding ? "Providers saved" : "Providers found" },
+            { value: "\u2713", label: "Health timeline generated" },
           ].map((card) => (
             <div
               key={card.label}
