@@ -227,7 +227,7 @@ Guidelines:
 
   // First pass: check if Kate wants to use tools
   const toolCheck = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4o-mini",
     temperature: 0.7,
     max_tokens: 800,
     tools: KATE_TOOLS,
@@ -259,7 +259,7 @@ Guidelines:
 
     // Second pass: stream response with tool results
     const stream = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       temperature: 0.7,
       max_tokens: 800,
       stream: true,
@@ -292,7 +292,7 @@ Guidelines:
 
   // Fallback: stream without tools
   const stream = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4o-mini",
     temperature: 0.7,
     max_tokens: 800,
     stream: true,
