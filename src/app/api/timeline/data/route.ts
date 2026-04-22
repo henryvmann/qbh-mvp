@@ -194,7 +194,17 @@ export async function GET(req: Request) {
 
           for (const p of providerRows) {
             const pLower = p.name.toLowerCase();
+            // Full containment
             if (lower.includes(pLower) || pLower.includes(lower)) {
+              matchedId = p.id;
+              matchedName = p.name;
+              break;
+            }
+            // Word-level match: any significant word from provider name found in event
+            const provWords = pLower.split(/[\s.,]+/).filter((w) => w.length > 3);
+            const eventWords = lower.split(/[\s.,]+/).filter((w) => w.length > 3);
+            const overlap = provWords.filter((pw) => eventWords.some((ew) => ew.includes(pw) || pw.includes(ew)));
+            if (overlap.length >= 1 && provWords.length > 0) {
               matchedId = p.id;
               matchedName = p.name;
               break;
