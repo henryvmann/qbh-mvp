@@ -58,7 +58,7 @@ async function buildContext(appUserId: string): Promise<string> {
       .neq("provider_type", "calendar"),
     supabaseAdmin
       .from("app_users")
-      .select("patient_profile")
+      .select("patient_profile, auth_user_id")
       .eq("id", appUserId)
       .single(),
     supabaseAdmin
@@ -109,6 +109,27 @@ async function buildContext(appUserId: string): Promise<string> {
 
   const displayName = profile.display_name || profile.nickname || profile.full_name || "Unknown";
 
+  // Load survey answers from auth user metadata
+  let surveyContext = "";
+  try {
+    const authUserId = userRes.data?.auth_user_id;
+    if (authUserId) {
+      const { data: authData } = await supabaseAdmin.auth.admin.getUserById(authUserId);
+      const surveyAnswers = authData?.user?.user_metadata?.survey_answers;
+      if (surveyAnswers) {
+        const parsed = typeof surveyAnswers === "string" ? JSON.parse(surveyAnswers) : surveyAnswers;
+        const parts: string[] = [];
+        if (parsed.step1?.length) parts.push(`Wants help with: ${parsed.step1.join(", ")}`);
+        if (parsed.step2?.length) parts.push(`Finds hardest: ${parsed.step2.join(", ")}`);
+        if (parsed.step3?.length) parts.push(`Managing care for: ${parsed.step3.join(", ")}`);
+        if (parsed.step4?.length) parts.push(`Wants QB to handle: ${parsed.step4.join(", ")}`);
+        if (parts.length > 0) {
+          surveyContext = `\nUser's onboarding preferences:\n${parts.join("\n")}\nReference these when relevant — e.g., if they said "Organizing records," proactively offer to help with that.\n`;
+        }
+      }
+    }
+  } catch {}
+
   // Kate focus areas from patient profile
   const focusAreas = profile.kate_focus_areas || null;
   const focusSection = focusAreas
@@ -123,7 +144,7 @@ async function buildContext(appUserId: string): Promise<string> {
 
   return `User's name: ${displayName} (full name: ${profile.full_name || "Unknown"})
 Today: ${now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-${focusSection}${healthHistorySection}
+${focusSection}${healthHistorySection}${surveyContext}
 Providers on file:
 ${providerList || "No providers yet."}
 
