@@ -51,14 +51,25 @@ export async function POST(req: NextRequest) {
       .select("name")
       .eq("app_user_id", appUserId);
 
-    const existingNames = new Set(
-      (existingProviders || []).map((p) => p.name.toLowerCase())
-    );
+    const existingProviderList = (existingProviders || []).map((p) => p.name.toLowerCase());
 
-    // Filter to only new providers
-    const newMatches = matches.filter(
-      (m) => !existingNames.has(m.name.toLowerCase())
-    );
+    // Word-level matching to catch duplicates like
+    // "Dr. Echelman yearly appointment" vs "D.D.S. ERIC ECHELMAN"
+    function isDuplicate(calName: string): boolean {
+      const lower = calName.toLowerCase();
+      for (const existing of existingProviderList) {
+        if (lower === existing || lower.includes(existing) || existing.includes(lower)) return true;
+        // Word overlap — any significant word (4+ chars) match
+        const calWords = lower.split(/[\s.,]+/).filter((w) => w.length >= 4);
+        const existWords = existing.split(/[\s.,]+/).filter((w) => w.length >= 4);
+        const overlap = calWords.filter((cw) => existWords.some((ew) => cw.includes(ew) || ew.includes(cw)));
+        if (overlap.length >= 1) return true;
+      }
+      return false;
+    }
+
+    // Filter to only truly new providers
+    const newMatches = matches.filter((m) => !isDuplicate(m.name));
 
     // Insert new providers with source="calendar" and status="active"
     // Auto-lookup phone numbers and addresses
