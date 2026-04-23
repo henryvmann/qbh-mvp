@@ -30,18 +30,24 @@ export default function RootLayout({ children }) {
           data-cbid="bbddaf04-23e0-426e-b6ad-67ecd0bb15d8"
           strategy="beforeInteractive"
         />
-        <Script
+        <script
+          type="text/plain"
+          data-cookieconsent="statistics"
           src="https://www.googletagmanager.com/gtag/js?id=G-T473FYH28S"
-          strategy="afterInteractive"
+          async
         />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-T473FYH28S');
-          `}
-        </Script>
+        <script
+          type="text/plain"
+          data-cookieconsent="statistics"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-T473FYH28S');
+            `,
+          }}
+        />
         <CapacitorInit />
         {children}
         <KateChatWrapper />
