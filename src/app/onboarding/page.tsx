@@ -679,7 +679,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* What QB will do — animated checklist, not clickable */}
-        <style jsx>{`
+        <style jsx global>{`
           @keyframes checkIn {
             from { opacity: 0; transform: translateX(-8px); }
             to { opacity: 1; transform: translateX(0); }
@@ -1937,7 +1937,7 @@ function Shell({ children, slideVisible, slideDirection }: { children: React.Rea
       className="relative min-h-screen text-[#1A1D2E] overflow-hidden"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
-      <style jsx>{`
+      <style jsx global>{`
         @keyframes slideInFromRight {
           from { opacity: 0; transform: translateX(60px) scale(0.97); }
           to { opacity: 1; transform: translateX(0) scale(1); }
