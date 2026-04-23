@@ -7,6 +7,7 @@ import BestNextStep from "../../components/qbh/BestNextStep";
 import { apiFetch } from "../../lib/api";
 import ProviderCard from "../../components/qbh/ProviderCard";
 import { Plus, Search, X, Check } from "lucide-react";
+import Link from "next/link";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import NextSteps from "../../components/qbh/NextSteps";
 import type { ProviderDashboardSnapshot } from "../lib/QBH/types";
