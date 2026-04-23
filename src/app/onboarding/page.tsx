@@ -657,27 +657,44 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        {/* What QB does — informational cards */}
-        <div className="mt-8 space-y-3">
+        {/* What QB will do — animated checklist, not clickable */}
+        <style jsx>{`
+          @keyframes checkIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+          }
+          @keyframes drawCheck {
+            from { stroke-dashoffset: 20; }
+            to { stroke-dashoffset: 0; }
+          }
+        `}</style>
+        <div className="mt-8 space-y-4">
           {[
-            { icon: Search, label: "Find your providers", detail: "We identify your doctors from your records or you add them manually" },
-            { icon: Calendar, label: "Book appointments", detail: "Kate calls offices and schedules for you — hands-free" },
-            { icon: CheckCircle, label: "Stay on track", detail: "Reminders, follow-ups, and care gap alerts" },
-          ].map((card) => (
+            { label: "Find your providers", detail: "We identify your doctors from your records or you add them manually", delay: "0.3s" },
+            { label: "Book appointments", detail: "Kate calls offices and schedules for you — hands-free", delay: "0.7s" },
+            { label: "Stay on track", detail: "Reminders, follow-ups, and care gap alerts", delay: "1.1s" },
+          ].map((item) => (
             <div
-              key={card.label}
-              className="flex items-center gap-3 rounded-xl px-4 py-3"
-              style={{
-                backgroundColor: CARD_BG,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderColor: CARD_BORDER,
-              }}
+              key={item.label}
+              className="flex items-center gap-4"
+              style={{ animation: `checkIn 0.5s ease-out ${item.delay} both` }}
             >
-              <card.icon size={18} strokeWidth={1.5} color="#5C6B5C" className="shrink-0" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/10">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M3 8.5L6.5 12L13 4"
+                    stroke="#5C6B5C"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="20"
+                    style={{ animation: `drawCheck 0.4s ease-out ${item.delay} both` }}
+                  />
+                </svg>
+              </div>
               <div>
-                <span className="text-sm font-medium text-[#1A1D2E]">{card.label}</span>
-                <p className="text-xs text-[#7A7F8A]">{card.detail}</p>
+                <div className="text-sm font-medium text-[#1A1D2E]">{item.label}</div>
+                <div className="text-xs text-[#7A7F8A]">{item.detail}</div>
               </div>
             </div>
           ))}
