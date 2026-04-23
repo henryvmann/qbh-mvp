@@ -553,17 +553,26 @@ function ProvidersInner() {
               const allProviderText = allDoctors.map((s) =>
                 `${s.provider.name} ${s.provider.specialty || ""} ${s.provider.provider_type || ""}`.toLowerCase()
               ).join(" ");
-              const missing: { label: string; color: string; border: string; keywords: RegExp }[] = [];
-              if (!/primary|pcp|internal|family|general/.test(allProviderText))
-                missing.push({ label: "Primary Care", color: "#E8F5E8", border: "#C2D9B8", keywords: /primary care/ });
-              if (!/dent|dds|oral/.test(allProviderText))
-                missing.push({ label: "Dentist", color: "#E0F0FF", border: "#B0D0E8", keywords: /dentist/ });
-              if (!/eye|vision|optom|ophthal/.test(allProviderText))
-                missing.push({ label: "Eye Doctor", color: "#FFF5E0", border: "#E8D0A0", keywords: /eye/ });
-              if (!/therap|psych|counsel|mental/.test(allProviderText))
-                missing.push({ label: "Therapist", color: "#F0E8F5", border: "#D0B8E0", keywords: /therapist/ });
-              if (!/derm|skin/.test(allProviderText))
-                missing.push({ label: "Dermatologist", color: "#FFF0E8", border: "#E8C8B0", keywords: /dermatologist/ });
+
+              // Check dismissed types from patient profile
+              const dismissedKey = "qbh_dismissed_provider_types";
+              let dismissed: string[] = [];
+              try {
+                const stored = localStorage.getItem(dismissedKey);
+                if (stored) dismissed = JSON.parse(stored);
+              } catch {}
+
+              const missing: { label: string; color: string; border: string; keywords: RegExp; dismissId: string }[] = [];
+              if (!/primary|pcp|internal|family|general/.test(allProviderText) && !dismissed.includes("pcp"))
+                missing.push({ label: "Primary Care", color: "#E8F5E8", border: "#C2D9B8", keywords: /primary care/, dismissId: "pcp" });
+              if (!/dent|dds|oral/.test(allProviderText) && !dismissed.includes("dentist"))
+                missing.push({ label: "Dentist", color: "#E0F0FF", border: "#B0D0E8", keywords: /dentist/, dismissId: "dentist" });
+              if (!/eye|vision|optom|ophthal/.test(allProviderText) && !dismissed.includes("eye"))
+                missing.push({ label: "Eye Doctor", color: "#FFF5E0", border: "#E8D0A0", keywords: /eye/, dismissId: "eye" });
+              if (!/therap|psych|counsel|mental/.test(allProviderText) && !dismissed.includes("therapist"))
+                missing.push({ label: "Therapist", color: "#F0E8F5", border: "#D0B8E0", keywords: /therapist/, dismissId: "therapist" });
+              if (!/derm|skin/.test(allProviderText) && !dismissed.includes("dermatologist"))
+                missing.push({ label: "Dermatologist", color: "#FFF0E8", border: "#E8C8B0", keywords: /dermatologist/, dismissId: "dermatologist" });
 
               if (missing.length === 0) return null;
               return (
@@ -573,22 +582,50 @@ function ProvidersInner() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {missing.map((m) => (
-                      <button
+                      <div
                         key={m.label}
-                        type="button"
-                        onClick={() => {
-                          setShowAddForm(true);
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        }}
-                        className="flex items-center justify-between rounded-2xl border-2 border-dashed p-5 transition hover:shadow-sm text-left"
+                        className="rounded-2xl border-2 border-dashed p-5"
                         style={{ borderColor: m.border, backgroundColor: m.color + "40" }}
                       >
-                        <div>
-                          <div className="text-sm font-semibold text-[#1A1D2E]">Your {m.label}</div>
-                          <div className="text-xs text-[#7A7F8A]">Add one to your care team</div>
-                        </div>
-                        <Plus size={18} className="text-[#B0B4BC]" />
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddForm(true);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                          className="flex w-full items-center justify-between text-left"
+                        >
+                          <div>
+                            <div className="text-sm font-semibold text-[#1A1D2E]">Your {m.label}</div>
+                            <div className="text-xs text-[#7A7F8A]">Add one to your care team</div>
+                          </div>
+                          <Plus size={18} className="text-[#B0B4BC]" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            try {
+                              const stored = localStorage.getItem(dismissedKey);
+                              const current: string[] = stored ? JSON.parse(stored) : [];
+                              current.push(m.dismissId);
+                              localStorage.setItem(dismissedKey, JSON.stringify(current));
+                              // Also save to patient profile
+                              apiFetch("/api/patient-profile", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  profile: { dismissed_provider_types: current },
+                                }),
+                              });
+                              // Force re-render
+                              window.location.reload();
+                            } catch {}
+                          }}
+                          className="mt-2 text-[10px] text-[#B0B4BC] hover:text-[#7A7F8A] underline underline-offset-2"
+                        >
+                          I Don&apos;t Have One
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>
