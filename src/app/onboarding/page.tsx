@@ -440,6 +440,25 @@ export default function OnboardingPage() {
       });
       if (signInError) throw signInError;
 
+      // Auto-create care recipients from step 3 survey answers
+      const careFor = survey.step3;
+      if (careFor.length > 0) {
+        const recipients: Array<{ id: string; name: string; relationship: string }> = [];
+        if (careFor.includes("Myself")) recipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
+        if (careFor.includes("My partner / spouse")) recipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
+        if (careFor.includes("My child(ren)")) recipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
+        if (careFor.includes("My parent(s)")) recipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
+        if (careFor.includes("Someone else")) recipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
+
+        try {
+          await apiFetch("/api/patient-profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profile: { care_recipients: recipients } }),
+          });
+        } catch {}
+      }
+
       setStep(8);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
@@ -638,6 +657,25 @@ export default function OnboardingPage() {
         password,
       });
       if (signInError) throw signInError;
+
+      // Auto-create care recipients from step 3 survey answers
+      const careFor = survey.step3;
+      if (careFor.length > 0) {
+        const recipients: Array<{ id: string; name: string; relationship: string }> = [];
+        if (careFor.includes("Myself")) recipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
+        if (careFor.includes("My partner / spouse")) recipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
+        if (careFor.includes("My child(ren)")) recipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
+        if (careFor.includes("My parent(s)")) recipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
+        if (careFor.includes("Someone else")) recipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
+
+        try {
+          await apiFetch("/api/patient-profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profile: { care_recipients: recipients } }),
+          });
+        } catch {}
+      }
 
       // Add each manual provider
       for (const prov of manualProviders) {

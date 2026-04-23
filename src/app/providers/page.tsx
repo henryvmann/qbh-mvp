@@ -271,6 +271,7 @@ function ProvidersInner() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [expandedDismiss, setExpandedDismiss] = useState<string | null>(null);
+  const [careRecipients, setCareRecipients] = useState<Array<{ id: string; name: string; relationship: string }>>([]);
   const [initialSearch, setInitialSearch] = useState("");
 
   const loadData = useCallback(() => {
@@ -290,6 +291,11 @@ function ProvidersInner() {
         }
       })
       .finally(() => setLoading(false));
+
+    // Load care recipients
+    apiFetch("/api/patient-profile").then((r) => r.json()).then((data) => {
+      if (data?.profile?.care_recipients) setCareRecipients(data.profile.care_recipients);
+    }).catch(() => {});
   }, [router]);
 
   useEffect(() => {
@@ -345,6 +351,24 @@ function ProvidersInner() {
         <p className="mt-1 text-sm text-[#7A7F8A]">
           {snapshots.length} provider{snapshots.length !== 1 ? "s" : ""} on file
         </p>
+
+        {/* Care Recipients */}
+        {careRecipients.length > 1 && (
+          <div className="mt-4 mb-2">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#B0B4BC] mb-2">Managing Care For</div>
+            <div className="flex flex-wrap gap-2">
+              {careRecipients.map((r) => (
+                <span key={r.id} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EBEDF0] px-3 py-1 text-xs font-medium text-[#1A1D2E] shadow-sm">
+                  {r.name}
+                  <span className="text-[10px] text-[#B0B4BC]">{r.relationship}</span>
+                </span>
+              ))}
+              <a href="/settings" className="inline-flex items-center rounded-full bg-[#F0F2F5] border border-[#EBEDF0] px-3 py-1 text-[10px] text-[#7A7F8A] hover:text-[#1A1D2E]">
+                Edit
+              </a>
+            </div>
+          </div>
+        )}
 
         <BestNextStep context="providers" />
 
