@@ -235,13 +235,24 @@ export default function AccountPage() {
                   type="text"
                   value={editInsProvider}
                   onChange={(e) => setEditInsProvider(e.target.value)}
-                  placeholder="e.g. Blue Cross, Aetna"
-                  list="account-insurance-providers"
+                  placeholder="Start typing your insurance..."
+                  autoComplete="off"
                   className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
-                <datalist id="account-insurance-providers">
-                  {["Aetna","Anthem","Blue Cross Blue Shield","Cigna","Humana","Kaiser Permanente","Medicare","Medicaid","Oscar Health","United Healthcare"].map((ins) => <option key={ins} value={ins} />)}
-                </datalist>
+                {editInsProvider.trim().length >= 2 && (() => {
+                  const matches = ["Aetna","Anthem","Blue Cross Blue Shield","Cigna","Humana","Kaiser Permanente","Medicare","Medicaid","Molina Healthcare","Oscar Health","Oxford","United Healthcare","WellCare","Ambetter","Centene","CareFirst","EmblemHealth","Florida Blue","Highmark","Horizon BCBS","Independence Blue Cross","TRICARE"]
+                    .filter((ins) => ins.toLowerCase().includes(editInsProvider.trim().toLowerCase()));
+                  if (matches.length === 0 || matches.some((m) => m.toLowerCase() === editInsProvider.trim().toLowerCase())) return null;
+                  return (
+                    <div className="mt-1 max-h-36 overflow-y-auto rounded-lg border border-[#EBEDF0] bg-white divide-y divide-[#EBEDF0]">
+                      {matches.slice(0, 5).map((ins) => (
+                        <button key={ins} type="button" onClick={() => setEditInsProvider(ins)} className="w-full px-3 py-2 text-left text-sm text-[#1A1D2E] hover:bg-[#F8F9FA] transition">
+                          {ins}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <label className="block text-xs text-[#7A7F8A] mb-1">Member / Policy ID</label>

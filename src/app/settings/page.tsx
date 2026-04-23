@@ -186,11 +186,11 @@ export default function SettingsPage() {
                 onChange={(e) => setInsuranceProvider(e.target.value)}
                 placeholder="Start typing your insurance..."
                 autoComplete="off"
-                list="insurance-providers"
                 className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
               />
-              <datalist id="insurance-providers">
-                {["Aetna", "Anthem", "Blue Cross Blue Shield", "Cigna", "Humana",
+              {insuranceProvider.trim().length >= 2 && (() => {
+                const KNOWN_INSURERS = [
+                  "Aetna", "Anthem", "Blue Cross Blue Shield", "Cigna", "Humana",
                   "Kaiser Permanente", "Medicaid", "Medicare", "Molina Healthcare",
                   "Oscar Health", "Oxford", "United Healthcare", "WellCare",
                   "Ambetter", "Centene", "CareFirst", "EmblemHealth", "Excellus",
@@ -198,8 +198,26 @@ export default function SettingsPage() {
                   "Highmark", "Horizon BCBS", "Independence Blue Cross",
                   "Medical Mutual", "Premera Blue Cross", "Priority Health",
                   "Regence", "SelectHealth", "Tufts Health Plan", "TRICARE",
-                ].map((ins) => <option key={ins} value={ins} />)}
-              </datalist>
+                ];
+                const matches = KNOWN_INSURERS.filter((ins) =>
+                  ins.toLowerCase().includes(insuranceProvider.trim().toLowerCase())
+                );
+                if (matches.length === 0 || matches.some((m) => m.toLowerCase() === insuranceProvider.trim().toLowerCase())) return null;
+                return (
+                  <div className="mt-1 max-h-36 overflow-y-auto rounded-lg border border-[#EBEDF0] bg-white divide-y divide-[#EBEDF0]">
+                    {matches.slice(0, 5).map((ins) => (
+                      <button
+                        key={ins}
+                        type="button"
+                        onClick={() => setInsuranceProvider(ins)}
+                        className="w-full px-3 py-2 text-left text-sm text-[#1A1D2E] hover:bg-[#F8F9FA] transition"
+                      >
+                        {ins}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
             <div>
               <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Member / Policy Number</label>
