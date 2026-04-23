@@ -270,6 +270,7 @@ function ProvidersInner() {
   const [hasCalendar, setHasCalendar] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [expandedDismiss, setExpandedDismiss] = useState<string | null>(null);
   const [initialSearch, setInitialSearch] = useState("");
 
   const loadData = useCallback(() => {
@@ -601,30 +602,56 @@ function ProvidersInner() {
                           </div>
                           <Plus size={18} className="text-[#B0B4BC]" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            try {
-                              const stored = localStorage.getItem(dismissedKey);
-                              const current: string[] = stored ? JSON.parse(stored) : [];
-                              current.push(m.dismissId);
-                              localStorage.setItem(dismissedKey, JSON.stringify(current));
-                              // Also save to patient profile
-                              apiFetch("/api/patient-profile", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  profile: { dismissed_provider_types: current },
-                                }),
-                              });
-                              // Force re-render
-                              window.location.reload();
-                            } catch {}
-                          }}
-                          className="mt-2 text-[10px] text-[#B0B4BC] hover:text-[#7A7F8A] underline underline-offset-2"
-                        >
-                          I Don&apos;t Have One
-                        </button>
+                        {expandedDismiss === m.dismissId ? (
+                          <div className="mt-3 rounded-xl bg-white border border-[#EBEDF0] p-3">
+                            <p className="text-xs text-[#1A1D2E]">Would you like Kate to help you find a {m.label.toLowerCase()} nearby?</p>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExpandedDismiss(null);
+                                  window.dispatchEvent(new CustomEvent("kate-quick-action", {
+                                    detail: { message: `Help me find a ${m.label.toLowerCase()} near me` },
+                                  }));
+                                }}
+                                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                                style={{ backgroundColor: "#5C6B5C" }}
+                              >
+                                Yes, Help Me Find One
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  try {
+                                    const stored = localStorage.getItem(dismissedKey);
+                                    const current: string[] = stored ? JSON.parse(stored) : [];
+                                    current.push(m.dismissId);
+                                    localStorage.setItem(dismissedKey, JSON.stringify(current));
+                                    apiFetch("/api/patient-profile", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        profile: { dismissed_provider_types: current },
+                                      }),
+                                    });
+                                    window.location.reload();
+                                  } catch {}
+                                }}
+                                className="rounded-lg px-3 py-1.5 text-xs text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                              >
+                                No Thanks
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedDismiss(m.dismissId)}
+                            className="mt-2 text-[10px] text-[#B0B4BC] hover:text-[#7A7F8A] underline underline-offset-2"
+                          >
+                            I Don&apos;t Have One
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
