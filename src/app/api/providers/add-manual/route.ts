@@ -36,18 +36,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, provider_id: existing.id, duplicate: true });
     }
 
+    const insertRow: Record<string, unknown> = {
+      app_user_id: appUserId,
+      name,
+      phone_number: phone,
+      specialty: specialty,
+      status: "active",
+      care_recipient: careRecipients.length > 0 ? JSON.stringify(careRecipients) : null,
+      source: "manual",
+    };
+    if (npi) insertRow.npi = npi;
+
     const { data, error } = await supabaseAdmin
       .from("providers")
-      .insert({
-        app_user_id: appUserId,
-        name,
-        phone_number: phone,
-        specialty: specialty,
-        npi: npi,
-        status: "active",
-        care_recipient: careRecipients.length > 0 ? JSON.stringify(careRecipients) : null,
-        source: "manual",
-      })
+      .insert(insertRow)
       .select("id")
       .single();
 

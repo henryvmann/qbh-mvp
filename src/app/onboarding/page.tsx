@@ -679,7 +679,7 @@ export default function OnboardingPage() {
 
       // Add each manual provider
       for (const prov of manualProviders) {
-        await apiFetch("/api/providers/add-manual", {
+        const addRes = await apiFetch("/api/providers/add-manual", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -691,6 +691,10 @@ export default function OnboardingPage() {
             care_recipients: prov.careRecipients,
           }),
         });
+        const addData = await addRes.json().catch(() => null);
+        if (!addRes.ok) {
+          console.error("[onboarding] Failed to add provider:", prov.name, addData?.error);
+        }
       }
 
       // Skip discovery, go straight to celebration
