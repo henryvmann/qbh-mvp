@@ -643,6 +643,7 @@ export default function OnboardingPage() {
             phone_number: p.phone,
             specialty: p.specialty,
             npi: p.npi,
+            care_recipients: p.careRecipients,
           })),
           consents: {
             ai_calls: true,

@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
         for (const prov of manualProviders) {
           const provName = String(prov.name || "").trim();
           if (!provName) continue;
+          const provCareRecipients = Array.isArray(prov.care_recipients) ? prov.care_recipients : [];
           const insertRow: Record<string, unknown> = {
             app_user_id: appUserId,
             name: provName,
@@ -97,6 +98,7 @@ export async function POST(req: NextRequest) {
             specialty: prov.specialty || null,
             status: "active",
             source: "manual",
+            care_recipient: provCareRecipients.length > 0 ? JSON.stringify(provCareRecipients) : null,
           };
           if (prov.npi) insertRow.npi = prov.npi;
           console.log("[signup] inserting provider:", provName, "for app_user_id:", appUserId);
