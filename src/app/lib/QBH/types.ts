@@ -10,6 +10,7 @@ export type Provider = {
   provider_type?: string | null;
   npi?: string | null;
   care_team?: string | null;
+  care_recipient?: string | null;
 };
 
 export type LastVisitCategory =

@@ -499,6 +499,40 @@ function ProvidersInner() {
                                 {subtitle}
                               </div>
                             )}
+                            {/* Care recipient badges */}
+                            {(() => {
+                              let recipients: string[] = [];
+                              try {
+                                const raw = snapshot.provider.care_recipient;
+                                if (raw) recipients = typeof raw === "string" ? JSON.parse(raw) : raw;
+                              } catch {}
+                              if (!recipients || recipients.length === 0) return null;
+
+                              // Build smart initials — use first letter, or first two if duplicates
+                              const allNames = careRecipients.map((r) => r.name);
+                              function getInitial(recipientLabel: string): string {
+                                const match = careRecipients.find((r) => r.relationship === recipientLabel || r.name === recipientLabel);
+                                const name = match?.name || recipientLabel;
+                                const first = name.charAt(0).toUpperCase();
+                                const duplicates = allNames.filter((n) => n.charAt(0).toUpperCase() === first);
+                                if (duplicates.length > 1) return name.slice(0, 2);
+                                return first;
+                              }
+
+                              return (
+                                <div className="flex gap-1 mt-1.5">
+                                  {recipients.map((r) => (
+                                    <span
+                                      key={r}
+                                      className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#5C6B5C]/15 text-[9px] font-bold text-[#5C6B5C]"
+                                      title={careRecipients.find((cr) => cr.relationship === r || cr.name === r)?.name || r}
+                                    >
+                                      {getInitial(r)}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </div>
                           <div className="flex flex-col items-end gap-1.5 shrink-0">
                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>
