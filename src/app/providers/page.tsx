@@ -360,44 +360,14 @@ function ProvidersInner() {
             <div className="text-[10px] font-bold uppercase tracking-widest text-[#B0B4BC] mb-2">Managing Care For</div>
             <div className="flex flex-wrap gap-2">
               {careRecipients.map((r) => (
-                editingRecipient === r.id ? (
-                  <form
-                    key={r.id}
-                    className="inline-flex items-center gap-1 rounded-full bg-white border border-[#5C6B5C] px-1 py-0.5 shadow-sm"
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      const updated = careRecipients.map((cr) => cr.id === r.id ? { ...cr, name: editRecipientName } : cr);
-                      setCareRecipients(updated);
-                      setEditingRecipient(null);
-                      await apiFetch("/api/patient-profile", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ profile: { care_recipients: updated } }),
-                      });
-                    }}
-                  >
-                    <input
-                      type="text"
-                      value={editRecipientName}
-                      onChange={(e) => setEditRecipientName(e.target.value)}
-                      className="w-20 rounded-full bg-transparent px-2 py-0.5 text-xs font-medium text-[#1A1D2E] focus:outline-none"
-                      autoFocus
-                      onBlur={() => setEditingRecipient(null)}
-                    />
-                    <span className="text-[10px] text-[#B0B4BC] pr-2">{r.relationship}</span>
-                  </form>
-                ) : (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => { setEditingRecipient(r.id); setEditRecipientName(r.name); }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EBEDF0] px-3 py-1 text-xs font-medium text-[#1A1D2E] shadow-sm hover:border-[#5C6B5C] transition cursor-pointer"
-                    title="Click to rename"
-                  >
-                    {r.name}
-                    <span className="text-[10px] text-[#B0B4BC]">{r.relationship}</span>
-                  </button>
-                )
+                <Link
+                  key={r.id}
+                  href="/care-recipients"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EBEDF0] px-3 py-1 text-xs font-medium text-[#1A1D2E] shadow-sm hover:border-[#5C6B5C] transition"
+                >
+                  {r.name}
+                  <span className="text-[10px] text-[#B0B4BC]">{r.relationship}</span>
+                </Link>
               ))}
             </div>
           </div>
