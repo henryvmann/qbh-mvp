@@ -1858,8 +1858,8 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <GoldButton onClick={() => window.location.href = "/handle-first"}>
-          See your providers &rarr;
+        <GoldButton onClick={() => window.location.href = isManualOnboarding ? "/dashboard" : "/handle-first"}>
+          {isManualOnboarding ? "Go to your dashboard \u2192" : "See your providers \u2192"}
         </GoldButton>
       </Shell>
     );
