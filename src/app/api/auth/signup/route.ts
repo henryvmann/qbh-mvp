@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Add manual providers if provided
+      console.log("[signup] manual_providers received:", JSON.stringify(manualProviders));
       if (manualProviders && Array.isArray(manualProviders)) {
         for (const prov of manualProviders) {
           const provName = String(prov.name || "").trim();
@@ -92,9 +93,12 @@ export async function POST(req: NextRequest) {
             source: "manual",
           };
           if (prov.npi) insertRow.npi = prov.npi;
+          console.log("[signup] inserting provider:", provName, "for app_user_id:", appUserId);
           const { error: provError } = await supabaseAdmin.from("providers").insert(insertRow);
           if (provError) {
-            console.error("signup add provider error:", provName, provError.message);
+            console.error("[signup] add provider error:", provName, provError.message, provError.details, provError.code);
+          } else {
+            console.log("[signup] provider added successfully:", provName);
           }
         }
       }
