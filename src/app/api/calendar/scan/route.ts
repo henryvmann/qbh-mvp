@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { scanCalendarForProviders } from "../../../../lib/google-calendar";
+import { lookupPlaceDetails } from "../../../../lib/google/places-lookup";
 
 export async function POST(req: NextRequest) {
   // Try session-based auth first (normal user requests)
@@ -59,14 +60,26 @@ export async function POST(req: NextRequest) {
       (m) => !existingNames.has(m.name.toLowerCase())
     );
 
-    // Insert new providers with source="calendar" and status="review_needed"
+    // Insert new providers with source="calendar" and status="active"
+    // Auto-lookup phone numbers and addresses
     let insertedCount = 0;
     for (const match of newMatches) {
+      // Look up phone and address from Google Places
+      let phone: string | null = null;
+      let address: string | null = null;
+      try {
+        const placeInfo = await lookupPlaceDetails(match.name);
+        phone = placeInfo.phone;
+        address = placeInfo.address;
+      } catch {}
+
       const { error } = await supabaseAdmin.from("providers").insert({
         app_user_id: appUserId,
         name: match.name,
         source: "calendar",
-        status: "review_needed",
+        status: "active",
+        phone_number: phone,
+        address: address,
       });
 
       if (!error) {
