@@ -272,6 +272,8 @@ function ProvidersInner() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [expandedDismiss, setExpandedDismiss] = useState<string | null>(null);
   const [careRecipients, setCareRecipients] = useState<Array<{ id: string; name: string; relationship: string }>>([]);
+  const [editingRecipient, setEditingRecipient] = useState<string | null>(null);
+  const [editRecipientName, setEditRecipientName] = useState("");
   const [initialSearch, setInitialSearch] = useState("");
 
   const loadData = useCallback(() => {
@@ -353,19 +355,50 @@ function ProvidersInner() {
         </p>
 
         {/* Care Recipients */}
-        {careRecipients.length > 1 && (
+        {careRecipients.length > 0 && (
           <div className="mt-4 mb-2">
             <div className="text-[10px] font-bold uppercase tracking-widest text-[#B0B4BC] mb-2">Managing Care For</div>
             <div className="flex flex-wrap gap-2">
               {careRecipients.map((r) => (
-                <span key={r.id} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EBEDF0] px-3 py-1 text-xs font-medium text-[#1A1D2E] shadow-sm">
-                  {r.name}
-                  <span className="text-[10px] text-[#B0B4BC]">{r.relationship}</span>
-                </span>
+                editingRecipient === r.id ? (
+                  <form
+                    key={r.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-white border border-[#5C6B5C] px-1 py-0.5 shadow-sm"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const updated = careRecipients.map((cr) => cr.id === r.id ? { ...cr, name: editRecipientName } : cr);
+                      setCareRecipients(updated);
+                      setEditingRecipient(null);
+                      await apiFetch("/api/patient-profile", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ profile: { care_recipients: updated } }),
+                      });
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={editRecipientName}
+                      onChange={(e) => setEditRecipientName(e.target.value)}
+                      className="w-20 rounded-full bg-transparent px-2 py-0.5 text-xs font-medium text-[#1A1D2E] focus:outline-none"
+                      autoFocus
+                      onBlur={() => setEditingRecipient(null)}
+                    />
+                    <span className="text-[10px] text-[#B0B4BC] pr-2">{r.relationship}</span>
+                  </form>
+                ) : (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => { setEditingRecipient(r.id); setEditRecipientName(r.name); }}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EBEDF0] px-3 py-1 text-xs font-medium text-[#1A1D2E] shadow-sm hover:border-[#5C6B5C] transition cursor-pointer"
+                    title="Click to rename"
+                  >
+                    {r.name}
+                    <span className="text-[10px] text-[#B0B4BC]">{r.relationship}</span>
+                  </button>
+                )
               ))}
-              <a href="/settings" className="inline-flex items-center rounded-full bg-[#F0F2F5] border border-[#EBEDF0] px-3 py-1 text-[10px] text-[#7A7F8A] hover:text-[#1A1D2E]">
-                Edit
-              </a>
             </div>
           </div>
         )}
