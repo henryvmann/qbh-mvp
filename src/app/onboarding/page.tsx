@@ -7,6 +7,7 @@ import { apiFetch } from "../../lib/api";
 import { CharacterWithBubble } from "../../components/qbh/CharacterBubble";
 import WhyWeAsk from "../../components/qbh/WhyWeAsk";
 import { Search, Calendar, CheckCircle, Building2, ShieldCheck, Clock, Sparkles } from "lucide-react";
+import TypeWriter from "../../components/qbh/TypeWriter";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -724,7 +725,7 @@ export default function OnboardingPage() {
         {/* Kate intro — below the pitch */}
         <div className="mt-8 float-item" style={{ animationDelay: "1.5s" }}>
           <CharacterWithBubble pose="waving">
-            Hey! I&apos;m Kate, your care coordinator. A few quick questions and I&apos;ll get everything set up for you.
+            <TypeWriter text="Hey! I'm Kate, your care coordinator. A few quick questions and I'll get everything set up for you." delay={1600} speed={20} />
           </CharacterWithBubble>
         </div>
 
@@ -915,7 +916,7 @@ export default function OnboardingPage() {
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mt-4">
           <CharacterWithBubble pose="pointing">
-            Here&apos;s what happens next. Three quick steps and you&apos;re all set.
+            <TypeWriter text="Here's what happens next. Three quick steps and you're all set." delay={300} speed={20} />
           </CharacterWithBubble>
         </div>
 
@@ -996,10 +997,7 @@ export default function OnboardingPage() {
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mb-6">
           <CharacterWithBubble pose="pointing">
-            No problem! You can add your providers by name and I&apos;ll look
-            them up. Just search for your doctor, dentist, or specialist and
-            I&apos;ll pull in their details. You can always add more later from
-            your dashboard.
+            <TypeWriter text="No problem! You can add your providers by name and I'll look them up. Just search for your doctor, dentist, or specialist and I'll pull in their details." delay={300} speed={18} />
           </CharacterWithBubble>
         </div>
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
@@ -1250,9 +1248,7 @@ export default function OnboardingPage() {
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mb-6">
           <CharacterWithBubble pose="pointing">
-            Almost there! I just need a few basics to create your account.
-            Then we&apos;ll use Plaid to securely identify your healthcare
-            providers from past co-pays. Access is strictly read-only.
+            <TypeWriter text="Almost there! I just need a few basics to create your account. Then we'll use Plaid to securely identify your healthcare providers from past co-pays. Access is strictly read-only." delay={300} speed={18} />
           </CharacterWithBubble>
         </div>
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
@@ -1972,8 +1968,13 @@ function Shell({ children, slideVisible, slideDirection }: { children: React.Rea
           to { opacity: 1; transform: translateY(0) rotate(0deg); }
         }
         @keyframes spinIn {
-          from { opacity: 0; transform: rotate(-180deg) scale(0.5); }
+          from { opacity: 0; transform: rotate(-90deg) scale(0.6); }
+          50% { opacity: 1; }
           to { opacity: 1; transform: rotate(0deg) scale(1); }
+        }
+        @keyframes typeIn {
+          from { max-height: 0; opacity: 0; }
+          to { max-height: 200px; opacity: 1; }
         }
         .slide-container {
           animation: ${animClass} 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -1988,7 +1989,7 @@ function Shell({ children, slideVisible, slideDirection }: { children: React.Rea
         .cascade-7 { animation-delay: 0.7s; }
         .pop-item { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
         .float-item { animation: floatIn 0.5s ease-out both; }
-        .spin-item { animation: spinIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .spin-item { animation: spinIn 1s cubic-bezier(0.22, 1, 0.36, 1) both; }
         .pulse-btn { animation: gentlePulse 2s ease-in-out infinite; }
       `}</style>
       <DecorativeCircle />
