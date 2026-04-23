@@ -75,8 +75,14 @@ export async function POST(req: NextRequest) {
         );
 
       if (upsertError) {
-        console.error("signup upsert app_users error:", upsertError);
+        console.error("[signup] upsert app_users FAILED:", upsertError.message, upsertError.code, upsertError.details);
+      } else {
+        console.log("[signup] app_users upserted OK, id:", appUserId);
       }
+
+      // Verify the row exists before adding providers
+      const { data: verifyRow } = await supabaseAdmin.from("app_users").select("id").eq("id", appUserId).maybeSingle();
+      console.log("[signup] app_users verify:", verifyRow ? "exists" : "MISSING");
 
       // Add manual providers if provided
       console.log("[signup] manual_providers received:", JSON.stringify(manualProviders));
