@@ -14,7 +14,8 @@ export default function ProviderLink({
   return (
     <Link
       href={`/providers/${providerId}`}
-      className={className || "text-[#1A1D2E] underline decoration-[#5C6B5C]/30 underline-offset-2 hover:decoration-[#5C6B5C] transition"}
+      style={{ color: "#1A1D2E" }}
+      className={className || "font-medium underline decoration-[#5C6B5C]/30 underline-offset-2 hover:decoration-[#5C6B5C] transition"}
     >
       {providerName}
     </Link>
