@@ -22,9 +22,10 @@ type ExistingProvider = {
 type Props = {
   onAdded: () => void;
   onCancel: () => void;
+  careRecipientLabel?: string;
 };
 
-export default function InlineProviderSearch({ onAdded, onCancel }: Props) {
+export default function InlineProviderSearch({ onAdded, onCancel, careRecipientLabel }: Props) {
   const [mode, setMode] = useState<"choose" | "search" | "link">("choose");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<NpiResult[]>([]);
@@ -86,6 +87,7 @@ export default function InlineProviderSearch({ onAdded, onCancel }: Props) {
           phone_number: result.phone,
           specialty: result.specialty,
           npi: result.npi,
+          ...(careRecipientLabel ? { care_recipients: [careRecipientLabel] } : {}),
         }),
       });
       const data = await res.json();

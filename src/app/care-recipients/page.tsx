@@ -7,6 +7,7 @@ import TopNav from "../../components/qbh/TopNav";
 import NextSteps from "../../components/qbh/NextSteps";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import { apiFetch } from "../../lib/api";
+import InlineProviderSearch from "../../components/qbh/InlineProviderSearch";
 import { Plus, Pencil, Check, Trash2 } from "lucide-react";
 
 type CareRecipient = {
@@ -35,6 +36,7 @@ export default function CareRecipientsPage() {
   const [editRelationship, setEditRelationship] = useState("");
   const [editDob, setEditDob] = useState("");
   const [saving, setSaving] = useState(false);
+  const [addingProviderFor, setAddingProviderFor] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRelationship, setNewRelationship] = useState("Other");
@@ -269,7 +271,32 @@ export default function CareRecipientsPage() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-[#B0B4BC]">No providers assigned yet. Add providers and select who they&apos;re for.</p>
+                        <p className="text-xs text-[#B0B4BC]">No providers assigned yet.</p>
+                      )}
+
+                      {/* Add provider for this recipient */}
+                      {addingProviderFor === r.id ? (
+                        <div className="mt-3">
+                          <InlineProviderSearch
+                            careRecipientLabel={r.relationship}
+                            onAdded={async () => {
+                              setAddingProviderFor(null);
+                              // Refresh providers
+                              const dashRes = await apiFetch("/api/dashboard/data");
+                              const dashData = await dashRes.json();
+                              if (dashData?.ok) setProviders(dashData.snapshots || []);
+                            }}
+                            onCancel={() => setAddingProviderFor(null)}
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setAddingProviderFor(r.id)}
+                          className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#5C6B5C] hover:underline underline-offset-2"
+                        >
+                          <Plus size={12} /> Add Provider
+                        </button>
                       )}
                     </div>
                   )}
