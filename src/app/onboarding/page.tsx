@@ -627,7 +627,7 @@ export default function OnboardingPage() {
       if (careFor.includes("My parent(s)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
       if (careFor.includes("Someone else")) careRecipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
 
-      // Create account via server API
+      // Create account + add providers in one server call
       const signupRes = await apiFetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -638,6 +638,12 @@ export default function OnboardingPage() {
           name: name.trim(),
           survey_answers: JSON.stringify(survey),
           care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
+          manual_providers: manualProviders.map((p) => ({
+            name: p.name,
+            phone_number: p.phone,
+            specialty: p.specialty,
+            npi: p.npi,
+          })),
           consents: {
             ai_calls: true,
             phi_sharing: true,
@@ -658,26 +664,6 @@ export default function OnboardingPage() {
         password,
       });
       if (signInError) throw signInError;
-
-      // Add each manual provider
-      for (const prov of manualProviders) {
-        const addRes = await apiFetch("/api/providers/add-manual", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            app_user_id: userId,
-            name: prov.name,
-            phone_number: prov.phone,
-            specialty: prov.specialty,
-            npi: prov.npi,
-            care_recipients: prov.careRecipients,
-          }),
-        });
-        const addData = await addRes.json().catch(() => null);
-        if (!addRes.ok) {
-          console.error("[onboarding] Failed to add provider:", prov.name, addData?.error);
-        }
-      }
 
       // Skip discovery, go straight to celebration
       setApprovedCount(manualProviders.length);

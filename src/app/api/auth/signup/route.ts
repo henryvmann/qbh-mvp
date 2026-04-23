@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     const surveyAnswers = body?.survey_answers || null;
     const consents = body?.consents || null;
     const careRecipients = body?.care_recipients || null;
+    const manualProviders = body?.manual_providers || null;
 
     if (!email || !password || !appUserId) {
       return NextResponse.json(
@@ -75,6 +76,27 @@ export async function POST(req: NextRequest) {
 
       if (upsertError) {
         console.error("signup upsert app_users error:", upsertError);
+      }
+
+      // Add manual providers if provided
+      if (manualProviders && Array.isArray(manualProviders)) {
+        for (const prov of manualProviders) {
+          const provName = String(prov.name || "").trim();
+          if (!provName) continue;
+          const insertRow: Record<string, unknown> = {
+            app_user_id: appUserId,
+            name: provName,
+            phone_number: prov.phone_number || prov.phone || null,
+            specialty: prov.specialty || null,
+            status: "active",
+            source: "manual",
+          };
+          if (prov.npi) insertRow.npi = prov.npi;
+          const { error: provError } = await supabaseAdmin.from("providers").insert(insertRow);
+          if (provError) {
+            console.error("signup add provider error:", provName, provError.message);
+          }
+        }
       }
     }
 
