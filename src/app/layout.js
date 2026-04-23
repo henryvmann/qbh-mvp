@@ -25,6 +25,12 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <Script
+          id="Cookiebot"
+          src="https://consent.cookiebot.com/uc.js"
+          data-cbid="bbddaf04-23e0-426e-b6ad-67ecd0bb15d8"
+          strategy="beforeInteractive"
+        />
+        <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-T473FYH28S"
           strategy="afterInteractive"
         />
