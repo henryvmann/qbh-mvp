@@ -1083,8 +1083,8 @@ export default function OnboardingPage() {
                           <button
                             type="button"
                             onClick={() => addManualProvider(result, Array.from(selected))}
-                            className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                            style={{ backgroundColor: "#5C6B5C", color: "#FFFFFF" }}
+                            className="rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm"
+                            style={{ backgroundColor: "#B8860B", color: "#FFFFFF" }}
                           >
                             Confirm
                           </button>
