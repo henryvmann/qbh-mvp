@@ -30,6 +30,24 @@ export default function RootLayout({ children }) {
           data-cbid="bbddaf04-23e0-426e-b6ad-67ecd0bb15d8"
           strategy="beforeInteractive"
         />
+        <Script id="gcm-defaults" strategy="beforeInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag("consent", "default", {
+              ad_personalization: "denied",
+              ad_storage: "denied",
+              ad_user_data: "denied",
+              analytics_storage: "denied",
+              functionality_storage: "denied",
+              personalization_storage: "denied",
+              security_storage: "granted",
+              wait_for_update: 500,
+            });
+            gtag("set", "ads_data_redaction", true);
+            gtag("set", "url_passthrough", false);
+          `}
+        </Script>
         <script
           type="text/plain"
           data-cookieconsent="statistics"
