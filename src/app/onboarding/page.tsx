@@ -741,6 +741,9 @@ export default function OnboardingPage() {
   if (step === 1) {
     return (
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
+        <button type="button" onClick={() => goToStep(0)} className="mb-4 text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition">
+          &larr; Previous
+        </button>
         <StepCounter current={SURVEY_STEP_MAP[1]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What do you want help staying on top of?
@@ -766,9 +769,6 @@ export default function OnboardingPage() {
           >
             Continue &rarr;
           </GoldButton>
-          <button type="button" onClick={() => goToStep(0)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
-            &larr; Back
-          </button>
         </div>
       </Shell>
     );
@@ -785,6 +785,9 @@ export default function OnboardingPage() {
   if (step === 3) {
     return (
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
+        <button type="button" onClick={() => goToStep(1)} className="mb-4 text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition">
+          &larr; Previous
+        </button>
         <StepCounter current={SURVEY_STEP_MAP[3]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What&apos;s hardest to manage today?
@@ -810,9 +813,6 @@ export default function OnboardingPage() {
           >
             Continue &rarr;
           </GoldButton>
-          <button type="button" onClick={() => goToStep(1)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
-            &larr; Back
-          </button>
         </div>
       </Shell>
     );
@@ -822,6 +822,9 @@ export default function OnboardingPage() {
   if (step === 4) {
     return (
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
+        <button type="button" onClick={() => goToStep(3)} className="mb-4 text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition">
+          &larr; Previous
+        </button>
         <StepCounter current={SURVEY_STEP_MAP[4]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           Who are you managing care for?
@@ -847,9 +850,6 @@ export default function OnboardingPage() {
           >
             Continue &rarr;
           </GoldButton>
-          <button type="button" onClick={() => goToStep(3)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
-            &larr; Back
-          </button>
         </div>
       </Shell>
     );
@@ -859,6 +859,9 @@ export default function OnboardingPage() {
   if (step === 5) {
     return (
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
+        <button type="button" onClick={() => goToStep(4)} className="mb-4 text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition">
+          &larr; Previous
+        </button>
         <StepCounter current={SURVEY_STEP_MAP[5]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What health admin is no longer on your to-do list?
@@ -884,9 +887,6 @@ export default function OnboardingPage() {
           >
             Continue &rarr;
           </GoldButton>
-          <button type="button" onClick={() => goToStep(4)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
-            &larr; Back
-          </button>
         </div>
       </Shell>
     );
