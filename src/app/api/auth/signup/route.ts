@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     const name = String(body?.name || "").trim();
     const surveyAnswers = body?.survey_answers || null;
     const consents = body?.consents || null;
+    const careRecipients = body?.care_recipients || null;
 
     if (!email || !password || !appUserId) {
       return NextResponse.json(
@@ -55,6 +56,11 @@ export async function POST(req: NextRequest) {
     // Ensure app_users row exists and link auth user to it
     if (userData.user) {
       // Upsert the app_users row — may not exist on manual provider path (no Plaid step)
+      // Build patient_profile with care recipients if provided
+      const patientProfile: Record<string, unknown> = {};
+      if (name) patientProfile.full_name = name;
+      if (careRecipients) patientProfile.care_recipients = careRecipients;
+
       const { error: upsertError } = await supabaseAdmin
         .from("app_users")
         .upsert(
@@ -62,6 +68,7 @@ export async function POST(req: NextRequest) {
             id: appUserId,
             auth_user_id: userData.user.id,
             ...(consents ? { consents } : {}),
+            ...(Object.keys(patientProfile).length > 0 ? { patient_profile: patientProfile } : {}),
           },
           { onConflict: "id" }
         );

@@ -409,6 +409,15 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
+      // Build care recipients from step 3 survey answers
+      const careFor = survey.step3;
+      const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
+      if (careFor.includes("Myself")) careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
+      if (careFor.includes("My partner / spouse")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
+      if (careFor.includes("My child(ren)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
+      if (careFor.includes("My parent(s)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
+      if (careFor.includes("Someone else")) careRecipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
+
       // Create account via server API (auto-confirms email)
       const signupRes = await apiFetch("/api/auth/signup", {
         method: "POST",
@@ -419,6 +428,7 @@ export default function OnboardingPage() {
           app_user_id: userId,
           name: name.trim(),
           survey_answers: JSON.stringify(survey),
+          care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
           consents: {
             ai_calls: true,
             phi_sharing: true,
@@ -439,25 +449,6 @@ export default function OnboardingPage() {
         password,
       });
       if (signInError) throw signInError;
-
-      // Auto-create care recipients from step 3 survey answers
-      const careFor = survey.step3;
-      if (careFor.length > 0) {
-        const recipients: Array<{ id: string; name: string; relationship: string }> = [];
-        if (careFor.includes("Myself")) recipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
-        if (careFor.includes("My partner / spouse")) recipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
-        if (careFor.includes("My child(ren)")) recipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
-        if (careFor.includes("My parent(s)")) recipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
-        if (careFor.includes("Someone else")) recipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
-
-        try {
-          await apiFetch("/api/patient-profile", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ profile: { care_recipients: recipients } }),
-          });
-        } catch {}
-      }
 
       setStep(8);
     } catch (err) {
@@ -627,6 +618,15 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
+      // Build care recipients from step 3
+      const careFor = survey.step3;
+      const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
+      if (careFor.includes("Myself")) careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
+      if (careFor.includes("My partner / spouse")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
+      if (careFor.includes("My child(ren)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
+      if (careFor.includes("My parent(s)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
+      if (careFor.includes("Someone else")) careRecipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
+
       // Create account via server API
       const signupRes = await apiFetch("/api/auth/signup", {
         method: "POST",
@@ -637,6 +637,7 @@ export default function OnboardingPage() {
           app_user_id: userId,
           name: name.trim(),
           survey_answers: JSON.stringify(survey),
+          care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
           consents: {
             ai_calls: true,
             phi_sharing: true,
@@ -657,25 +658,6 @@ export default function OnboardingPage() {
         password,
       });
       if (signInError) throw signInError;
-
-      // Auto-create care recipients from step 3 survey answers
-      const careFor = survey.step3;
-      if (careFor.length > 0) {
-        const recipients: Array<{ id: string; name: string; relationship: string }> = [];
-        if (careFor.includes("Myself")) recipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
-        if (careFor.includes("My partner / spouse")) recipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
-        if (careFor.includes("My child(ren)")) recipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
-        if (careFor.includes("My parent(s)")) recipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
-        if (careFor.includes("Someone else")) recipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
-
-        try {
-          await apiFetch("/api/patient-profile", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ profile: { care_recipients: recipients } }),
-          });
-        } catch {}
-      }
 
       // Add each manual provider
       for (const prov of manualProviders) {
