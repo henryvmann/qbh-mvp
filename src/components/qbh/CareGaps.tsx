@@ -77,7 +77,20 @@ export default function CareGaps() {
 
       const detected: CareGap[] = [];
 
+      // Pre-fetch gender to filter gender-specific care gaps
+      let userGender = "";
+      try {
+        const profileRes = await apiFetch("/api/patient-profile");
+        const profileData = await profileRes.json();
+        userGender = (profileData?.profile?.gender || profileData?.profile?.sex || "").toLowerCase();
+      } catch {}
+      const isFemale = userGender === "female" || userGender === "f" ||
+        /obgyn|ob\/gyn|gynecol|obstet|women.*health/.test(providerText);
+
       for (const gap of CARE_GAP_TYPES) {
+        // Skip OB/GYN for non-female users
+        if (gap.type === "obgyn" && !isFemale) continue;
+
         let found = false;
         switch (gap.type) {
           case "pcp":

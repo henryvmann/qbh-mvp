@@ -50,6 +50,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [fullName, setFullName] = useState("");
   const [dob, setDob] = useState("");
+  const [gender, setGender] = useState("");
   const [insuranceProvider, setInsuranceProvider] = useState("");
   const [insuranceMemberId, setInsuranceMemberId] = useState("");
   const [callbackPhone, setCallbackPhone] = useState("");
@@ -79,6 +80,7 @@ export default function SettingsPage() {
           setDisplayName(p.display_name || p.nickname || "");
           setFullName(p.full_name || "");
           setDob(p.date_of_birth || "");
+          setGender(p.gender || "");
           setInsuranceProvider(p.insurance_provider || "");
           setInsuranceMemberId(p.insurance_member_id || "");
           setCallbackPhone(p.callback_phone || "");
@@ -105,6 +107,7 @@ export default function SettingsPage() {
             display_name: displayName.trim() || null,
             full_name: fullName.trim() || null,
             date_of_birth: dob.trim() || null,
+            gender: gender || null,
             insurance_provider: insuranceProvider.trim() || null,
             insurance_member_id: insuranceMemberId.trim() || null,
             callback_phone: callbackPhone.trim() || null,
@@ -177,6 +180,29 @@ export default function SettingsPage() {
                 onChange={(e) => setDob(e.target.value)}
                 className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Sex</label>
+              <div className="flex gap-2">
+                {[
+                  { value: "male", label: "Male" },
+                  { value: "female", label: "Female" },
+                  { value: "other", label: "Prefer Not To Say" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setGender(opt.value)}
+                    className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition ${
+                      gender === opt.value
+                        ? "bg-[#5C6B5C] text-white"
+                        : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="relative">
               <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Insurance Provider</label>
