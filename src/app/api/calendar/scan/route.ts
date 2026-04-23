@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         name: m.name,
         date: m.date,
         upcoming: m.upcoming,
-        already_exists: existingNames.has(m.name.toLowerCase()),
+        already_exists: isDuplicate(m.name),
       })),
     });
   } catch (err) {
