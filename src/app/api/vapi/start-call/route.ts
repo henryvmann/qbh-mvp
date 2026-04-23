@@ -304,7 +304,7 @@ export async function POST(req: Request) {
 
   const patient_name = body?.patient_name ?? null;
   const provider_name = body?.provider_name ?? null;
-  const preferred_timeframe = body?.preferred_timeframe ?? null;
+  let preferred_timeframe = body?.preferred_timeframe ?? null;
   const demo_autoconfirm =
     typeof body?.demo_autoconfirm === "boolean" ? body.demo_autoconfirm : true;
 
@@ -326,7 +326,20 @@ export async function POST(req: Request) {
     .eq("id", app_user_id)
     .single();
 
-  const patientProfile = (userRow?.patient_profile || {}) as Record<string, string | null>;
+  const patientProfile = (userRow?.patient_profile || {}) as Record<string, any>;
+
+  // Build preferred timeframe from availability settings if not explicitly passed
+  if (!preferred_timeframe) {
+    const days = patientProfile.availability_days as string[] | null;
+    const time = patientProfile.availability_time as string | null;
+    const notes = patientProfile.availability_notes as string | null;
+    const parts: string[] = [];
+    if (days && days.length > 0 && days.length < 6) parts.push(days.join(", "));
+    if (time === "morning") parts.push("mornings (8am to noon)");
+    else if (time === "afternoon") parts.push("afternoons (noon to 5pm)");
+    if (notes) parts.push(notes);
+    if (parts.length > 0) preferred_timeframe = parts.join(" — ");
+  }
 
   // Resolve patient full name: body > profile > auth metadata
   let resolvedPatientName = patient_name || patientProfile.full_name || null;
