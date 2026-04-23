@@ -82,6 +82,13 @@ export default function CalendarViewPage() {
   const [hasCalendar, setHasCalendar] = useState(false);
   const [userId, setUserId] = useState("");
 
+  // Availability preferences
+  const [availDays, setAvailDays] = useState<string[]>([]);
+  const [availTime, setAvailTime] = useState("anytime");
+  const [availNotes, setAvailNotes] = useState("");
+  const [availSaving, setAvailSaving] = useState(false);
+  const [availSaved, setAvailSaved] = useState(false);
+
   // Calendar events that look like doctor appointments for confirmation
   const [calendarEvents, setCalendarEvents] = useState<Array<{
     id: string;
@@ -91,6 +98,15 @@ export default function CalendarViewPage() {
   }>>([]);
 
   useEffect(() => {
+    // Load availability preferences
+    apiFetch("/api/patient-profile").then((r) => r.json()).then((data) => {
+      if (data?.profile) {
+        if (data.profile.availability_days) setAvailDays(data.profile.availability_days);
+        if (data.profile.availability_time) setAvailTime(data.profile.availability_time);
+        if (data.profile.availability_notes) setAvailNotes(data.profile.availability_notes);
+      }
+    }).catch(() => {});
+
     Promise.all([
       apiFetch("/api/visits/data").then((res) => {
         if (res.status === 401) { router.push("/login"); return null; }
@@ -483,6 +499,106 @@ export default function CalendarViewPage() {
             </p>
           </div>
         )}
+        {/* Availability preferences */}
+        <div className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
+          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">Your Availability</h2>
+          <p className="text-xs text-[#7A7F8A] mb-4">Tell Kate when you&apos;re available so she books at the right times.</p>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">Preferred Days</label>
+              <div className="flex flex-wrap gap-2">
+                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day) => {
+                  const short = day.slice(0, 3);
+                  const isSelected = (availDays || []).includes(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => {
+                        setAvailDays((prev) => {
+                          const current = prev || [];
+                          return current.includes(day) ? current.filter((d) => d !== day) : [...current, day];
+                        });
+                      }}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                        isSelected ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                      }`}
+                    >
+                      {short}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">Preferred Times</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "morning", label: "Morning (8–12)" },
+                  { value: "afternoon", label: "Afternoon (12–5)" },
+                  { value: "anytime", label: "Anytime" },
+                ].map((time) => {
+                  const isSelected = availTime === time.value;
+                  return (
+                    <button
+                      key={time.value}
+                      type="button"
+                      onClick={() => setAvailTime(time.value)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                        isSelected ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                      }`}
+                    >
+                      {time.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">Anything Else Kate Should Know?</label>
+              <input
+                type="text"
+                value={availNotes}
+                onChange={(e) => setAvailNotes(e.target.value)}
+                placeholder="e.g., No appointments before 10am, avoid Wednesdays"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                setAvailSaving(true);
+                try {
+                  await apiFetch("/api/patient-profile", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      profile: {
+                        availability_days: availDays,
+                        availability_time: availTime,
+                        availability_notes: availNotes.trim() || null,
+                      },
+                    }),
+                  });
+                  setAvailSaved(true);
+                  setTimeout(() => setAvailSaved(false), 2000);
+                } finally {
+                  setAvailSaving(false);
+                }
+              }}
+              disabled={availSaving}
+              className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+            >
+              {availSaving ? "Saving..." : availSaved ? "Saved!" : "Save Availability"}
+            </button>
+          </div>
+        </div>
+
         <NextSteps />
       </div>
     </main>
