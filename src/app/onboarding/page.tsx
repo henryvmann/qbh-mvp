@@ -129,18 +129,21 @@ function OptionRow({
   selected,
   onClick,
   multi,
+  index = 0,
 }: {
   label: string;
   selected: boolean;
   onClick: () => void;
   multi: boolean;
+  index?: number;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-4 rounded-xl px-5 py-4 text-left text-sm transition shadow-sm"
+      className="flex w-full items-center gap-4 rounded-xl px-5 py-4 text-left text-sm transition shadow-sm cascade-item"
       style={{
+        animationDelay: `${0.1 + index * 0.08}s`,
         backgroundColor: CARD_BG,
         borderWidth: 1,
         borderStyle: "solid",
@@ -213,6 +216,24 @@ export default function OnboardingPage() {
 
   /* ---- core state ---- */
   const [step, setStep] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<"forward" | "back">("forward");
+  const [transitioning, setTransitioning] = useState(false);
+  const [slideVisible, setSlideVisible] = useState(true);
+
+  // Animated step change
+  function goToStep(nextStep: number) {
+    if (transitioning) return;
+    const direction = nextStep > step ? "forward" : "back";
+    setSlideDirection(direction);
+    setTransitioning(true);
+    setSlideVisible(false);
+    setTimeout(() => {
+      setStep(nextStep);
+      setSlideVisible(true);
+      setTimeout(() => setTransitioning(false), 400);
+    }, 300);
+  }
+
   const [survey, setSurvey] = useState<SurveyAnswers>({
     step1: [],
     step2: [],
@@ -647,12 +668,12 @@ export default function OnboardingPage() {
   // Step 0: Enhanced Splash — elevator pitch first, Kate second
   if (step === 0) {
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mt-8">
-          <h1 className="text-3xl font-light text-[#1A1D2E] leading-tight">
+          <h1 className="text-3xl font-light text-[#1A1D2E] leading-tight cascade-item" style={{ animationDelay: "0s" }}>
             Let&apos;s get your health organized.
           </h1>
-          <p className="mt-3 text-base text-[#7A7F8A]">
+          <p className="mt-3 text-base text-[#7A7F8A] cascade-item" style={{ animationDelay: "0.15s" }}>
             In a few minutes, we&apos;ll find your providers, see what&apos;s overdue, and set you up with a care coordinator who handles the rest.
           </p>
         </div>
@@ -701,7 +722,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Kate intro — below the pitch */}
-        <div className="mt-8">
+        <div className="mt-8 float-item" style={{ animationDelay: "1.5s" }}>
           <CharacterWithBubble pose="waving">
             Hey! I&apos;m Kate, your care coordinator. A few quick questions and I&apos;ll get everything set up for you.
           </CharacterWithBubble>
@@ -709,7 +730,7 @@ export default function OnboardingPage() {
 
         <div className="sticky bottom-0 z-20 pb-4">
           <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
-          <GoldButton onClick={() => setStep(1)}>Get Started &rarr;</GoldButton>
+          <GoldButton onClick={() => goToStep(1)}>Get Started &rarr;</GoldButton>
         </div>
       </Shell>
     );
@@ -718,16 +739,17 @@ export default function OnboardingPage() {
   // Step 1: What do you want help staying on top of?
   if (step === 1) {
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <StepCounter current={SURVEY_STEP_MAP[1]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What do you want help staying on top of?
         </h1>
         <p className="mt-2 text-sm text-[#7A7F8A]">Select as many as you&apos;d like</p>
         <div className="mt-6 flex flex-col gap-3">
-          {STEP1_OPTIONS.map((opt) => (
+          {STEP1_OPTIONS.map((opt, optIdx) => (
             <OptionRow
               key={opt}
+              index={optIdx}
               label={opt}
               selected={survey.step1.includes(opt)}
               onClick={() => toggleMulti("step1", opt)}
@@ -738,12 +760,12 @@ export default function OnboardingPage() {
         <div className="sticky bottom-0 z-20 pb-4">
           <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
           <GoldButton
-            onClick={() => setStep(3)}
+            onClick={() => goToStep(3)}
             disabled={survey.step1.length === 0}
           >
             Continue &rarr;
           </GoldButton>
-          <button type="button" onClick={() => setStep(0)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
+          <button type="button" onClick={() => goToStep(0)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
             &larr; Back
           </button>
         </div>
@@ -761,16 +783,17 @@ export default function OnboardingPage() {
   // Step 3: What's hardest to manage today? (was step 2)
   if (step === 3) {
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <StepCounter current={SURVEY_STEP_MAP[3]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What&apos;s hardest to manage today?
         </h1>
         <p className="mt-2 text-sm text-[#7A7F8A]">This helps Kate prioritize where to jump in first</p>
         <div className="mt-6 flex flex-col gap-3">
-          {STEP2_OPTIONS.map((opt) => (
+          {STEP2_OPTIONS.map((opt, optIdx) => (
             <OptionRow
               key={opt}
+              index={optIdx}
               label={opt}
               selected={survey.step2.includes(opt)}
               onClick={() => toggleMulti("step2", opt)}
@@ -781,12 +804,12 @@ export default function OnboardingPage() {
         <div className="sticky bottom-0 z-20 pb-4">
           <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
           <GoldButton
-            onClick={() => setStep(4)}
+            onClick={() => goToStep(4)}
             disabled={survey.step2.length === 0}
           >
             Continue &rarr;
           </GoldButton>
-          <button type="button" onClick={() => setStep(1)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
+          <button type="button" onClick={() => goToStep(1)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
             &larr; Back
           </button>
         </div>
@@ -797,16 +820,17 @@ export default function OnboardingPage() {
   // Step 4: Who are you managing care for? (was step 3)
   if (step === 4) {
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <StepCounter current={SURVEY_STEP_MAP[4]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           Who are you managing care for?
         </h1>
         <p className="mt-2 text-sm text-[#7A7F8A]">Choose as many as you&apos;d like — Kate can organize by person</p>
         <div className="mt-6 flex flex-col gap-3">
-          {STEP3_OPTIONS.map((opt) => (
+          {STEP3_OPTIONS.map((opt, optIdx) => (
             <OptionRow
               key={opt}
+              index={optIdx}
               label={opt}
               selected={survey.step3.includes(opt)}
               onClick={() => toggleMulti("step3", opt)}
@@ -817,12 +841,12 @@ export default function OnboardingPage() {
         <div className="sticky bottom-0 z-20 pb-4">
           <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
           <GoldButton
-            onClick={() => setStep(5)}
+            onClick={() => goToStep(5)}
             disabled={survey.step3.length === 0}
           >
             Continue &rarr;
           </GoldButton>
-          <button type="button" onClick={() => setStep(3)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
+          <button type="button" onClick={() => goToStep(3)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
             &larr; Back
           </button>
         </div>
@@ -833,16 +857,17 @@ export default function OnboardingPage() {
   // Step 5: What would you want QB to handle? (was step 4)
   if (step === 5) {
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <StepCounter current={SURVEY_STEP_MAP[5]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What health admin is no longer on your to-do list?
         </h1>
         <p className="mt-2 text-sm text-[#7A7F8A]">Select as many as you&apos;d like</p>
         <div className="mt-6 flex flex-col gap-3">
-          {STEP4_OPTIONS.map((opt) => (
+          {STEP4_OPTIONS.map((opt, optIdx) => (
             <OptionRow
               key={opt}
+              index={optIdx}
               label={opt}
               selected={survey.step4.includes(opt)}
               onClick={() => toggleMulti("step4", opt)}
@@ -853,12 +878,12 @@ export default function OnboardingPage() {
         <div className="sticky bottom-0 z-20 pb-4">
           <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
           <GoldButton
-            onClick={() => setStep(6)}
+            onClick={() => goToStep(6)}
             disabled={survey.step4.length === 0}
           >
             Continue &rarr;
           </GoldButton>
-          <button type="button" onClick={() => setStep(4)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
+          <button type="button" onClick={() => goToStep(4)} className="mt-2 w-full text-center text-sm text-[#7A7F8A] hover:text-[#1A1D2E]">
             &larr; Back
           </button>
         </div>
@@ -887,7 +912,7 @@ export default function OnboardingPage() {
     ];
 
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mt-4">
           <CharacterWithBubble pose="pointing">
             Here&apos;s what happens next. Three quick steps and you&apos;re all set.
@@ -896,10 +921,10 @@ export default function OnboardingPage() {
 
         <div className="mt-8 flex flex-col gap-5">
           {steps.map((s) => (
-            <div key={s.num} className="flex gap-4">
+            <div key={s.num} className="flex gap-4 cascade-item" style={{ animationDelay: `${s.num * 0.2}s` }}>
               <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold spin-item"
+                style={{ backgroundColor: ACCENT, color: "#FFFFFF", animationDelay: `${s.num * 0.2 + 0.1}s` }}
               >
                 {s.num}
               </span>
@@ -911,7 +936,7 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <GoldButton onClick={() => setStep(7)}>Let&apos;s do it &rarr;</GoldButton>
+        <GoldButton onClick={() => goToStep(7)}>Let&apos;s do it &rarr;</GoldButton>
 
         <div className="mt-6 text-center">
           <button
@@ -968,7 +993,7 @@ export default function OnboardingPage() {
     }
 
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mb-6">
           <CharacterWithBubble pose="pointing">
             No problem! You can add your providers by name and I&apos;ll look
@@ -1031,7 +1056,7 @@ export default function OnboardingPage() {
                         {[result.specialty, [result.city, result.state].filter(Boolean).join(", ")].filter(Boolean).join(" \u00b7 ")}
                       </span>
                       <div className="mt-2 flex flex-wrap gap-1.5">
-                        {personOptions.map((opt) => (
+                        {personOptions.map((opt, optIdx) => (
                           <button
                             key={opt.value}
                             type="button"
@@ -1222,7 +1247,7 @@ export default function OnboardingPage() {
   if (step === 7) {
     const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && password === confirmPassword && allConsentsGiven;
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mb-6">
           <CharacterWithBubble pose="pointing">
             Almost there! I just need a few basics to create your account.
@@ -1561,7 +1586,7 @@ export default function OnboardingPage() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {personOptions.map((opt) => (
+                {personOptions.map((opt, optIdx) => (
                   <button
                     key={opt.value}
                     onClick={() => toggleProviderPerson(provider.id, opt.value)}
@@ -1598,7 +1623,7 @@ export default function OnboardingPage() {
     }
 
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mb-6">
           <CharacterWithBubble pose="celebrating">
             Great news &mdash; I found some providers! Take a quick look and
@@ -1637,7 +1662,7 @@ export default function OnboardingPage() {
         )}
 
         {allReviewed && (
-          <GoldButton onClick={() => setStep(9)}>
+          <GoldButton onClick={() => goToStep(9)}>
             Continue &rarr;
           </GoldButton>
         )}
@@ -1649,7 +1674,7 @@ export default function OnboardingPage() {
   if (step === 8) {
     if (error) {
       return (
-        <Shell>
+        <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
           <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
             Something went wrong
           </h1>
@@ -1707,7 +1732,7 @@ export default function OnboardingPage() {
     ];
 
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
           <div className="mb-8 text-left w-full">
             <CharacterWithBubble pose="thinking">
@@ -1793,7 +1818,7 @@ export default function OnboardingPage() {
     const totalProviders = approvedCount + followUpCount + (isManualOnboarding ? manualProviders.length : 0);
 
     return (
-      <Shell>
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mt-8">
           <CharacterWithBubble pose="celebrating">
             {isManualOnboarding
@@ -1869,7 +1894,7 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
   }
 
   return (
-    <Shell>
+    <Shell >
       <div className="mt-8">
         <CharacterWithBubble pose="thinking">
           QB found three providers I&apos;d completely forgotten about and booked
@@ -1902,14 +1927,72 @@ function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
 /*  Shell layout wrapper                                               */
 /* ------------------------------------------------------------------ */
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, slideVisible, slideDirection }: { children: React.ReactNode; slideVisible?: boolean; slideDirection?: "forward" | "back" }) {
+  const enterClass = slideDirection === "back" ? "slideInFromLeft" : "slideInFromRight";
+  const exitClass = slideDirection === "back" ? "slideOutToRight" : "slideOutToLeft";
+  const animClass = slideVisible === false ? exitClass : enterClass;
+
   return (
     <main
-      className="relative min-h-screen text-[#1A1D2E]"
+      className="relative min-h-screen text-[#1A1D2E] overflow-hidden"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
+      <style jsx>{`
+        @keyframes slideInFromRight {
+          from { opacity: 0; transform: translateX(60px) scale(0.97); }
+          to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes slideOutToLeft {
+          from { opacity: 1; transform: translateX(0) scale(1); }
+          to { opacity: 0; transform: translateX(-60px) scale(0.97); }
+        }
+        @keyframes slideInFromLeft {
+          from { opacity: 0; transform: translateX(-60px) scale(0.97); }
+          to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes slideOutToRight {
+          from { opacity: 1; transform: translateX(0) scale(1); }
+          to { opacity: 0; transform: translateX(60px) scale(0.97); }
+        }
+        @keyframes cascadeIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes popIn {
+          0% { opacity: 0; transform: scale(0.8); }
+          70% { transform: scale(1.05); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes gentlePulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); box-shadow: 0 10px 30px rgba(92,107,92,0.4); }
+        }
+        @keyframes floatIn {
+          from { opacity: 0; transform: translateY(24px) rotate(-2deg); }
+          to { opacity: 1; transform: translateY(0) rotate(0deg); }
+        }
+        @keyframes spinIn {
+          from { opacity: 0; transform: rotate(-180deg) scale(0.5); }
+          to { opacity: 1; transform: rotate(0deg) scale(1); }
+        }
+        .slide-container {
+          animation: ${animClass} 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .cascade-item { animation: cascadeIn 0.4s ease-out both; }
+        .cascade-1 { animation-delay: 0.1s; }
+        .cascade-2 { animation-delay: 0.2s; }
+        .cascade-3 { animation-delay: 0.3s; }
+        .cascade-4 { animation-delay: 0.4s; }
+        .cascade-5 { animation-delay: 0.5s; }
+        .cascade-6 { animation-delay: 0.6s; }
+        .cascade-7 { animation-delay: 0.7s; }
+        .pop-item { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .float-item { animation: floatIn 0.5s ease-out both; }
+        .spin-item { animation: spinIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .pulse-btn { animation: gentlePulse 2s ease-in-out infinite; }
+      `}</style>
       <DecorativeCircle />
-      <div className="relative z-10 mx-auto max-w-lg px-6 py-12 sm:max-w-xl sm:py-20 md:max-w-2xl">
+      <div className={`relative z-10 mx-auto max-w-lg px-6 py-12 sm:max-w-xl sm:py-20 md:max-w-2xl slide-container`}>
         {children}
       </div>
     </main>
