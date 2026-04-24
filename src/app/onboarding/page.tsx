@@ -875,7 +875,7 @@ export default function OnboardingPage() {
         </button>
         <StepCounter current={SURVEY_STEP_MAP[5]} total={4} />
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          What health admin is no longer on your to-do list?
+          What health admin would you like off of your plate?
         </h1>
         <p className="mt-2 text-sm text-[#7A7F8A]">Select as many as you&apos;d like</p>
         <div className="mt-6 flex flex-col gap-3">
