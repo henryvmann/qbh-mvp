@@ -58,6 +58,8 @@ export default function SettingsPage() {
   const [proactivity, setProactivity] = useState("balanced");
   const [focusAreas, setFocusAreas] = useState<string[]>(["booking", "reminders"]);
   const [calendarFlexibility, setCalendarFlexibility] = useState<"flexible" | "balanced" | "strict">("balanced");
+  const [docProviders, setDocProviders] = useState<Array<{ id: string; name: string }>>([]);
+  const [docProviderName, setDocProviderName] = useState("");
   const [healthHistory, setHealthHistory] = useState("");
   const [careRecipients, setCareRecipients] = useState<CareRecipient[]>([]);
   const [showAddPerson, setShowAddPerson] = useState(false);
@@ -66,6 +68,15 @@ export default function SettingsPage() {
   const [newPersonDob, setNewPersonDob] = useState("");
 
   useEffect(() => {
+    // Load providers for document upload selector
+    apiFetch("/api/dashboard/data").then((r) => r.json()).then((data) => {
+      if (data?.ok) {
+        setDocProviders((data.snapshots || [])
+          .filter((s: any) => s.provider.provider_type !== "pharmacy")
+          .map((s: any) => ({ id: s.provider.id, name: s.provider.name })));
+      }
+    }).catch(() => {});
+
     apiFetch("/api/patient-profile")
       .then((res) => {
         if (res.status === 401) {
@@ -288,9 +299,24 @@ export default function SettingsPage() {
           />
 
           {/* Document upload */}
-          <div className="mt-4 rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F8F9FA] p-4 text-center">
+          <div className="mt-4 rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F8F9FA] p-4">
             <p className="text-xs font-medium text-[#7A7F8A] mb-2">Or upload a health document</p>
             <p className="text-[10px] text-[#B0B4BC] mb-3">PDF, text, or image of medical records — Kate will summarize it</p>
+            {docProviders.length > 0 && (
+              <div className="mb-3">
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Which provider is this from? (optional)</label>
+                <select
+                  value={docProviderName}
+                  onChange={(e) => setDocProviderName(e.target.value)}
+                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-xs text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                >
+                  <option value="">General (no specific provider)</option>
+                  {docProviders.map((p) => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <label className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white cursor-pointer transition hover:brightness-95" style={{ backgroundColor: "#5C6B5C" }}>
               Upload Document
               <input
@@ -302,6 +328,7 @@ export default function SettingsPage() {
                   if (!file) return;
                   const formData = new FormData();
                   formData.append("file", file);
+                  if (docProviderName) formData.append("provider_name", docProviderName);
                   try {
                     const res = await apiFetch("/api/health-docs", { method: "POST", body: formData });
                     const data = await res.json();
