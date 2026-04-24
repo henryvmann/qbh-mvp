@@ -101,6 +101,14 @@ export default function SetupWizard() {
                 Skip Tour
               </button>
               <div className="flex items-center gap-3">
+                {currentStep > 0 && (
+                  <button
+                    onClick={() => setCurrentStep((prev) => prev - 1)}
+                    className="text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition"
+                  >
+                    &larr; Previous
+                  </button>
+                )}
                 <span className="text-xs text-[#B0B4BC]">
                   {currentStep + 1} of {WIZARD_STEPS.length}
                 </span>
