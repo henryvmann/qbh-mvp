@@ -1236,8 +1236,10 @@ export default function OnboardingPage() {
               className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
               style={{ backgroundColor: CARD_BG, borderColor: password && confirmPassword && password !== confirmPassword ? "#E04030" : CARD_BORDER }}
             />
-            {password && confirmPassword && password !== confirmPassword && (
-              <p className="text-xs text-red-500 mt-1">Passwords don&apos;t match</p>
+            {password && confirmPassword && (
+              password !== confirmPassword
+                ? <p className="text-xs text-red-500 mt-1">Passwords don&apos;t match</p>
+                : <p className="text-xs text-emerald-600 mt-1">Passwords match &#10003;</p>
             )}
           </div>
         </div>
