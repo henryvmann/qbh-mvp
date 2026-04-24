@@ -1786,7 +1786,8 @@ export default function OnboardingPage() {
   // Step 9: Celebration — skip counts (they're unreliable here) and go straight to review
   if (step === 9) {
     const isManualOnboarding = manualPath;
-    const totalProviders = approvedCount + followUpCount + (isManualOnboarding ? manualProviders.length : 0);
+    // Only count active providers (not review_needed, dismissed, etc.)
+    const totalProviders = approvedCount + (isManualOnboarding ? manualProviders.length : 0);
 
     return (
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
