@@ -61,6 +61,15 @@ export async function POST(req: NextRequest) {
       const patientProfile: Record<string, unknown> = {};
       if (name) patientProfile.full_name = name;
       if (careRecipients) patientProfile.care_recipients = careRecipients;
+      // Additional patient info from onboarding
+      const pi = body?.patient_info;
+      if (pi) {
+        if (pi.date_of_birth) patientProfile.date_of_birth = pi.date_of_birth;
+        if (pi.gender) patientProfile.gender = pi.gender;
+        if (pi.insurance_provider) patientProfile.insurance_provider = pi.insurance_provider;
+        if (pi.insurance_member_id) patientProfile.insurance_member_id = pi.insurance_member_id;
+        if (pi.callback_phone) patientProfile.callback_phone = pi.callback_phone;
+      }
 
       const { error: upsertError } = await supabaseAdmin
         .from("app_users")

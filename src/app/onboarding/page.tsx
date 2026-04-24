@@ -269,6 +269,11 @@ export default function OnboardingPage() {
   const [connectCalendar, setConnectCalendar] = useState(false);
   const [connectManual, setConnectManual] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
+  const [patientDob, setPatientDob] = useState("");
+  const [patientGender, setPatientGender] = useState("");
+  const [patientInsurance, setPatientInsurance] = useState("");
+  const [patientMemberId, setPatientMemberId] = useState("");
+  const [patientPhone, setPatientPhone] = useState("");
   const [manualProviders, setManualProviders] = useState<Array<{ name: string; specialty: string | null; phone: string | null; npi?: string | null; careRecipients: string[] }>>([]);
   const [npiSearchQuery, setNpiSearchQuery] = useState("");
   const [npiSearchResults, setNpiSearchResults] = useState<Array<{ npi: string; name: string; specialty: string | null; phone: string | null; city: string | null; state: string | null }>>([]);
@@ -433,6 +438,13 @@ export default function OnboardingPage() {
           name: name.trim(),
           survey_answers: JSON.stringify(survey),
           care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
+          patient_info: {
+            date_of_birth: patientDob || undefined,
+            gender: patientGender || undefined,
+            insurance_provider: patientInsurance.trim() || undefined,
+            insurance_member_id: patientMemberId.trim() || undefined,
+            callback_phone: patientPhone.trim() || undefined,
+          },
           consents: {
             ai_calls: true,
             phi_sharing: true,
@@ -1090,7 +1102,90 @@ export default function OnboardingPage() {
           )}
         </div>
 
-        <div className="mt-6 flex flex-col gap-3">
+        {/* Additional info — helps Kate book appointments */}
+        <div className="mt-6">
+          <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">Your Info (Optional)</div>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Date of Birth</label>
+                <input
+                  type="date"
+                  value={patientDob}
+                  onChange={(e) => setPatientDob(e.target.value)}
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Sex</label>
+                <div className="flex gap-1.5">
+                  {[{ value: "male", label: "M" }, { value: "female", label: "F" }, { value: "other", label: "—" }].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setPatientGender(opt.value)}
+                      className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition ${
+                        patientGender === opt.value ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Insurance Provider</label>
+              <input
+                type="text"
+                value={patientInsurance}
+                onChange={(e) => setPatientInsurance(e.target.value)}
+                placeholder="Start typing your insurance..."
+                autoComplete="off"
+                className="w-full rounded-xl border px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+              />
+              {patientInsurance.trim().length >= 2 && (() => {
+                const KNOWN = ["Aetna","Anthem","Blue Cross Blue Shield","Cigna","Humana","Kaiser Permanente","Medicaid","Medicare","Molina Healthcare","Oscar Health","Oxford","United Healthcare","WellCare","Ambetter","Centene","CareFirst","EmblemHealth","Excellus","Florida Blue","Highmark","Horizon BCBS","Independence Blue Cross","TRICARE"];
+                const matches = KNOWN.filter((ins) => ins.toLowerCase().includes(patientInsurance.trim().toLowerCase()));
+                if (matches.length === 0 || matches.some((m) => m.toLowerCase() === patientInsurance.trim().toLowerCase())) return null;
+                return (
+                  <div className="mt-1 max-h-36 overflow-y-auto rounded-lg border border-[#EBEDF0] bg-white divide-y divide-[#EBEDF0]">
+                    {matches.slice(0, 5).map((ins) => (
+                      <button key={ins} type="button" onClick={() => setPatientInsurance(ins)} className="w-full px-3 py-2 text-left text-sm text-[#1A1D2E] hover:bg-[#F8F9FA] transition">
+                        {ins}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Member / Policy ID</label>
+                <input
+                  type="text"
+                  value={patientMemberId}
+                  onChange={(e) => setPatientMemberId(e.target.value)}
+                  placeholder="Found on your insurance card"
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Callback Phone</label>
+                <input
+                  type="tel"
+                  value={patientPhone}
+                  onChange={(e) => setPatientPhone(e.target.value)}
+                  placeholder="(555) 123-4567"
+                  className="w-full rounded-xl border px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Consent — single checkbox */}
@@ -1159,6 +1254,13 @@ export default function OnboardingPage() {
                   name: name.trim(),
                   survey_answers: JSON.stringify(survey),
                   care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
+                  patient_info: {
+                    date_of_birth: patientDob || undefined,
+                    gender: patientGender || undefined,
+                    insurance_provider: patientInsurance.trim() || undefined,
+                    insurance_member_id: patientMemberId.trim() || undefined,
+                    callback_phone: patientPhone.trim() || undefined,
+                  },
                   consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
                 }),
               });
