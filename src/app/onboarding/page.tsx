@@ -481,6 +481,13 @@ export default function OnboardingPage() {
     setPlaidAutoAdvance(false);
   }, [plaidAutoAdvance, handleStep7Continue, firstName, lastName, email, password, allConsentsGiven]);
 
+  /* ---- Interstitial auto-advance (step 65 → step 7) ---- */
+  useEffect(() => {
+    if (step !== 65) return;
+    const timer = setTimeout(() => goToStep(7), 3500);
+    return () => clearTimeout(timer);
+  }, [step]);
+
   /* ---- Step 8: run discovery ---- */
   useEffect(() => {
     if (step !== 8) return;
@@ -995,7 +1002,7 @@ export default function OnboardingPage() {
             if (connectCalendar) {
               setCalendarPending(true);
             }
-            goToStep(7);
+            goToStep(65);
           }}
           disabled={!connectBank && !connectCalendar && !connectManual}
         >
@@ -1012,6 +1019,44 @@ export default function OnboardingPage() {
     );
   }
 
+  // Interstitial: Kate intro before account creation
+  if (step === 65) {
+    return (
+      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
+        <style jsx global>{`
+          @keyframes fadeScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+          }
+          @keyframes floatUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+          <div style={{ animation: "fadeScale 0.6s ease-out both" }}>
+            <img
+              src="/kate-avatar.png"
+              alt="Kate"
+              className="mx-auto h-24 w-24 rounded-full shadow-lg"
+            />
+          </div>
+          <h1
+            className="mt-8 text-2xl font-light text-[#1A1D2E] leading-relaxed"
+            style={{ animation: "floatUp 0.5s ease-out 0.4s both" }}
+          >
+            Next up &mdash; a little about you.
+          </h1>
+          <p
+            className="mt-3 max-w-sm text-base text-[#7A7F8A]"
+            style={{ animation: "floatUp 0.5s ease-out 0.7s both" }}
+          >
+            This helps Kate book appointments faster. Don&apos;t have everything? No worries &mdash; you can always add it later.
+          </p>
+        </div>
+      </Shell>
+    );
+  }
 
   // Step 7: Account creation (universal — all paths)
   if (step === 7) {
