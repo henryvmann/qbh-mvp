@@ -265,6 +265,9 @@ export default function OnboardingPage() {
   const [loadingDiscovery, setLoadingDiscovery] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [manualPath, setManualPath] = useState(false);
+  const [connectBank, setConnectBank] = useState(true);
+  const [connectCalendar, setConnectCalendar] = useState(false);
+  const [connectManual, setConnectManual] = useState(false);
   const [manualProviders, setManualProviders] = useState<Array<{ name: string; specialty: string | null; phone: string | null; npi?: string | null; careRecipients: string[] }>>([]);
   const [npiSearchQuery, setNpiSearchQuery] = useState("");
   const [npiSearchResults, setNpiSearchResults] = useState<Array<{ npi: string; name: string; specialty: string | null; phone: string | null; city: string | null; state: string | null }>>([]);
@@ -905,21 +908,24 @@ export default function OnboardingPage() {
 
   // Step 6: NEW — "Here's what happens next" explainer
   if (step === 6) {
-    const steps = [
+    const connectionOptions = [
       {
-        num: 1,
-        title: "Connect your bank",
-        desc: "Using Plaid, we\u2019ll securely identify healthcare co-pays from your past transactions to find your providers. Access is read-only.",
+        id: "bank",
+        label: "Connect Your Bank",
+        desc: "We\u2019ll identify your healthcare providers from past co-pays via Plaid. Read-only access.",
+        selected: connectBank,
       },
       {
-        num: 2,
-        title: "Your provider hub",
-        desc: "The one place where all of your doctors are curated for you \u2014 contacts, notes, and history in one view.",
+        id: "calendar",
+        label: "Connect Your Calendar",
+        desc: "Kate checks your schedule for conflicts before booking. We\u2019ll also scan for doctor appointments.",
+        selected: connectCalendar,
       },
       {
-        num: 3,
-        title: "QB gets to work",
-        desc: "We\u2019ll see where you\u2019re at, what needs attention, and start handling it.",
+        id: "manual",
+        label: "Add Providers Manually",
+        desc: "Search for your doctors by name and add them yourself.",
+        selected: connectManual,
       },
     ];
 
@@ -927,36 +933,70 @@ export default function OnboardingPage() {
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mt-4">
           <CharacterWithBubble pose="pointing">
-            <TypeWriter text="Here's what happens next. Three quick steps and you're all set." delay={300} speed={20} />
+            <TypeWriter text="How would you like to get started? Choose any or all." delay={300} speed={20} />
           </CharacterWithBubble>
         </div>
 
-        <div className="mt-8 flex flex-col gap-5">
-          {steps.map((s) => (
-            <div key={s.num} className="flex gap-4 cascade-item" style={{ animationDelay: `${s.num * 0.2}s` }}>
+        <div className="mt-8 flex flex-col gap-3">
+          {connectionOptions.map((opt, idx) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => {
+                if (opt.id === "bank") setConnectBank(!connectBank);
+                if (opt.id === "calendar") setConnectCalendar(!connectCalendar);
+                if (opt.id === "manual") setConnectManual(!connectManual);
+              }}
+              className="flex items-center gap-4 rounded-xl px-5 py-4 text-left text-sm transition shadow-sm cascade-item"
+              style={{
+                animationDelay: `${idx * 0.15}s`,
+                backgroundColor: opt.selected ? "#5C6B5C10" : CARD_BG,
+                borderWidth: 1,
+                borderStyle: "solid",
+                borderColor: opt.selected ? ACCENT : CARD_BORDER,
+              }}
+            >
               <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold spin-item"
-                style={{ backgroundColor: ACCENT, color: "#FFFFFF", animationDelay: `${s.num * 0.2 + 0.1}s` }}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+                style={{
+                  borderColor: opt.selected ? ACCENT : "#B0B4BC",
+                  backgroundColor: opt.selected ? ACCENT : "transparent",
+                }}
               >
-                {s.num}
+                {opt.selected && (
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 8.5L6.5 12L13 4" />
+                  </svg>
+                )}
               </span>
               <div>
-                <div className="text-sm font-medium text-[#1A1D2E]">{s.title}</div>
-                <div className="mt-1 text-xs text-[#7A7F8A] leading-relaxed">{s.desc}</div>
+                <div className="font-medium text-[#1A1D2E]">{opt.label}</div>
+                <div className="text-xs text-[#7A7F8A] mt-0.5">{opt.desc}</div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
-        <GoldButton onClick={() => goToStep(7)}>Let&apos;s do it &rarr;</GoldButton>
+        <GoldButton
+          onClick={() => {
+            if (connectManual && !connectBank) {
+              setManualPath(true);
+            }
+            if (connectCalendar) {
+              setCalendarPending(true);
+            }
+            goToStep(7);
+          }}
+          disabled={!connectBank && !connectCalendar && !connectManual}
+        >
+          Continue &rarr;
+        </GoldButton>
 
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => { setManualPath(true); setStep(7); }}
-            className="text-sm text-[#7A7F8A] underline underline-offset-4 hover:text-[#1A1D2E]"
-          >
-            I&apos;d rather add my providers manually
-          </button>
+        <div className="mt-3 text-center text-xs text-[#B0B4BC]">
+          {connectBank && connectManual ? "We\u2019ll scan your bank and let you add providers manually" :
+           connectBank ? "We\u2019ll connect your bank to find providers" :
+           connectManual ? "You\u2019ll add your providers by name" :
+           "Select at least one option"}
         </div>
       </Shell>
     );
