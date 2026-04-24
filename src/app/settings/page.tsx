@@ -273,8 +273,11 @@ export default function SettingsPage() {
           <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
             Your Health History
           </h2>
-          <p className="text-xs text-[#7A7F8A] mb-4">
+          <p className="text-xs text-[#7A7F8A] mb-2">
             Tell Kate about your health background — conditions, surgeries, ongoing concerns, anything relevant. She&apos;ll use this to give you better, more personalized suggestions.
+          </p>
+          <p className="text-[10px] text-[#B0B4BC] mb-4">
+            Kate won&apos;t provide medical advice — she&apos;ll summarize your history in your own words and use it to help organize your care and suggest relevant providers.
           </p>
           <textarea
             value={healthHistory}
