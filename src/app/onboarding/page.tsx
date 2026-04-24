@@ -484,7 +484,14 @@ export default function OnboardingPage() {
   /* ---- Interstitial auto-advance (step 65 → step 7) ---- */
   useEffect(() => {
     if (step !== 65) return;
-    const timer = setTimeout(() => goToStep(7), 3500);
+    const timer = setTimeout(() => {
+      setSlideDirection("forward");
+      setSlideVisible(false);
+      setTimeout(() => {
+        setStep(7);
+        setSlideVisible(true);
+      }, 300);
+    }, 3500);
     return () => clearTimeout(timer);
   }, [step]);
 
