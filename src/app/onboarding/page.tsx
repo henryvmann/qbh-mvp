@@ -1067,7 +1067,7 @@ export default function OnboardingPage() {
 
   // Step 7: Account creation (universal — all paths)
   if (step === 7) {
-    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && password === confirmPassword && allConsentsGiven;
+    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && allConsentsGiven;
     const kateText = connectBank
       ? "Almost there! Create your account and we'll connect your bank to find your providers."
       : "Almost there! Create your account and we'll get everything set up for you.";
@@ -1115,43 +1115,46 @@ export default function OnboardingPage() {
               borderColor: CARD_BORDER,
             }}
           />
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
-              minLength={6}
-              className="w-full rounded-xl border px-4 py-3 pr-12 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-              style={{
-                backgroundColor: CARD_BG,
-                borderColor: CARD_BORDER,
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#7A7F8A] hover:text-[#1A1D2E]"
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
+          <div>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a password"
+                minLength={6}
+                className="w-full rounded-xl border px-4 py-3 pr-12 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
+                style={{
+                  backgroundColor: CARD_BG,
+                  borderColor: CARD_BORDER,
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-base"
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+            {password.length > 0 && (() => {
+              const hasUpper = /[A-Z]/.test(password);
+              const hasLower = /[a-z]/.test(password);
+              const hasNumber = /[0-9]/.test(password);
+              const hasSpecial = /[^A-Za-z0-9]/.test(password);
+              const score = (password.length >= 8 ? 1 : 0) + (hasUpper && hasLower ? 1 : 0) + (hasNumber ? 1 : 0) + (hasSpecial ? 1 : 0);
+              const strength = score <= 1 ? { label: "Weak", color: "#E04030", width: "33%" } : score <= 2 ? { label: "Medium", color: "#B8860B", width: "66%" } : { label: "Strong", color: "#5C6B5C", width: "100%" };
+              return (
+                <div className="mt-2">
+                  <div className="h-1.5 rounded-full bg-[#EBEDF0] overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-300" style={{ width: strength.width, backgroundColor: strength.color }} />
+                  </div>
+                  <p className="mt-1 text-xs font-medium" style={{ color: strength.color }}>{strength.label}</p>
+                </div>
+              );
+            })()}
           </div>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm password"
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-            style={{
-              backgroundColor: CARD_BG,
-              borderColor: password && confirmPassword && password !== confirmPassword ? "#E04030" : CARD_BORDER,
-            }}
-          />
-          {password && confirmPassword && (
-            password !== confirmPassword
-              ? <p className="text-xs text-red-500 mt-1">Passwords don&apos;t match</p>
-              : <p className="text-xs text-emerald-600 mt-1">Passwords match &#10003;</p>
-          )}
         </div>
 
         {/* Additional info — helps Kate book appointments */}
