@@ -1652,7 +1652,7 @@ export default function OnboardingPage() {
           <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
             {error}
           </div>
-          <GoldButton onClick={() => window.location.href = "/handle-first"}>
+          <GoldButton onClick={() => window.location.href = "/dashboard"}>
             Continue to dashboard &rarr;
           </GoldButton>
         </Shell>
@@ -1823,8 +1823,8 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <GoldButton onClick={() => window.location.href = isManualOnboarding ? "/dashboard" : "/handle-first"}>
-          {isManualOnboarding ? "Go to your dashboard \u2192" : "See your providers \u2192"}
+        <GoldButton onClick={() => window.location.href = "/dashboard"}>
+          Go To Your Dashboard &rarr;
         </GoldButton>
       </Shell>
     );
@@ -1832,7 +1832,7 @@ export default function OnboardingPage() {
 
   // Step 10: Dashboard redirect (fallback)
   if (step === 10) {
-    window.location.href = "/handle-first";
+    window.location.href = "/dashboard";
     return null;
   }
 
