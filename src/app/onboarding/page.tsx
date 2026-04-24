@@ -1125,7 +1125,7 @@ export default function OnboardingPage() {
         {connectBank ? (
           plaidConnected ? (
             <GoldButton id="step7-continue-btn" onClick={handleStep7Continue} disabled={!canContinue}>
-              Continue &rarr;
+              Hold Tight &mdash; Setting Things Up...
             </GoldButton>
           ) : canContinue ? (
             <GoldButton onClick={() => openPlaidLink()}>
