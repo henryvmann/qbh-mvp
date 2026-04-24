@@ -268,6 +268,7 @@ export default function OnboardingPage() {
   const [connectBank, setConnectBank] = useState(true);
   const [connectCalendar, setConnectCalendar] = useState(false);
   const [connectManual, setConnectManual] = useState(false);
+  const [showAccountForm, setShowAccountForm] = useState(false);
   const [manualProviders, setManualProviders] = useState<Array<{ name: string; specialty: string | null; phone: string | null; npi?: string | null; careRecipients: string[] }>>([]);
   const [npiSearchQuery, setNpiSearchQuery] = useState("");
   const [npiSearchResults, setNpiSearchResults] = useState<Array<{ npi: string; name: string; specialty: string | null; phone: string | null; city: string | null; state: string | null }>>([]);
@@ -979,9 +980,6 @@ export default function OnboardingPage() {
 
         <GoldButton
           onClick={() => {
-            if (connectManual && !connectBank) {
-              setManualPath(true);
-            }
             if (connectCalendar) {
               setCalendarPending(true);
             }
@@ -1002,314 +1000,23 @@ export default function OnboardingPage() {
     );
   }
 
-  // Step 7 (manual path): Account setup + NPI provider search
-  if (step === 7 && manualPath) {
-    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && password === confirmPassword && allConsentsGiven;
 
-    // Build person options from step 3 survey answers
-    const personLabelMap: Record<string, string> = {
-      "Myself": "Me",
-      "My partner / spouse": "Partner",
-      "My child(ren)": "Child",
-      "My parent(s)": "Parent",
-      "Someone else": "Other",
-    };
-    const personOptions = survey.step3
-      .map((s) => ({ value: s.toLowerCase().replace(/[^a-z]/g, "_"), label: personLabelMap[s] || s }))
-      .filter((o) => o.label);
-    const singlePerson = personOptions.length === 1;
-    const defaultCareRecipient = singlePerson ? personOptions[0].value : "";
-
-    function toggleNpiResultPerson(npi: string, personValue: string) {
-      setNpiResultPeople((prev) => {
-        const current = new Set(prev[npi] || []);
-        if (current.has(personValue)) {
-          current.delete(personValue);
-        } else {
-          current.add(personValue);
-        }
-        return { ...prev, [npi]: current };
-      });
-    }
-
-    function addManualProvider(result: { name: string; specialty: string | null; phone: string | null; npi?: string | null }, careRecipients?: string[]) {
-      const crs = careRecipients || (singlePerson ? [defaultCareRecipient] : []);
-      if (crs.length === 0) return; // need assignment
-      setManualProviders((prev) => {
-        if (prev.some((p) => p.name === result.name)) return prev;
-        return [...prev, { name: result.name, specialty: result.specialty, phone: result.phone, npi: result.npi || null, careRecipients: crs }];
-      });
-      setNpiSearchQuery("");
-      setNpiSearchResults([]);
-      setNpiResultPeople({});
-    }
-
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <div className="mb-6">
-          <CharacterWithBubble pose="pointing">
-            <TypeWriter text="No problem! You can add your providers by name and I'll look them up. Just search for your doctor, dentist, or specialist and I'll pull in their details." delay={300} speed={18} />
-          </CharacterWithBubble>
-        </div>
-        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          Add your healthcare providers
-        </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">
-          Search by name to find your doctor, dentist, or specialist.
-        </p>
-
-        {/* NPI Search — shown first since that's what they clicked for */}
-        <div className="mt-6">
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>
-            Search providers
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={npiSearchQuery}
-              onChange={(e) => setNpiSearchQuery(e.target.value)}
-              placeholder="Dr. Smith, City Dental, etc."
-              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            />
-            {npiSearching && (
-              <span className="absolute right-3 top-3 text-xs text-[#7A7F8A]">Searching...</span>
-            )}
-          </div>
-
-          {/* Search results dropdown */}
-          {npiSearchResults.length > 0 && (
-            <div
-              className="mt-1 max-h-64 overflow-y-auto rounded-xl border"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            >
-              {npiSearchResults.map((result) => {
-                const selected = npiResultPeople[result.npi] || new Set<string>();
-                return (
-                <div key={result.npi}>
-                  {singlePerson ? (
-                    <button
-                      type="button"
-                      onClick={() => addManualProvider(result)}
-                      className="flex w-full flex-col px-4 py-3 text-left transition hover:bg-[#F0F2F5]"
-                    >
-                      <span className="text-sm font-medium text-[#1A1D2E]">{result.name}</span>
-                      <span className="text-xs text-[#7A7F8A]">
-                        {[result.specialty, [result.city, result.state].filter(Boolean).join(", ")].filter(Boolean).join(" \u00b7 ")}
-                      </span>
-                    </button>
-                  ) : (
-                    <div className="flex flex-col px-4 py-3">
-                      <span className="text-sm font-medium text-[#1A1D2E]">{result.name}</span>
-                      <span className="text-xs text-[#7A7F8A]">
-                        {[result.specialty, [result.city, result.state].filter(Boolean).join(", ")].filter(Boolean).join(" \u00b7 ")}
-                      </span>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {personOptions.map((opt, optIdx) => (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => toggleNpiResultPerson(result.npi, opt.value)}
-                            className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                            style={{
-                              backgroundColor: selected.has(opt.value) ? ACCENT : "transparent",
-                              color: selected.has(opt.value) ? "#FFFFFF" : "#7A7F8A",
-                              border: selected.has(opt.value) ? "none" : "1px solid #EBEDF0",
-                            }}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                        {selected.size > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => addManualProvider(result, Array.from(selected))}
-                            className="rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm"
-                            style={{ backgroundColor: "#B8860B", color: "#FFFFFF" }}
-                          >
-                            Confirm
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Added providers */}
-        {manualProviders.length > 0 && (
-          <div className="mt-6">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>
-              Your providers ({manualProviders.length})
-            </div>
-            <div className="flex flex-col gap-2">
-              {manualProviders.map((prov, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-xl border px-4 py-3"
-                  style={{ backgroundColor: CARD_BG, borderColor: ACCENT }}
-                >
-                  <div>
-                    <div className="text-sm font-medium text-[#1A1D2E]">{prov.name}</div>
-                    {prov.specialty && (
-                      <div className="text-xs text-[#7A7F8A]">{prov.specialty}</div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setManualProviders((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="text-xs text-[#7A7F8A] hover:text-red-600"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Account creation — separate section */}
-        <div className="mt-8 border-t border-[#EBEDF0] pt-6">
-          <h2 className="text-lg font-semibold text-[#1A1D2E]">
-            Create your account
-          </h2>
-          <p className="mt-1 text-sm text-[#7A7F8A]">
-            We need this to save your providers and get started.
-          </p>
-
-          <div className="mt-4 flex flex-col gap-3">
-            <div>
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First name"
-                  className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-                />
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last name"
-                  className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-                />
-              </div>
-            </div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-              style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-            />
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password"
-                minLength={6}
-                className="w-full rounded-xl border px-4 py-3 pr-12 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#7A7F8A] hover:text-[#1A1D2E]"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm password"
-              className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-              style={{ backgroundColor: CARD_BG, borderColor: password && confirmPassword && password !== confirmPassword ? "#E04030" : CARD_BORDER }}
-            />
-            {password && confirmPassword && (
-              password !== confirmPassword
-                ? <p className="text-xs text-red-500 mt-1">Passwords don&apos;t match</p>
-                : <p className="text-xs text-emerald-600 mt-1">Passwords match &#10003;</p>
-            )}
-          </div>
-        </div>
-
-        {/* Consent — single checkbox */}
-        <div className="mt-5">
-          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
-            <input
-              type="checkbox"
-              checked={consentCalls && consentPhi && consentTerms}
-              onChange={(e) => {
-                setConsentCalls(e.target.checked);
-                setConsentPhi(e.target.checked);
-                setConsentTerms(e.target.checked);
-              }}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
-            />
-            <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I agree to the{" "}
-              <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Terms of Service</a>
-              {" "}and{" "}
-              <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Privacy Policy</a>
-              , and authorize QB to call offices and use my info to organize my care
-            </span>
-          </label>
-        </div>
-
-        {error && (
-          <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
-            {error}
-          </div>
-        )}
-
-        <GoldButton
-          onClick={handleManualContinue}
-          disabled={!canContinue || manualProviders.length === 0}
-        >
-          Continue &rarr;
-        </GoldButton>
-
-        {canContinue && manualProviders.length === 0 && (
-          <div className="mt-3 text-center">
-            <button
-              onClick={handleManualContinue}
-              className="text-sm text-[#7A7F8A] underline underline-offset-4 hover:text-[#1A1D2E]"
-            >
-              Skip &mdash; I&apos;ll add providers later
-            </button>
-          </div>
-        )}
-      </Shell>
-    );
-  }
-
-  // Step 7: Account setup + Plaid connection (was step 5)
+  // Step 7: Account creation (universal — all paths)
   if (step === 7) {
     const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && password === confirmPassword && allConsentsGiven;
+    const kateText = connectBank
+      ? "Almost there! Create your account and we'll connect your bank to find your providers."
+      : "Almost there! Create your account and we'll get everything set up for you.";
     return (
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mb-6">
           <CharacterWithBubble pose="pointing">
-            <TypeWriter text="Almost there! I just need a few basics to create your account. Then we'll use Plaid to securely identify your healthcare providers from past co-pays. Access is strictly read-only." delay={300} speed={18} />
+            <TypeWriter text={kateText} delay={300} speed={18} />
           </CharacterWithBubble>
         </div>
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          Let&apos;s get you set up
+          Create Your Account
         </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">
-          Name &bull; Email &bull; Connect accounts
-        </p>
 
         <div className="mt-6 flex flex-col gap-4">
           <div>
@@ -1376,8 +1083,10 @@ export default function OnboardingPage() {
               borderColor: password && confirmPassword && password !== confirmPassword ? "#E04030" : CARD_BORDER,
             }}
           />
-          {password && confirmPassword && password !== confirmPassword && (
-            <p className="text-xs text-red-500 mt-1">Passwords don&apos;t match</p>
+          {password && confirmPassword && (
+            password !== confirmPassword
+              ? <p className="text-xs text-red-500 mt-1">Passwords don&apos;t match</p>
+              : <p className="text-xs text-emerald-600 mt-1">Passwords match &#10003;</p>
           )}
         </div>
 
@@ -1413,13 +1122,59 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {plaidConnected ? (
-          <GoldButton id="step7-continue-btn" onClick={handleStep7Continue} disabled={!canContinue}>
-            Continue &rarr;
-          </GoldButton>
+        {connectBank ? (
+          plaidConnected ? (
+            <GoldButton id="step7-continue-btn" onClick={handleStep7Continue} disabled={!canContinue}>
+              Continue &rarr;
+            </GoldButton>
+          ) : canContinue ? (
+            <GoldButton onClick={() => openPlaidLink()}>
+              Connect Your Bank &rarr;
+            </GoldButton>
+          ) : (
+            <div className="mt-8 text-center text-sm text-[#7A7F8A]">
+              Fill in your info above to continue
+            </div>
+          )
         ) : canContinue ? (
-          <GoldButton onClick={() => openPlaidLink()}>
-            Connect your bank &rarr;
+          <GoldButton onClick={async () => {
+            // No bank — create account and go to celebration
+            setError(null);
+            try {
+              const careFor = survey.step3;
+              const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
+              if (careFor.includes("Myself")) careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
+              if (careFor.includes("My partner / spouse")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
+              if (careFor.includes("My child(ren)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
+              if (careFor.includes("My parent(s)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
+              if (careFor.includes("Someone else")) careRecipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
+
+              const signupRes = await apiFetch("/api/auth/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email: email.trim(),
+                  password,
+                  app_user_id: userId,
+                  name: name.trim(),
+                  survey_answers: JSON.stringify(survey),
+                  care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
+                  consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
+                }),
+              });
+              const signupData = await signupRes.json();
+              if (!signupRes.ok || !signupData?.ok) throw new Error(signupData?.error || "Failed to create account.");
+
+              const supabase = createClient();
+              const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+              if (signInError) throw signInError;
+
+              goToStep(9);
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "Failed to create account.");
+            }
+          }}>
+            Create Account &rarr;
           </GoldButton>
         ) : (
           <div className="mt-8 text-center text-sm text-[#7A7F8A]">
