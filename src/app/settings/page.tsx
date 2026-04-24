@@ -77,7 +77,7 @@ export default function SettingsPage() {
       .then((data) => {
         if (data?.ok && data.profile) {
           const p = data.profile;
-          setDisplayName(p.display_name || p.nickname || "");
+          setDisplayName(p.display_name || p.nickname || (p.full_name ? p.full_name.split(" ")[0] : ""));
           setFullName(p.full_name || "");
           setDob(p.date_of_birth || "");
           setGender(p.gender || "");
