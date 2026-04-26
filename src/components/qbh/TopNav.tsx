@@ -80,16 +80,16 @@ export default function TopNav() {
                   <path d="M4 4l8 8M12 4l-8 8" />
                 </svg>
               </button>
-              <Link href="/settings" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/10 transition">
+              <Link href="/settings" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm text-white hover:bg-white/10 transition">
                 Settings
               </Link>
-              <Link href="/account" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/10 transition">
+              <Link href="/account" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm text-white hover:bg-white/10 transition">
                 Account
               </Link>
-              <Link href="/recordings" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/10 transition">
+              <Link href="/recordings" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm text-white hover:bg-white/10 transition">
                 Recordings
               </Link>
-              <Link href="/medications" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/10 transition">
+              <Link href="/medications" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm text-white hover:bg-white/10 transition">
                 Medications
               </Link>
               <div className="border-t border-white/10 mt-1 pt-1">

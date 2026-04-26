@@ -227,14 +227,26 @@ export default function CareGaps() {
                 className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
                 style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
               >
-                <Search size={12} />
-                Find one
+                Find One
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  // TODO: open provider assignment from existing providers
+                  window.location.href = '/providers?add=true&search=' + encodeURIComponent(gap.label.toLowerCase());
+                }}
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#EBEDF0] text-[#1A1D2E] hover:bg-[#F0F2F5]"
+              >
+                Assign
               </button>
               <button
                 onClick={() => setDismissed((prev) => new Set([...prev, gap.type]))}
-                className="text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
+                className="ml-1 text-[#B0B4BC] hover:text-[#7A7F8A]"
+                title="Dismiss"
               >
-                Dismiss
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M4 4l8 8M12 4l-8 8" />
+                </svg>
               </button>
             </div>
           </div>

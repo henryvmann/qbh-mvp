@@ -87,7 +87,29 @@ export async function GET(req: Request) {
     }
   }
 
-  const past = (pastVisitRows ?? []).map((v) => ({
+  // Also get past calendar events
+  const { data: pastCalendarEvents } = await supabaseAdmin
+    .from("calendar_events")
+    .select("id, provider_id, start_at, timezone")
+    .eq("app_user_id", appUserId)
+    .eq("status", "confirmed")
+    .lt("start_at", nowIso)
+    .order("start_at", { ascending: false })
+    .limit(50);
+
+  // Get names for past calendar event providers
+  const pastCalProviderIds = [...new Set((pastCalendarEvents ?? []).map((e) => e.provider_id))];
+  if (pastCalProviderIds.length > 0) {
+    const { data: calProviders } = await supabaseAdmin
+      .from("providers")
+      .select("id, name")
+      .in("id", pastCalProviderIds);
+    for (const p of calProviders ?? []) {
+      if (!providerNameMap.has(p.id)) providerNameMap.set(p.id, p.name);
+    }
+  }
+
+  const pastFromVisits = (pastVisitRows ?? []).map((v) => ({
     id: v.id,
     providerId: v.provider_id,
     providerName: providerNameMap.get(v.provider_id) ?? "Unknown Provider",
@@ -95,10 +117,26 @@ export async function GET(req: Request) {
     amount: v.amount ?? null,
   }));
 
+  const pastFromCalendar = (pastCalendarEvents ?? []).map((e) => ({
+    id: `cal-${e.id}`,
+    providerId: e.provider_id,
+    providerName: providerNameMap.get(e.provider_id) ?? "Unknown Provider",
+    visitDate: e.start_at.split("T")[0],
+    amount: null,
+  }));
+
+  // Merge and deduplicate by provider+date, sort by date descending
+  const pastMap = new Map<string, typeof pastFromVisits[0]>();
+  for (const v of [...pastFromVisits, ...pastFromCalendar]) {
+    const key = `${v.providerId}-${v.visitDate}`;
+    if (!pastMap.has(key)) pastMap.set(key, v);
+  }
+  const past = [...pastMap.values()].sort((a, b) => (b.visitDate || "").localeCompare(a.visitDate || ""));
+
   // 3. Follow-ups from dashboard providers
   const snapshots = await getDashboardProvidersForUser(appUserId);
   const followUps = snapshots
-    .filter((s) => s.followUpNeeded)
+    .filter((s) => s.followUpNeeded && s.provider.provider_type !== "pharmacy")
     .map((s) => ({
       providerId: s.provider.id,
       providerName: s.provider.name,

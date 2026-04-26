@@ -56,12 +56,12 @@ function AchievementBadge({
       className={`flex items-center gap-3 rounded-xl border p-4 transition ${
         earned
           ? "bg-white border-[#5C6B5C]/20 shadow-sm"
-          : "bg-[#F0F2F5] border-[#EBEDF0] opacity-50"
+          : "bg-[#F0F2F5] border-[#EBEDF0]"
       }`}
     >
-      <IconComp size={24} strokeWidth={1.5} color={earned ? "#5C6B5C" : "#B0B4BC"} />
+      <IconComp size={24} strokeWidth={1.5} color={earned ? "#5C6B5C" : "#7A7F8A"} />
       <div>
-        <div className={`text-sm font-semibold ${earned ? "text-[#1A1D2E]" : "text-[#B0B4BC]"}`}>
+        <div className={`text-sm font-semibold ${earned ? "text-[#1A1D2E]" : "text-[#3A3F4B]"}`}>
           {title}
         </div>
         <div className="text-xs text-[#7A7F8A]">{description}</div>

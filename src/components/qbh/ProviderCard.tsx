@@ -466,12 +466,28 @@ export default function ProviderCard({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[#7A7F8A]">Specialty</label>
+              <label className="mb-1 block text-xs text-[#7A7F8A]">Provider Type</label>
+              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                {["Primary Care", "Therapist", "Dentist", "Eye Care", "Dermatology", "OB/GYN", "Specialist"].map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setEditSpecialty(opt)}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                      editSpecialty === opt
+                        ? "bg-[#5C6B5C] text-white"
+                        : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
               <input
                 type="text"
                 value={editSpecialty}
                 onChange={(e) => setEditSpecialty(e.target.value)}
-                placeholder="e.g. Psychiatry, Dermatology"
+                placeholder="Or type a specialty"
                 className={detailInputClass}
               />
             </div>
