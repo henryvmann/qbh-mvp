@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import TopNav from "../../components/qbh/TopNav";
 import { apiFetch } from "../../lib/api";
@@ -39,6 +39,14 @@ const PLANS = [
 ];
 
 export default function BillingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F4F5F7]" />}>
+      <BillingContent />
+    </Suspense>
+  );
+}
+
+function BillingContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState<string | null>(null);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
