@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getSessionAppUserId } from "../../../lib/auth/get-session-app-user-id";
 import { supabaseAdmin } from "../../../lib/supabase-server";
+import { storeHealthDocument } from "../../../lib/aws/s3";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -45,16 +46,22 @@ export async function POST(req: NextRequest) {
 
     if (file) {
       const buffer = await file.arrayBuffer();
+      const fileBuffer = Buffer.from(buffer);
       const fileName = file.name.toLowerCase();
 
+      // Store original file in S3 (pseudonymized, KMS-encrypted)
+      let s3Key: string | undefined;
+      try {
+        s3Key = await storeHealthDocument(appUserId, fileBuffer, file.name, file.type || "application/octet-stream");
+      } catch (s3Err) {
+        console.error("[health-docs] S3 upload failed (continuing with summarization):", s3Err);
+      }
+
       if (fileName.endsWith(".pdf")) {
-        // For PDFs, extract text using the raw bytes as best effort
-        // GPT-4o can handle base64-encoded content
-        const base64 = Buffer.from(buffer).toString("base64");
+        const base64 = fileBuffer.toString("base64");
         documentText = `[PDF Document: ${file.name}]\nBase64 content (first 10000 chars): ${base64.slice(0, 10000)}`;
       } else if (fileName.match(/\.(png|jpg|jpeg|gif|webp)$/)) {
-        // For images, send as base64 for GPT-4o vision
-        const base64 = Buffer.from(buffer).toString("base64");
+        const base64 = fileBuffer.toString("base64");
         const mimeType = fileName.endsWith(".png") ? "image/png" : "image/jpeg";
 
         const response = await openai.chat.completions.create({
@@ -74,9 +81,8 @@ export async function POST(req: NextRequest) {
 
         const summary = response.choices[0]?.message?.content || "Could not read this image.";
         await appendToHistory(appUserId, summary, providerName);
-        return NextResponse.json({ ok: true, summary });
+        return NextResponse.json({ ok: true, summary, s3Key });
       } else {
-        // Plain text files
         documentText = new TextDecoder().decode(buffer);
       }
     }
@@ -116,7 +122,7 @@ Return a clear, bullet-pointed summary that the user can review.`,
 
     const summary = response.choices[0]?.message?.content || "Could not summarize this document.";
     await appendToHistory(appUserId, summary, providerName);
-    return NextResponse.json({ ok: true, summary });
+    return NextResponse.json({ ok: true, summary, s3Key: undefined });
   } catch (err) {
     console.error("[health-docs] error:", err);
     return NextResponse.json({ ok: false, error: "Failed to process document" }, { status: 500 });

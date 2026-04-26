@@ -72,6 +72,12 @@ export default function HomePage() {
           </Link>
         </div>
       </div>
+
+      <footer className="absolute bottom-0 left-0 right-0 py-6 text-center text-xs text-[#7A7F8A] space-x-4">
+        <Link href="/privacy">Privacy Policy</Link>
+        <span>&middot;</span>
+        <Link href="/terms">Terms of Service</Link>
+      </footer>
     </main>
   );
 }

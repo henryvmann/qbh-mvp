@@ -56,6 +56,8 @@ This is a binding promise. Under multiple state privacy laws (CCPA/CPRA "do not 
 
 Before committing to "No data sold" in marketing, confirm the Privacy Policy will not list any disclosures that meet the statutory definition of a sale. The claim and the policy must match.
 
+**Update 2026-04-22**: this claim is materially more defensible following the Google Analytics 4 reconfiguration performed on this date. GA4 was previously the one subprocessor whose configuration could plausibly have been characterized as "sharing for value" under the expanded state-law definitions of sale. After the reconfiguration (Data Processing Amendment accepted; Google Signals, ads personalization, granular location, and four data-sharing categories disabled; 2-month retention; Google Consent Mode v2 Advanced gating all data behind affirmative consent), Google operates as a service provider only. All remaining subprocessors (Supabase, OpenAI, VAPI, Vercel, Plaid) are paid service providers under DPA/BAA terms. Full record in `docs/compliance/2026-04-22-ga4-cookiebot-reconfiguration.md`. The "No data sold" trust point can now be retained in marketing copy, subject to counsel's final review.
+
 ### 2.3 "Read-only access" / "strictly read-only" (Plaid)
 
 - **Locations**:

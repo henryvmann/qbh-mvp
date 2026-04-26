@@ -61,13 +61,14 @@ This memorandum inventories the technical and administrative safeguards currentl
 - **Onboarding consent**: Single checkbox during account creation gathers three consents simultaneously: (1) agree to Terms of Service, (2) agree to Privacy Policy, (3) authorize QBH to call offices and use personal information to organize care.
 - **Consent record storage**: Consent state stored in the `app_users` record with a timestamp.
 - **Per-call capacity**: Kate voice calls are gated by a check that the user's full patient profile is populated and consent has been recorded.
+- **Cookie consent (Cookiebot)**: Deployed 2026-04-22. Cookiebot consent management platform captures affirmative opt-in for cookie categories (Necessary, Statistics, Preferences, Marketing), with Google Consent Mode v2 Advanced signaling and Global Privacy Control (GPC) signal honoring enabled. Consent decisions are logged for audit. Google Analytics 4 is gated behind affirmative Statistics-category consent and does not fire pre-consent. See `docs/compliance/2026-04-22-ga4-cookiebot-reconfiguration.md`.
 
 ### Gaps
 - **Bundled consent**: The three consents are combined into one checkbox. Separate, granular consents are stronger legally (and often required).
-- **Missing policy documents**: The Terms of Service and Privacy Policy links in the consent UI currently point to `#` placeholders. No policies are published.
+- **Missing policy documents**: The Terms of Service and Privacy Policy links in the consent UI currently point to `#` placeholders. No policies are published. Cookiebot banner "Privacy Policy" link requires a live URL rather than a placeholder.
 - **Recording consent text**: The authorization does not explicitly disclose that Kate calls are recorded, which may be insufficient for two-party-consent states.
 - **No AI disclosure consent**: The fact that Kate is an AI voice agent is not explicitly disclosed during onboarding (it is disclosed on the call if asked).
-- **No withdrawal of consent mechanism** beyond account deletion.
+- **No withdrawal of consent mechanism** beyond account deletion (cookie preferences can be changed via Cookiebot's banner but in-product consents cannot).
 
 ---
 
@@ -151,9 +152,15 @@ See `vendor-inventory.md` for full detail. Summary:
 
 ## 10. Summary of recommended priorities
 
+### Completed 2026-04-22
+- ✅ Cookie consent management platform deployed (Cookiebot) with Google Consent Mode v2 Advanced and GPC honoring
+- ✅ Google Analytics 4 reconfigured to service-provider-only mode (Data Processing Amendment accepted; Google Signals, ads personalization, granular location, and data sharing disabled; 2-month retention)
+- ✅ Meta Pixel and session replay tools verified as not installed (and deliberately avoided going forward)
+- ✅ Geolocation confirmed as not collected by the product (no `navigator.geolocation`, no Capacitor geolocation plugin, no iOS/Android location permissions declared)
+
 ### Before launch (P0)
 1. Execute BAAs with Supabase, OpenAI, VAPI, Vercel
-2. Publish real Terms of Service and Privacy Policy (replace `#` placeholders)
+2. Publish real Terms of Service and Privacy Policy (replace `#` placeholders, also referenced by Cookiebot banner)
 3. Split onboarding consent into separate, granular authorizations
 4. Add explicit call-recording consent language for two-party-consent states
 5. Confirm VAPI call-audio retention and deletion-on-request capability

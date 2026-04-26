@@ -159,6 +159,8 @@ Data moves between the user's device, the QBH application, and a defined set of 
 | Vercel | Entire application traffic (processed in memory; logs retained per Vercel policy) | Hosting | HIPAA (if BAA signed) |
 | Apple Push Notifications | Notification text (may include appointment reminders) | Push notifications | Potentially PHI |
 | Epic (future) | OAuth tokens; Epic sends QBH clinical records | Medical record integration | HIPAA (QBH is BA to Epic) |
+| Google Analytics 4 | Web page interactions, referring source, anonymized IP, device/browser metadata (no PHI) | Site usage analytics. Configured as service-provider-only: Data Processing Amendment accepted, Google Signals disabled, ads personalization disabled across all regions, 2-month retention, gated by Cookiebot consent + Google Consent Mode v2 Advanced (see `docs/compliance/2026-04-22-ga4-cookiebot-reconfiguration.md`). | CCPA/CPRA and state privacy laws — service-provider relationship |
+| Cookiebot (Cybot A/S) | Consent decisions, anonymized visitor identifiers, IP metadata (no PHI) | Consent management platform and GPC honoring | GDPR (for EU operator), CCPA/CPRA service-provider |
 
 ---
 
@@ -175,6 +177,8 @@ Data moves between the user's device, the QBH application, and a defined set of 
 | Audit logs | Account deleted | `audit_logs` table, cascade-deleted |
 | Plaid transactions | Account deleted | Deleted per `account/delete` route |
 | Supabase backups | Per Supabase retention | Point-in-time recovery retains data after deletion |
+| Google Analytics 4 event + user data | 2 months | Shortest retention offered by Google; configured 2026-04-22 |
+| Cookiebot consent logs | Per Cookiebot retention | Consent decisions and timestamps stored by Cookiebot for audit purposes |
 
 ---
 

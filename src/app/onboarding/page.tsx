@@ -1268,9 +1268,9 @@ export default function OnboardingPage() {
             />
             <span className="text-xs text-[#7A7F8A] leading-relaxed">
               I agree to the{" "}
-              <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Terms of Service</a>
+              <a href="/terms" target="_blank" className="underline underline-offset-2 text-[#5C6B5C]">Terms of Service</a>
               {" "}and{" "}
-              <a href="#" className="underline underline-offset-2 text-[#5C6B5C]">Privacy Policy</a>
+              <a href="/privacy" target="_blank" className="underline underline-offset-2 text-[#5C6B5C]">Privacy Policy</a>
               , and authorize QB to call offices and use my info to organize my care
             </span>
           </label>

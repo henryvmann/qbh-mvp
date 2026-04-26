@@ -121,6 +121,23 @@ This inventory lists every third party that receives, processes, or stores Quart
 - **BAA status**: **N/A** — no PHI shared.
 - **Priority**: N/A.
 
+### Google Analytics 4
+- **Provider**: Google LLC
+- **Role**: Website and web-app usage analytics (page views, event counts, session metadata).
+- **Data categories sent**: Interaction events, page paths, referring source, anonymized IP, device/browser metadata. No PHI, no account identifiers, no health data.
+- **Regulatory posture**: Service provider under executed Data Processing Amendment (accepted April 2, 2026). Configured 2026-04-22 to service-provider-only mode: Google Signals disabled, data sharing with Google products disabled across all four categories, ads personalization disabled in all 307 regions, granular location/device collection disabled, data retention set to 2 months. Google Consent Mode v2 Advanced deployed in `src/app/layout.js`. GA4 fires only after affirmative user consent captured via Cookiebot.
+- **BAA status**: **N/A** — Google does not provide a BAA for GA4. No PHI transmitted; service-provider DPA accepted.
+- **Compliance record**: `docs/compliance/2026-04-22-ga4-cookiebot-reconfiguration.md` (Change ID QBH-COMP-2026-04-22-001).
+- **Priority**: **Resolved**.
+
+### Cookiebot (by Cybot A/S)
+- **Provider**: Cybot A/S (Denmark)
+- **Role**: Consent management platform. Captures user consent for cookie categories (Necessary, Statistics, Preferences, Marketing), honors Global Privacy Control (GPC) signals, logs consent decisions for audit, implements Google Consent Mode v2 Advanced signaling.
+- **Data categories sent**: Consent decisions, anonymized visitor identifiers, regional metadata for geographic banner behavior. No PHI.
+- **BAA status**: **N/A** — no PHI shared. Standard DPA under Cybot's terms.
+- **Compliance record**: Deployed 2026-04-22. Same compliance record as GA4 above.
+- **Priority**: **Resolved**.
+
 ---
 
 ## Tier 4: corporate / operational vendors (add as onboarded)
@@ -153,3 +170,5 @@ This inventory lists every third party that receives, processes, or stores Quart
 | 9 | Epic | Register for App Market; execute required agreements | P1 |
 | 10 | Stripe | Execute DPA before processing payments | P1 |
 | 11 | Email / observability / support tools | Select vendors; execute BAA where applicable | P2 |
+| 12 | Google Analytics 4 | DPA accepted; service-provider reconfiguration completed 2026-04-22 | **Resolved** |
+| 13 | Cookiebot | Deployed 2026-04-22 with Google Consent Mode v2 Advanced and GPC honoring | **Resolved** |

@@ -157,6 +157,29 @@ Counsel should advise on:
 
 ---
 
+## 5A. Cookie consent (Cookiebot) — deployed 2026-04-22
+
+Separate from the in-product onboarding consent checkbox described in Section 2, the site and app now display a cookie consent banner managed by Cookiebot (Cybot A/S).
+
+### Scope of this consent surface
+- Applies to cookies and tracking technologies placed on the Quarterback Health website and native apps. Today, the only active tracking technology gated by Cookiebot is Google Analytics 4.
+- Supabase Auth session cookies and Plaid Link session cookies are classified as Necessary and do not require user opt-in.
+
+### Behavior
+- **Affirmative opt-in**: user must interact with the Cookiebot banner to set preferences before Statistics-category cookies (GA4) are allowed to fire. Until consent is granted, GA4 does not load.
+- **Google Consent Mode v2 Advanced**: deployed via an inline script in `src/app/layout.js` that sets default consent to denied for every category except `security_storage`. Cookiebot updates the consent state after user action.
+- **GPC signal honoring**: enabled in the Cookiebot dashboard. Visitors in supported US states who transmit a Global Privacy Control signal are treated as if they had declined tracking.
+- **Consent logging**: every consent decision is logged with timestamp by Cookiebot for audit purposes.
+- **Change of mind**: users may update their cookie preferences at any time via Cookiebot's banner / preference center.
+
+### Remaining gap
+- The Cookiebot banner links to "Privacy Policy" but the link currently points to the same placeholder as the in-product consent checkbox. This must be replaced with a live Privacy Policy URL when the policy is published.
+
+### Compliance record
+Full change record, including before/after Google Analytics 4 admin state, verification test results, and SOC 2 trust-service-criteria mapping, is in `docs/compliance/2026-04-22-ga4-cookiebot-reconfiguration.md` (Change ID QBH-COMP-2026-04-22-001).
+
+---
+
 ## 6. Screenshots / source excerpts
 
 ### 6.1 Consent checkbox (signup path, lines 1296–1317)
