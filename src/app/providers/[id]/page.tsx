@@ -225,13 +225,41 @@ export default function ProviderDetailPage() {
                   placeholder="Doctor name (e.g. Sarah Chen)"
                   className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                 />
-                <input
-                  type="text"
-                  value={editSpecialty}
-                  onChange={(e) => setEditSpecialty(e.target.value)}
-                  placeholder="Specialty (e.g. Family Medicine)"
-                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                />
+                <div>
+                  <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Provider Type</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { value: "Primary Care", label: "Primary Care" },
+                      { value: "Therapist", label: "Therapist" },
+                      { value: "Dentist", label: "Dentist" },
+                      { value: "Eye Care", label: "Eye Care" },
+                      { value: "Dermatology", label: "Dermatology" },
+                      { value: "OB/GYN", label: "OB/GYN" },
+                      { value: "Specialist", label: "Specialist" },
+                      { value: "Pharmacy", label: "Pharmacy" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setEditSpecialty(opt.value)}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                          editSpecialty === opt.value
+                            ? "bg-[#5C6B5C] text-white"
+                            : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={editSpecialty}
+                    onChange={(e) => setEditSpecialty(e.target.value)}
+                    placeholder="Or type a specialty (e.g. Cardiology)"
+                    className="mt-1.5 w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  />
+                </div>
                 <div>
                   <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Care Team</label>
                   <div className="flex flex-wrap gap-1.5 mb-1.5">

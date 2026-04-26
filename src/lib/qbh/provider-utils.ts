@@ -11,12 +11,25 @@ export const SPECIALTY_COLORS: Record<string, { bg: string; border: string; acce
   default:    { bg: "#F5F8F5", border: "#D0D8D0", accent: "#5C6B5C", label: "Provider" },
 };
 
+/** Map from user-facing label to internal color key */
+const LABEL_MAP: Record<string, keyof typeof SPECIALTY_COLORS> = {
+  "primary care": "pcp", "therapist": "therapist", "dentist": "dentist",
+  "eye care": "eye", "dermatology": "dermatology", "ob/gyn": "obgyn",
+  "specialist": "specialist", "pharmacy": "pharmacy",
+};
+
 export function getSpecialtyColor(provider: { name?: string; specialty?: string | null; provider_type?: string | null }) {
   const specialty = (provider.specialty || "").toLowerCase();
   const name = (provider.name || "").toLowerCase();
   const type = (provider.provider_type || "").toLowerCase();
 
   if (type === "pharmacy") return SPECIALTY_COLORS.pharmacy;
+
+  // Check explicit specialty label first (set by user via Provider Type picker)
+  const explicitMatch = LABEL_MAP[specialty];
+  if (explicitMatch) return SPECIALTY_COLORS[explicitMatch];
+
+  // Fall back to keyword detection
   if (/\b(therap|psych|counsel|mental|behav)\b/.test(specialty + name)) return SPECIALTY_COLORS.therapist;
   if (/\b(dent|dds|oral|ortho)\b/.test(specialty + name)) return SPECIALTY_COLORS.dentist;
   if (/\b(eye|vision|ophthal|optom)\b/.test(specialty + name)) return SPECIALTY_COLORS.eye;

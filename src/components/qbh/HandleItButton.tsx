@@ -43,6 +43,7 @@ export default function HandleItButton({
     kind: "ok" | "error";
     text: string;
   } | null>(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = React.useState(false);
 
   // Pre-call info collection
   const [showForm, setShowForm] = React.useState(false);
@@ -54,6 +55,28 @@ export default function HandleItButton({
   const [callbackPhone, setCallbackPhone] = React.useState("");
   const [patientStatus, setPatientStatus] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
+
+  async function checkSubscriptionAndProceed() {
+    if (loading) return;
+    setToast(null);
+    try {
+      const res = await apiFetch("/api/dashboard/data");
+      const data = await res.json();
+      const status = data?.subscription_status;
+      const freeCallsUsed = data?.free_calls_used || 0;
+      if (status === "active" || status === "trialing") {
+        checkProfileAndProceed();
+      } else if (freeCallsUsed < 1) {
+        // Allow one free call
+        checkProfileAndProceed();
+      } else {
+        setShowUpgradePrompt(true);
+      }
+    } catch {
+      // If check fails, let them proceed
+      checkProfileAndProceed();
+    }
+  }
 
   async function checkProfileAndProceed() {
     if (loading) return;
@@ -316,11 +339,36 @@ export default function HandleItButton({
         </div>
       )}
 
+      {/* Upgrade prompt for free users */}
+      {showUpgradePrompt && (
+        <div className="rounded-2xl border border-[#EBEDF0] bg-white p-4 shadow-sm">
+          <p className="text-sm font-semibold text-[#1A1D2E]">Loved your free call? Upgrade for unlimited.</p>
+          <p className="mt-1 text-xs text-[#7A7F8A]">
+            You&apos;ve used your free AI call. Upgrade to Solo or Family for unlimited appointment scheduling with Kate.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <a
+              href="/billing"
+              className="flex-1 rounded-xl py-2.5 text-center text-sm font-semibold text-white"
+              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+            >
+              View Plans
+            </a>
+            <button
+              onClick={() => setShowUpgradePrompt(false)}
+              className="rounded-xl px-4 py-2.5 text-sm text-[#7A7F8A] hover:text-[#1A1D2E]"
+            >
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main call button */}
-      {!showForm && (
+      {!showForm && !showUpgradePrompt && (
         <button
           type="button"
-          onClick={checkProfileAndProceed}
+          onClick={checkSubscriptionAndProceed}
           disabled={loading}
           className="group relative w-full overflow-hidden rounded-2xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.98] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
           style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}

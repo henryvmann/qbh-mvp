@@ -11,6 +11,11 @@ import Link from "next/link";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import NextSteps from "../../components/qbh/NextSteps";
 import type { ProviderDashboardSnapshot } from "../lib/QBH/types";
+import { SPECIALTY_COLORS, getSpecialtyColor as getSpecialtyColorBase } from "../../lib/qbh/provider-utils";
+
+function getSpecialtyColor(snapshot: ProviderDashboardSnapshot) {
+  return getSpecialtyColorBase(snapshot.provider);
+}
 
 function getStatusLabel(snapshot: ProviderDashboardSnapshot): { label: string; className: string } {
   const bs = snapshot.booking_state;
@@ -35,33 +40,6 @@ function getStatusLabel(snapshot: ProviderDashboardSnapshot): { label: string; c
 }
 
 /** Color palette for provider specialty types */
-const SPECIALTY_COLORS: Record<string, { bg: string; border: string; accent: string; label: string }> = {
-  pcp:        { bg: "#E8F5E8", border: "#C2D9B8", accent: "#3D5A3D", label: "Primary Care" },
-  dentist:    { bg: "#E0F0FF", border: "#B0D0E8", accent: "#2A6090", label: "Dentist" },
-  therapist:  { bg: "#F0E8F5", border: "#D0B8E0", accent: "#6A4A8A", label: "Therapist" },
-  eye:        { bg: "#FFF5E0", border: "#E8D0A0", accent: "#8A6A20", label: "Eye Care" },
-  dermatology:{ bg: "#FFF0E8", border: "#E8C8B0", accent: "#8A5030", label: "Dermatology" },
-  obgyn:      { bg: "#FFE8F0", border: "#E8B0C8", accent: "#8A3060", label: "OB/GYN" },
-  specialist: { bg: "#F0F5FF", border: "#B0C8E8", accent: "#305080", label: "Specialist" },
-  pharmacy:   { bg: "#F5F5F5", border: "#E0E0E0", accent: "#7A7F8A", label: "Pharmacy" },
-  default:    { bg: "#F5F8F5", border: "#D0D8D0", accent: "#5C6B5C", label: "Provider" },
-};
-
-function getSpecialtyColor(snapshot: ProviderDashboardSnapshot) {
-  const specialty = (snapshot.provider.specialty || "").toLowerCase();
-  const name = (snapshot.provider.name || "").toLowerCase();
-  const type = (snapshot.provider.provider_type || "").toLowerCase();
-
-  if (type === "pharmacy") return SPECIALTY_COLORS.pharmacy;
-  if (/\b(therap|psych|counsel|mental|behav)\b/.test(specialty + name)) return SPECIALTY_COLORS.therapist;
-  if (/\b(dent|dds|oral|ortho)\b/.test(specialty + name)) return SPECIALTY_COLORS.dentist;
-  if (/\b(eye|vision|ophthal|optom)\b/.test(specialty + name)) return SPECIALTY_COLORS.eye;
-  if (/\b(derm|skin)\b/.test(specialty + name)) return SPECIALTY_COLORS.dermatology;
-  if (/\b(obgyn|ob\/gyn|gynec|obstet)\b/.test(specialty + name)) return SPECIALTY_COLORS.obgyn;
-  if (/\b(primary|family|internal|general|pcp)\b/.test(specialty + name)) return SPECIALTY_COLORS.pcp;
-  if (/\b(cardio|neuro|ortho|gastro|endo|pulmon|oncol|urol|nephro)\b/.test(specialty)) return SPECIALTY_COLORS.specialist;
-  return SPECIALTY_COLORS.default;
-}
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -514,8 +492,17 @@ function ProvidersInner() {
 
                               // Build smart initials — use first letter, or first two if duplicates
                               const allNames = careRecipients.map((r) => r.name);
+                              const SELF_LABELS = ["self", "myself", "me"];
                               function getInitial(recipientLabel: string): string {
-                                const match = careRecipients.find((r) => r.relationship === recipientLabel || r.name === recipientLabel);
+                                const lower = recipientLabel.toLowerCase();
+                                const match = careRecipients.find((r) =>
+                                  r.relationship === recipientLabel ||
+                                  r.name === recipientLabel ||
+                                  r.relationship.toLowerCase() === lower ||
+                                  r.name.toLowerCase() === lower ||
+                                  (SELF_LABELS.includes(lower) && r.relationship === "Self") ||
+                                  (r.relationship === "Self" && SELF_LABELS.includes(lower))
+                                );
                                 const name = match?.name || recipientLabel;
                                 const first = name.charAt(0).toUpperCase();
                                 const duplicates = allNames.filter((n) => n.charAt(0).toUpperCase() === first);
@@ -529,7 +516,14 @@ function ProvidersInner() {
                                     <span
                                       key={r}
                                       className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#5C6B5C]/15 text-[9px] font-bold text-[#5C6B5C]"
-                                      title={careRecipients.find((cr) => cr.relationship === r || cr.name === r)?.name || r}
+                                      title={(() => {
+                                        const lr = r.toLowerCase();
+                                        return careRecipients.find((cr) =>
+                                          cr.relationship === r || cr.name === r ||
+                                          cr.relationship.toLowerCase() === lr || cr.name.toLowerCase() === lr ||
+                                          (SELF_LABELS.includes(lr) && cr.relationship === "Self")
+                                        )?.name || r;
+                                      })()}
                                     >
                                       {getInitial(r)}
                                     </span>

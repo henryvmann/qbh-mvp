@@ -44,13 +44,20 @@ export async function GET(req: Request) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
   logAudit({ appUserId, action: "view_dashboard", resourceType: "dashboard", ipAddress: ip });
 
-  const [snapshots, discoverySummary, hasGoogleCalendarConnection, userInfo] =
+  const [snapshots, discoverySummary, hasGoogleCalendarConnection, userInfo, subscriptionData] =
     await Promise.all([
       getDashboardProvidersForUser(appUserId),
       getDashboardDiscoverySummaryForUser(appUserId),
       getGoogleCalendarConnectionForUser(appUserId),
       getUserInfo(appUserId),
+      supabaseAdmin
+        .from("app_users")
+        .select("subscription_status, stripe_plan, free_calls_used")
+        .eq("id", appUserId)
+        .maybeSingle(),
     ]);
+
+  const sub = (subscriptionData.data || {}) as Record<string, unknown>;
 
   return NextResponse.json({
     ok: true,
@@ -60,5 +67,8 @@ export async function GET(req: Request) {
     snapshots,
     discoverySummary,
     hasGoogleCalendarConnection,
+    subscription_status: sub.subscription_status || "free",
+    stripe_plan: sub.stripe_plan || null,
+    free_calls_used: sub.free_calls_used || 0,
   });
 }

@@ -322,9 +322,19 @@ export async function POST(req: Request) {
   // Fetch patient profile for the call
   const { data: userRow } = await supabaseAdmin
     .from("app_users")
-    .select("patient_profile, auth_user_id")
+    .select("patient_profile, auth_user_id, subscription_status, free_calls_used")
     .eq("id", app_user_id)
     .single();
+
+  // Increment free call counter for non-subscribers
+  const subStatus = (userRow as Record<string, unknown>)?.subscription_status as string | null;
+  if (subStatus !== "active" && subStatus !== "trialing") {
+    const used = ((userRow as Record<string, unknown>)?.free_calls_used as number) || 0;
+    await supabaseAdmin
+      .from("app_users")
+      .update({ free_calls_used: used + 1 })
+      .eq("id", app_user_id);
+  }
 
   const patientProfile = (userRow?.patient_profile || {}) as Record<string, any>;
 
