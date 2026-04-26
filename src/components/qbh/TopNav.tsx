@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "../../lib/supabase/client";
@@ -107,16 +108,13 @@ export default function TopNav() {
 
         {/* QB Logo */}
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{
-              background: "#FFFFFF",
-              boxShadow:
-                "0 1px 4px rgba(0,0,0,0.15), inset 0 -1px 2px rgba(0,0,0,0.04), inset 0 1px 1px rgba(255,255,255,1)",
-            }}
-          >
-            <CheckmarkIcon className="h-5 w-5 text-[#D0D3D8]" />
-          </div>
+          <Image
+            src="/qbh-icon.png"
+            alt="QB"
+            width={40}
+            height={40}
+            className="rounded-xl"
+          />
           <span className="text-sm font-semibold text-white/90 hidden md:inline">
             Quarterback Health
           </span>
