@@ -1067,7 +1067,16 @@ export default function OnboardingPage() {
 
   // Step 7: Account creation (universal — all paths)
   if (step === 7) {
-    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && allConsentsGiven;
+    const isUnder18 = (() => {
+      if (!patientDob) return false;
+      const dob = new Date(patientDob + "T00:00:00");
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+      return age < 18;
+    })();
+    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && allConsentsGiven && !isUnder18;
     const kateText = connectBank
       ? "Almost there! Create your account and we'll connect your bank to find your providers."
       : "Almost there! Create your account and we'll get everything set up for you.";
@@ -1179,8 +1188,11 @@ export default function OnboardingPage() {
                   value={patientDob}
                   onChange={(e) => setPatientDob(e.target.value)}
                   className="w-full rounded-xl border px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
+                  style={{ backgroundColor: CARD_BG, borderColor: isUnder18 ? "#E53E3E" : CARD_BORDER }}
                 />
+                {isUnder18 && (
+                  <p className="mt-1 text-[10px] text-red-500">You must be 18 or older to use Quarterback Health.</p>
+                )}
               </div>
               <div className="flex-1">
                 <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Sex</label>

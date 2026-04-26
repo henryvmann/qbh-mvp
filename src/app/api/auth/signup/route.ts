@@ -33,6 +33,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Under-18 blocker
+    const dob = body?.patient_info?.date_of_birth;
+    if (dob) {
+      const birthDate = new Date(dob + "T00:00:00");
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+      if (age < 18) {
+        return NextResponse.json(
+          { ok: false, error: "You must be 18 or older to use Quarterback Health." },
+          { status: 403 }
+        );
+      }
+    }
+
     // Create user with admin API — auto-confirms email
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
