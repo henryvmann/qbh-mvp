@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/handle-first", "/dashboard", "/providers", "/visits", "/goals", "/timeline",
   "/notes", "/calendar-view", "/calendar-connect", "/settings", "/account",
   "/medications", "/recordings", "/analytics", "/admin", "/portal-connect", "/care-recipients",
+  "/billing", "/privacy", "/terms",
 ];
 
 export async function middleware(request: NextRequest) {
