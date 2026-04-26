@@ -146,6 +146,20 @@ export async function GET(req: NextRequest) {
       if (state) indParams.set("state", state);
       if (city && !state) indParams.set("city", `${city}*`);
       searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${indParams}`, { signal: AbortSignal.timeout(5000) }));
+
+      // Search 2b: If 3+ words, also try first two words as first/last name
+      // Handles "Caroline Andrew Stamford Health" → first=Caroline last=Andrew
+      if (nameParts.length >= 3) {
+        const ind2Params = new URLSearchParams({
+          version: "2.1",
+          first_name: `${nameParts[0]}*`,
+          last_name: `${nameParts[1]}*`,
+          limit: "5",
+        });
+        if (state) ind2Params.set("state", state);
+        if (city && !state) ind2Params.set("city", `${city}*`);
+        searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${ind2Params}`, { signal: AbortSignal.timeout(5000) }));
+      }
     } else {
       // Single word — search as last name
       const indParams = new URLSearchParams({
