@@ -7,18 +7,34 @@ import { apiFetch } from "../../lib/api";
 
 const PLANS = [
   {
+    id: "free" as const,
+    name: "QB Free",
+    price: "$0",
+    period: "",
+    description: "See everything — take action when you're ready",
+    features: [
+      "Unlimited providers",
+      "Calendar integration",
+      "Limited Kate chat",
+      "Basic care gap recommendations",
+    ],
+    excluded: [
+      "AI appointment scheduling",
+      "Health document summaries",
+    ],
+  },
+  {
     id: "solo" as const,
     name: "QB Solo",
     price: "$24",
     period: "/ month",
     description: "For individuals managing their own healthcare",
     features: [
-      "Unlimited provider management",
+      "Everything in Free, plus:",
+      "Unlimited Kate chat",
       "AI appointment scheduling",
-      "Kate chat assistant",
       "Health document summaries",
-      "Calendar integration",
-      "Care gap recommendations",
+      "Advanced care gap recommendations",
     ],
   },
   {
@@ -28,7 +44,7 @@ const PLANS = [
     period: "/ month",
     description: "Manage care for your whole household",
     features: [
-      "Everything in Solo",
+      "Everything in Solo, plus:",
       "Up to 5 care recipients",
       "Family calendar coordination",
       "Per-person provider tracking",
@@ -151,9 +167,12 @@ function BillingContent() {
           </div>
         )}
 
-        <div className="mt-8 grid gap-6 sm:grid-cols-2">
+        <div className="mt-8 grid gap-6 sm:grid-cols-3">
           {PLANS.map((plan) => {
             const isCurrent = isActive && currentPlan === plan.id;
+            const isFree = plan.id === "free";
+            const isCurrentFree = !isActive && isFree;
+            const excluded = "excluded" in plan ? (plan as { excluded: string[] }).excluded : [];
             return (
               <div
                 key={plan.id}
@@ -169,7 +188,7 @@ function BillingContent() {
                 <h2 className="text-lg font-bold text-[#1A1D2E]">{plan.name}</h2>
                 <div className="mt-2 flex items-baseline gap-1">
                   <span className="text-3xl font-bold text-[#1A1D2E]">{plan.price}</span>
-                  <span className="text-sm text-[#7A7F8A]">{plan.period}</span>
+                  {plan.period && <span className="text-sm text-[#7A7F8A]">{plan.period}</span>}
                 </div>
                 <p className="mt-2 text-xs text-[#7A7F8A]">{plan.description}</p>
 
@@ -180,21 +199,31 @@ function BillingContent() {
                       {f}
                     </li>
                   ))}
+                  {excluded.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-[#B0B4BC]">
+                      <span className="mt-0.5">&#10005;</span>
+                      {f}
+                    </li>
+                  ))}
                 </ul>
 
                 <button
-                  onClick={() => handleCheckout(plan.id)}
-                  disabled={!!loading || isCurrent}
+                  onClick={() => !isFree && handleCheckout(plan.id as "solo" | "family")}
+                  disabled={!!loading || isCurrent || isCurrentFree}
                   className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold transition ${
-                    isCurrent
+                    isCurrent || isCurrentFree
                       ? "bg-[#EBEDF0] text-[#7A7F8A] cursor-default"
+                      : isFree
+                      ? "bg-white border border-[#EBEDF0] text-[#1A1D2E] hover:bg-[#F4F5F7]"
                       : "bg-[#5C6B5C] text-white hover:bg-[#4A5A4A]"
                   }`}
                 >
-                  {isCurrent
+                  {isCurrent || isCurrentFree
                     ? "Current Plan"
                     : loading === plan.id
                     ? "Redirecting..."
+                    : isFree
+                    ? "Your Current Plan"
                     : `Get ${plan.name}`}
                 </button>
               </div>
