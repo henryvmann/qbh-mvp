@@ -198,6 +198,20 @@ function buildSuggestions(
     });
   }
 
+  // 2b. Unconfirmed calendar providers need identification
+  const unconfirmedCalendar = dashboard.snapshots.filter(
+    (s) => s.provider.source === "calendar" && !s.provider.confirmed_status && s.booking_state?.status === "NONE"
+  );
+  if (unconfirmedCalendar.length > 0) {
+    suggestions.push({
+      id: "confirm-calendar-providers",
+      text: `Kate found ${unconfirmedCalendar.length} provider${unconfirmedCalendar.length > 1 ? "s" : ""} on your calendar — confirm who they are so she can help.`,
+      actionLabel: "Review providers",
+      actionType: "link",
+      actionHref: "/providers",
+    });
+  }
+
   // 3. Calendar not connected
   if (!dashboard.hasGoogleCalendarConnection) {
     suggestions.push({

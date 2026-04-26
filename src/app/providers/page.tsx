@@ -27,6 +27,9 @@ function getStatusLabel(snapshot: ProviderDashboardSnapshot): { label: string; c
   if (actions.current?.status === "BLOCKED") {
     return { label: "Blocked", className: "bg-red-50 text-red-600 ring-1 ring-red-200" };
   }
+  if (snapshot.provider.confirmed_status === "recurring") {
+    return { label: "Recurring", className: "bg-violet-500/15 text-violet-600 ring-1 ring-violet-500/30" };
+  }
   if (bs?.status === "BOOKED") {
     return { label: "Upcoming", className: "bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/30" };
   }
@@ -248,6 +251,11 @@ function ProvidersInner() {
   const [loading, setLoading] = useState(true);
   const [hasCalendar, setHasCalendar] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [confirmMode, setConfirmMode] = useState<"choose" | "link" | "search">("choose");
+  const [confirmSearchQuery, setConfirmSearchQuery] = useState("");
+  const [confirmSearchResults, setConfirmSearchResults] = useState<Array<{ name: string; phone?: string; specialty?: string; npi?: string }>>([]);
+  const [confirmSearching, setConfirmSearching] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [expandedDismiss, setExpandedDismiss] = useState<string | null>(null);
   const [careRecipients, setCareRecipients] = useState<Array<{ id: string; name: string; relationship: string }>>([]);
@@ -550,6 +558,137 @@ function ProvidersInner() {
                           </div>
                         </div>
                       </button>
+
+                      {/* Confirm Provider for unconfirmed calendar providers */}
+                      {snapshot.provider.source === "calendar" && !snapshot.provider.confirmed_status && snapshot.booking_state?.status === "NONE" && (
+                        confirmingId === snapshot.provider.id ? (
+                          <div className="px-5 pb-4 border-t" style={{ borderColor: colors.border }}>
+                            {confirmMode === "choose" && (
+                              <div className="mt-3 space-y-2">
+                                <p className="text-xs font-semibold text-[#1A1D2E]">What is this provider?</p>
+                                <button
+                                  onClick={() => setConfirmMode("link")}
+                                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
+                                >
+                                  Link to existing provider
+                                </button>
+                                <button
+                                  onClick={() => setConfirmMode("search")}
+                                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
+                                >
+                                  Search for provider
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    await apiFetch("/api/providers/confirm", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ provider_id: snapshot.provider.id, recurring: true }),
+                                    });
+                                    setConfirmingId(null);
+                                    window.location.reload();
+                                  }}
+                                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#7A7F8A] hover:bg-[#F4F5F7]"
+                                >
+                                  Already recurring — no booking needed
+                                </button>
+                                <button onClick={() => { setConfirmingId(null); setConfirmMode("choose"); }} className="text-xs text-[#B0B4BC] mt-1">
+                                  Cancel
+                                </button>
+                              </div>
+                            )}
+                            {confirmMode === "link" && (
+                              <div className="mt-3 space-y-2">
+                                <p className="text-xs font-semibold text-[#1A1D2E]">Select an existing provider:</p>
+                                {allDoctors.filter((s) => s.provider.id !== snapshot.provider.id && s.provider.source !== "calendar").map((s) => (
+                                  <button
+                                    key={s.provider.id}
+                                    onClick={async () => {
+                                      await apiFetch("/api/providers/confirm", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ provider_id: snapshot.provider.id, link_to_provider_id: s.provider.id }),
+                                      });
+                                      setConfirmingId(null);
+                                      setConfirmMode("choose");
+                                      window.location.reload();
+                                    }}
+                                    className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
+                                  >
+                                    {s.provider.name}{s.provider.specialty ? ` · ${s.provider.specialty}` : ""}
+                                  </button>
+                                ))}
+                                <button onClick={() => setConfirmMode("choose")} className="text-xs text-[#B0B4BC] mt-1">
+                                  ← Back
+                                </button>
+                              </div>
+                            )}
+                            {confirmMode === "search" && (
+                              <div className="mt-3 space-y-2">
+                                <p className="text-xs font-semibold text-[#1A1D2E]">Search for this provider:</p>
+                                <input
+                                  type="text"
+                                  value={confirmSearchQuery}
+                                  onChange={(e) => setConfirmSearchQuery(e.target.value)}
+                                  onKeyDown={async (e) => {
+                                    if (e.key === "Enter" && confirmSearchQuery.trim()) {
+                                      setConfirmSearching(true);
+                                      try {
+                                        const res = await apiFetch(`/api/npi/search?q=${encodeURIComponent(confirmSearchQuery.trim())}`);
+                                        const data = await res.json();
+                                        setConfirmSearchResults(data?.results || []);
+                                      } catch {} finally { setConfirmSearching(false); }
+                                    }
+                                  }}
+                                  placeholder="Provider name, then press Enter"
+                                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                                />
+                                {confirmSearching && <p className="text-xs text-[#7A7F8A]">Searching...</p>}
+                                {confirmSearchResults.map((r, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={async () => {
+                                      await apiFetch("/api/providers/confirm", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                          provider_id: snapshot.provider.id,
+                                          name: r.name,
+                                          phone_number: r.phone,
+                                          specialty: r.specialty,
+                                          npi: r.npi,
+                                        }),
+                                      });
+                                      setConfirmingId(null);
+                                      setConfirmMode("choose");
+                                      setConfirmSearchQuery("");
+                                      setConfirmSearchResults([]);
+                                      window.location.reload();
+                                    }}
+                                    className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
+                                  >
+                                    <div className="font-medium">{r.name}</div>
+                                    {r.specialty && <div className="text-xs text-[#7A7F8A]">{r.specialty}</div>}
+                                  </button>
+                                ))}
+                                <button onClick={() => { setConfirmMode("choose"); setConfirmSearchResults([]); setConfirmSearchQuery(""); }} className="text-xs text-[#B0B4BC] mt-1">
+                                  ← Back
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="px-5 pb-3">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setConfirmingId(snapshot.provider.id); setConfirmMode("choose"); }}
+                              className="rounded-xl px-4 py-2 text-xs font-semibold text-white"
+                              style={{ backgroundColor: "#5C6B5C" }}
+                            >
+                              Confirm Provider
+                            </button>
+                          </div>
+                        )
+                      )}
 
                       {isExpanded && (
                         <div className="px-5 pb-5 space-y-3 border-t" style={{ borderColor: colors.border }}>

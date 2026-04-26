@@ -140,6 +140,7 @@ type ProviderRow = {
   source: string | null;
   care_team: string | null;
   care_recipient: string | null;
+  confirmed_status: string | null;
 };
 
 type AttemptRow = {
@@ -640,7 +641,7 @@ export async function getDashboardProvidersForUser(
 
   const { data: providers, error: providersError } = await supabaseAdmin
     .from("providers")
-    .select("id,name,display_name,status,created_at,app_user_id,phone_number,specialty,doctor_name,notes,provider_type,source,care_team,care_recipient")
+    .select("id,name,display_name,status,created_at,app_user_id,phone_number,specialty,doctor_name,notes,provider_type,source,care_team,care_recipient,confirmed_status")
     .eq("app_user_id", cleanedUserId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
@@ -802,6 +803,8 @@ export async function getDashboardProvidersForUser(
       provider_type: pRow.provider_type || null,
       care_team: pRow.care_team || null,
       care_recipient: pRow.care_recipient || null,
+      source: pRow.source || null,
+      confirmed_status: pRow.confirmed_status || null,
     };
 
     const futureConfirmedEvent = futureConfirmedByProvider.get(pRow.id) ?? null;
@@ -825,17 +828,21 @@ export async function getDashboardProvidersForUser(
     const retryDecision = deriveRetryDecision(rawLatestAttempt?.metadata);
 
     const isManualProvider = pRow.source === "manual";
+    const isConfirmedProvider = pRow.confirmed_status === "confirmed";
+    const isRecurring = pRow.confirmed_status === "recurring";
 
     const booking_state: ProviderDashboardSnapshot["booking_state"] = {
-      status: hasMultipleFutureConfirmedEvents
-        ? "IN_PROGRESS"
-        : futureConfirmedEvent
-          ? "BOOKED"
-          : hasActiveBookingAttempt
-            ? "IN_PROGRESS"
-            : hasVisitHistory || isManualProvider
-              ? "FOLLOW_UP"
-              : "NONE",
+      status: isRecurring
+        ? "BOOKED"
+        : hasMultipleFutureConfirmedEvents
+          ? "IN_PROGRESS"
+          : futureConfirmedEvent
+            ? "BOOKED"
+            : hasActiveBookingAttempt
+              ? "IN_PROGRESS"
+              : hasVisitHistory || isManualProvider || isConfirmedProvider
+                ? "FOLLOW_UP"
+                : "NONE",
       displayTime: getAttemptBookingString(rawLatestAttempt, "display_time"),
       appointmentStart:
         futureConfirmedEvent?.start_at ??

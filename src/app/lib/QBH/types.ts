@@ -11,6 +11,8 @@ export type Provider = {
   npi?: string | null;
   care_team?: string | null;
   care_recipient?: string | null;
+  source?: string | null;
+  confirmed_status?: string | null;
 };
 
 export type LastVisitCategory =
