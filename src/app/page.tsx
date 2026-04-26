@@ -43,7 +43,7 @@ export default function HomePage() {
           className="text-xs font-semibold uppercase tracking-[0.25em]"
           style={{ color: "#5C6B5C" }}
         >
-          QBH &#10022; Your Health Ally
+          Quarterback Health &#10022; Your Health Ally
         </div>
 
         <h1 className="mt-6 text-4xl font-light tracking-tight sm:text-5xl">
