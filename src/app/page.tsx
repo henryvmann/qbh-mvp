@@ -50,7 +50,7 @@ export default function HomePage() {
         />
 
         <h1 className="mt-4 text-4xl font-light tracking-tight sm:text-5xl text-center">
-          Your healthcare, handled.
+          Healthcare Changed for Good.
         </h1>
 
         <p className="mt-4 max-w-xl mx-auto text-lg text-[#7A7F8A] text-center">

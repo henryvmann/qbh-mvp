@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Quarterback Health",
-  description: "Your healthcare, handled.",
+  description: "Healthcare Changed for Good.",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
