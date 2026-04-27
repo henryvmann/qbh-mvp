@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const matches = await scanCalendarForProviders(appUserId);
+    const { providers: matches, allEvents } = await scanCalendarForProviders(appUserId);
 
     if (matches.length === 0) {
       return NextResponse.json({
@@ -98,9 +98,49 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Create provider_visits for past calendar events so they show in Past Visits
+    const { data: allProviders } = await supabaseAdmin
+      .from("providers")
+      .select("id, name")
+      .eq("app_user_id", appUserId)
+      .eq("status", "active");
+
+    const providerByName = new Map<string, string>();
+    for (const p of allProviders || []) {
+      providerByName.set(p.name.toLowerCase(), p.id);
+    }
+
+    const now = new Date();
+    let visitsCreated = 0;
+    for (const evt of allEvents) {
+      const evtDate = new Date(evt.date);
+      if (evtDate >= now) continue; // Only past events
+
+      const providerId = providerByName.get(evt.name.toLowerCase());
+      if (!providerId) continue;
+
+      const visitDate = evt.date.split("T")[0];
+      // Check if visit already exists to avoid duplicates
+      const { data: existing } = await supabaseAdmin
+        .from("provider_visits")
+        .select("id")
+        .eq("app_user_id", appUserId)
+        .eq("provider_id", providerId)
+        .eq("visit_date", visitDate)
+        .maybeSingle();
+
+      if (!existing) {
+        const { error: visitErr } = await supabaseAdmin
+          .from("provider_visits")
+          .insert({ app_user_id: appUserId, provider_id: providerId, visit_date: visitDate, source: "calendar" });
+        if (!visitErr) visitsCreated++;
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       new_providers: insertedCount,
+      past_visits_created: visitsCreated,
       matches: matches.map((m) => ({
         name: m.name,
         date: m.date,

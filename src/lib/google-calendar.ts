@@ -573,6 +573,11 @@ export type CalendarProviderMatch = {
   upcoming: boolean;
 };
 
+export type CalendarEventOccurrence = {
+  name: string;
+  date: string;
+};
+
 /**
  * Extracts a provider name from an event summary.
  * Strips common prefixes like "Appointment with", "Visit -", etc.
@@ -593,7 +598,7 @@ function extractProviderName(summary: string): string {
  */
 export async function scanCalendarForProviders(
   appUserId: string
-): Promise<CalendarProviderMatch[]> {
+): Promise<{ providers: CalendarProviderMatch[]; allEvents: CalendarEventOccurrence[] }> {
   const connection = await getValidGoogleCalendarAccessToken(appUserId);
   const now = new Date();
   const timeMin = new Date(now);
@@ -671,7 +676,7 @@ export async function scanCalendarForProviders(
     }
   }
 
-  return Array.from(seen.values());
+  return { providers: Array.from(seen.values()), allEvents: matches };
 }
 
 export async function fetchGoogleCalendarFreeBusy(params: {
