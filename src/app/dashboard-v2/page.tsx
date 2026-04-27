@@ -146,14 +146,58 @@ function DashboardInner() {
   const weekDays = getWeekDays();
 
   return (
-    <main className="min-h-screen pb-16 relative" style={{ background: BG }}>
-      {/* Subtle organic grid — like light through greenhouse glass panels */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.045]" style={{
+    <main id="greenhouse" className="min-h-screen pb-16 relative" style={{ background: BG }}>
+      {/* Global theme overrides for child components */}
+      <style>{`
+        #greenhouse .rounded-2xl.bg-white,
+        #greenhouse .bg-white.shadow-sm,
+        #greenhouse .bg-white.border {
+          background: rgba(255,255,255,0.5) !important;
+          backdrop-filter: blur(12px) !important;
+          -webkit-backdrop-filter: blur(12px) !important;
+          border-color: rgba(255,255,255,0.6) !important;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+        }
+        #greenhouse .bg-white {
+          background: rgba(255,255,255,0.45) !important;
+        }
+        #greenhouse .bg-\\[\\#F4F5F7\\],
+        #greenhouse .bg-\\[\\#F0F2F5\\] {
+          background: rgba(255,255,255,0.3) !important;
+        }
+        #greenhouse .border-\\[\\#EBEDF0\\] {
+          border-color: rgba(255,255,255,0.5) !important;
+        }
+        #greenhouse .text-\\[\\#5C6B5C\\] {
+          color: ${GREEN} !important;
+        }
+        #greenhouse button[style*="5C6B5C"],
+        #greenhouse a[style*="5C6B5C"] {
+          background: linear-gradient(135deg, ${GREEN}, ${GREEN_LIGHT}) !important;
+          box-shadow: 0 4px 16px ${GREEN}25 !important;
+        }
+        #greenhouse .shadow-sm {
+          box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 0 0 1px rgba(255,255,255,0.5) !important;
+        }
+        #greenhouse .shadow-lg,
+        #greenhouse .shadow-2xl {
+          box-shadow: 0 4px 20px rgba(0,0,0,0.06), 0 0 0 1px rgba(255,255,255,0.5) !important;
+        }
+      `}</style>
+
+      {/* Greenhouse glass panel grid */}
+      <div className="fixed inset-0 pointer-events-none" style={{
+        opacity: 0.07,
         backgroundImage: `
-          linear-gradient(${TEAL_GLOW}40 1px, transparent 1px),
-          linear-gradient(90deg, ${GOLD}30 1px, transparent 1px)
+          linear-gradient(${TEAL_GLOW} 1px, transparent 1px),
+          linear-gradient(90deg, ${GOLD}80 1px, transparent 1px)
         `,
         backgroundSize: "80px 80px",
+      }} />
+
+      {/* Soft radial glow — like light coming through the ceiling */}
+      <div className="fixed inset-0 pointer-events-none" style={{
+        background: `radial-gradient(ellipse at 30% 10%, ${TEAL_GLOW}08 0%, transparent 60%), radial-gradient(ellipse at 70% 90%, ${GOLD}06 0%, transparent 50%)`,
       }} />
 
       <TopNav />
@@ -196,15 +240,18 @@ function DashboardInner() {
         <div className="mt-6 px-7" data-wizard="hero">
           <FrostCard glow className="p-6 relative overflow-hidden">
             {/* Leaf-vein pattern — organic tech texture */}
-            <svg className="absolute top-0 right-0 w-40 h-40 opacity-[0.10]" viewBox="0 0 100 100" fill="none">
-              <path d="M50 0 C50 50 100 50 100 100" stroke={GREEN} strokeWidth="0.6" />
-              <path d="M30 0 C30 40 70 60 100 80" stroke={TEAL_GLOW} strokeWidth="0.4" />
-              <path d="M0 20 C30 20 50 50 80 100" stroke={GREEN} strokeWidth="0.4" />
-              <path d="M70 0 C60 30 90 70 100 60" stroke={GOLD} strokeWidth="0.3" />
-              <circle cx="50" cy="50" r="1.5" fill={TEAL_GLOW} opacity="0.6" />
-              <circle cx="30" cy="30" r="1.2" fill={GREEN} opacity="0.5" />
-              <circle cx="75" cy="75" r="1.2" fill={GOLD} opacity="0.5" />
-              <circle cx="60" cy="20" r="0.8" fill={TEAL_GLOW} opacity="0.4" />
+            <svg className="absolute -top-4 -right-4 w-48 h-48 opacity-[0.20]" viewBox="0 0 100 100" fill="none">
+              <path d="M50 0 C50 50 100 50 100 100" stroke={GREEN} strokeWidth="0.8" />
+              <path d="M30 0 C30 40 70 60 100 80" stroke={TEAL_GLOW} strokeWidth="0.6" />
+              <path d="M0 20 C30 20 50 50 80 100" stroke={GREEN} strokeWidth="0.5" />
+              <path d="M70 0 C60 30 90 70 100 60" stroke={GOLD} strokeWidth="0.5" />
+              <path d="M10 50 C40 45 60 70 95 90" stroke={TEAL_GLOW} strokeWidth="0.3" />
+              <circle cx="50" cy="50" r="2" fill={TEAL_GLOW} opacity="0.7" />
+              <circle cx="30" cy="30" r="1.8" fill={GREEN} opacity="0.6" />
+              <circle cx="75" cy="75" r="1.8" fill={GOLD} opacity="0.6" />
+              <circle cx="60" cy="20" r="1.3" fill={TEAL_GLOW} opacity="0.5" />
+              <circle cx="85" cy="45" r="1" fill={GOLD} opacity="0.5" />
+              <circle cx="15" cy="65" r="1" fill={GREEN} opacity="0.4" />
             </svg>
 
             <div className="relative flex items-start gap-4">
