@@ -87,6 +87,9 @@ export default function TopNav() {
               <Link href="/account" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm hover:bg-white/10 transition" style={{ color: "#FFFFFF" }}>
                 Account
               </Link>
+              <Link href="/documents" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm hover:bg-white/10 transition" style={{ color: "#FFFFFF" }}>
+                Documents
+              </Link>
               <Link href="/recordings" onClick={() => setMenuOpen(false)} className="block px-4 py-2.5 text-sm hover:bg-white/10 transition" style={{ color: "#FFFFFF" }}>
                 Recordings
               </Link>
