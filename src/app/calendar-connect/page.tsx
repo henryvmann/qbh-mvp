@@ -199,8 +199,27 @@ function CalendarConnectPageInner() {
             <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-6">
               <div className="text-sm font-medium text-[#1A1D2E] mb-3">Google Calendar</div>
               {googleConnected ? (
-                <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
-                  Connected &#10003;
+                <div className="space-y-2">
+                  <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
+                    Connected &#10003;
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setSubmitting(true);
+                      try {
+                        const res = await fetch("/api/calendar/scan", { method: "POST", headers: { "Content-Type": "application/json" } });
+                        const data = await res.json();
+                        if (data.ok) {
+                          alert(`Scan complete: ${data.new_providers || 0} new providers, ${data.past_visits_created || 0} past visits found.`);
+                          window.location.reload();
+                        }
+                      } catch {} finally { setSubmitting(false); }
+                    }}
+                    disabled={submitting}
+                    className="w-full rounded-2xl px-6 py-2.5 text-sm font-medium border border-[#EBEDF0] text-[#1A1D2E] hover:bg-[#F0F2F5] transition disabled:opacity-60"
+                  >
+                    {submitting ? "Scanning..." : "Rescan Calendar"}
+                  </button>
                 </div>
               ) : (
                 <button
