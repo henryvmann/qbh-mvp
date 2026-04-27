@@ -520,6 +520,39 @@ export default function ProviderCard({
               Cancel
             </button>
           </div>
+
+          {/* Recurring toggle */}
+          <div className="mt-3 pt-3 border-t border-[#EBEDF0]">
+            {provider.confirmed_status === "recurring" ? (
+              <button
+                onClick={async () => {
+                  await apiFetch("/api/providers/update", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ provider_id: provider.id, confirmed_status: null }),
+                  });
+                  window.location.reload();
+                }}
+                className="text-xs text-violet-600 hover:underline"
+              >
+                Remove recurring status
+              </button>
+            ) : (
+              <button
+                onClick={async () => {
+                  await apiFetch("/api/providers/update", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ provider_id: provider.id, confirmed_status: "recurring" }),
+                  });
+                  window.location.reload();
+                }}
+                className="text-xs text-[#7A7F8A] hover:text-[#1A1D2E]"
+              >
+                Mark as recurring — no booking needed
+              </button>
+            )}
+          </div>
         </div>
       )}
 
