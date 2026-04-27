@@ -48,7 +48,7 @@ type ChatMessage = {
   content: string;
 };
 
-async function buildContext(appUserId: string): Promise<string> {
+async function buildContext(appUserId: string): Promise<{ text: string; commStyle: string; proactivity: string }> {
   const [providersRes, userRes, eventsRes, visitsRes] = await Promise.all([
     supabaseAdmin
       .from("providers")
@@ -130,7 +130,9 @@ async function buildContext(appUserId: string): Promise<string> {
     }
   } catch {}
 
-  // Kate focus areas from patient profile
+  // Kate preferences from patient profile
+  const commStyle = profile.kate_communication_style || "friend";
+  const proactivity = profile.kate_proactivity || "balanced";
   const focusAreas = profile.kate_focus_areas || null;
   const focusSection = focusAreas
     ? `\nUser's priority health focus areas: ${focusAreas}\nEmphasize these areas when giving suggestions, asking follow-ups, or offering proactive help.\n`
@@ -142,7 +144,7 @@ async function buildContext(appUserId: string): Promise<string> {
     ? `\nUser's health history (shared by them): ${healthHistory}\nUse this context to make better suggestions. For example, if they mention stomach issues and don't have a GI doctor, suggest finding one.\n`
     : "";
 
-  return `User's name: ${displayName} (full name: ${profile.full_name || "Unknown"})
+  const text = `User's name: ${displayName} (full name: ${profile.full_name || "Unknown"})
 Today: ${now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
 ${focusSection}${healthHistorySection}${surveyContext}
 Providers on file:
@@ -151,6 +153,8 @@ ${providerList || "No providers yet."}
 ${upcomingEvents ? `Upcoming appointments:\n${upcomingEvents}` : "No upcoming appointments."}
 ${recentPastEvents ? `Recent past appointments:\n${recentPastEvents}` : ""}
 `;
+
+  return { text, commStyle, proactivity };
 }
 
 export async function POST(req: NextRequest) {
@@ -188,7 +192,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const context = await buildContext(appUserId);
+  const { text: context, commStyle, proactivity } = await buildContext(appUserId);
 
   const pageContext = {
     "/dashboard": "The user is on their main dashboard — they can see their health score, overdue providers, and upcoming appointments.",
@@ -205,7 +209,23 @@ export async function POST(req: NextRequest) {
 
   const locationContext = userLocation ? `\nUser's approximate location: ${userLocation}` : "";
 
-  const systemPrompt = `You are Kate, an exceptionally capable and helpful care coordinator for Quarterback Health. You are smart, resourceful, and proactive. Users should feel like they have a brilliant personal health assistant who can actually get things done.
+  // Build tone instruction based on communication style
+  const toneInstruction = commStyle === "professional"
+    ? "Communication style: Be clear, organized, and to-the-point. Use complete sentences, avoid slang or casual language. Structure information with bullet points when listing multiple items. Think of yourself as a sharp executive assistant."
+    : "Communication style: Be warm, casual, and conversational — like a helpful friend who happens to know a lot about healthcare. Use contractions, be encouraging, and keep things light.";
+
+  // Build proactivity instruction
+  const proactivityInstruction = proactivity === "proactive"
+    ? "Involvement level: Be highly proactive. Volunteer suggestions even when not asked. Point out things the user might be missing. Offer next steps before they ask. If you notice care gaps or overdue visits, bring them up."
+    : proactivity === "minimal"
+    ? "Involvement level: Be reserved. Only provide information the user specifically asks for. Don't volunteer extra suggestions or nudge them toward actions. Keep responses short and focused on exactly what was asked."
+    : "Involvement level: Be balanced. Answer what's asked and add a brief suggestion when it's clearly relevant, but don't overwhelm with unsolicited advice.";
+
+  const systemPrompt = `You are Kate, an exceptionally capable and helpful care coordinator for Quarterback Health. You are smart, resourceful, and genuinely helpful.
+
+${toneInstruction}
+
+${proactivityInstruction}
 
 Here is the user's current information:
 ${context}
@@ -233,12 +253,11 @@ What you should NOT do:
 - Never suggest health habits (water, diet, exercise) — redirect to "that's a great conversation to have with your doctor"
 
 Guidelines:
-- Be warm, concise, confident, and genuinely helpful. Not robotic, not formal.
+- Follow the communication style and involvement level above carefully.
 - If you CAN help, help. Don't say "I can't do that" unless you truly cannot. Be resourceful.
 - When the user asks for something, DO IT or tell them exactly how to do it step by step.
 - Use short responses (2-4 sentences). Be direct.
 - Reference their actual providers by name when relevant.
-- If they have no providers, proactively help them add some — suggest they go to the Providers page.
 - When suggesting actions, be specific: link to pages, reference real names, give clear next steps.`;
 
   const chatMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [

@@ -37,6 +37,7 @@ type PatientProfile = {
   date_of_birth?: string | null;
   insurance_provider?: string | null;
   callback_phone?: string | null;
+  kate_proactivity?: string | null;
 };
 
 /* ── Context type ── */
@@ -268,7 +269,11 @@ function buildSuggestions(
     });
   }
 
-  return suggestions;
+  // Limit suggestions based on Kate proactivity setting
+  const proactivity = profile?.kate_proactivity || "balanced";
+  const maxSuggestions = proactivity === "proactive" ? 5 : proactivity === "minimal" ? 1 : 3;
+
+  return suggestions.slice(0, maxSuggestions);
 }
 
 /* ── Session storage helpers ── */
