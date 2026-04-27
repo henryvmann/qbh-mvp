@@ -362,8 +362,20 @@ async function handleOne(
             if (month > 11) { month = 0; year++; }
           }
 
+          // Normalize word numbers to digits for time parsing
+          let timeText = officeOfferRawText;
+          const wordTimeMap: Record<string, string> = {
+            "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
+            "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",
+            "eleven": "11", "twelve": "12",
+          };
+          for (const [word, digit] of Object.entries(wordTimeMap)) {
+            timeText = timeText.replace(new RegExp(`\\b${word}\\s*(am|pm|a\\.m\\.|p\\.m\\.)`, "gi"), `${digit} $1`);
+            timeText = timeText.replace(new RegExp(`\\bat\\s+${word}\\b`, "gi"), `at ${digit}`);
+          }
+
           // Check for time — if no time given, ask for it instead of defaulting to 9AM
-          const tMatch = officeOfferRawText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
+          const tMatch = timeText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?)\b/i);
           if (!tMatch) {
             // Build a spoken date for the response
             const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];

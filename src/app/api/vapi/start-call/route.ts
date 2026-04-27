@@ -82,6 +82,19 @@ function cleanProviderNameForSpeech(raw: string | null | undefined): string {
   return name.trim();
 }
 
+/**
+ * Format a patient name for clear speech.
+ * "Thistle Mann" → "Thistle, Mann" — the comma adds a pause so TTS doesn't run names together.
+ */
+function formatNameForSpeech(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 2) {
+    // Add comma between first and last for a natural pause
+    return `${parts[0]}, ${parts[1]}`;
+  }
+  return name;
+}
+
 function asRecord(value: unknown): JsonRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as JsonRecord;
@@ -569,7 +582,7 @@ export async function POST(req: Request) {
         variableValues: {
           attempt_id,
           provider_id,
-          patient_name: resolvedPatientName,
+          patient_name: formatNameForSpeech(resolvedPatientName),
           provider_name: cleanProviderNameForSpeech(provider_name),
           preferred_timeframe,
           demo_autoconfirm,
