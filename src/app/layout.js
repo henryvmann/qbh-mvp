@@ -19,6 +19,10 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Quarterback Health",
   description: "Your healthcare, handled.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({ children }) {

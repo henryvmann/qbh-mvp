@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "../lib/supabase/client";
 
 export default function HomePage() {
@@ -38,24 +39,26 @@ export default function HomePage() {
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-3xl px-6 pt-20 pb-20">
-        <div
-          className="text-xs font-semibold uppercase tracking-[0.25em]"
-          style={{ color: "#5C6B5C" }}
-        >
-          Quarterback Health &#10022; Your Health Ally
-        </div>
+      <div className="relative mx-auto max-w-3xl px-6 pt-10 pb-20">
+        <Image
+          src="/qbh-logo-full.png"
+          alt="Quarterback Health"
+          width={300}
+          height={300}
+          className="mx-auto"
+          priority
+        />
 
-        <h1 className="mt-6 text-4xl font-light tracking-tight sm:text-5xl">
+        <h1 className="mt-4 text-4xl font-light tracking-tight sm:text-5xl text-center">
           Your healthcare, handled.
         </h1>
 
-        <p className="mt-4 max-w-xl text-lg text-[#7A7F8A]">
+        <p className="mt-4 max-w-xl mx-auto text-lg text-[#7A7F8A] text-center">
           You don&apos;t have to manage this alone. QB keeps track, follows up,
           and handles the details so you don&apos;t have to.
         </p>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center">
           <Link
             href="/onboarding"
             className="inline-flex items-center justify-center rounded-xl px-8 py-3.5 text-sm font-semibold shadow-lg"
