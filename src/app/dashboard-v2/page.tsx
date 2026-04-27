@@ -22,9 +22,9 @@ const GREEN = "#4A6B4A";
 const GREEN_LIGHT = "#5C7B5C";
 const TEAL_GLOW = "#0FA5A5";
 const GOLD = "#C89B3C";
-const SKY_TOP = "#C8E0F0";
-const SKY_MID = "#E0EDF7";
-const SKY_BOT = "#F0F4F8";
+const SKY_TOP = "#CDDBD6";   // muted teal mist
+const SKY_MID = "#DDD8D0";   // warm gold-stone
+const SKY_BOT = "#ECEAE6";   // soft warm grey
 const GLASS = "rgba(255,255,255,0.55)";
 const GLASS_BORDER = "rgba(255,255,255,0.7)";
 const GLASS_HOVER = "rgba(255,255,255,0.72)";
@@ -148,10 +148,10 @@ function DashboardInner() {
   return (
     <main className="min-h-screen pb-16 relative" style={{ background: BG }}>
       {/* Subtle organic grid — like light through greenhouse glass panels */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.015]" style={{
+      <div className="fixed inset-0 pointer-events-none opacity-[0.045]" style={{
         backgroundImage: `
-          linear-gradient(${TEAL_GLOW} 1px, transparent 1px),
-          linear-gradient(90deg, ${TEAL_GLOW} 1px, transparent 1px)
+          linear-gradient(${TEAL_GLOW}40 1px, transparent 1px),
+          linear-gradient(90deg, ${GOLD}30 1px, transparent 1px)
         `,
         backgroundSize: "80px 80px",
       }} />
@@ -196,13 +196,15 @@ function DashboardInner() {
         <div className="mt-6 px-7" data-wizard="hero">
           <FrostCard glow className="p-6 relative overflow-hidden">
             {/* Leaf-vein pattern — organic tech texture */}
-            <svg className="absolute top-0 right-0 w-32 h-32 opacity-[0.04]" viewBox="0 0 100 100" fill="none">
-              <path d="M50 0 C50 50 100 50 100 100" stroke={GREEN} strokeWidth="0.5" />
-              <path d="M30 0 C30 40 70 60 100 80" stroke={TEAL_GLOW} strokeWidth="0.3" />
-              <path d="M0 20 C30 20 50 50 80 100" stroke={GREEN} strokeWidth="0.3" />
-              <circle cx="50" cy="50" r="1" fill={TEAL_GLOW} opacity="0.5" />
-              <circle cx="30" cy="30" r="0.8" fill={GREEN} opacity="0.4" />
-              <circle cx="75" cy="75" r="0.8" fill={GOLD} opacity="0.4" />
+            <svg className="absolute top-0 right-0 w-40 h-40 opacity-[0.10]" viewBox="0 0 100 100" fill="none">
+              <path d="M50 0 C50 50 100 50 100 100" stroke={GREEN} strokeWidth="0.6" />
+              <path d="M30 0 C30 40 70 60 100 80" stroke={TEAL_GLOW} strokeWidth="0.4" />
+              <path d="M0 20 C30 20 50 50 80 100" stroke={GREEN} strokeWidth="0.4" />
+              <path d="M70 0 C60 30 90 70 100 60" stroke={GOLD} strokeWidth="0.3" />
+              <circle cx="50" cy="50" r="1.5" fill={TEAL_GLOW} opacity="0.6" />
+              <circle cx="30" cy="30" r="1.2" fill={GREEN} opacity="0.5" />
+              <circle cx="75" cy="75" r="1.2" fill={GOLD} opacity="0.5" />
+              <circle cx="60" cy="20" r="0.8" fill={TEAL_GLOW} opacity="0.4" />
             </svg>
 
             <div className="relative flex items-start gap-4">
