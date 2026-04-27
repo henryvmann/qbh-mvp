@@ -166,7 +166,7 @@ export default function AnalyticsPage() {
         </p>
 
         {/* Stats grid */}
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        <div data-tour="stats-grid" className="mt-6 grid grid-cols-3 gap-3">
           <StatCard value={data.providerCount} label="Providers" color="#5C6B5C" />
           <StatCard value={data.bookedCount} label="Appointments" color="#2A6090" />
           <StatCard value={data.visitCount} label="Past Visits" color="#5C4A8A" />
@@ -219,7 +219,7 @@ export default function AnalyticsPage() {
           return (
             <>
               {earned.length > 0 && (
-                <div className="mt-6">
+                <div data-tour="achievements" className="mt-6">
                   <div className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">
                     Earned — {earned.length} of {achievements.length}
                   </div>

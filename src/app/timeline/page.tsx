@@ -97,7 +97,7 @@ export default function TimelinePage() {
 
         {/* Upcoming appointments */}
         {upcoming.length > 0 && (
-          <div className="mt-8">
+          <div data-tour="timeline-upcoming" className="mt-8">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-sm font-bold text-emerald-600">Upcoming</span>
               <div className="flex-1 h-px bg-[#EBEDF0]" />
@@ -150,7 +150,7 @@ export default function TimelinePage() {
 
         {/* Year-by-year provider history */}
         {years.length > 0 ? (
-          <div className="mt-8 space-y-6">
+          <div data-tour="timeline-history" className="mt-8 space-y-6">
             {years.map((yearData) => (
               <div key={yearData.year}>
                 <div className="mb-3 flex items-center gap-2">

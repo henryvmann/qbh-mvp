@@ -334,7 +334,7 @@ export default function CalendarViewPage() {
         )}
 
         {/* Month navigation */}
-        <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] overflow-hidden">
+        <div data-tour="calendar-grid" className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#EBEDF0]">
             <button
               onClick={prevMonth}
@@ -500,7 +500,7 @@ export default function CalendarViewPage() {
           </div>
         )}
         {/* Availability preferences */}
-        <div className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
+        <div data-tour="availability" className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
           <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">Your Availability</h2>
           <p className="text-xs text-[#7A7F8A] mb-4">Tell Kate when you&apos;re available so she books at the right times.</p>
 

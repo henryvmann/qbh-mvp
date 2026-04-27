@@ -360,7 +360,7 @@ export default function GoalsPage() {
         )}
 
         {/* What's important to you */}
-        <div className="mb-6 rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]">
+        <div data-tour="goals-input" className="mb-6 rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]">
           <h3 className="text-base font-semibold text-[#1A1D2E] mb-1">
             What&apos;s important to you?
           </h3>
@@ -458,7 +458,7 @@ export default function GoalsPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div data-tour="goals-sections" className="space-y-8">
             {sections.map((section) => {
               const completed = section.items.filter((g) => g.progress >= 100);
               const outstanding = section.items.filter((g) => g.progress < 100);

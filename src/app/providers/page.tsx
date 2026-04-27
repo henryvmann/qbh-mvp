@@ -363,7 +363,7 @@ function ProvidersInner() {
         <BestNextStep context="providers" />
 
         {/* Add Provider */}
-        <div className="mt-4">
+        <div data-tour="add-provider" className="mt-4">
           {showAddForm ? (
             <AddProviderForm
               userId={userId}
@@ -444,7 +444,7 @@ function ProvidersInner() {
 
             {/* Ungrouped Doctors / Specialists — color-coded cards */}
             {doctors.length > 0 && (
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+              <div data-tour="provider-list" className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                 {doctors.map((snapshot) => {
                   const status = getStatusLabel(snapshot);
                   const colors = getSpecialtyColor(snapshot);

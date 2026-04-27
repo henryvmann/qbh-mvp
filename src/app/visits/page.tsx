@@ -119,7 +119,7 @@ function VisitsInner() {
         <BestNextStep context="visits" />
 
         {/* Upcoming visits */}
-        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+        <section data-tour="upcoming-visits" className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-serif text-xl text-[#1A1D2E]">
@@ -195,7 +195,7 @@ function VisitsInner() {
         {/* Follow-ups and Past visits side by side */}
         <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Follow-ups */}
-          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+          <div data-tour="follow-ups" className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-serif text-xl text-[#1A1D2E]">

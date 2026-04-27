@@ -280,7 +280,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Health History */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
+        <div data-tour="health-history" className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
           <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
             Your Health History
           </h2>
@@ -480,7 +480,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Kate Preferences — all in one card */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
+        <div data-tour="kate-preferences" className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
           <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
             Kate Preferences
           </h2>
