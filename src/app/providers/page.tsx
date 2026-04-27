@@ -500,17 +500,22 @@ function ProvidersInner() {
 
                               // Build smart initials — use first letter, or first two if duplicates
                               const allNames = careRecipients.map((r) => r.name);
-                              const SELF_LABELS = ["self", "myself", "me"];
+                              const SELF_LABELS = ["self", "myself", "me", "my health"];
                               function getInitial(recipientLabel: string): string {
-                                const lower = recipientLabel.toLowerCase();
-                                const match = careRecipients.find((r) =>
-                                  r.relationship === recipientLabel ||
-                                  r.name === recipientLabel ||
-                                  r.relationship.toLowerCase() === lower ||
-                                  r.name.toLowerCase() === lower ||
-                                  (SELF_LABELS.includes(lower) && r.relationship === "Self") ||
-                                  (r.relationship === "Self" && SELF_LABELS.includes(lower))
-                                );
+                                const lower = recipientLabel.toLowerCase().trim();
+                                // Try matching by ID first, then name, then relationship, then self-labels
+                                const match = careRecipients.find((r) => {
+                                  if (r.id === recipientLabel) return true;
+                                  if (r.name === recipientLabel) return true;
+                                  if (r.relationship === recipientLabel) return true;
+                                  if (r.name.toLowerCase() === lower) return true;
+                                  if (r.relationship.toLowerCase() === lower) return true;
+                                  // "Myself", "Me", "Self", "My health" → match the Self care recipient
+                                  if (SELF_LABELS.includes(lower) && r.relationship === "Self") return true;
+                                  // Partial match: if the label contains the name or vice versa
+                                  if (lower.includes(r.name.toLowerCase()) || r.name.toLowerCase().includes(lower)) return true;
+                                  return false;
+                                });
                                 const name = match?.name || recipientLabel;
                                 const first = name.charAt(0).toUpperCase();
                                 const duplicates = allNames.filter((n) => n.charAt(0).toUpperCase() === first);

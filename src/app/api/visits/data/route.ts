@@ -42,21 +42,26 @@ export async function GET(req: Request) {
   ];
   let providerNameMap = new Map<string, string>();
 
+  const providerConfirmedMap = new Map<string, boolean>();
+
   if (upcomingProviderIds.length > 0) {
     const { data: upProviders } = await supabaseAdmin
       .from("providers")
-      .select("id, name")
+      .select("id, name, source, confirmed_status")
       .in("id", upcomingProviderIds);
 
     for (const p of upProviders ?? []) {
       providerNameMap.set(p.id, p.name);
+      // A provider is "confirmed" if it's not calendar-sourced, or if confirmed_status is set
+      providerConfirmedMap.set(p.id, p.source !== "calendar" || !!p.confirmed_status);
     }
   }
 
-  const upcoming: Array<{ eventId: string; providerId: string; providerName: string; startAt: string; endAt: string; timezone: string | null }> = (upcomingEvents ?? []).map((e) => ({
+  const upcoming: Array<{ eventId: string; providerId: string; providerName: string; startAt: string; endAt: string; timezone: string | null; providerConfirmed: boolean }> = (upcomingEvents ?? []).map((e) => ({
     eventId: e.id,
     providerId: e.provider_id,
     providerName: providerNameMap.get(e.provider_id) ?? "Unknown Provider",
+    providerConfirmed: providerConfirmedMap.get(e.provider_id) ?? true,
     startAt: e.start_at,
     endAt: e.end_at,
     timezone: e.timezone,

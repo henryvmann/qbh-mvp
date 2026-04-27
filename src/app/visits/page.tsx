@@ -18,6 +18,7 @@ type UpcomingVisit = {
   endAt: string | null;
   timezone: string | null;
   needsProviderMatch?: boolean;
+  providerConfirmed?: boolean;
 };
 
 type PastVisit = {
@@ -167,6 +168,20 @@ function VisitsInner() {
                         style={{ backgroundColor: "#5C6B5C" }}
                       >
                         Assign Provider
+                      </a>
+                    </div>
+                  )}
+                  {visit.providerId && !visit.providerConfirmed && (
+                    <div className="mt-3 flex items-center gap-2 rounded-xl bg-blue-50 border border-blue-200 px-4 py-2.5">
+                      <span className="text-xs text-blue-700">
+                        Is this the right provider? Confirm to help Kate manage it.
+                      </span>
+                      <a
+                        href={`/providers`}
+                        className="rounded-lg px-3 py-1 text-xs font-semibold text-white shrink-0"
+                        style={{ backgroundColor: "#5C6B5C" }}
+                      >
+                        Confirm
                       </a>
                     </div>
                   )}
