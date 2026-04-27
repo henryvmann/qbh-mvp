@@ -202,7 +202,7 @@ function DashboardInner() {
 
       <TopNav />
 
-      <div className="relative mx-auto max-w-lg sm:max-w-xl md:max-w-2xl">
+      <div className="relative mx-auto max-w-5xl px-2">
 
         {/* ── Greeting ── */}
         <div className="px-7 pt-8">
@@ -416,7 +416,7 @@ function DashboardInner() {
       </div>
 
       {/* ── What To Do Next ── */}
-      <div className="mx-auto max-w-lg sm:max-w-xl md:max-w-2xl mt-10 px-7 pb-8" data-wizard="next-steps">
+      <div className="mx-auto max-w-5xl mt-10 px-9 pb-8" data-wizard="next-steps">
         <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: TEXT_LIGHT }}>
           What To Do Next
         </div>
