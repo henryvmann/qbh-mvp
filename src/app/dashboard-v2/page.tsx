@@ -1,643 +1,387 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { apiFetch } from "../../lib/api";
 import HandleItButton from "../../components/qbh/HandleItButton";
+import KateInsights from "../../components/qbh/KateInsights";
+import CareGaps from "../../components/qbh/CareGaps";
+import KateFollowUp from "../../components/qbh/KateFollowUp";
+import TopNav from "../../components/qbh/TopNav";
+import BestNextStep from "../../components/qbh/BestNextStep";
+import ProviderLink from "../../components/qbh/ProviderLink";
 
-/* ───────────────────────── Types ───────────────────────── */
+/* ── Colors ── */
+const TEAL = "#0FA5A5";
+const GOLD = "#D4A44C";
+const NAVY = "#0F1729";
+const SURFACE = "rgba(255,255,255,0.05)";
+const BORDER = "rgba(255,255,255,0.08)";
+const TEXT_PRIMARY = "rgba(255,255,255,0.92)";
+const TEXT_SECONDARY = "rgba(255,255,255,0.50)";
+const TEXT_MUTED = "rgba(255,255,255,0.30)";
 
-type Snapshot = {
-  provider: { id: string; name: string; phone: string | null };
-  followUpNeeded: boolean;
-  booking_state: {
-    status: string;
-    displayTime: string | null;
-    appointmentStart: string | null;
-  };
-  futureConfirmedEvent: { start_at: string } | null;
-  system_actions: { next: { type: string; status: string } | null };
-  visitCount: number;
-  lastVisitDate: string | null;
-};
-
+/* ── Types ── */
 type DashboardData = {
   appUserId: string;
   userName: string | null;
-  snapshots: Snapshot[];
-  discoverySummary: { chargesAnalyzed: number; providersFound: number };
+  snapshots: any[];
+  discoverySummary: { chargesAnalyzed: number };
   hasGoogleCalendarConnection: boolean;
 };
 
-/* ───────────────────────── Helpers ───────────────────────── */
-
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+/* ── Helpers ── */
+function isOverdue(snapshot: any): boolean {
+  return (
+    snapshot.followUpNeeded &&
+    snapshot.booking_state?.status !== "BOOKED" &&
+    snapshot.booking_state?.status !== "IN_PROGRESS"
+  );
 }
 
-function monthsAgo(dateStr: string): number {
-  const d = new Date(dateStr);
+function hasConfirmedBooking(snapshot: any): boolean {
+  return snapshot.booking_state?.status === "BOOKED";
+}
+
+function monthsSinceLastVisit(snapshot: any): number | null {
+  const last = snapshot.lastVisitDate || snapshot.last_visit_date;
+  if (!last) return null;
+  const d = new Date(last);
   const now = new Date();
+  return Math.max(1, Math.round((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+}
+
+/* ── Day helpers ── */
+const DAY_ABBREV = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function getWeekDays(): Array<{ abbrev: string; date: number; isToday: boolean }> {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const days: Array<{ abbrev: string; date: number; isToday: boolean }> = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - dayOfWeek + i);
+    days.push({ abbrev: DAY_ABBREV[i], date: d.getDate(), isToday: i === dayOfWeek });
+  }
+  return days;
+}
+
+/* ── Glass Card ── */
+function GlassCard({ children, className = "", style, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    (now.getFullYear() - d.getFullYear()) * 12 +
-    (now.getMonth() - d.getMonth())
-  );
-}
-
-function formatRelativeDate(dateStr: string): string {
-  const now = new Date();
-  const d = new Date(dateStr);
-  const diffMs = d.getTime() - now.getTime();
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) {
-    return `Today at ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
-  }
-  if (diffDays === 1) {
-    return `Tomorrow at ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
-  }
-  if (diffDays > 1 && diffDays <= 7) {
-    return `${d.toLocaleDateString([], { weekday: "long" })} at ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
-  }
-  return d.toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function formatLastVisit(dateStr: string): string {
-  const m = monthsAgo(dateStr);
-  if (m <= 0) return "Last visit this month";
-  if (m === 1) return "Last visit 1 month ago";
-  return `Last visit ${m} months ago`;
-}
-
-/* ───────────── Card classification ───────────── */
-
-type CardType = "overdue" | "upcoming" | "in-progress" | "up-to-date";
-
-type ActionItem = {
-  type: CardType;
-  snapshot: Snapshot;
-  sortOrder: number;
-};
-
-function classifySnapshots(snapshots: Snapshot[]): ActionItem[] {
-  const items: ActionItem[] = [];
-
-  for (const s of snapshots) {
-    const hasUpcoming =
-      s.booking_state.status === "BOOKED" || s.futureConfirmedEvent !== null;
-    const isInProgress = s.booking_state.status === "IN_PROGRESS";
-    const isOverdue =
-      s.followUpNeeded ||
-      (s.lastVisitDate && monthsAgo(s.lastVisitDate) > 6 && !hasUpcoming);
-
-    if (isOverdue && !hasUpcoming && !isInProgress) {
-      items.push({ type: "overdue", snapshot: s, sortOrder: 0 });
-    } else if (hasUpcoming) {
-      items.push({ type: "upcoming", snapshot: s, sortOrder: 1 });
-    } else if (isInProgress) {
-      items.push({ type: "in-progress", snapshot: s, sortOrder: 2 });
-    } else {
-      items.push({ type: "up-to-date", snapshot: s, sortOrder: 3 });
-    }
-  }
-
-  items.sort((a, b) => a.sortOrder - b.sortOrder);
-  return items;
-}
-
-/* ───────────────────── Botanical SVG ───────────────────── */
-
-function BotanicalSVG() {
-  return (
-    <svg
-      className="pointer-events-none absolute right-0 top-0 h-full w-2/3"
-      viewBox="0 0 400 300"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="xMaxYMid slice"
+    <div
+      className={`rounded-2xl ${className}`}
+      style={{ background: SURFACE, border: `1px solid ${BORDER}`, ...style }}
+      {...props}
     >
-      <ellipse
-        cx="300"
-        cy="80"
-        rx="120"
-        ry="40"
-        transform="rotate(-30 300 80)"
-        fill="#7BA59A"
-        opacity="0.06"
-      />
-      <ellipse
-        cx="340"
-        cy="160"
-        rx="100"
-        ry="35"
-        transform="rotate(15 340 160)"
-        fill="#7BA59A"
-        opacity="0.05"
-      />
-      <ellipse
-        cx="280"
-        cy="220"
-        rx="90"
-        ry="30"
-        transform="rotate(-45 280 220)"
-        fill="#7BA59A"
-        opacity="0.07"
-      />
-      <ellipse
-        cx="360"
-        cy="240"
-        rx="60"
-        ry="25"
-        transform="rotate(25 360 240)"
-        fill="#7BA59A"
-        opacity="0.04"
-      />
-    </svg>
-  );
-}
-
-/* ───────────────────── Hero Section ───────────────────── */
-
-function HeroSection({
-  userName,
-  overdueCount,
-  upcomingCount,
-}: {
-  userName: string | null;
-  overdueCount: number;
-  upcomingCount: number;
-}) {
-  const greeting = getGreeting();
-  const name = userName || "there";
-
-  let subtitle: string;
-  if (overdueCount > 0) {
-    subtitle = `You've got ${overdueCount} thing${overdueCount === 1 ? "" : "s"} to take care of.`;
-  } else if (upcomingCount > 0) {
-    subtitle = `You have ${upcomingCount} appointment${upcomingCount === 1 ? "" : "s"} coming up.`;
-  } else {
-    subtitle = "You're all caught up. Enjoy your day.";
-  }
-
-  return (
-    <section className="relative overflow-hidden rounded-3xl bg-white/5 p-8 ring-1 ring-white/[0.08] backdrop-blur-sm">
-      <BotanicalSVG />
-      <div className="relative z-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7BA59A]">
-          Quarterback
-        </p>
-        <h1 className="mt-3 font-serif text-3xl tracking-tight text-[#F0F2F5] sm:text-4xl">
-          {greeting}, {name}.
-        </h1>
-        <p className="mt-2 text-base text-[#8A9BAE]">{subtitle}</p>
-      </div>
-    </section>
-  );
-}
-
-/* ───────────────────── Action Cards ───────────────────── */
-
-function OverdueCard({
-  snapshot,
-  userId,
-}: {
-  snapshot: Snapshot;
-  userId: string;
-}) {
-  const detail = snapshot.lastVisitDate
-    ? formatLastVisit(snapshot.lastVisitDate)
-    : "Overdue for a visit";
-
-  return (
-    <div className="rounded-2xl border-l-4 border-amber-400 bg-white/5 p-5 ring-1 ring-white/[0.08] backdrop-blur-sm transition-all hover:bg-white/[0.07]">
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-[#F0F2F5]">
-            {snapshot.provider.name}
-          </h3>
-          <p className="mt-1 text-sm text-amber-400/80">{detail}</p>
-        </div>
-        <span className="ml-3 flex-shrink-0 rounded-full bg-amber-400/15 px-2.5 py-1 text-xs font-medium text-amber-400">
-          Overdue
-        </span>
-      </div>
-      <HandleItButton
-        userId={userId}
-        providerId={snapshot.provider.id}
-        providerName={snapshot.provider.name}
-        phoneNumber={snapshot.provider.phone}
-        label="Let Kate book it →"
-      />
+      {children}
     </div>
   );
 }
 
-function UpcomingCard({ snapshot }: { snapshot: Snapshot }) {
-  let detail: string;
-  if (snapshot.booking_state.displayTime) {
-    detail = snapshot.booking_state.displayTime;
-  } else if (snapshot.futureConfirmedEvent?.start_at) {
-    detail = formatRelativeDate(snapshot.futureConfirmedEvent.start_at);
-  } else if (snapshot.booking_state.appointmentStart) {
-    detail = formatRelativeDate(snapshot.booking_state.appointmentStart);
-  } else {
-    detail = "Appointment booked";
-  }
-
+/* ── Metric Pill ── */
+function MetricPill({ value, label, color }: { value: number; label: string; color: string }) {
   return (
-    <div className="rounded-2xl border-l-4 border-emerald-400 bg-white/5 p-5 ring-1 ring-white/[0.08] backdrop-blur-sm transition-all hover:bg-white/[0.07]">
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-[#F0F2F5]">
-            {snapshot.provider.name}
-          </h3>
-          <p className="mt-1 text-sm text-emerald-400/80">{detail}</p>
-        </div>
-        <span className="ml-3 flex-shrink-0 text-emerald-400">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-        </span>
-      </div>
+    <div className="flex items-center gap-2">
+      <span className="text-2xl font-light" style={{ color }}>{value}</span>
+      <span className="text-[10px] font-medium" style={{ color: TEXT_SECONDARY }}>{label}</span>
     </div>
   );
 }
 
-function InProgressCard({ snapshot }: { snapshot: Snapshot }) {
-  return (
-    <div className="rounded-2xl border-l-4 border-sky-400 bg-white/5 p-5 ring-1 ring-white/[0.08] backdrop-blur-sm transition-all hover:bg-white/[0.07]">
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-[#F0F2F5]">
-            {snapshot.provider.name}
-          </h3>
-          <p className="mt-1 text-sm text-sky-400/80">
-            Kate is working on booking this
-          </p>
-        </div>
-        <span className="ml-3 flex-shrink-0">
-          <span className="relative flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-sky-400" />
-          </span>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function UpToDateCard({ snapshot }: { snapshot: Snapshot }) {
-  const detail = snapshot.lastVisitDate
-    ? formatLastVisit(snapshot.lastVisitDate)
-    : `${snapshot.visitCount} visit${snapshot.visitCount === 1 ? "" : "s"} on record`;
-
-  return (
-    <div className="rounded-2xl bg-white/[0.03] p-5 ring-1 ring-white/[0.05] transition-all hover:bg-white/[0.05]">
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base font-medium text-[#8A9BAE]">
-            {snapshot.provider.name}
-          </h3>
-          <p className="mt-1 text-sm text-[#8A9BAE]/60">{detail}</p>
-        </div>
-        <span className="ml-3 flex-shrink-0 text-[#8A9BAE]/40">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function CalendarNudgeCard({ userId }: { userId: string }) {
-  return (
-    <Link
-      href={`/calendar-connect?user_id=${encodeURIComponent(userId)}`}
-      className="block rounded-2xl border-l-4 border-[#7BA59A] bg-white/5 p-5 ring-1 ring-white/[0.08] backdrop-blur-sm transition-all hover:bg-white/[0.07]"
-    >
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-[#F0F2F5]">
-            Connect your calendar
-          </h3>
-          <p className="mt-1 text-sm text-[#8A9BAE]">
-            Kate can check your schedule before booking
-          </p>
-        </div>
-        <span className="ml-3 flex-shrink-0 text-[#7BA59A]">
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-        </span>
-      </div>
-    </Link>
-  );
-}
-
-/* ───────────────────── Action Feed ───────────────────── */
-
-function ActionFeed({
-  items,
-  userId,
-  showCalendarNudge,
-}: {
-  items: ActionItem[];
-  userId: string;
-  showCalendarNudge: boolean;
-}) {
-  const cards: React.ReactNode[] = [];
-
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    const key = item.snapshot.provider.id;
-
-    switch (item.type) {
-      case "overdue":
-        cards.push(
-          <OverdueCard key={key} snapshot={item.snapshot} userId={userId} />
-        );
-        break;
-      case "upcoming":
-        cards.push(<UpcomingCard key={key} snapshot={item.snapshot} />);
-        break;
-      case "in-progress":
-        cards.push(<InProgressCard key={key} snapshot={item.snapshot} />);
-        break;
-      case "up-to-date":
-        cards.push(<UpToDateCard key={key} snapshot={item.snapshot} />);
-        break;
-    }
-
-    // Insert calendar nudge after 2nd card
-    if (i === 1 && showCalendarNudge) {
-      cards.push(<CalendarNudgeCard key="calendar-nudge" userId={userId} />);
-    }
-  }
-
-  // If fewer than 2 cards but nudge needed, append it
-  if (items.length < 2 && showCalendarNudge) {
-    cards.push(<CalendarNudgeCard key="calendar-nudge" userId={userId} />);
-  }
-
-  return (
-    <section className="mt-6 space-y-3 pb-24">
-      {cards.length === 0 ? (
-        <div className="rounded-2xl bg-white/5 p-8 text-center ring-1 ring-white/[0.08]">
-          <p className="text-[#8A9BAE]">No providers discovered yet.</p>
-        </div>
-      ) : (
-        cards
-      )}
-    </section>
-  );
-}
-
-/* ───────────────────── Bottom Tab Bar ───────────────────── */
-
-function BottomTabBar() {
-  const tabs = [
-    {
-      label: "Home",
-      href: "/dashboard-v2",
-      active: true,
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z" />
-        </svg>
-      ),
-    },
-    {
-      label: "Timeline",
-      href: "/timeline",
-      active: false,
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      ),
-    },
-    {
-      label: "Calendar",
-      href: "/visits",
-      active: false,
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-      ),
-    },
-    {
-      label: "Kate",
-      href: "#kate",
-      active: false,
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <text
-            x="12"
-            y="16"
-            textAnchor="middle"
-            fill="currentColor"
-            stroke="none"
-            fontSize="12"
-            fontWeight="bold"
-          >
-            K
-          </text>
-        </svg>
-      ),
-    },
-    {
-      label: "Profile",
-      href: "/account",
-      active: false,
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
-      ),
-    },
-  ];
-
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t border-white/[0.08] bg-[#1E2228]">
-      <div className="mx-auto flex h-full max-w-lg items-center justify-around px-4">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.label}
-            href={tab.href}
-            className={`flex flex-col items-center gap-0.5 transition-colors ${
-              tab.active
-                ? "text-[#7BA59A]"
-                : "text-[#8A9BAE]/50 hover:text-[#8A9BAE]"
-            }`}
-          >
-            {tab.icon}
-            <span className="text-[10px] font-medium">{tab.label}</span>
-          </Link>
-        ))}
-      </div>
-    </nav>
-  );
-}
-
-/* ───────────────────── Main Dashboard ───────────────────── */
-
-function DashboardV2Inner() {
+/* ── Main Dashboard ── */
+function DashboardInner() {
   const router = useRouter();
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bookingAll, setBookingAll] = useState(false);
+  const [bookingAllDone, setBookingAllDone] = useState(false);
 
   useEffect(() => {
-    apiFetch("/api/dashboard/data")
-      .then((res) => {
-        if (res.status === 401) {
-          router.push("/login");
-          return null;
-        }
-        return res.json();
-      })
-      .then((json) => {
-        if (json?.ok) setData(json);
-      })
-      .finally(() => setLoading(false));
+    async function load() {
+      let res = await apiFetch("/api/dashboard/data");
+      if (res.status === 401) {
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await apiFetch("/api/dashboard/data");
+      }
+      if (res.status === 401) {
+        await new Promise((r) => setTimeout(r, 3000));
+        res = await apiFetch("/api/dashboard/data");
+      }
+      if (res.status === 401) { router.push("/login"); return; }
+      const json = await res.json();
+      if (json?.ok) setData(json);
+      setLoading(false);
+    }
+    load().catch(() => setLoading(false));
   }, [router]);
 
-  const actionItems = useMemo(
-    () => (data ? classifySnapshots(data.snapshots) : []),
-    [data]
-  );
+  if (loading) return <main className="min-h-screen" style={{ background: NAVY }} />;
 
-  const overdueCount = useMemo(
-    () => actionItems.filter((i) => i.type === "overdue").length,
-    [actionItems]
-  );
-
-  const upcomingCount = useMemo(
-    () => actionItems.filter((i) => i.type === "upcoming").length,
-    [actionItems]
-  );
-
-  if (loading) {
-    return <main className="min-h-screen bg-[#1E2228]" />;
+  if (!data) {
+    return (
+      <main className="min-h-screen flex items-center justify-center" style={{ background: NAVY }}>
+        <div className="text-center">
+          <div className="text-lg font-light" style={{ color: TEXT_SECONDARY }}>No data yet</div>
+          <div className="mt-2 text-sm" style={{ color: TEXT_MUTED }}>Your dashboard will populate once providers are discovered.</div>
+        </div>
+      </main>
+    );
   }
 
-  if (!data) return null;
+  const { appUserId, userName, snapshots } = data;
+  const nonPharmacySnapshots = snapshots.filter((s: any) => s.provider.provider_type !== "pharmacy");
+  const overdueSnapshots = nonPharmacySnapshots.filter(isOverdue);
+  const overdueCount = overdueSnapshots.length;
+  const upcomingCount = nonPharmacySnapshots.filter(hasConfirmedBooking).length;
+  const providerCount = snapshots.length;
+  const topOverdue = overdueSnapshots[0] ?? null;
+  const topOverdueMonths = topOverdue ? monthsSinceLastVisit(topOverdue) : null;
+  const weekDays = getWeekDays();
 
   return (
-    <main className="min-h-screen bg-[#1E2228] px-4 pb-20 pt-8 sm:px-6">
-      <div className="mx-auto max-w-lg">
-        <HeroSection
-          userName={data.userName}
-          overdueCount={overdueCount}
-          upcomingCount={upcomingCount}
-        />
-        <ActionFeed
-          items={actionItems}
-          userId={data.appUserId}
-          showCalendarNudge={!data.hasGoogleCalendarConnection}
-        />
+    <main className="min-h-screen pb-16" style={{ background: `linear-gradient(180deg, ${NAVY} 0%, #111827 50%, #0C1220 100%)` }}>
+      <TopNav />
+
+      <div className="mx-auto max-w-lg sm:max-w-xl md:max-w-2xl">
+
+        {/* ── Greeting + Metrics ── */}
+        <div className="px-7 pt-8 flex items-center justify-between">
+          <span className="text-sm" style={{ color: TEXT_SECONDARY }}>Hi, {userName || "there"}</span>
+          <div className="flex items-center gap-5">
+            <MetricPill value={providerCount} label="providers" color={TEAL} />
+            <MetricPill value={upcomingCount} label="upcoming" color={GOLD} />
+            {overdueCount > 0 && <MetricPill value={overdueCount} label="overdue" color="#F87171" />}
+          </div>
+        </div>
+
+        {/* ── Best Next Step ── */}
+        <div className="px-7 mt-2" data-wizard="best-next-step">
+          <BestNextStep />
+        </div>
+
+        {/* ── Week Strip ── */}
+        <Link href="/calendar-view" className="mt-6 flex items-center justify-center gap-2 group">
+          {weekDays.map((day, i) => (
+            <div
+              key={i}
+              className="flex flex-col items-center gap-1 rounded-xl px-2.5 py-2 transition"
+              style={day.isToday
+                ? { background: `linear-gradient(135deg, ${TEAL}, ${GOLD})`, color: "#fff" }
+                : { color: TEXT_MUTED }
+              }
+            >
+              <span className="text-[10px] font-medium">{day.abbrev}</span>
+              <span className="text-sm font-semibold">{day.date}</span>
+            </div>
+          ))}
+        </Link>
+
+        {/* ── Kate's Brief ── */}
+        <div className="mt-6 px-7" data-wizard="hero">
+          <GlassCard className="relative overflow-hidden p-6">
+            {/* Faint constellation texture */}
+            <div className="absolute inset-0 opacity-[0.03]" style={{
+              backgroundImage: `radial-gradient(circle at 20% 30%, ${TEAL} 1px, transparent 1px), radial-gradient(circle at 80% 70%, ${GOLD} 1px, transparent 1px), radial-gradient(circle at 50% 50%, ${TEAL} 0.5px, transparent 0.5px)`,
+              backgroundSize: "60px 60px, 80px 80px, 40px 40px",
+            }} />
+
+            <div className="relative flex items-start gap-4">
+              <Image
+                src="/kate-avatar.png"
+                alt="Kate"
+                width={44}
+                height={44}
+                className="rounded-full shrink-0 mt-0.5"
+                style={{ boxShadow: `0 0 0 2px ${GOLD}40` }}
+              />
+              <div className="flex-1">
+                {providerCount === 0 ? (
+                  <>
+                    <div className="text-lg font-light" style={{ color: TEXT_PRIMARY }}>
+                      Let&apos;s build your health profile
+                    </div>
+                    <div className="mt-1 text-sm" style={{ color: TEXT_SECONDARY }}>
+                      Start by adding your providers — who&apos;s your primary care doctor?
+                    </div>
+                    <Link
+                      href="/providers?add=true"
+                      className="mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                      style={{ background: `linear-gradient(135deg, ${TEAL}, ${GOLD})` }}
+                    >
+                      Add your first provider
+                    </Link>
+                  </>
+                ) : overdueCount > 0 ? (
+                  <>
+                    <div className="text-lg font-light" style={{ color: TEXT_PRIMARY }}>
+                      {overdueCount === 1
+                        ? `${topOverdue?.provider?.name || "A provider"} is overdue`
+                        : `${overdueCount} providers need attention`}
+                    </div>
+                    <div className="mt-1 text-sm" style={{ color: TEXT_SECONDARY }}>
+                      {topOverdueMonths
+                        ? `It's been ${topOverdueMonths} months. Want me to handle it?`
+                        : "Want me to call and book for you?"}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-lg font-light" style={{ color: TEAL }}>You&apos;re all set</div>
+                    <div className="mt-1 text-sm" style={{ color: TEXT_SECONDARY }}>
+                      All providers are on track. Nothing needs your attention.
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* ── Book All ── */}
+        {overdueCount > 0 && (
+          <div className="mt-4 px-7">
+            <GlassCard style={{ background: `linear-gradient(135deg, ${TEAL}12, ${GOLD}12)` }}>
+              <div className="px-5 py-3">
+                {overdueSnapshots.slice(0, 5).map((s: any) => (
+                  <div key={s.provider.id} className="flex items-center gap-2 py-1.5 text-sm" style={{ color: TEXT_SECONDARY }}>
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: "#F87171" }} />
+                    {s.provider.name}
+                  </div>
+                ))}
+              </div>
+              <div className="px-5 pb-4">
+                <button
+                  type="button"
+                  disabled={bookingAll || bookingAllDone}
+                  onClick={async () => {
+                    setBookingAll(true);
+                    try {
+                      await Promise.all(overdueSnapshots.map((s: any) =>
+                        apiFetch("/api/vapi/start-call", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ app_user_id: appUserId, provider_id: s.provider.id, provider_name: s.provider.name, mode: "BOOK" }),
+                        })
+                      ));
+                      setBookingAllDone(true);
+                    } catch { setBookingAllDone(true); } finally { setBookingAll(false); }
+                  }}
+                  className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+                  style={{ background: `linear-gradient(135deg, ${TEAL}, ${GOLD})` }}
+                >
+                  {bookingAll ? "Starting calls..." : bookingAllDone ? "Kate is on it!" : `Let Kate book ${overdueCount === 1 ? "it" : "all " + overdueCount}`}
+                </button>
+              </div>
+            </GlassCard>
+          </div>
+        )}
+
+        <KateFollowUp />
+        <KateInsights />
+        <CareGaps />
+
+        {/* ── Provider Network ── */}
+        <div className="mt-10 px-7" data-wizard="providers">
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: TEXT_MUTED }}>Your Network</div>
+          <GlassCard className="mt-3 overflow-hidden">
+            {snapshots.map((s: any, idx: number) => {
+              const overdue = isOverdue(s);
+              const booked = hasConfirmedBooking(s);
+              const isLast = idx === snapshots.length - 1;
+              const isPharmacy = s.provider.provider_type === "pharmacy";
+              const statusColor = isPharmacy ? TEXT_MUTED : overdue ? "#F87171" : booked ? GOLD : TEAL;
+
+              return (
+                <div
+                  key={s.provider.id}
+                  className="flex items-center justify-between px-5 py-3.5"
+                  style={!isLast ? { borderBottom: `1px solid ${BORDER}` } : {}}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: statusColor, boxShadow: `0 0 6px ${statusColor}40` }} />
+                    <div>
+                      <span className="text-sm font-medium" style={{ color: TEXT_PRIMARY }}>
+                        <ProviderLink providerId={s.provider.id} providerName={s.provider.name} />
+                      </span>
+                      {isPharmacy && <span className="ml-2 text-[10px]" style={{ color: TEXT_MUTED }}>Pharmacy</span>}
+                    </div>
+                  </div>
+                  {isPharmacy ? (
+                    <span className="text-[10px] font-medium" style={{ color: TEXT_MUTED }}>Tracked</span>
+                  ) : overdue ? (
+                    <HandleItButton userId={appUserId} providerId={s.provider.id} providerName={s.provider.name} label="Book" />
+                  ) : booked ? (
+                    <span className="text-[10px] font-medium" style={{ color: GOLD }}>Upcoming</span>
+                  ) : (
+                    <span className="text-[10px] font-medium" style={{ color: TEAL }}>On track</span>
+                  )}
+                </div>
+              );
+            })}
+            {snapshots.length === 0 && (
+              <div className="px-5 py-8 text-center text-sm" style={{ color: TEXT_MUTED }}>No providers discovered yet.</div>
+            )}
+          </GlassCard>
+        </div>
+
+        {/* ── At a Glance ── */}
+        <div className="mt-10 px-7">
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: TEXT_MUTED }}>At a Glance</div>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <Link href="/providers">
+              <GlassCard className="flex min-h-[100px] flex-col justify-between p-5 transition hover:brightness-125">
+                <div className="text-3xl font-extralight" style={{ color: TEAL }}>{providerCount}</div>
+                <div className="text-xs font-medium" style={{ color: TEXT_SECONDARY }}>Providers</div>
+              </GlassCard>
+            </Link>
+            <Link href="/visits">
+              <GlassCard className="flex min-h-[100px] flex-col justify-between p-5 transition hover:brightness-125">
+                <div className="text-3xl font-extralight" style={{ color: overdueCount > 0 ? "#F87171" : TEXT_SECONDARY }}>{overdueCount}</div>
+                <div className="text-xs font-medium" style={{ color: TEXT_SECONDARY }}>Overdue</div>
+              </GlassCard>
+            </Link>
+            <Link href="/visits">
+              <GlassCard className="flex min-h-[100px] flex-col justify-between p-5 transition hover:brightness-125">
+                <div className="text-3xl font-extralight" style={{ color: GOLD }}>{upcomingCount}</div>
+                <div className="text-xs font-medium" style={{ color: TEXT_SECONDARY }}>Upcoming</div>
+              </GlassCard>
+            </Link>
+          </div>
+        </div>
       </div>
-      <BottomTabBar />
+
+      {/* ── What To Do Next ── */}
+      <div className="mx-auto max-w-lg sm:max-w-xl md:max-w-2xl mt-10 px-7 pb-8" data-wizard="next-steps">
+        <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: TEXT_MUTED }}>What To Do Next</div>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { href: "/providers", title: "Manage Providers", desc: "Add, edit, or review your care team" },
+            { href: "/settings", title: "Your Profile", desc: "Health history, insurance, preferences" },
+            { href: "/visits", title: "Visits", desc: "Upcoming and past appointments" },
+            { href: "/goals", title: "Goals", desc: "Set and track your health goals" },
+          ].map((item) => (
+            <Link key={item.href} href={item.href}>
+              <GlassCard className="p-4 transition hover:brightness-125 group">
+                <div className="text-sm font-semibold" style={{ color: TEXT_PRIMARY }}>{item.title}</div>
+                <div className="text-xs mt-1" style={{ color: TEXT_SECONDARY }}>{item.desc}</div>
+                <div className="mt-2 h-[1px] w-8 transition-all group-hover:w-12" style={{ background: `linear-gradient(90deg, ${TEAL}, ${GOLD})` }} />
+              </GlassCard>
+            </Link>
+          ))}
+        </div>
+      </div>
     </main>
   );
 }
 
 export default function DashboardV2Page() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-[#1E2228]" />}>
-      <DashboardV2Inner />
+    <Suspense fallback={<main className="min-h-screen" style={{ background: NAVY }} />}>
+      <DashboardInner />
     </Suspense>
   );
 }
