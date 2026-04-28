@@ -74,14 +74,19 @@ function UserBubble({ children }: { children: React.ReactNode }) {
   );
 }
 
-function OptionButtons({ options, onSelect, columns }: { options: Array<{ label: string; value: string }>; onSelect: (value: string) => void; columns?: number }) {
+function OptionButtons({ options, onSelect }: { options: Array<{ label: string; value: string }>; onSelect: (value: string) => void }) {
   return (
-    <div className={`flex flex-wrap gap-2 animate-fadeIn ${columns === 2 ? "grid grid-cols-2" : ""}`}>
+    <div className="flex flex-wrap gap-2 justify-end animate-fadeIn">
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onSelect(opt.value)}
-          className="rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-sm font-medium text-[#1A1D2E] shadow-sm transition hover:border-[#5C6B5C] hover:bg-[#F0F4F0] active:scale-[0.98]"
+          className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
+          style={{
+            backgroundColor: "#D4A44C15",
+            border: "1px solid #D4A44C40",
+            color: "#8B6914",
+          }}
         >
           {opt.label}
         </button>
