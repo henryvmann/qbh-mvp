@@ -13,6 +13,7 @@ import TopNav from "../../components/qbh/TopNav";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import UrgentCareButton from "../../components/qbh/UrgentCareButton";
 import ProviderLink from "../../components/qbh/ProviderLink";
+import PostVisitPrompt from "../../components/qbh/PostVisitPrompt";
 
 /* ── Types ── */
 
@@ -483,6 +484,11 @@ function DashboardInner() {
             </div>
           </div>
         )}
+
+        {/* ── Post-Visit Follow-up ── */}
+        <div className="px-7">
+          <PostVisitPrompt />
+        </div>
 
         {/* ── 5. Kate's Follow-up Questions ── */}
         <KateFollowUp />

@@ -263,6 +263,7 @@ function ProvidersInner() {
   const [editingRecipient, setEditingRecipient] = useState<string | null>(null);
   const [editRecipientName, setEditRecipientName] = useState("");
   const [initialSearch, setInitialSearch] = useState("");
+  const [selectedPerson, setSelectedPerson] = useState<string | null>(null); // null = show all
 
   const loadData = useCallback(() => {
     apiFetch("/api/dashboard/data")
@@ -309,22 +310,41 @@ function ProvidersInner() {
     );
   }
 
-  const allDoctors = snapshots.filter((s) => s.provider.provider_type !== "pharmacy" && s.provider.provider_type !== "calendar");
+  const allDoctorsUnfiltered = snapshots.filter((s) => s.provider.provider_type !== "pharmacy" && s.provider.provider_type !== "calendar");
   const pharmacies = snapshots.filter((s) => s.provider.provider_type === "pharmacy");
 
-  // Group doctors by care team
-  const careTeams = new Map<string, typeof allDoctors>();
-  const ungrouped: typeof allDoctors = [];
+  // Filter by selected person
+  const allDoctors = selectedPerson
+    ? allDoctorsUnfiltered.filter((s) => {
+        try {
+          const raw = s.provider.care_recipient;
+          if (!raw) return false;
+          const recipients: string[] = typeof raw === "string" ? JSON.parse(raw) : raw;
+          const SELF_LABELS = ["self", "myself", "me", "my health"];
+          const selfRecipient = careRecipients.find((r) => r.name === selectedPerson);
+          return recipients.some((r) => {
+            const lower = r.toLowerCase().trim();
+            if (r === selectedPerson || lower === selectedPerson.toLowerCase()) return true;
+            if (selfRecipient?.relationship === "Self" && SELF_LABELS.includes(lower)) return true;
+            const match = careRecipients.find((cr) => cr.name === selectedPerson);
+            if (match && (match.relationship === r || match.relationship.toLowerCase() === lower)) return true;
+            return false;
+          });
+        } catch { return false; }
+      })
+    : allDoctorsUnfiltered;
+
+  // Group doctors by specialty color for hub view
+  const specialtyGroups = new Map<string, typeof allDoctors>();
   for (const s of allDoctors) {
-    const team = s.provider.care_team;
-    if (team) {
-      if (!careTeams.has(team)) careTeams.set(team, []);
-      careTeams.get(team)!.push(s);
-    } else {
-      ungrouped.push(s);
-    }
+    const colors = getSpecialtyColor(s);
+    const label = colors.label;
+    if (!specialtyGroups.has(label)) specialtyGroups.set(label, []);
+    specialtyGroups.get(label)!.push(s);
   }
-  const doctors = ungrouped; // backwards compat — ungrouped renders in the existing grid
+
+  // Keep ungrouped for backwards compat
+  const doctors = allDoctors;
 
   function toggleExpand(id: string) {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -338,26 +358,36 @@ function ProvidersInner() {
       <TopNav />
       <div className="mx-auto max-w-4xl px-6 pt-8 pb-20">
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
-          {userName ? `${userName}\u2019s Providers` : "Your Providers"}
+          {selectedPerson ? `${selectedPerson}\u2019s Providers` : userName ? `${userName}\u2019s Providers` : "Your Providers"}
         </h1>
         <p className="mt-1 text-sm text-[#7A7F8A]">
-          {snapshots.length} provider{snapshots.length !== 1 ? "s" : ""} on file
+          {allDoctors.length} provider{allDoctors.length !== 1 ? "s" : ""}{selectedPerson ? "" : " on file"}
         </p>
 
-        {/* Care Recipients */}
+        {/* Care Recipients — clickable filters */}
         {careRecipients.length > 0 && (
           <div className="mt-4 mb-2">
             <div className="text-[10px] font-bold uppercase tracking-widest text-[#B0B4BC] mb-2">Managing Care For</div>
             <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedPerson(null)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                  selectedPerson === null ? "bg-[#5C6B5C] text-white border-[#5C6B5C]" : "bg-white text-[#1A1D2E] border-[#EBEDF0] hover:border-[#5C6B5C]"
+                }`}
+              >
+                All
+              </button>
               {careRecipients.map((r) => (
-                <Link
+                <button
                   key={r.id}
-                  href="/care-recipients"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EBEDF0] px-3 py-1 text-xs font-medium text-[#1A1D2E] shadow-sm hover:border-[#5C6B5C] transition"
+                  onClick={() => setSelectedPerson(selectedPerson === r.name ? null : r.name)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    selectedPerson === r.name ? "bg-[#5C6B5C] text-white border-[#5C6B5C]" : "bg-white text-[#1A1D2E] border-[#EBEDF0] shadow-sm hover:border-[#5C6B5C]"
+                  }`}
                 >
                   {r.name}
-                  <span className="text-[10px] text-[#B0B4BC]">{r.relationship}</span>
-                </Link>
+                  <span className={`text-[10px] ${selectedPerson === r.name ? "text-white/70" : "text-[#B0B4BC]"}`}>{r.relationship}</span>
+                </button>
               ))}
             </div>
           </div>
@@ -393,57 +423,7 @@ function ProvidersInner() {
           </div>
         ) : (
           <>
-            {/* Care Team Groups */}
-            {careTeams.size > 0 && Array.from(careTeams.entries()).map(([teamName, teamDoctors]) => (
-              <div key={teamName} className="mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C]">
-                    {teamName}
-                  </span>
-                  <span className="text-[10px] text-[#B0B4BC]">
-                    {teamDoctors.length} provider{teamDoctors.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                  {teamDoctors.map((snapshot) => {
-                    const status = getStatusLabel(snapshot);
-                    const colors = getSpecialtyColor(snapshot);
-                    const subtitle = snapshot.provider.doctor_name
-                      ? `Dr. ${snapshot.provider.doctor_name}${snapshot.provider.specialty ? ` · ${snapshot.provider.specialty}` : ""}`
-                      : snapshot.provider.specialty || null;
-
-                    return (
-                      <div
-                        key={snapshot.provider.id}
-                        className="rounded-2xl shadow-sm overflow-hidden transition-shadow hover:shadow-md"
-                        style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
-                      >
-                        <div className="p-5">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.accent }}>
-                                {colors.label}
-                              </span>
-                              <div className="mt-1.5 text-base font-semibold leading-tight">
-                                <ProviderLink providerId={snapshot.provider.id} providerName={snapshot.provider.name} />
-                              </div>
-                              {subtitle && (
-                                <div className="text-xs mt-1" style={{ color: colors.accent + "99" }}>{subtitle}</div>
-                              )}
-                            </div>
-                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium shrink-0 ${status.className}`}>
-                              {status.label}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-
-            {/* Ungrouped Doctors / Specialists — color-coded cards */}
+            {/* Provider cards — color-coded by specialty */}
             {doctors.length > 0 && (
               <div data-tour="provider-list" className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                 {doctors.map((snapshot) => {
