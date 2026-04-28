@@ -6,13 +6,14 @@ import Image from "next/image";
 import { Search, Calendar, Building2, ShieldCheck, Brain, Phone, Eye, EyeOff } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import { createClient } from "../../lib/supabase/client";
+import { theme } from "../../components/qbh/theme";
 
-/* ── Design tokens ── */
-const BG = "#F4F5F7";
-const ACCENT = "#5C6B5C";
-const CARD_BG = "#FFFFFF";
-const CARD_BORDER = "#EBEDF0";
-const TEXT_PRIMARY = "#1A1D2E";
+/* ── Design tokens (from greenhouse theme) ── */
+const BG = theme.bgGradient;
+const ACCENT = theme.green;
+const CARD_BG = theme.glass;
+const CARD_BORDER = theme.glassBorder;
+const TEXT_PRIMARY = theme.textPrimary;
 const TEXT_SECONDARY = "#7A7F8A";
 const TEXT_MUTED = "#B0B4BC";
 
@@ -49,7 +50,7 @@ function KateBubble({ children, typing }: { children: React.ReactNode; typing?: 
   return (
     <div className="flex items-start gap-3 animate-fadeIn">
       <Image src="/kate-avatar.png" alt="Kate" width={32} height={32} className="rounded-full shrink-0 mt-1" />
-      <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white border border-[#EBEDF0] shadow-sm px-4 py-3">
+      <div className="max-w-[85%] rounded-2xl rounded-tl-sm backdrop-blur-sm px-4 py-3" style={{ background: theme.glass, border: `1px solid ${theme.glassBorder}`, boxShadow: theme.cardShadow }}>
         {typing ? (
           <div className="flex gap-1 py-1">
             <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -106,7 +107,7 @@ function ToggleCard({ icon: Icon, title, description, selected, onToggle }: {
     <button
       onClick={onToggle}
       className={`w-full rounded-2xl border p-4 text-left transition ${
-        selected ? "border-[#5C6B5C] bg-[#5C6B5C]/5 ring-1 ring-[#5C6B5C]" : "border-[#EBEDF0] bg-white hover:border-[#B0B4BC]"
+        selected ? "border-[#5C6B5C] bg-[#5C6B5C]/5 ring-1 ring-[#5C6B5C]" : "border-white/70 bg-white/55 backdrop-blur-sm hover:border-[#B0B4BC]"
       }`}
     >
       <div className="flex items-start gap-3">
@@ -521,14 +522,20 @@ export default function OnboardingV2() {
 
   // ── Render ──
   return (
-    <div className="min-h-screen" style={{ backgroundColor: BG }}>
+    <div className="min-h-screen relative" style={{ background: BG }}>
+      {/* Greenhouse grid */}
+      <div className="fixed inset-0 pointer-events-none" style={{
+        opacity: theme.gridOpacity,
+        backgroundImage: `linear-gradient(${theme.gridTeal} 1px, transparent 1px), linear-gradient(90deg, ${theme.gridGold} 1px, transparent 1px)`,
+        backgroundSize: theme.gridSize,
+      }} />
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fadeIn { animation: fadeIn 0.4s ease-out both; }
       `}</style>
 
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#F4F5F7]/80 backdrop-blur-md border-b border-[#EBEDF0] px-6 py-3">
+      <div className="sticky top-0 z-10 backdrop-blur-md border-b px-6 py-3" style={{ background: "rgba(205,219,214,0.8)", borderColor: theme.glassBorder }}>
         <div className="mx-auto max-w-lg flex items-center gap-2">
           <Image src="/kate-avatar.png" alt="Kate" width={28} height={28} className="rounded-full" />
           <span className="text-sm font-semibold text-[#1A1D2E]">Kate</span>
@@ -566,21 +573,21 @@ export default function OnboardingV2() {
         {/* Value Props */}
         {phase === "value-props" && !typing && (
           <div className="space-y-3 animate-fadeIn">
-            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-4 flex items-start gap-3">
+            <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
               <Search size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
               <div>
                 <div className="text-sm font-semibold text-[#1A1D2E]">Find every doctor you've seen</div>
                 <p className="mt-1 text-xs text-[#7A7F8A]">I scan your co-pays and pull your complete provider history. No typing, no remembering.</p>
               </div>
             </div>
-            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-4 flex items-start gap-3">
+            <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
               <Phone size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
               <div>
                 <div className="text-sm font-semibold text-[#1A1D2E]">Book appointments for you</div>
                 <p className="mt-1 text-xs text-[#7A7F8A]">I call the office, navigate the phone tree, and schedule. You don't pick up the phone.</p>
               </div>
             </div>
-            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-4 flex items-start gap-3">
+            <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
               <Brain size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
               <div>
                 <div className="text-sm font-semibold text-[#1A1D2E]">Connect the dots</div>
@@ -672,7 +679,7 @@ export default function OnboardingV2() {
 
         {/* Account creation */}
         {phase === "account-create" && !typing && (
-          <div className="animate-fadeIn rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-5 space-y-3">
+          <div className="animate-fadeIn rounded-2xl backdrop-blur-sm p-5 space-y-3" style={{ background: theme.glass, border: `1px solid ${theme.glassBorder}`, boxShadow: theme.cardShadow }}>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">First name</label>
