@@ -115,6 +115,11 @@ export default function KatePageInsight() {
         />
         <div className="flex-1 min-w-0">
           <p className="text-sm text-[#1A1D2E] leading-relaxed">{insight}</p>
+          {insight.includes("overdue") && (
+            <a href="/providers" className="mt-2 inline-block text-xs font-semibold text-[#5C6B5C] underline underline-offset-2">
+              View providers &rarr;
+            </a>
+          )}
         </div>
         <button
           onClick={() => setDismissed(true)}

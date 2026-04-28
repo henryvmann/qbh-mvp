@@ -1307,8 +1307,47 @@ export default function OnboardingPage() {
               Hold Tight &mdash; Setting Things Up...
             </GoldButton>
           ) : canContinue ? (
-            <GoldButton onClick={() => openPlaidLink()}>
-              Connect Your Bank &rarr;
+            <GoldButton onClick={async () => {
+              // Create account first, then open Plaid
+              setError(null);
+              try {
+                const careFor = survey.step3;
+                const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
+                if (careFor.includes("Myself")) careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
+                if (careFor.includes("My partner / spouse")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
+                if (careFor.includes("My child(ren)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
+                if (careFor.includes("My parent(s)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
+                if (careFor.includes("Someone else")) careRecipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
+
+                const signupRes = await apiFetch("/api/auth/signup", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    email: email.trim(), password, app_user_id: userId, name: name.trim(),
+                    survey_answers: JSON.stringify(survey),
+                    care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
+                    patient_info: {
+                      date_of_birth: patientDob || undefined, gender: patientGender || undefined,
+                      insurance_provider: patientInsurance.trim() || undefined,
+                      insurance_member_id: patientMemberId.trim() || undefined,
+                      callback_phone: patientPhone.trim() || undefined,
+                    },
+                    consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
+                  }),
+                });
+                const signupData = await signupRes.json();
+                if (!signupRes.ok || !signupData?.ok) throw new Error(signupData?.error || "Failed to create account.");
+
+                const supabase = createClient();
+                await supabase.auth.signInWithPassword({ email: email.trim(), password });
+
+                // Now open Plaid
+                openPlaidLink();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to create account.");
+              }
+            }}>
+              Create Account &rarr;
             </GoldButton>
           ) : (
             <div className="mt-8 text-center text-sm text-[#7A7F8A]">
@@ -1580,10 +1619,13 @@ export default function OnboardingPage() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {personOptions.map((opt, optIdx) => (
+                {personOptions.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => toggleProviderPerson(provider.id, opt.value)}
+                    onClick={() => {
+                      // One-click: select person and auto-confirm
+                      handleProviderAssign(provider.id, [opt.value], undefined, existingPatient);
+                    }}
                     className="rounded-lg px-2.5 py-1 text-xs font-semibold"
                     style={{
                       backgroundColor: selected.has(opt.value) ? ACCENT : "transparent",
@@ -1594,15 +1636,6 @@ export default function OnboardingPage() {
                     {opt.label}
                   </button>
                 ))}
-                {selected.size > 0 && (
-                  <button
-                    onClick={() => handleProviderAssign(provider.id, Array.from(selected), undefined, existingPatient)}
-                    className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                    style={{ backgroundColor: "#5C6B5C", color: "#FFFFFF" }}
-                  >
-                    Confirm
-                  </button>
-                )}
                 <button
                   onClick={() => handleProviderDismiss(provider.id)}
                   className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-2.5 py-1 text-xs text-[#7A7F8A]"
@@ -1655,11 +1688,19 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {allReviewed && (
-          <GoldButton onClick={() => goToStep(9)}>
-            Continue &rarr;
-          </GoldButton>
-        )}
+        <div className="flex items-center justify-between mt-4">
+          <button
+            onClick={() => goToStep(7)}
+            className="text-xs text-[#7A7F8A] hover:text-[#1A1D2E]"
+          >
+            &larr; Back
+          </button>
+          {allReviewed && (
+            <GoldButton onClick={() => goToStep(9)}>
+              Continue &rarr;
+            </GoldButton>
+          )}
+        </div>
       </Shell>
     );
   }
