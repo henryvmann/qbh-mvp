@@ -390,11 +390,19 @@ export default function OnboardingV2() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ public_token: publicToken, app_user_id: userId }),
           }).then(() => {
-            setTimeout(() => {
-              addKateMessage("Give me a sec \u2014 I'm pulling your records now.");
-              setPhase("discovery-reveal");
-              runBankDiscovery();
-            }, 500);
+            if (connectCalendar) {
+              // Also connect calendar before discovery
+              setTimeout(() => {
+                addKateMessage("Bank connected. Now let's grab your calendar too \u2014 I'll scan for doctor appointments.");
+                setTimeout(() => setPhase("calendar-connect"), 1200);
+              }, 500);
+            } else {
+              setTimeout(() => {
+                addKateMessage("Give me a sec \u2014 I'm pulling your records now.");
+                setPhase("discovery-reveal");
+                runBankDiscovery();
+              }, 500);
+            }
           });
         },
         onExit: () => {},
@@ -761,6 +769,43 @@ export default function OnboardingV2() {
             <div className="mt-2 flex items-center justify-center gap-3 text-[10px] text-[#B0B4BC]">
               <ShieldCheck size={12} /> Encrypted &middot; Read-only &middot; Powered by Plaid
             </div>
+          </div>
+        )}
+
+        {/* Calendar connect */}
+        {phase === "calendar-connect" && !typing && (
+          <div className="animate-fadeIn space-y-3">
+            <button
+              onClick={async () => {
+                try {
+                  const res = await apiFetch("/api/google-calendar/connect", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ app_user_id: userId }),
+                  });
+                  const data = await res.json();
+                  if (data?.ok && data?.authorize_url) {
+                    window.location.href = data.authorize_url;
+                  }
+                } catch {}
+              }}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: ACCENT }}
+            >
+              Connect Google Calendar
+            </button>
+            <button
+              onClick={() => {
+                addKateMessage("No problem. Let me pull your bank records now.");
+                setTimeout(() => {
+                  setPhase("discovery-reveal");
+                  runBankDiscovery();
+                }, 1000);
+              }}
+              className="w-full text-center text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
+            >
+              Skip for now
+            </button>
           </div>
         )}
 
