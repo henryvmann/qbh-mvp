@@ -783,8 +783,7 @@ export default function OnboardingV2() {
         {/* Score reveal */}
         {phase === "score-reveal" && score !== null && (
           <div className="animate-fadeIn text-center">
-            <div className="mx-auto" style={{ width: 140, height: 140 }}>
-              {/* Inline score ring for the reveal */}
+            <div className="relative mx-auto" style={{ width: 140, height: 140 }}>
               <svg width={140} height={140} viewBox="0 0 140 140" className="transform -rotate-90">
                 <circle cx={70} cy={70} r={58} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={7} />
                 <defs>
@@ -797,7 +796,7 @@ export default function OnboardingV2() {
                   strokeDasharray={`${(score / 100) * 2 * Math.PI * 58} ${2 * Math.PI * 58}`}
                   className="transition-all duration-1000" />
               </svg>
-              <div className="relative -mt-[98px] flex flex-col items-center justify-center h-[98px]">
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-4xl font-light text-[#0FA5A5]">{score}</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A] mt-0.5">
                   {score >= 85 ? "Excellent" : score >= 60 ? "On Track" : score >= 30 ? "Building" : "Getting Started"}
