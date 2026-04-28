@@ -678,7 +678,7 @@ export default function ProviderCard({
         </div>
       ) : null}
 
-      {nextAction ? (
+      {nextAction && state.key !== "recurring" ? (
         <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 ring-1 ring-[#EBEDF0]">
           <div className="text-sm font-medium text-[#1A1D2E]">Next action</div>
           <div className="mt-1 text-sm text-[#7A7F8A]">
