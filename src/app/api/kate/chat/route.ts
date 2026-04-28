@@ -122,7 +122,7 @@ async function buildContext(appUserId: string): Promise<{ text: string; commStyl
         if (parsed.step1?.length) parts.push(`Wants help with: ${parsed.step1.join(", ")}`);
         if (parsed.step2?.length) parts.push(`Finds hardest: ${parsed.step2.join(", ")}`);
         if (parsed.step3?.length) parts.push(`Managing care for: ${parsed.step3.join(", ")}`);
-        if (parsed.step4?.length) parts.push(`Wants QB to handle: ${parsed.step4.join(", ")}`);
+        if (parsed.step4?.length) parts.push(`Wants Quarterback Health to handle: ${parsed.step4.join(", ")}`);
         if (parts.length > 0) {
           surveyContext = `\nUser's onboarding preferences:\n${parts.join("\n")}\nReference these when relevant — e.g., if they said "Organizing records," proactively offer to help with that.\n`;
         }

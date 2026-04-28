@@ -54,7 +54,7 @@ export default function HomePage() {
         </h1>
 
         <p className="mt-4 max-w-xl mx-auto text-lg text-[#7A7F8A] text-center">
-          You don&apos;t have to manage this alone. QB keeps track, follows up,
+          You don&apos;t have to manage this alone. Quarterback Health keeps track, follows up,
           and handles the details so you don&apos;t have to.
         </p>
 

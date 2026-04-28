@@ -234,6 +234,37 @@ function buildSuggestions(
     });
   }
 
+  // 4b. Care recipients with no providers
+  if (profile) {
+    const recipients = (profile as any).care_recipients as Array<{ name: string; relationship: string }> | undefined;
+    if (recipients && recipients.length > 0) {
+      // Check if any non-Self recipient has zero providers assigned
+      const nonSelf = recipients.filter((r) => r.relationship !== "Self");
+      for (const r of nonSelf) {
+        const hasProviders = dashboard.snapshots.some((s) => {
+          try {
+            const raw = s.provider?.care_recipient;
+            if (!raw) return false;
+            const arr: string[] = typeof raw === "string" ? JSON.parse(raw) : raw;
+            return arr.some((label) =>
+              label === r.name || label.toLowerCase() === r.relationship.toLowerCase()
+            );
+          } catch { return false; }
+        });
+        if (!hasProviders) {
+          suggestions.push({
+            id: `add-providers-${r.name}`,
+            text: `Want to add providers for ${r.name}? Kate can help you search.`,
+            actionLabel: "Add providers",
+            actionType: "link",
+            actionHref: "/providers?add=true",
+          });
+          break; // Only show one
+        }
+      }
+    }
+  }
+
   // 5. Providers needing review (pending status)
   const pendingReview = dashboard.snapshots.filter(
     (s) => s.booking_state?.status === "NEEDS_REVIEW"

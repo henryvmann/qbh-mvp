@@ -6,6 +6,7 @@
 type PlaceLookupResult = {
   phone: string | null;
   address: string | null;
+  placeName: string | null;
 };
 
 export async function lookupPlaceDetails(
@@ -15,7 +16,7 @@ export async function lookupPlaceDetails(
 ): Promise<PlaceLookupResult> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    return { phone: null, address: null };
+    return { phone: null, address: null, placeName: null };
   }
 
   try {
@@ -28,10 +29,13 @@ export async function lookupPlaceDetails(
     });
     const searchData = await searchRes.json();
 
-    if (!searchData.results?.[0]?.place_id) return { phone: null, address: null };
+    if (!searchData.results?.[0]?.place_id) return { phone: null, address: null, placeName: null };
 
-    const placeId = searchData.results[0].place_id;
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=formatted_phone_number,international_phone_number,formatted_address&key=${apiKey}`;
+    const topResult = searchData.results[0];
+    const placeId = topResult.place_id;
+    const placeName = topResult.name || null;
+
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=formatted_phone_number,international_phone_number,formatted_address,name&key=${apiKey}`;
     const detailsRes = await fetch(detailsUrl, {
       signal: AbortSignal.timeout(5000),
     });
@@ -41,13 +45,15 @@ export async function lookupPlaceDetails(
       detailsData.result?.international_phone_number ||
       detailsData.result?.formatted_phone_number;
     const address = detailsData.result?.formatted_address || null;
+    const detailedName = detailsData.result?.name || placeName;
 
     return {
       phone: phone ? normalizePhoneE164(phone) : null,
       address,
+      placeName: detailedName,
     };
   } catch {
-    return { phone: null, address: null };
+    return { phone: null, address: null, placeName: null };
   }
 }
 

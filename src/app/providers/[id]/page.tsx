@@ -260,6 +260,32 @@ export default function ProviderDetailPage() {
                     className="mt-1.5 w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                   />
                 </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Network Status</label>
+                  <div className="flex gap-1.5">
+                    {[
+                      { value: "in-network", label: "In-Network" },
+                      { value: "out-of-network", label: "Out-of-Network" },
+                      { value: "", label: "Not Sure" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setEditNotes((prev) => {
+                          const cleaned = prev.replace(/\[Network: [^\]]*\]\s*/g, "").trim();
+                          return opt.value ? `[Network: ${opt.label}] ${cleaned}`.trim() : cleaned;
+                        })}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                          editNotes.includes(opt.label)
+                            ? "bg-[#5C6B5C] text-white"
+                            : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <textarea
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}

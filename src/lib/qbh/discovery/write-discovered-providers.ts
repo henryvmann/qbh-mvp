@@ -180,6 +180,16 @@ export async function writeDiscoveredProviders({
           const updates: Record<string, string> = {};
           if (placeInfo.phone) updates.phone_number = placeInfo.phone;
           if (placeInfo.address) updates.address = placeInfo.address;
+          // Auto-rename if Places found a better name (strategy A)
+          if (placeInfo.placeName && placeInfo.placeName !== p.name) {
+            const placeLower = placeInfo.placeName.toLowerCase();
+            const currentLower = p.name.toLowerCase();
+            // Only rename if the names are clearly related (one contains the other)
+            if (placeLower.includes(currentLower) || currentLower.includes(placeLower) ||
+                placeLower.split(" ").some((w: string) => w.length >= 4 && currentLower.includes(w))) {
+              updates.display_name = placeInfo.placeName;
+            }
+          }
           if (Object.keys(updates).length > 0) {
             await supabaseAdmin.from("providers").update(updates).eq("id", p.id);
           }

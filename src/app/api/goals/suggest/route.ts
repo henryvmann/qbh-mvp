@@ -51,7 +51,7 @@ The user's current providers: ${providerNames || "none listed yet"}
 
 Return JSON: {
   "response": "A 2-3 sentence warm response. First acknowledge their focus area. Then explain which provider types typically work in that area (e.g., 'Heart health is usually managed by your primary care doctor and a cardiologist. A nutritionist can also play a role.'). Then offer to help them get organized.",
-  "goals": [{ "title": "short goal title", "detail": "one sentence explaining what QB will help with" }]
+  "goals": [{ "title": "short goal title", "detail": "one sentence explaining what Kate will help with" }]
 }
 
 IMPORTANT — when suggesting provider types for a health topic:

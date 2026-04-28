@@ -156,6 +156,7 @@ export default function OnboardingPage() {
   const [patientInsurance, setPatientInsurance] = useState("");
   const [patientMemberId, setPatientMemberId] = useState("");
   const [patientPhone, setPatientPhone] = useState("");
+  const [zipCode, setZipCode] = useState("");
   const [consentGiven, setConsentGiven] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creatingAccount, setCreatingAccount] = useState(false);
@@ -327,6 +328,7 @@ export default function OnboardingPage() {
             insurance_provider: patientInsurance.trim() || undefined,
             insurance_member_id: patientMemberId.trim() || undefined,
             callback_phone: patientPhone.trim() || undefined,
+            zip_code: zipCode.trim() || undefined,
           },
           consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
         }),
@@ -740,10 +742,22 @@ export default function OnboardingPage() {
                 </div>
               )}
             </div>
-            <div>
-              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Phone number</label>
-              <input type="tel" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} placeholder="(555) 123-4567" className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Phone number</label>
+                <input type="tel" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} placeholder="(555) 123-4567" className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Zip code <span className="text-[#B0B4BC]">(optional)</span></label>
+                <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="06880" maxLength={10} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+              </div>
             </div>
+            {/* Email confirmation (read-only) */}
+            {email && (
+              <div className="rounded-xl bg-[#F0F2F5]/50 px-3 py-2 text-xs text-[#7A7F8A]">
+                Account email: <span className="font-medium text-[#1A1D2E]">{email}</span>
+              </div>
+            )}
             <label className="flex items-start gap-2 mt-2">
               <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-0.5 h-4 w-4 rounded accent-[#5C6B5C]" />
               <span className="text-[10px] text-[#7A7F8A] leading-relaxed">

@@ -558,6 +558,8 @@ export default function ProviderCard({
 
       <p className="mt-4 text-sm text-[#7A7F8A]">{state.description}</p>
 
+      {/* TODO: "Also assign to..." for sharing providers across care recipients */}
+
       {/* Appointment prep — show for non-pharmacy providers */}
       {!isPharmacy && (
         <AppointmentPrep
