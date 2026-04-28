@@ -676,7 +676,7 @@ export default function OnboardingV2() {
             <div>
               <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Password</label>
               <div className="relative">
-                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] pr-10 focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B0B4BC]">
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
