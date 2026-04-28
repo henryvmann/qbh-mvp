@@ -314,8 +314,8 @@ export default function ProviderDetailPage() {
             )}
           </div>
 
-          {/* Action bar */}
-          {provider.provider_type !== "pharmacy" && (
+          {/* Action bar — hide if pharmacy or has upcoming appointment */}
+          {provider.provider_type !== "pharmacy" && upcoming.length === 0 && (
             <div className="px-6 pb-5">
               <HandleItButton
                 providerId={provider.id}
