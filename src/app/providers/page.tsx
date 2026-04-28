@@ -363,8 +363,6 @@ function ProvidersInner() {
           </div>
         )}
 
-        <BestNextStep context="providers" />
-
         {/* Add Provider */}
         <div data-tour="add-provider" className="mt-4">
           {showAddForm ? (
@@ -788,23 +786,20 @@ function ProvidersInner() {
                     {missing.map((m) => (
                       <div
                         key={m.label}
-                        className="rounded-2xl border-2 border-dashed p-5"
+                        className="rounded-2xl border-2 border-dashed p-5 cursor-pointer transition hover:shadow-sm"
                         style={{ borderColor: m.border, backgroundColor: m.color + "40" }}
+                        onClick={() => {
+                          setShowAddForm(true);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
                       >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowAddForm(true);
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
-                          className="flex w-full items-center justify-between text-left"
-                        >
+                        <div className="flex w-full items-center justify-between text-left">
                           <div>
                             <div className="text-sm font-semibold text-[#1A1D2E]">Your {m.label}</div>
                             <div className="text-xs text-[#7A7F8A]">Add one to your care team</div>
                           </div>
                           <Plus size={18} className="text-[#B0B4BC]" />
-                        </button>
+                        </div>
                         {expandedDismiss === m.dismissId ? (
                           <div className="mt-3 rounded-xl bg-white border border-[#EBEDF0] p-3">
                             <p className="text-xs text-[#1A1D2E]">Would you like Kate to help you find a {m.label.toLowerCase()} nearby?</p>

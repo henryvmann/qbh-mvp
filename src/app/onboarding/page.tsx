@@ -491,7 +491,7 @@ export default function OnboardingPage() {
         setStep(7);
         setSlideVisible(true);
       }, 300);
-    }, 3500);
+    }, 5500);
     return () => clearTimeout(timer);
   }, [step]);
 
@@ -733,9 +733,9 @@ export default function OnboardingPage() {
         `}</style>
         <div className="mt-8 space-y-4">
           {[
-            { label: "Find your providers", detail: "We identify your doctors from your records or you add them manually", delay: "0.3s" },
-            { label: "Book appointments", detail: "Kate calls offices and schedules for you — hands-free", delay: "0.7s" },
-            { label: "Stay on track", detail: "Reminders, follow-ups, and care gap alerts", delay: "1.1s" },
+            { label: "Find your providers", detail: "We scan your co-pays to discover every doctor you've seen — or add them yourself", delay: "0.3s" },
+            { label: "Book appointments", detail: "Kate calls offices and schedules for you — no hold music, no phone trees", delay: "0.7s" },
+            { label: "See the full picture", detail: "Connect the dots between your providers, track what's overdue, and stay organized", delay: "1.1s" },
           ].map((item) => (
             <div
               key={item.label}
@@ -939,13 +939,13 @@ export default function OnboardingPage() {
       {
         id: "bank",
         label: "Connect Your Bank",
-        desc: "We\u2019ll identify your healthcare providers from past co-pays via Plaid. Read-only access.",
+        desc: "We\u2019ll scan your co-pays to find every doctor you\u2019ve seen. Powered by Plaid — bank-level encryption, read-only, never stores credentials.",
         selected: connectBank,
       },
       {
         id: "calendar",
         label: "Connect Your Calendar",
-        desc: "Kate checks your schedule for conflicts before booking. We\u2019ll also scan for doctor appointments.",
+        desc: "We\u2019ll scan for past and future doctor appointments. Kate also checks your schedule before booking to avoid conflicts.",
         selected: connectCalendar,
       },
       {
@@ -1226,7 +1226,7 @@ export default function OnboardingPage() {
                 style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
               />
               {patientInsurance.trim().length >= 2 && (() => {
-                const KNOWN = ["Aetna","Anthem","Blue Cross Blue Shield","Cigna","Humana","Kaiser Permanente","Medicaid","Medicare","Molina Healthcare","Oscar Health","Oxford","United Healthcare","WellCare","Ambetter","Centene","CareFirst","EmblemHealth","Excellus","Florida Blue","Highmark","Horizon BCBS","Independence Blue Cross","TRICARE"];
+                const KNOWN = ["Aetna","Anthem","Anthem Blue Cross Blue Shield","Blue Cross Blue Shield","Blue Shield of California","Cigna","ConnectiCare","EmblemHealth","Empire BCBS","Excellus BCBS","Florida Blue","Harvard Pilgrim","Highmark BCBS","Horizon BCBS","Humana","Independence Blue Cross","Kaiser Permanente","Medicaid","Medicare","Molina Healthcare","Oscar Health","Oxford","Premera Blue Cross","Priority Health","TRICARE","UnitedHealthcare","UnitedHealthcare BCBS","WellCare","Ambetter","Centene","CareFirst BCBS","Regence BCBS"];
                 const matches = KNOWN.filter((ins) => ins.toLowerCase().includes(patientInsurance.trim().toLowerCase()));
                 if (matches.length === 0 || matches.some((m) => m.toLowerCase() === patientInsurance.trim().toLowerCase())) return null;
                 return (
@@ -1424,6 +1424,8 @@ export default function OnboardingPage() {
     }
 
     async function handleProviderDismiss(providerId: string) {
+      // Mark as dismissed visually first, then remove after a brief delay
+      setPendingProviders((prev) => prev.map((p) => p.id === providerId ? { ...p, status: "dismissed" as any } : p));
       const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
       try {
         await apiFetch("/api/providers/review", {
@@ -1434,7 +1436,9 @@ export default function OnboardingPage() {
       } catch {
         // Best-effort
       }
-      setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
+      setTimeout(() => {
+        setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
+      }, 400);
     }
 
     const confirmedProviders = pendingProviders.filter((p) => p.status === "active");
@@ -1462,7 +1466,7 @@ export default function OnboardingPage() {
       return (
         <div
           key={provider.id}
-          className="rounded-xl border px-4 py-3"
+          className={`rounded-xl border px-4 py-3 transition-all duration-300 ${(provider as any).status === "dismissed" ? "opacity-30 scale-95" : ""}`}
           style={{ backgroundColor: CARD_BG, borderColor: isConfirmed ? "#5C6B5C" : CARD_BORDER }}
         >
           <div className="flex items-center justify-between">
@@ -1807,27 +1811,34 @@ export default function OnboardingPage() {
           </CharacterWithBubble>
         </div>
 
-        {/* Summary cards */}
+        {/* Summary */}
         <div className="mt-8 flex flex-col gap-3">
-          {[
-            { value: "\u2713", label: "Account created" },
-            { value: "\u2713", label: isManualOnboarding ? "Providers saved" : "Providers found" },
-            { value: "\u2713", label: "Health timeline generated" },
-          ].map((card) => (
-            <div
-              key={card.label}
-              className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm"
-              style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}
-            >
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
-              >
-                {card.value}
-              </span>
-              <span className="text-[#1A1D2E]">{card.label}</span>
+          <div className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}>&#10003;</span>
+            <span className="text-[#1A1D2E]">Account created</span>
+          </div>
+          {totalProviders > 0 && (
+            <div className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-light" style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}>{totalProviders}</span>
+              <span className="text-[#1A1D2E]">providers found</span>
             </div>
-          ))}
+          )}
+          {connectCalendar && (
+            <div className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}>&#10003;</span>
+              <span className="text-[#1A1D2E]">Calendar connected</span>
+            </div>
+          )}
+        </div>
+
+        {/* What's next */}
+        <div className="mt-6 rounded-xl px-5 py-4 text-sm" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
+          <div className="font-semibold text-[#1A1D2E] mb-2">What happens next:</div>
+          <ul className="space-y-1 text-xs text-[#7A7F8A]">
+            <li>&#x2022; Kate will show you what&apos;s overdue and what needs attention</li>
+            <li>&#x2022; You can book appointments with one tap — Kate calls the office</li>
+            <li>&#x2022; Your Health Coordination Score starts building from here</li>
+          </ul>
         </div>
 
         <GoldButton onClick={() => window.location.href = "/dashboard"}>

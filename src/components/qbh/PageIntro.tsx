@@ -13,9 +13,9 @@ type Slide = {
 
 const PAGE_INTROS: Record<string, Slide[]> = {
   "/providers": [
-    { title: "Your Care Team", body: "All your doctors, dentists, and specialists in one place.", target: "center", position: "below" },
-    { title: "Click Any Name", body: "Tap a provider to see their full details — contact info, visit history, and notes.", target: "provider-list", position: "above" },
-    { title: "Build Your Team", body: "Missing a provider? Use the + Add provider button to search and add.", target: "add-provider", position: "below" },
+    { title: "Your Provider Hub", body: "All your doctors, organized by specialty. Each one stores contact info, visit history, documents, and notes — everything in one place.", target: "center", position: "below" },
+    { title: "Your Providers", body: "Each provider card shows their status — on track, overdue, or upcoming. Tap any name for full details.", target: "provider-list", position: "above" },
+    { title: "Build Your Team", body: "Missing someone? Search by name and add them, or let Kate help you find one.", target: "add-provider", position: "below" },
   ],
   "/visits": [
     { title: "Your Appointments", body: "See upcoming visits and past appointments all in one view.", target: "center", position: "below" },
