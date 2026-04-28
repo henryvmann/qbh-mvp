@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import { apiFetch } from "../../lib/api";
 import { Rocket, Building2, CalendarCheck, BarChart3, Target, Link as LinkIcon, Star, Trophy, Check } from "lucide-react";
 
@@ -130,9 +130,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
-        <TopNav />
-      </main>
+      <PageShell><div /></PageShell>
     );
   }
 
@@ -152,11 +150,8 @@ export default function AnalyticsPage() {
   const earnedCount = achievements.filter((a) => a.earned).length;
 
   return (
-    <main
-      className="min-h-screen text-[#1A1D2E]"
-      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
-    >
-      <TopNav />
+    <PageShell>
+      
       <div className="mx-auto max-w-2xl px-6 pt-8 pb-20">
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
           Your Progress
@@ -260,6 +255,6 @@ export default function AnalyticsPage() {
           );
         })()}
       </div>
-    </main>
+    </PageShell>
   );
 }

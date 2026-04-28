@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Calendar, Link2, CheckCircle, XCircle } from "lucide-react";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import NextSteps from "../../components/qbh/NextSteps";
 import { apiFetch } from "../../lib/api";
 
@@ -207,21 +207,13 @@ export default function CalendarViewPage() {
 
   if (loading) {
     return (
-      <main
-        className="min-h-screen"
-        style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
-      >
-        <TopNav />
-      </main>
+      <PageShell><div /></PageShell>
     );
   }
 
   return (
-    <main
-      className="min-h-screen text-[#1A1D2E]"
-      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
-    >
-      <TopNav />
+    <PageShell>
+      
       <div className="mx-auto max-w-3xl px-6 pb-16 pt-10">
         <div className="mb-6 flex items-center gap-3">
           <Calendar size={22} strokeWidth={1.5} color="#5C6B5C" />
@@ -601,6 +593,6 @@ export default function CalendarViewPage() {
 
         <NextSteps />
       </div>
-    </main>
+    </PageShell>
   );
 }

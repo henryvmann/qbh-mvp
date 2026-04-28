@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import { apiFetch } from "../../lib/api";
 import NextSteps from "../../components/qbh/NextSteps";
 import { Plus, Trash2, Users } from "lucide-react";
@@ -147,18 +147,13 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
-        <TopNav />
-      </main>
+      <PageShell><div /></PageShell>
     );
   }
 
   return (
-    <main
-      className="min-h-screen text-[#1A1D2E]"
-      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
-    >
-      <TopNav />
+    <PageShell>
+      
       <div className="mx-auto max-w-2xl px-6 pt-8 pb-20">
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-8">
           Settings
@@ -632,6 +627,6 @@ export default function SettingsPage() {
         </button>
         <NextSteps />
       </div>
-    </main>
+    </PageShell>
   );
 }

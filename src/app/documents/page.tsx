@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "../../lib/api";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import NextSteps from "../../components/qbh/NextSteps";
 import { Upload, FileText, Image as ImageIcon, File, Trash2 } from "lucide-react";
 
@@ -130,9 +130,7 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7]">
-      <TopNav />
-      <div className="mx-auto max-w-2xl px-6 pt-24 pb-16">
+    <PageShell maxWidth="max-w-2xl">
         <h1 className="font-serif text-3xl text-[#1A1D2E]">Health Documents</h1>
         <p className="mt-2 text-sm text-[#7A7F8A]">
           Upload medical records, lab results, visit summaries, and more. Kate will summarize them and add to your health history.
@@ -231,7 +229,6 @@ export default function DocumentsPage() {
         <div className="mt-10">
           <NextSteps />
         </div>
-      </div>
-    </div>
+    </PageShell>
   );
 }

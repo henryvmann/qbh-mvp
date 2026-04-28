@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import NextSteps from "../../components/qbh/NextSteps";
@@ -316,7 +316,7 @@ export default function GoalsPage() {
   }
 
   if (loading) {
-    return <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />;
+    return <PageShell><div /></PageShell>;
   }
 
   // Group goals by category
@@ -338,11 +338,8 @@ export default function GoalsPage() {
   const onTrackCount = goals.filter((g) => g.progress >= 50).length;
 
   return (
-    <main
-      className="min-h-screen text-[#1A1D2E]"
-      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
-    >
-      <TopNav />
+    <PageShell>
+      
       <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-4">
           Goals
@@ -625,6 +622,6 @@ export default function GoalsPage() {
 
         <NextSteps />
       </div>
-    </main>
+    </PageShell>
   );
 }

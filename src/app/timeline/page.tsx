@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import NextSteps from "../../components/qbh/NextSteps";
 import { Calendar, ChevronDown, ChevronRight } from "lucide-react";
@@ -61,17 +61,15 @@ export default function TimelinePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
-        <TopNav />
-      </main>
+      <PageShell><div /></PageShell>
     );
   }
 
   const totalVisits = years.reduce((sum, y) => sum + y.totalVisits, 0);
 
   return (
-    <main className="min-h-screen text-[#1A1D2E]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
-      <TopNav />
+    <PageShell>
+      
       <div className="mx-auto max-w-3xl px-6 pt-8 pb-16">
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
           Health Timeline
@@ -265,6 +263,6 @@ export default function TimelinePage() {
 
         <NextSteps />
       </div>
-    </main>
+    </PageShell>
   );
 }

@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import { apiFetch } from "../../lib/api";
 import ProviderCard from "../../components/qbh/ProviderCard";
@@ -303,11 +303,7 @@ function ProvidersInner() {
   }, [searchParams]);
 
   if (loading) {
-    return (
-      <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
-        <TopNav />
-      </main>
-    );
+    return <PageShell><div /></PageShell>;
   }
 
   const allDoctorsUnfiltered = snapshots.filter((s) => s.provider.provider_type !== "pharmacy" && s.provider.provider_type !== "calendar");
@@ -351,12 +347,7 @@ function ProvidersInner() {
   }
 
   return (
-    <main
-      className="min-h-screen text-[#1A1D2E]"
-      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
-    >
-      <TopNav />
-      <div className="mx-auto max-w-4xl px-6 pt-8 pb-20">
+    <PageShell>
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
           {selectedPerson ? `${selectedPerson}\u2019s Providers` : userName ? `${userName}\u2019s Providers` : "Your Providers"}
         </h1>
@@ -839,8 +830,7 @@ function ProvidersInner() {
           </>
         )}
         <NextSteps />
-      </div>
-    </main>
+    </PageShell>
   );
 }
 

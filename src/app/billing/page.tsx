@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import { apiFetch } from "../../lib/api";
 
 const PLANS = [
@@ -56,7 +56,7 @@ const PLANS = [
 
 export default function BillingPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F4F5F7]" />}>
+    <Suspense fallback={<PageShell><div /></PageShell>}>
       <BillingContent />
     </Suspense>
   );
@@ -125,9 +125,7 @@ function BillingContent() {
   const isActive = subscriptionStatus === "active" || subscriptionStatus === "trialing";
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7]">
-      <TopNav />
-      <div className="mx-auto max-w-3xl px-6 pt-24 pb-16">
+    <PageShell maxWidth="max-w-3xl">
         <h1 className="text-2xl font-bold text-[#1A1D2E]">Choose Your Plan</h1>
         <p className="mt-2 text-sm text-[#7A7F8A]">
           Start managing your healthcare with Kate by your side.
@@ -234,7 +232,6 @@ function BillingContent() {
         <p className="mt-8 text-center text-xs text-[#B0B4BC]">
           Cancel anytime. No long-term contracts. Prices shown in USD.
         </p>
-      </div>
-    </div>
+    </PageShell>
   );
 }
