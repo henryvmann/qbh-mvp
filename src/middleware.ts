@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/notes", "/calendar-view", "/calendar-connect", "/settings", "/account",
   "/medications", "/recordings", "/analytics", "/admin", "/portal-connect", "/care-recipients",
   "/billing", "/privacy", "/terms", "/dashboard-v2", "/dashboard-v3", "/documents", "/onboarding-v2", "/health-card",
+  "/providers-hub-a", "/providers-hub-c",
 ];
 
 export async function middleware(request: NextRequest) {
