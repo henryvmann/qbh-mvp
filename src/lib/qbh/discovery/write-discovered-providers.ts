@@ -15,6 +15,47 @@ function cleanName(input: string): string {
   return input.trim().toLowerCase();
 }
 
+/** Map credential prefixes to specialty labels */
+const CREDENTIAL_TO_SPECIALTY: Record<string, string> = {
+  "md": "Physician", "do": "Physician", "dds": "Dentist", "dmd": "Dentist",
+  "od": "Optometrist", "dc": "Chiropractor", "dpm": "Podiatrist",
+  "np": "Nurse Practitioner", "pa": "Physician Assistant", "rn": "Nurse",
+  "phd": "Psychologist", "psyd": "Psychologist",
+  "lcsw": "Therapist", "lmft": "Therapist", "lpc": "Therapist",
+  "fnp-bc": "Nurse Practitioner", "aprn": "Nurse Practitioner",
+};
+
+/** Move credential prefixes to after the name and detect specialty */
+function stripCredentials(name: string): { cleanedName: string; detectedSpecialty: string | null } {
+  const CRED_PREFIXES = /^\s*(M\.?D\.?|D\.?D\.?S\.?|D\.?O\.?|D\.?P\.?M\.?|N\.?P\.?|P\.?A\.?|R\.?N\.?|D\.?C\.?|O\.?D\.?|Ph\.?D\.?|Psy\.?D\.?|D\.?M\.?D\.?|FNP-BC|LCSW|LMFT|LPC|APRN)\s+/i;
+  let cleaned = name.trim();
+  let specialty: string | null = null;
+  const credentials: string[] = [];
+
+  // Extract credentials from the front
+  let match = cleaned.match(CRED_PREFIXES);
+  while (match) {
+    const raw = match[1].replace(/\./g, "").toUpperCase();
+    const cred = raw.toLowerCase();
+    if (!specialty) specialty = CREDENTIAL_TO_SPECIALTY[cred] || null;
+    credentials.push(raw);
+    cleaned = cleaned.replace(CRED_PREFIXES, "").trim();
+    match = cleaned.match(CRED_PREFIXES);
+  }
+
+  // Title case if ALL CAPS
+  if (cleaned === cleaned.toUpperCase() && cleaned.length > 3) {
+    cleaned = cleaned.replace(/\b\w+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  }
+
+  // Append credentials after name: "Eric Echelman, DDS"
+  if (credentials.length > 0) {
+    cleaned = `${cleaned}, ${credentials.join(", ")}`;
+  }
+
+  return { cleanedName: cleaned || name.trim(), detectedSpecialty: specialty };
+}
+
 /**
  * Check if two provider names are likely the same entity.
  * e.g. "Weston Pharmacy" and "Weston Pharmacy Gifts" → true
@@ -89,16 +130,20 @@ export async function writeDiscoveredProviders({
       seenInsertNames.add(key);
       return true;
     })
-    .map((provider) => ({
-      app_user_id: userId,
-      name: provider.provider_name.trim(),
-      status: provider.bucket === "HEALTHCARE" ? "active" : "review_needed",
-      guessed_portal_brand: null,
-      guessed_portal_confidence: null,
-      phone_number: provider.phone_number || null,
-      provider_type: provider.provider_type || null,
-      source: "plaid",
-    }));
+    .map((provider) => {
+      const { cleanedName, detectedSpecialty } = stripCredentials(provider.provider_name.trim());
+      return {
+        app_user_id: userId,
+        name: cleanedName,
+        specialty: detectedSpecialty || null,
+        status: provider.bucket === "HEALTHCARE" ? "active" : "review_needed",
+        guessed_portal_brand: null,
+        guessed_portal_confidence: null,
+        phone_number: provider.phone_number || null,
+        provider_type: provider.provider_type || null,
+        source: "plaid",
+      };
+    });
 
   let insertedProviders: Array<{ id: string; name: string }> = [];
 

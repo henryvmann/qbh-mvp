@@ -42,9 +42,68 @@ function normalizeProviderName(input: string): string {
     .trim();
 }
 
+/** Common abbreviations in transaction descriptions */
+const ABBREVIATION_MAP: Record<string, string> = {
+  "cnslts": "Consultants", "cnslt": "Consultant", "assoc": "Associates",
+  "hlth": "Health", "med": "Medical", "dntl": "Dental", "grp": "Group",
+  "ctr": "Center", "svcs": "Services", "mgmt": "Management",
+  "phys": "Physical", "thrpy": "Therapy", "ortho": "Orthopedic",
+  "peds": "Pediatric", "derm": "Dermatology", "psych": "Psychiatry",
+  "obgyn": "OB/GYN", "surg": "Surgery", "hosp": "Hospital",
+  "fam": "Family", "int": "Internal", "rehab": "Rehabilitation",
+  "diag": "Diagnostic", "img": "Imaging", "lab": "Laboratory",
+  "pharm": "Pharmacy", "rx": "Pharmacy", "prof": "Professional",
+};
+
+function cleanTransactionName(raw: string): string {
+  let name = raw.trim();
+
+  // Extract name from ACH format: "ORIG CO NAME:Alma ORIG ID:..."
+  const achMatch = name.match(/ORIG\s+CO\s+NAME:\s*([^\s]+(?:\s+[^\s]+)*?)\s+ORIG\s+ID:/i);
+  if (achMatch) {
+    name = achMatch[1].trim();
+  }
+
+  // Remove common transaction prefixes/suffixes
+  name = name
+    .replace(/\b(ORIG CO NAME|ORIG ID|DESC DATE|CO ENTRY|DESCR|CREDIT|SEC|PPD|TRACE#|EED|IND ID|IND NAME|TRN)[:# ]*[A-Z0-9]*/gi, "")
+    .replace(/\b(ACH|POS|PURCHASE|DEBIT|CHECKCARD|CHECK CARD|ONLINE|PMT|PAYMENT)\b/gi, "")
+    .replace(/\d{6,}/g, "") // Remove long number sequences (trace IDs, etc.)
+    .replace(/[:\/#]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Expand common abbreviations
+  const words = name.split(/\s+/);
+  const expanded = words.map((w) => {
+    const lower = w.toLowerCase();
+    return ABBREVIATION_MAP[lower] || w;
+  });
+  name = expanded.join(" ");
+
+  // Remove trailing prepositions left from truncation ("Of", "Of The", "And")
+  name = name.replace(/\s+(of|the|and|for|in|at)\s*$/i, "").trim();
+
+  // Title case if ALL CAPS
+  if (name === name.toUpperCase() && name.length > 3) {
+    name = name.replace(/\b\w+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  }
+
+  return name || raw.trim();
+}
+
 function pickProviderName(tx: PlaidDiscoveryTransaction): string {
-  const raw = (tx.merchant_name || tx.name || "").trim();
-  return raw || "UNKNOWN PROVIDER";
+  const merchantName = tx.merchant_name?.trim();
+  const txName = tx.name?.trim();
+
+  // Prefer merchant_name (cleaner), fall back to cleaned transaction name
+  if (merchantName && !merchantName.match(/ORIG\s+CO\s+NAME/i)) {
+    return cleanTransactionName(merchantName);
+  }
+  if (txName) {
+    return cleanTransactionName(txName);
+  }
+  return "UNKNOWN PROVIDER";
 }
 
 function daysBetween(a: string, b: string): number {
