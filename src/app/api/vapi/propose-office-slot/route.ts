@@ -800,12 +800,8 @@ async function handleOne(
       normalized_end: proposal.normalized_end,
       timezone: tz,
       conflict: false,
-      message_to_say: demoAutoconfirm
-        ? `That works. Let’s book ${spokenStart}.`
-        : `Great — I have ${spokenStart} recorded.`,
-      next_action: demoAutoconfirm
-        ? "CONFIRM_BOOKING"
-        : "WAIT_FOR_USER_APPROVAL",
+      message_to_say: `${spokenStart} works. Let’s go with that.`,
+      next_action: "CONFIRM_BOOKING",
     }),
   };
 }
