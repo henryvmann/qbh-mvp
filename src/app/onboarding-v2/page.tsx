@@ -657,16 +657,16 @@ export default function OnboardingV2() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">First name</label>
-                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Last name</label>
-                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
               </div>
             </div>
             <div>
               <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
             </div>
             <div>
               <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Password</label>
@@ -688,7 +688,7 @@ export default function OnboardingV2() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Date of birth</label>
-                <input type="date" value={patientDob} onChange={(e) => setPatientDob(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" style={isUnder18 ? { borderColor: "#E53E3E" } : {}} />
+                <input type="date" value={patientDob} onChange={(e) => setPatientDob(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" style={isUnder18 ? { borderColor: "#E53E3E" } : {}} />
                 {isUnder18 && <p className="mt-1 text-[10px] text-red-500">Must be 18 or older.</p>}
               </div>
               <div>
@@ -705,7 +705,7 @@ export default function OnboardingV2() {
             </div>
             <div className="relative">
               <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Insurance provider</label>
-              <input type="text" value={patientInsurance} onChange={(e) => setPatientInsurance(e.target.value)} placeholder="Start typing..." className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+              <input type="text" value={patientInsurance} onChange={(e) => setPatientInsurance(e.target.value)} placeholder="Start typing..." className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
               {filteredInsurance.length > 0 && patientInsurance.length >= 2 && (
                 <div className="absolute z-10 mt-1 w-full rounded-xl border border-[#EBEDF0] bg-white shadow-lg max-h-40 overflow-y-auto">
                   {filteredInsurance.map((ins) => (
@@ -716,7 +716,7 @@ export default function OnboardingV2() {
             </div>
             <div>
               <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Phone number</label>
-              <input type="tel" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} placeholder="(555) 123-4567" className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+              <input type="tel" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} placeholder="(555) 123-4567" className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
             </div>
             <label className="flex items-start gap-2 mt-2">
               <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-0.5 h-4 w-4 rounded accent-[#5C6B5C]" />
