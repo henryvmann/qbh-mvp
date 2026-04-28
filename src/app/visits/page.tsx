@@ -217,7 +217,7 @@ function VisitsInner() {
                   Follow-ups to schedule
                 </h2>
                 <p className="mt-2 text-sm text-[#7A7F8A]">
-                  Providers currently needing another scheduling push.
+                  Providers that are overdue or don&apos;t have a future appointment.
                 </p>
               </div>
               <span className="text-sm font-medium text-[#7A7F8A]">

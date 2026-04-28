@@ -267,7 +267,7 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Callback Phone Number</label>
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Phone Number</label>
               <input
                 type="tel"
                 value={callbackPhone}

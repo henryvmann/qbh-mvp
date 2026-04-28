@@ -259,6 +259,7 @@ function ProvidersInner() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [expandedDismiss, setExpandedDismiss] = useState<string | null>(null);
   const [careRecipients, setCareRecipients] = useState<Array<{ id: string; name: string; relationship: string }>>([]);
+  const [userName, setUserName] = useState("");
   const [editingRecipient, setEditingRecipient] = useState<string | null>(null);
   const [editRecipientName, setEditRecipientName] = useState("");
   const [initialSearch, setInitialSearch] = useState("");
@@ -284,6 +285,8 @@ function ProvidersInner() {
     // Load care recipients
     apiFetch("/api/patient-profile").then((r) => r.json()).then((data) => {
       if (data?.profile?.care_recipients) setCareRecipients(data.profile.care_recipients);
+      const p = data?.profile;
+      if (p) setUserName(p.display_name || p.nickname || (p.full_name ? p.full_name.split(" ")[0] : ""));
     }).catch(() => {});
   }, [router]);
 
@@ -335,7 +338,7 @@ function ProvidersInner() {
       <TopNav />
       <div className="mx-auto max-w-4xl px-6 pt-8 pb-20">
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
-          Your Providers
+          {userName ? `${userName}\u2019s Providers` : "Your Providers"}
         </h1>
         <p className="mt-1 text-sm text-[#7A7F8A]">
           {snapshots.length} provider{snapshots.length !== 1 ? "s" : ""} on file
@@ -575,13 +578,13 @@ function ProvidersInner() {
                                   onClick={() => setConfirmMode("link")}
                                   className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
                                 >
-                                  Link to existing provider
+                                  Link to a provider on your profile
                                 </button>
                                 <button
                                   onClick={() => setConfirmMode("search")}
                                   className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
                                 >
-                                  Search for provider
+                                  Search for your provider
                                 </button>
                                 <button
                                   onClick={async () => {
@@ -849,7 +852,7 @@ function ProvidersInner() {
                             onClick={() => setExpandedDismiss(m.dismissId)}
                             className="mt-2 text-[10px] text-[#B0B4BC] hover:text-[#7A7F8A] underline underline-offset-2"
                           >
-                            I Don&apos;t Have One
+                            Help me find one
                           </button>
                         )}
                       </div>

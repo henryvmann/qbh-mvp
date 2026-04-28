@@ -833,7 +833,7 @@ export default function OnboardingPage() {
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           What&apos;s hardest to manage today?
         </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">This helps Kate prioritize where to jump in first</p>
+        <p className="mt-2 text-sm text-[#7A7F8A]">This helps Kate, your care coordinator, prioritize where to jump in first</p>
         <div className="mt-6 flex flex-col gap-3">
           {STEP2_OPTIONS.map((opt, optIdx) => (
             <OptionRow
@@ -870,7 +870,7 @@ export default function OnboardingPage() {
         <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
           Who are you managing care for?
         </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">Choose as many as you&apos;d like — Kate can organize by person</p>
+        <p className="mt-2 text-sm text-[#7A7F8A]">Choose as many as you&apos;d like — Your care coordinator can organize by person</p>
         <div className="mt-6 flex flex-col gap-3">
           {STEP3_OPTIONS.map((opt, optIdx) => (
             <OptionRow
@@ -1251,7 +1251,7 @@ export default function OnboardingPage() {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Callback Phone</label>
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Phone Number</label>
                 <input
                   type="tel"
                   value={patientPhone}
@@ -1283,7 +1283,7 @@ export default function OnboardingPage() {
               <a href="/terms" target="_blank" className="underline underline-offset-2 text-[#5C6B5C]">Terms of Service</a>
               {" "}and{" "}
               <a href="/privacy" target="_blank" className="underline underline-offset-2 text-[#5C6B5C]">Privacy Policy</a>
-              , and authorize QB to call offices and use my info to organize my care
+              , and authorize Quarterback Health to call offices and use my info to organize my care
             </span>
           </label>
         </div>
@@ -1500,7 +1500,7 @@ export default function OnboardingPage() {
             <div className="mt-2">
               {/* New/existing patient toggle */}
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-[#7A7F8A]">Been seen here before?</span>
+                <span className="text-xs text-[#7A7F8A]">Have you visited this provider before?</span>
                 <button
                   onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: true }))}
                   className="rounded-lg px-2 py-0.5 text-xs font-semibold"
@@ -1544,7 +1544,7 @@ export default function OnboardingPage() {
             <div className="mt-2">
               {/* New/existing patient toggle */}
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-[#7A7F8A]">Been seen here before?</span>
+                <span className="text-xs text-[#7A7F8A]">Have you visited this provider before?</span>
                 <button
                   onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: true }))}
                   className="rounded-lg px-2 py-0.5 text-xs font-semibold"

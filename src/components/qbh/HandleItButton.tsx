@@ -288,7 +288,7 @@ export default function HandleItButton({
             {providerName && (
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-[#7A7F8A]">
-                  Have you been seen at {providerName} before?
+                  Have you visited this provider before?
                 </label>
                 <div className="flex gap-2">
                   {[
