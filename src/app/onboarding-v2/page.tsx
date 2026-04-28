@@ -711,7 +711,7 @@ export default function OnboardingV2() {
             <div className="relative">
               <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Insurance provider</label>
               <input type="text" value={patientInsurance} onChange={(e) => setPatientInsurance(e.target.value)} placeholder="Start typing..." className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
-              {filteredInsurance.length > 0 && patientInsurance.length >= 2 && (
+              {filteredInsurance.length > 0 && patientInsurance.length >= 2 && !KNOWN_INSURANCE.includes(patientInsurance) && (
                 <div className="absolute z-10 mt-1 w-full rounded-xl border border-[#EBEDF0] bg-white shadow-lg max-h-40 overflow-y-auto">
                   {filteredInsurance.map((ins) => (
                     <button key={ins} onClick={() => setPatientInsurance(ins)} className="w-full px-3 py-2 text-left text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]">{ins}</button>
