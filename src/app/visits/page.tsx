@@ -194,15 +194,23 @@ function VisitsInner() {
                 No upcoming appointments yet
               </div>
               <p className="mt-2 text-sm text-[#7A7F8A]">
-                Appointments will appear here when Kate books them, or you can add one manually.
+                Confirmed appointments will appear here when Kate books them.
               </p>
-              <a
-                href="/calendar-view"
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                style={{ backgroundColor: "#5C6B5C" }}
-              >
-                View calendar
-              </a>
+              <div className="mt-3 flex gap-2">
+                <a
+                  href="/calendar-view"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                  style={{ backgroundColor: "#5C6B5C" }}
+                >
+                  View calendar
+                </a>
+                <a
+                  href="/providers"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#EBEDF0] text-[#1A1D2E] hover:bg-white"
+                >
+                  Book with Kate
+                </a>
+              </div>
             </div>
           )}
         </section>

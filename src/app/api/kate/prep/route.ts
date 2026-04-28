@@ -108,7 +108,7 @@ ${healthHistory ? `\nPatient's health history: ${healthHistory}` : ""}
 
 This patient has visited this provider ${visitCount} time(s).
 ${isRecurring ? "This is a RECURRING provider (like a therapist or regular doctor). Do NOT suggest bringing an insurance card or arriving early for paperwork — they've been here many times." : ""}
-${isFirstVisit ? "This appears to be a FIRST VISIT. Include new patient prep items." : ""}
+${isFirstVisit ? "We don't have visit history for this provider yet. Include general prep items but don't assume it's their first visit — they may have been going for years before using QBH." : ""}
 
 Generate a JSON response with:
 {

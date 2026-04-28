@@ -188,8 +188,8 @@ function getState(snapshot: ProviderDashboardSnapshot) {
       badgeClassName: "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30",
       description:
         nextAction?.status === "PENDING"
-          ? "No upcoming appointment is on the calendar yet."
-          : "This provider may need a follow-up.",
+          ? "No upcoming appointment on the calendar yet."
+          : "No recent visits on record. Want Kate to book?",
     };
   }
 

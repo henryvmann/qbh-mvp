@@ -260,32 +260,6 @@ export default function ProviderDetailPage() {
                     className="mt-1.5 w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Care Team</label>
-                  <div className="flex flex-wrap gap-1.5 mb-1.5">
-                    {["General Health", "Cancer Care", "Mental Health", "Women's Health", "Pediatrics", "Chronic Care"].map((team) => (
-                      <button
-                        key={team}
-                        type="button"
-                        onClick={() => setEditCareTeam(team)}
-                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
-                          editCareTeam === team
-                            ? "bg-[#5C6B5C] text-white"
-                            : "bg-[#F0F2F5] text-[#7A7F8A] hover:bg-[#E8EBF0]"
-                        }`}
-                      >
-                        {team}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="text"
-                    value={editCareTeam}
-                    onChange={(e) => setEditCareTeam(e.target.value)}
-                    placeholder="Or type a custom team name..."
-                    className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                  />
-                </div>
                 <textarea
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}

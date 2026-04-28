@@ -1016,12 +1016,11 @@ export default function OnboardingPage() {
           Continue &rarr;
         </GoldButton>
 
-        <div className="mt-3 text-center text-xs text-[#B0B4BC]">
-          {connectBank && connectManual ? "We\u2019ll scan your bank and let you add providers manually" :
-           connectBank ? "We\u2019ll connect your bank to find providers" :
-           connectManual ? "You\u2019ll add your providers by name" :
-           "Select at least one option"}
-        </div>
+        {!connectBank && !connectCalendar && !connectManual && (
+          <div className="mt-3 text-center text-xs text-[#B0B4BC]">
+            Select at least one option to continue
+          </div>
+        )}
       </Shell>
     );
   }
@@ -1077,9 +1076,7 @@ export default function OnboardingPage() {
       return age < 18;
     })();
     const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && allConsentsGiven && !isUnder18;
-    const kateText = connectBank
-      ? "Almost there! Create your account and we'll connect your bank to find your providers."
-      : "Almost there! Create your account and we'll get everything set up for you.";
+    const kateText = "Almost there! Create your account and we'll find your providers and get everything set up.";
     return (
       <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
         <div className="mb-6">
@@ -1163,13 +1160,18 @@ export default function OnboardingPage() {
               const hasNumber = /[0-9]/.test(password);
               const hasSpecial = /[^A-Za-z0-9]/.test(password);
               const score = (password.length >= 8 ? 1 : 0) + (hasUpper && hasLower ? 1 : 0) + (hasNumber ? 1 : 0) + (hasSpecial ? 1 : 0);
-              const strength = score <= 1 ? { label: "Weak", color: "#E04030", width: "33%" } : score <= 2 ? { label: "Medium", color: "#B8860B", width: "66%" } : { label: "Strong", color: "#5C6B5C", width: "100%" };
+              const strength = score <= 1 ? { label: "Weak", color: "#E04030", width: "33%" } : score <= 2 ? { label: "Medium", color: "#B8860B", width: "66%" } : { label: "Strong", color: "#22C55E", width: "100%" };
               return (
                 <div className="mt-2">
                   <div className="h-1.5 rounded-full bg-[#EBEDF0] overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-300" style={{ width: strength.width, backgroundColor: strength.color }} />
                   </div>
-                  <p className="mt-1 text-xs font-medium" style={{ color: strength.color }}>{strength.label}</p>
+                  <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]">
+                    <span style={{ color: password.length >= 8 ? "#22C55E" : "#B0B4BC" }}>{password.length >= 8 ? "✓" : "○"} 8+ characters</span>
+                    <span style={{ color: hasUpper && hasLower ? "#22C55E" : "#B0B4BC" }}>{hasUpper && hasLower ? "✓" : "○"} Upper & lowercase</span>
+                    <span style={{ color: hasNumber ? "#22C55E" : "#B0B4BC" }}>{hasNumber ? "✓" : "○"} Number</span>
+                    <span style={{ color: hasSpecial ? "#22C55E" : "#B0B4BC" }}>{hasSpecial ? "✓" : "○"} Special character</span>
+                  </div>
                 </div>
               );
             })()}
@@ -1178,7 +1180,7 @@ export default function OnboardingPage() {
 
         {/* Additional info — helps Kate book appointments */}
         <div className="mt-6">
-          <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">Your Info (Optional)</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">Your Info</div>
           <div className="flex flex-col gap-3">
             <div className="flex gap-3">
               <div className="flex-1">
@@ -1291,6 +1293,11 @@ export default function OnboardingPage() {
         {error && (
           <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
             {error}
+            {error.toLowerCase().includes("already") && (
+              <a href="/login" className="mt-1 block text-xs font-semibold text-[#5C6B5C] underline underline-offset-2">
+                Sign in instead &rarr;
+              </a>
+            )}
           </div>
         )}
 
@@ -1689,29 +1696,16 @@ export default function OnboardingPage() {
     ];
 
     const healthFacts = [
-      "Adults should get a physical exam at least once a year",
-      "Dental cleanings are recommended every 6 months",
-      "Eye exams can detect early signs of diabetes and high blood pressure",
-      "Preventive care can catch 80% of health issues before they become serious",
-      "The average American sees 7 different healthcare providers",
-      "Staying on top of screenings reduces hospitalization risk by 40%",
-      "Most insurance plans cover preventive care at no extra cost",
-      "Skin cancer screenings are recommended annually starting at age 30",
-      "Blood pressure should be checked at least once every two years",
-      "Women should begin mammograms at age 40, or earlier with family history",
-      "Cholesterol should be checked every 4-6 years for adults over 20",
-      "A colonoscopy is recommended starting at age 45",
-      "Flu shots are recommended annually for everyone over 6 months old",
-      "Regular dental visits can reduce your risk of heart disease",
-      "Vision prescriptions should be updated every 1-2 years",
-      "Adults need 7-9 hours of sleep for optimal health",
-      "Walking 30 minutes a day reduces the risk of chronic disease by 30-40%",
-      "Dermatologists recommend a full-body skin check once a year",
-      "Mental health checkups are just as important as physical ones",
-      "Keeping a list of medications helps prevent dangerous interactions",
-      "Bone density screening is recommended for women starting at age 65",
-      "Having a primary care physician reduces ER visits by 33%",
-      "Regular hearing tests are recommended starting at age 50",
+      "The average person sees 7 different doctors but none of them talk to each other",
+      "73% of patients say their healthcare feels disconnected and siloed",
+      "People who track their providers report feeling 2x more in control of their health",
+      "The #1 reason people miss follow-ups? They simply forget to book",
+      "Having all your providers in one place saves an average of 4 hours per month",
+      "Most people can't name their last visit date for half their doctors",
+      "Care coordination — connecting the dots between providers — is the #1 gap in healthcare",
+      "People who use a care coordinator are 40% more likely to stay on top of preventive care",
+      "The average American spends 3+ hours per year on hold with doctor's offices",
+      "Organized patients have better outcomes — because they ask better questions",
     ];
 
     return (

@@ -145,7 +145,7 @@ export default function SetupWizard() {
     if (step.position === "below") {
       tooltipStyle = {
         position: "fixed",
-        top: targetRect.bottom + padding + 12,
+        top: targetRect.bottom + padding + 20,
         left,
         width: tooltipWidth,
         maxWidth: "calc(100vw - 32px)",
@@ -153,7 +153,7 @@ export default function SetupWizard() {
     } else {
       tooltipStyle = {
         position: "fixed",
-        bottom: window.innerHeight - targetRect.top + padding + 12,
+        bottom: window.innerHeight - targetRect.top + padding + 20,
         left,
         width: tooltipWidth,
         maxWidth: "calc(100vw - 32px)",
