@@ -1,2055 +1,890 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "../../lib/supabase/client";
+import Image from "next/image";
+import { Search, Calendar, Building2, ShieldCheck, Brain, Phone, Eye, EyeOff } from "lucide-react";
 import { apiFetch } from "../../lib/api";
-import { CharacterWithBubble } from "../../components/qbh/CharacterBubble";
-import WhyWeAsk from "../../components/qbh/WhyWeAsk";
-import { Search, Calendar, CheckCircle, Building2, ShieldCheck, Clock, Sparkles } from "lucide-react";
-import TypeWriter from "../../components/qbh/TypeWriter";
+import { createClient } from "../../lib/supabase/client";
+import { theme } from "../../components/qbh/theme";
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
+/* ── Design tokens (from greenhouse theme) ── */
+const BG = theme.bgGradient;
+const ACCENT = theme.green;
+const CARD_BG = theme.glass;
+const CARD_BORDER = theme.glassBorder;
+const TEXT_PRIMARY = theme.textPrimary;
+const TEXT_SECONDARY = "#7A7F8A";
+const TEXT_MUTED = "#B0B4BC";
 
-interface SurveyAnswers {
-  step1: string[];
-  step2: string[];
-  step3: string[];
-  step4: string[];
+/* ── Types ── */
+type ChatMessage = {
+  id: string;
+  sender: "kate" | "user" | "system";
+  content: React.ReactNode;
+  delay?: number;
+};
+
+type DiscoveredProvider = {
+  id: string;
+  name: string;
+  visit_count: number;
+  status: string;
+  overdue?: boolean;
+};
+
+/* ── Plaid script loader ── */
+function ensurePlaidScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).Plaid) { resolve(); return; }
+    const s = document.createElement("script");
+    s.src = "https://cdn.plaid.com/link/v2/stable/link-initialize.js";
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Failed to load Plaid"));
+    document.head.appendChild(s);
+  });
 }
 
-interface DiscoveryResult {
-  label: string;
-  detail?: string;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Constants                                                          */
-/* ------------------------------------------------------------------ */
-
-const STEP1_OPTIONS = [
-  "My appointments",
-  "My medications",
-  "My test results",
-  "My health",
-  "My medical history",
-  "All of the above",
-];
-
-const STEP2_OPTIONS = [
-  "Booking appointments",
-  "Remembering follow-ups",
-  "Organizing records",
-  "Advocating for myself",
-  "All of the above",
-];
-
-const STEP3_OPTIONS = [
-  "Myself",
-  "My partner / spouse",
-  "My child(ren)",
-  "My parent(s)",
-  "Someone else",
-];
-
-const STEP4_OPTIONS = [
-  "Booking and scheduling appointments",
-  "Tracking when I'm overdue for visits",
-  "Organizing my providers and records",
-  "Following up after appointments",
-  "Connecting the dots between providers",
-  "All of the above",
-];
-
-const ACCENT = "#5C6B5C";
-const ACCENT_BG = "#1A1D2E";
-const CARD_BG = "#FFFFFF";
-const CARD_BORDER = "#EBEDF0";
-
-/* Survey step mapping: step 1 -> survey 1, step 3 -> survey 2, step 4 -> survey 3, step 5 -> survey 4 */
-const SURVEY_STEP_MAP: Record<number, number> = { 1: 1, 3: 2, 4: 3, 5: 4 };
-
-/* ------------------------------------------------------------------ */
-/*  Shared UI pieces                                                   */
-/* ------------------------------------------------------------------ */
-
-function DecorativeCircle() {
+/* ── Chat Bubble ── */
+function KateBubble({ children, typing }: { children: React.ReactNode; typing?: boolean }) {
   return (
-    <div
-      className="pointer-events-none fixed -right-32 -top-32 h-[500px] w-[500px] rounded-full border border-[#D0D8E0]/30"
-      aria-hidden
-    />
-  );
-}
-
-function StepCounter({ current, total }: { current: number; total: number }) {
-  return (
-    <div
-      className="mb-8 text-xs font-semibold uppercase tracking-[0.25em]"
-      style={{ color: ACCENT }}
-    >
-      Step {current} of {total}
+    <div className="flex items-start gap-3 animate-fadeIn">
+      <Image src="/kate-avatar.png" alt="Kate" width={32} height={32} className="rounded-full shrink-0 mt-1" />
+      <div className="max-w-[85%] rounded-2xl rounded-tl-sm backdrop-blur-sm px-4 py-3" style={{ background: theme.glass, border: `1px solid ${theme.glassBorder}`, boxShadow: theme.cardShadow }}>
+        {typing ? (
+          <div className="flex gap-1 py-1">
+            <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-bounce" style={{ animationDelay: "0ms" }} />
+            <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-bounce" style={{ animationDelay: "300ms" }} />
+          </div>
+        ) : (
+          <div className="text-sm text-[#1A1D2E] leading-relaxed">{children}</div>
+        )}
+      </div>
     </div>
   );
 }
 
-function GoldButton({
-  children,
-  onClick,
-  disabled,
-  type = "button",
-  id,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  type?: "button" | "submit";
-  id?: string;
-}) {
+function UserBubble({ children }: { children: React.ReactNode }) {
   return (
-    <button
-      id={id}
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className="mt-8 w-full rounded-3xl px-6 py-4 text-base font-semibold text-white shadow-lg transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
-      style={{
-        background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
-        boxShadow: "0 8px 24px rgba(92,107,92,0.35)",
-      }}
-    >
-      {children}
-    </button>
+    <div className="flex justify-end animate-fadeIn">
+      <div className="max-w-[75%] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white font-medium" style={{ backgroundColor: ACCENT }}>
+        {children}
+      </div>
+    </div>
   );
 }
 
-function OptionRow({
-  label,
-  selected,
-  onClick,
-  multi,
-  index = 0,
-}: {
-  label: string;
+function OptionButtons({ options, onSelect }: { options: Array<{ label: string; value: string }>; onSelect: (value: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2 justify-end animate-fadeIn">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onSelect(opt.value)}
+          className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
+          style={{
+            backgroundColor: "#D4A44C15",
+            border: "1px solid #D4A44C40",
+            color: "#8B6914",
+          }}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ToggleCard({ icon: Icon, title, description, selected, onToggle }: {
+  icon: React.ComponentType<any>;
+  title: string;
+  description: string;
   selected: boolean;
-  onClick: () => void;
-  multi: boolean;
-  index?: number;
+  onToggle: () => void;
 }) {
   return (
     <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-4 rounded-xl px-5 py-4 text-left text-sm transition shadow-sm cascade-item"
-      style={{
-        animationDelay: `${0.1 + index * 0.08}s`,
-        backgroundColor: CARD_BG,
-        borderWidth: 1,
-        borderStyle: "solid",
-        borderColor: selected ? ACCENT : CARD_BORDER,
-      }}
+      onClick={onToggle}
+      className={`w-full rounded-2xl border p-4 text-left transition ${
+        selected ? "border-[#5C6B5C] bg-[#5C6B5C]/5 ring-1 ring-[#5C6B5C]" : "border-white/70 bg-white/55 backdrop-blur-sm hover:border-[#B0B4BC]"
+      }`}
     >
-      {/* indicator */}
-      <span
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border"
-        style={{
-          borderColor: selected ? ACCENT : "#B0B4BC",
-          backgroundColor: selected ? ACCENT : "transparent",
-        }}
-      >
-        {selected && (
-          <span
-            className="block h-2 w-2 rounded-full"
-            style={{ backgroundColor: "#fff" }}
-          />
-        )}
-      </span>
-      <span className="text-[#1A1D2E]">{label}</span>
+      <div className="flex items-start gap-3">
+        <Icon size={20} className={selected ? "text-[#5C6B5C]" : "text-[#B0B4BC]"} />
+        <div className="flex-1">
+          <div className="text-sm font-semibold text-[#1A1D2E]">{title}</div>
+          <p className="mt-1 text-xs text-[#7A7F8A] leading-relaxed">{description}</p>
+        </div>
+        <div className={`mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center transition ${
+          selected ? "border-[#5C6B5C] bg-[#5C6B5C]" : "border-[#D0D3D8]"
+        }`}>
+          {selected && <span className="text-white text-[10px]">&#10003;</span>}
+        </div>
+      </div>
     </button>
   );
 }
 
-function ConnectionRow({
-  label,
-  connected,
-  pending,
-  onClick,
-}: {
-  label: string;
-  connected: boolean;
-  pending: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center justify-between rounded-xl px-5 py-4 text-left text-sm transition shadow-sm"
-      style={{
-        backgroundColor: CARD_BG,
-        borderWidth: 1,
-        borderStyle: "solid",
-        borderColor: connected ? "#5C6B5C" : CARD_BORDER,
-      }}
-    >
-      <span className="text-[#1A1D2E]">{label}</span>
-      {connected ? (
-        <span className="text-[#5C6B5C] text-xs font-medium">Connected &#10003;</span>
-      ) : pending ? (
-        <span className="text-amber-600 text-xs font-medium">Pending...</span>
-      ) : (
-        <span className="text-xs font-medium" style={{ color: ACCENT }}>
-          Connect
-        </span>
-      )}
-    </button>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Main component                                                     */
-/* ------------------------------------------------------------------ */
-
+/* ── Main Component ── */
 export default function OnboardingPage() {
   const router = useRouter();
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const plaidHandlerRef = useRef<{ destroy: () => void } | null>(null);
 
-  /* ---- core state ---- */
-  const [step, setStep] = useState(0);
-  const [slideDirection, setSlideDirection] = useState<"forward" | "back">("forward");
-  const [transitioning, setTransitioning] = useState(false);
-  const [slideVisible, setSlideVisible] = useState(true);
+  // Chat state
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [phase, setPhase] = useState<string>("intro");
+  const [typing, setTyping] = useState(false);
 
-  // Animated step change
-  function goToStep(nextStep: number) {
-    if (transitioning) return;
-    const direction = nextStep > step ? "forward" : "back";
-    setSlideDirection(direction);
-    setTransitioning(true);
-    setSlideVisible(false);
-    setTimeout(() => {
-      setStep(nextStep);
-      setSlideVisible(true);
-      setTimeout(() => setTransitioning(false), 400);
-    }, 300);
-  }
-
-  const [survey, setSurvey] = useState<SurveyAnswers>({
-    step1: [],
-    step2: [],
-    step3: [],
-    step4: [],
-  });
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const name = `${firstName.trim()} ${lastName.trim()}`.trim();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [userId, setUserId] = useState("");
-  const [plaidConnected, setPlaidConnected] = useState(false);
-  const [calendarConnected] = useState(false); // deferred to after auth
-  const [calendarPending, setCalendarPending] = useState(false);
-  const [plaidPublicToken, setPlaidPublicToken] = useState<string | null>(null);
-  const [discoveryResults, setDiscoveryResults] = useState<DiscoveryResult[]>(
-    []
-  );
-  const [pendingProviders, setPendingProviders] = useState<Array<{ id: string; name: string; status: string; visit_count: number }>>([]);
-  const [approvedCount, setApprovedCount] = useState(0);
-  const [followUpCount, setFollowUpCount] = useState(0);
-  const [reviewingProviders, setReviewingProviders] = useState(false);
-  const [providerPeople, setProviderPeople] = useState<Record<string, Set<string>>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [loadingDiscovery, setLoadingDiscovery] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState(0);
-  const [manualPath, setManualPath] = useState(false);
-  const [connectBank, setConnectBank] = useState(true);
+  // User data
+  const [userId] = useState(() => typeof window !== "undefined" ? (localStorage.getItem("qbh_user_id") || crypto.randomUUID()) : crypto.randomUUID());
+  const [careFor, setCareFor] = useState<string>("just-me");
+  const [familyMembers, setFamilyMembers] = useState<string[]>([]);
+  const [connectBank, setConnectBank] = useState(false);
   const [connectCalendar, setConnectCalendar] = useState(false);
   const [connectManual, setConnectManual] = useState(false);
-  const [showAccountForm, setShowAccountForm] = useState(false);
+
+  // Account fields
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [patientDob, setPatientDob] = useState("");
   const [patientGender, setPatientGender] = useState("");
   const [patientInsurance, setPatientInsurance] = useState("");
   const [patientMemberId, setPatientMemberId] = useState("");
   const [patientPhone, setPatientPhone] = useState("");
-  const [manualProviders, setManualProviders] = useState<Array<{ name: string; specialty: string | null; phone: string | null; npi?: string | null; careRecipients: string[] }>>([]);
-  const [npiSearchQuery, setNpiSearchQuery] = useState("");
-  const [npiSearchResults, setNpiSearchResults] = useState<Array<{ npi: string; name: string; specialty: string | null; phone: string | null; city: string | null; state: string | null }>>([]);
-  const [npiSearching, setNpiSearching] = useState(false);
-  const [npiResultPeople, setNpiResultPeople] = useState<Record<string, Set<string>>>({});
-  const [healthFactIndex, setHealthFactIndex] = useState(0);
-  const [healthFactFading, setHealthFactFading] = useState(false);
-  const [providerExisting, setProviderExisting] = useState<Record<string, boolean>>({});
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [creatingAccount, setCreatingAccount] = useState(false);
 
-  const [consentCalls, setConsentCalls] = useState(false);
-  const [consentPhi, setConsentPhi] = useState(false);
-  const [consentTerms, setConsentTerms] = useState(false);
-  const allConsentsGiven = consentCalls && consentPhi && consentTerms;
+  // Plaid
+  const [plaidConnected, setPlaidConnected] = useState(false);
 
-  const [plaidAutoAdvance, setPlaidAutoAdvance] = useState(false);
-  const plaidHandlerRef = useRef<{ open: () => void } | null>(null);
+  // Discovery
+  const [discoveredProviders, setDiscoveredProviders] = useState<DiscoveredProvider[]>([]);
+  const [revealIndex, setRevealIndex] = useState(0);
+  const [revealDone, setRevealDone] = useState(false);
 
-  // No auth guard here — if someone explicitly navigates to /onboarding,
-  // let them through. The home page handles the "authenticated -> dashboard" redirect.
+  // Score
+  const [score, setScore] = useState<number | null>(null);
 
-  /* ---- initialise user id ---- */
+  // Save userId
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    localStorage.setItem("qbh_user_id", userId);
+  }, [userId]);
 
-    // Check if returning from native OAuth with Plaid already connected
-    const nativePlaidDone = window.localStorage.getItem("qbh_plaid_connected");
-    if (nativePlaidDone) {
-      setPlaidConnected(true);
-      const savedId = window.localStorage.getItem("qbh_user_id") || "";
-      if (savedId) setUserId(savedId);
-      setStep(8); // jump to discovery
-      window.localStorage.removeItem("qbh_plaid_connected");
-      return;
-    }
+  // Auto-scroll to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, phase, typing]);
 
-    const id = crypto.randomUUID();
-    setUserId(id);
-    window.localStorage.setItem("qbh_user_id", id);
-  }, []);
-
-  /* ---- toggle helpers ---- */
-  function toggleMulti(
-    key: "step1" | "step2" | "step3" | "step4",
-    value: string
-  ) {
-    const optionsMap: Record<string, string[]> = {
-      step1: STEP1_OPTIONS,
-      step2: STEP2_OPTIONS,
-      step3: STEP3_OPTIONS,
-      step4: STEP4_OPTIONS,
-    };
-
-    setSurvey((prev) => {
-      const arr = prev[key];
-
-      // "All of the above" toggles everything
-      if (value === "All of the above") {
-        const allOpts = optionsMap[key].filter((o) => o !== "All of the above");
-        const allSelected = allOpts.every((o) => arr.includes(o));
-        return {
-          ...prev,
-          [key]: allSelected ? [] : [...allOpts, "All of the above"],
-        };
-      }
-
-      const next = arr.includes(value)
-        ? arr.filter((v) => v !== value && v !== "All of the above")
-        : [...arr, value];
-      return { ...prev, [key]: next };
-    });
+  // Add Kate message with typing delay
+  function addKateMessage(content: React.ReactNode, delayMs = 800) {
+    setTyping(true);
+    setTimeout(() => {
+      setTyping(false);
+      setMessages((prev) => [...prev, { id: `kate-${Date.now()}-${Math.random()}`, sender: "kate", content }]);
+    }, delayMs);
   }
 
-  // setSingle removed — step3 is now multi-select
+  function addKateMessages(contents: React.ReactNode[], baseDelay = 800, gap = 600) {
+    contents.forEach((content, i) => {
+      setTimeout(() => {
+        if (i < contents.length - 1) {
+          setMessages((prev) => [...prev, { id: `kate-${Date.now()}-${i}`, sender: "kate", content }]);
+        } else {
+          setTyping(false);
+          setMessages((prev) => [...prev, { id: `kate-${Date.now()}-${i}`, sender: "kate", content }]);
+        }
+      }, baseDelay + i * gap);
+    });
+    setTyping(true);
+    // Stop typing when last message lands
+    setTimeout(() => setTyping(false), baseDelay + (contents.length - 1) * gap);
+  }
 
-  /* ---- Plaid Link via CDN script ---- */
-  const openPlaidLink = useCallback(async () => {
-    if (!userId) return;
+  function addUserMessage(content: string) {
+    setMessages((prev) => [...prev, { id: `user-${Date.now()}`, sender: "user", content }]);
+  }
+
+  // ── Phase: Intro ──
+  useEffect(() => {
+    if (phase !== "intro") return;
+    const t1 = setTimeout(() => {
+      setMessages([{ id: "k1", sender: "kate", content: "Hey \u2014 I'm Kate. I help people get their healthcare together." }]);
+    }, 600);
+    const t2 = setTimeout(() => {
+      setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Here's what I've noticed: most people have five, six, maybe seven doctors. And if I asked you when you last saw each one..." }]);
+    }, 2000);
+    const t3 = setTimeout(() => {
+      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "...you'd probably have to guess." }]);
+      setTyping(false);
+    }, 3400);
+    setTyping(true);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [phase]);
+
+  // ── Phase handlers ──
+  function handleIntroResponse(value: string) {
+    if (value === "relatable") {
+      addUserMessage("Yeah, that's me");
+      setTimeout(() => {
+        addKateMessages([
+          "No judgment \u2014 that's literally everyone. The system isn't built for you to keep track.",
+          "But I am."
+        ]);
+        setTimeout(() => setPhase("value-props"), 2400);
+      }, 400);
+    } else {
+      addUserMessage("I'm actually pretty on top of it");
+      setTimeout(() => {
+        addKateMessages([
+          "Love that. But I bet even you have a provider or two that's slipped through the cracks.",
+          "Either way \u2014 I'm about to make your life easier."
+        ]);
+        setTimeout(() => setPhase("value-props"), 2400);
+      }, 400);
+    }
+  }
+
+  function handleValuePropsNext() {
+    addUserMessage("Let's do it");
+    setTimeout(() => {
+      addKateMessage("Quick question \u2014 is this just for you, or are you managing care for your people too?");
+      setTimeout(() => setPhase("who-for"), 1200);
+    }, 400);
+  }
+
+  function handleWhoFor(value: string) {
+    setCareFor(value);
+    if (value === "just-me") {
+      addUserMessage("Just me");
+      setFamilyMembers([]);
+      setTimeout(() => {
+        setPhase("discovery-method");
+        addKateMessage("Now for the fun part. I need to find your doctors. Pick whichever you're comfortable with \u2014 or do all three.");
+      }, 400);
+    } else {
+      addUserMessage("Me and my family");
+      setTimeout(() => {
+        addKateMessage("Got it. Who else are you keeping track of?");
+        setTimeout(() => setPhase("family-select"), 1200);
+      }, 400);
+    }
+  }
+
+  function handleFamilyDone() {
+    addUserMessage(`Me${familyMembers.length > 0 ? ", " + familyMembers.join(", ") : ""}`);
+    setTimeout(() => {
+      addKateMessages([
+        "I'll set up a separate hub for each person. Everyone's providers, appointments, and history \u2014 organized individually but managed by you.",
+        "Now for the fun part. I need to find your doctors. Pick whichever you're comfortable with \u2014 or do all three."
+      ]);
+      setTimeout(() => setPhase("discovery-method"), 2400);
+    }, 400);
+  }
+
+  function handleDiscoveryMethodDone() {
+    const selected: string[] = [];
+    if (connectBank) selected.push("bank scan");
+    if (connectCalendar) selected.push("calendar");
+    if (connectManual) selected.push("manual");
+    addUserMessage(selected.join(" + ") || "none");
+    setTimeout(() => {
+      addKateMessage("Last thing \u2014 let's set up your account so I can save everything.");
+      setTimeout(() => setPhase("account-create"), 1200);
+    }, 400);
+  }
+
+  // ── Account creation ──
+  async function handleCreateAccount() {
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6 || !consentGiven) return;
     setError(null);
+    setCreatingAccount(true);
 
     try {
-      // 1. get link token
+      const name = `${firstName.trim()} ${lastName.trim()}`;
+      const surveyStep3 = careFor === "just-me" ? ["Myself"] : ["Myself", ...familyMembers.map((m) => m === "partner" ? "My partner / spouse" : m === "children" ? "My child(ren)" : m === "parents" ? "My parent(s)" : "Someone else")];
+
+      const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
+      careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
+      if (familyMembers.includes("partner")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
+      if (familyMembers.includes("children")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
+      if (familyMembers.includes("parents")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
+
+      const signupRes = await apiFetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(), password, app_user_id: userId, name,
+          survey_answers: JSON.stringify({ step1: [], step2: [], step3: surveyStep3, step4: [] }),
+          care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
+          patient_info: {
+            date_of_birth: patientDob || undefined, gender: patientGender || undefined,
+            insurance_provider: patientInsurance.trim() || undefined,
+            insurance_member_id: patientMemberId.trim() || undefined,
+            callback_phone: patientPhone.trim() || undefined,
+          },
+          consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
+        }),
+      });
+      const data = await signupRes.json();
+      if (!signupRes.ok || !data?.ok) throw new Error(data?.error || "Failed to create account.");
+
+      const supabase = createClient();
+      await supabase.auth.signInWithPassword({ email: email.trim(), password });
+
+      addUserMessage("Account created");
+
+      if (connectBank) {
+        setTimeout(() => {
+          addKateMessage("Account created. Now let's connect your bank \u2014 this is where the magic happens.");
+          setTimeout(() => setPhase("plaid-connect"), 1200);
+        }, 400);
+      } else if (connectCalendar) {
+        setTimeout(() => {
+          addKateMessage("Account created. Let me scan your calendar for doctor appointments.");
+          setTimeout(() => {
+            // Trigger calendar scan
+            setPhase("discovery-reveal");
+            runCalendarDiscovery();
+          }, 1200);
+        }, 400);
+      } else {
+        setTimeout(() => {
+          addKateMessage("Account created. Let's head to your dashboard \u2014 you can add providers from there.");
+          setTimeout(() => setPhase("score-reveal"), 1200);
+        }, 400);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create account.");
+    } finally {
+      setCreatingAccount(false);
+    }
+  }
+
+  // ── Plaid ──
+  const openPlaidLink = useCallback(async () => {
+    try {
       const res = await apiFetch("/api/plaid/link-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ app_user_id: userId }),
       });
       const data = await res.json();
-      if (!res.ok || !data?.ok || !data?.link_token) {
-        throw new Error(data?.error || "Failed to create Plaid Link token.");
-      }
+      if (!res.ok || !data?.ok || !data?.link_token) throw new Error("Failed to create Plaid token.");
 
-      const linkToken = data.link_token;
-      window.localStorage.setItem("qbh_plaid_link_token", linkToken);
-      window.localStorage.setItem("qbh_user_id", userId);
-      try {
-        const { Preferences } = await import("@capacitor/preferences");
-        await Preferences.set({ key: "qbh_plaid_link_token", value: linkToken });
-        await Preferences.set({ key: "qbh_user_id", value: userId });
-      } catch {
-        // non-native
-      }
-
-      // 2. load Plaid Link script if needed
+      localStorage.setItem("qbh_plaid_link_token", data.link_token);
       await ensurePlaidScript();
 
-      // 3. open Plaid Link
-      const Plaid = (window as unknown as Record<string, unknown>)["Plaid"] as {
-        create: (config: Record<string, unknown>) => { open: () => void; destroy: () => void };
-      };
-
+      const Plaid = (window as any).Plaid;
       const handler = Plaid.create({
-        token: linkToken,
+        token: data.link_token,
         onSuccess: (publicToken: string) => {
-          setPlaidPublicToken(publicToken);
           setPlaidConnected(true);
-          // Auto-advance after brief delay so user sees "connected" state
-          setTimeout(() => {
-            setPlaidAutoAdvance(true);
-          }, 1500);
+          // Exchange token and start discovery
+          apiFetch("/api/plaid/exchange-and-discover", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ public_token: publicToken, app_user_id: userId }),
+          }).then(() => {
+            if (connectCalendar) {
+              // Also connect calendar before discovery
+              setTimeout(() => {
+                addKateMessage("Bank connected. Now let's grab your calendar too \u2014 I'll scan for doctor appointments.");
+                setTimeout(() => setPhase("calendar-connect"), 1200);
+              }, 500);
+            } else {
+              setTimeout(() => {
+                addKateMessage("Give me a sec \u2014 I'm pulling your records now.");
+                setPhase("discovery-reveal");
+                runBankDiscovery();
+              }, 500);
+            }
+          });
         },
-        onExit: (err: unknown) => {
-          if (err) {
-            setError("Plaid Link exited before completion.");
-          }
-        },
+        onExit: () => {},
       });
-
       plaidHandlerRef.current = handler;
       handler.open();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to open Plaid Link."
-      );
+      setError(err instanceof Error ? err.message : "Failed to open bank connection.");
     }
   }, [userId]);
 
-  // Calendar connect deferred to after auth — just a toggle at step 7
-
-  /* ---- Step 7 continue: create user ---- */
-  const handleStep7Continue = useCallback(async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6 || !allConsentsGiven) return;
-    setError(null);
-
-    try {
-      // Build care recipients from step 3 survey answers
-      const careFor = survey.step3;
-      const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
-      if (careFor.includes("Myself")) careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
-      if (careFor.includes("My partner / spouse")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
-      if (careFor.includes("My child(ren)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
-      if (careFor.includes("My parent(s)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
-      if (careFor.includes("Someone else")) careRecipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
-
-      // Create account via server API (auto-confirms email)
-      const signupRes = await apiFetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-          app_user_id: userId,
-          name: name.trim(),
-          survey_answers: JSON.stringify(survey),
-          care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
-          patient_info: {
-            date_of_birth: patientDob || undefined,
-            gender: patientGender || undefined,
-            insurance_provider: patientInsurance.trim() || undefined,
-            insurance_member_id: patientMemberId.trim() || undefined,
-            callback_phone: patientPhone.trim() || undefined,
-          },
-          consents: {
-            ai_calls: true,
-            phi_sharing: true,
-            terms: true,
-            consented_at: new Date().toISOString(),
-          },
-        }),
-      });
-      const signupData = await signupRes.json();
-      if (!signupRes.ok || !signupData?.ok) {
-        throw new Error(signupData?.error || "Failed to create account.");
-      }
-
-      // Sign in to create client session
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (signInError) throw signInError;
-
-      setStep(8);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create account.");
-    }
-  }, [firstName, lastName, email, password, userId, survey, allConsentsGiven]);
-
-  /* ---- Auto-advance after Plaid connects ---- */
-  useEffect(() => {
-    if (!plaidAutoAdvance) return;
-    if (firstName.trim() && lastName.trim() && email.trim() && password.length >= 6 && allConsentsGiven) {
-      handleStep7Continue();
-    }
-    setPlaidAutoAdvance(false);
-  }, [plaidAutoAdvance, handleStep7Continue, firstName, lastName, email, password, allConsentsGiven]);
-
-  /* ---- Interstitial auto-advance (step 65 → step 7) ---- */
-  useEffect(() => {
-    if (step !== 65) return;
-    const timer = setTimeout(() => {
-      setSlideDirection("forward");
-      setSlideVisible(false);
-      setTimeout(() => {
-        setStep(7);
-        setSlideVisible(true);
-      }, 300);
-    }, 5500);
-    return () => clearTimeout(timer);
-  }, [step]);
-
-  /* ---- Step 8: run discovery ---- */
-  useEffect(() => {
-    if (step !== 8) return;
-    let cancelled = false;
-
-    setLoadingDiscovery(true);
-    setAnalysisProgress(0);
-
-    // Animate progress items in sequence
-    // Animate 6 progress steps over ~90 seconds
-    const timer1 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(1); }, 3000);
-    const timer2 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(2); }, 10000);
-    const timer3 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(3); }, 25000);
-    const timer4 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(4); }, 45000);
-    const timer5 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(5); }, 65000);
-    const timer6 = window.setTimeout(() => { if (!cancelled) setAnalysisProgress(6); }, 85000);
-
-    async function runDiscovery() {
+  // ── Discovery ──
+  async function runBankDiscovery() {
+    // Poll for providers
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
       try {
-        const effectiveUserId =
-          userId || window.localStorage.getItem("qbh_user_id") || "";
-
-        console.log("[Onboarding] Starting discovery for:", effectiveUserId);
-        console.log("[Onboarding] plaidPublicToken:", plaidPublicToken ? "yes" : "no");
-        console.log("[Onboarding] plaidConnected:", plaidConnected);
-
-        // Exchange Plaid token if we have one (web flow)
-        if (plaidPublicToken) {
-          console.log("[Onboarding] Exchanging Plaid token...");
-          const exchangeRes = await apiFetch("/api/plaid/exchange-token", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              app_user_id: effectiveUserId,
-              public_token: plaidPublicToken,
-            }),
-          });
-          const exchangeData = await exchangeRes.json();
-          console.log("[Onboarding] Exchange result:", exchangeData);
-          if (!exchangeRes.ok || !exchangeData?.ok) {
-            throw new Error(
-              exchangeData?.error || "Failed to exchange Plaid token."
-            );
-          }
-        }
-
-        // Run discovery with retry logic (fresh Plaid connections often need time)
-        async function tryDiscovery(attempt: number): Promise<any> {
-          console.log(`[Onboarding] Running discovery (attempt ${attempt})...`);
-          const res = await apiFetch("/api/discovery/run", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ app_user_id: effectiveUserId }),
-          });
-          const data = await res.json();
-          console.log(`[Onboarding] Discovery attempt ${attempt}:`, JSON.stringify(data));
-
-          // Retry on PRODUCT_NOT_READY or 500 (up to 3 attempts)
-          if ((data.pending || !res.ok) && attempt < 3) {
-            const delay = attempt * 5000; // 5s, 10s
-            console.log(`[Onboarding] Retrying in ${delay / 1000}s...`);
-            await new Promise((r) => setTimeout(r, delay));
-            return tryDiscovery(attempt + 1);
-          }
-          return data;
-        }
-
-        const discData = await tryDiscovery(1);
-
-        // Small delay so animation feels natural
-        await new Promise((r) => setTimeout(r, 1200));
-
-        if (!cancelled) {
-          // Fetch review_needed providers
-          const pendingRes = await apiFetch(`/api/providers/pending?app_user_id=${encodeURIComponent(effectiveUserId)}`);
-          const pendingData = await pendingRes.json();
-          console.log("[Onboarding] Pending providers:", pendingData);
-
-          if (pendingRes.ok && pendingData?.providers?.length > 0) {
-            setPendingProviders(pendingData.providers);
-            // Track counts for celebration screen
-            const active = pendingData.providers.filter((p: { status: string }) => p.status === "active");
-            setApprovedCount(active.length);
-            setFollowUpCount(pendingData.providers.filter((p: { status: string }) => p.status === "review_needed").length);
-            setReviewingProviders(true);
-            setLoadingDiscovery(false);
-            return;
-          }
-
-          setLoadingDiscovery(false);
-          // Go to celebration screen instead of directly to dashboard
-          setStep(9);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          console.error("[Onboarding] Discovery failed:", err);
-          setError(err instanceof Error ? err.message : "Discovery failed");
-          setLoadingDiscovery(false);
-          // Don't auto-navigate — show the error
-        }
-      }
-    }
-
-    runDiscovery();
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer1);
-      window.clearTimeout(timer2);
-      window.clearTimeout(timer3);
-      window.clearTimeout(timer4);
-      window.clearTimeout(timer5);
-      window.clearTimeout(timer6);
-    };
-  }, [step, plaidPublicToken, plaidConnected, userId]);
-
-  /* ---- Rotating health facts on discovery screen ---- */
-  useEffect(() => {
-    if (step !== 8 || reviewingProviders) return;
-    const interval = window.setInterval(() => {
-      setHealthFactFading(true);
-      setTimeout(() => {
-        setHealthFactIndex((prev) => (prev + 1) % 23);
-        setHealthFactFading(false);
-      }, 400);
-    }, 5000);
-    return () => window.clearInterval(interval);
-  }, [step, reviewingProviders]);
-
-  /* ---- NPI search debounce ---- */
-  useEffect(() => {
-    if (!npiSearchQuery || npiSearchQuery.length < 2) {
-      setNpiSearchResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setNpiSearching(true);
-      try {
-        const res = await apiFetch(`/api/npi/search?q=${encodeURIComponent(npiSearchQuery)}`);
+        const res = await apiFetch("/api/dashboard/data");
         const data = await res.json();
-        if (data.ok) setNpiSearchResults(data.results || []);
+        if (data?.ok && data.snapshots?.length > 0) {
+          clearInterval(poll);
+          const providers = data.snapshots
+            .filter((s: any) => s.provider.provider_type !== "pharmacy")
+            .map((s: any) => ({
+              id: s.provider.id, name: s.provider.name,
+              visit_count: s.visitCount || 0, status: "active",
+              overdue: s.followUpNeeded && s.booking_state?.status !== "BOOKED",
+            }));
+          setDiscoveredProviders(providers);
+          startReveal(providers);
+        }
       } catch {}
-      finally { setNpiSearching(false); }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [npiSearchQuery]);
-
-  /* ---- Manual path: handle continue ---- */
-  const handleManualContinue = useCallback(async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6 || !allConsentsGiven) return;
-    setError(null);
-
-    try {
-      // Build care recipients from step 3
-      const careFor = survey.step3;
-      const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
-      if (careFor.includes("Myself")) careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
-      if (careFor.includes("My partner / spouse")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
-      if (careFor.includes("My child(ren)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
-      if (careFor.includes("My parent(s)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
-      if (careFor.includes("Someone else")) careRecipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
-
-      // Create account + add providers in one server call
-      const signupRes = await apiFetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-          app_user_id: userId,
-          name: name.trim(),
-          survey_answers: JSON.stringify(survey),
-          care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
-          manual_providers: manualProviders.map((p) => ({
-            name: p.name,
-            phone_number: p.phone,
-            specialty: p.specialty,
-            npi: p.npi,
-            care_recipients: p.careRecipients,
-          })),
-          consents: {
-            ai_calls: true,
-            phi_sharing: true,
-            terms: true,
-            consented_at: new Date().toISOString(),
-          },
-        }),
-      });
-      const signupData = await signupRes.json();
-      if (!signupRes.ok || !signupData?.ok) {
-        throw new Error(signupData?.error || "Failed to create account.");
+      if (attempts > 30) {
+        clearInterval(poll);
+        addKateMessage("I didn\u2019t find any healthcare co-pays in your recent transactions. That\u2019s okay \u2014 you might use a different bank, or your insurance covers everything. You can add providers manually from your dashboard.");
+        setTimeout(() => setPhase("score-reveal"), 1500);
       }
+    }, 3000);
+  }
 
-      // Sign in to create client session
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (signInError) throw signInError;
-
-      // Skip discovery, go straight to celebration
-      setApprovedCount(manualProviders.length);
-      setFollowUpCount(0);
-      setStep(9);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create account.");
+  async function runCalendarDiscovery() {
+    try {
+      await apiFetch("/api/calendar/scan", { method: "POST" });
+      const res = await apiFetch("/api/dashboard/data");
+      const data = await res.json();
+      if (data?.ok && data.snapshots?.length > 0) {
+        const providers = data.snapshots
+          .filter((s: any) => s.provider.provider_type !== "pharmacy")
+          .map((s: any) => ({
+            id: s.provider.id, name: s.provider.name,
+            visit_count: s.visitCount || 0, status: "active",
+            overdue: s.followUpNeeded && s.booking_state?.status !== "BOOKED",
+          }));
+        setDiscoveredProviders(providers);
+        startReveal(providers);
+      } else {
+        addKateMessage("I didn\u2019t find any doctor appointments on your calendar. No worries \u2014 you can add providers from your dashboard.");
+        setTimeout(() => setPhase("score-reveal"), 1500);
+      }
+    } catch {
+      addKateMessage("Couldn\u2019t scan your calendar right now. No worries \u2014 you can connect it later from settings.");
+      setTimeout(() => setPhase("score-reveal"), 1500);
     }
-  }, [firstName, lastName, email, password, userId, survey, manualProviders, allConsentsGiven]);
+  }
 
-  /* ---- render per step ---- */
+  function startReveal(providers: DiscoveredProvider[]) {
+    setRevealIndex(0);
+    setRevealDone(false);
+    providers.forEach((_, i) => {
+      setTimeout(() => {
+        setRevealIndex(i + 1);
+        if (i === providers.length - 1) {
+          setTimeout(() => {
+            const overdueCount = providers.filter((p) => p.overdue).length;
+            const onTrack = providers.length - overdueCount;
+            addKateMessage(`Found ${providers.length} provider${providers.length !== 1 ? "s" : ""}. ${onTrack} on track, ${overdueCount} might be overdue.`);
+            setRevealDone(true);
+            setTimeout(() => setPhase("score-reveal"), 1500);
+          }, 800);
+        }
+      }, 1500 * (i + 1));
+    });
+  }
 
-  // Step 0: Enhanced Splash — elevator pitch first, Kate second
-  if (step === 0) {
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <div className="mt-8">
-          <h1 className="text-3xl font-light text-[#1A1D2E] leading-tight cascade-item" style={{ animationDelay: "0s" }}>
-            Let&apos;s get your health organized.
-          </h1>
-          <p className="mt-3 text-base text-[#7A7F8A] cascade-item" style={{ animationDelay: "0.15s" }}>
-            In a few minutes, we&apos;ll find your providers, see what&apos;s overdue, and set you up with a care coordinator who handles the rest.
-          </p>
+  // ── Score ──
+  useEffect(() => {
+    if (phase !== "score-reveal") return;
+    apiFetch("/api/health-score")
+      .then((r) => r.json())
+      .then((d) => { if (d.ok) setScore(d.score); })
+      .catch(() => setScore(0));
+  }, [phase]);
+
+  // ── Insurance autocomplete ──
+  const KNOWN_INSURANCE = ["Aetna","Anthem","Anthem Blue Cross Blue Shield","Blue Cross Blue Shield","Cigna","ConnectiCare","EmblemHealth","Empire BCBS","Excellus BCBS","Florida Blue","Harvard Pilgrim","Highmark BCBS","Horizon BCBS","Humana","Independence Blue Cross","Kaiser Permanente","Medicaid","Medicare","Molina Healthcare","Oscar Health","Oxford","Premera Blue Cross","TRICARE","UnitedHealthcare","WellCare"];
+  const filteredInsurance = patientInsurance.length >= 2
+    ? KNOWN_INSURANCE.filter((i) => i.toLowerCase().includes(patientInsurance.toLowerCase()))
+    : [];
+
+  // ── Password checks ──
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  const isUnder18 = (() => {
+    if (!patientDob) return false;
+    const dob = new Date(patientDob + "T00:00:00");
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+    return age < 18;
+  })();
+  const canCreate = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && consentGiven && !isUnder18 && !creatingAccount;
+
+  // ── Render ──
+  return (
+    <div className="min-h-screen relative" style={{ background: BG }}>
+      {/* Greenhouse grid */}
+      <div className="fixed inset-0 pointer-events-none" style={{
+        opacity: theme.gridOpacity,
+        backgroundImage: `linear-gradient(${theme.gridTeal} 1px, transparent 1px), linear-gradient(90deg, ${theme.gridGold} 1px, transparent 1px)`,
+        backgroundSize: theme.gridSize,
+      }} />
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out both; }
+      `}</style>
+
+      {/* Header */}
+      <div className="sticky top-0 z-10 backdrop-blur-md border-b px-6 py-3" style={{ background: "rgba(205,219,214,0.8)", borderColor: theme.glassBorder }}>
+        <div className="mx-auto max-w-lg flex items-center gap-2">
+          <Image src="/kate-avatar.png" alt="Kate" width={28} height={28} className="rounded-full" />
+          <span className="text-sm font-semibold text-[#1A1D2E]">Kate</span>
+          <span className="text-[10px] text-[#5C6B5C] font-medium ml-1">Care Coordinator</span>
         </div>
+      </div>
 
-        {/* What QB will do — animated checklist, not clickable */}
-        <style jsx global>{`
-          @keyframes checkIn {
-            from { opacity: 0; transform: translateX(-8px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes drawCheck {
-            from { stroke-dashoffset: 20; }
-            to { stroke-dashoffset: 0; }
-          }
-        `}</style>
-        <div className="mt-8 space-y-4">
-          {[
-            { label: "Find your providers", detail: "We scan your co-pays to discover every doctor you've seen — or add them yourself", delay: "0.3s" },
-            { label: "Book appointments", detail: "Kate calls offices and schedules for you — no hold music, no phone trees", delay: "0.7s" },
-            { label: "See the full picture", detail: "Connect the dots between your providers, track what's overdue, and stay organized", delay: "1.1s" },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center gap-4"
-              style={{ animation: `checkIn 0.5s ease-out ${item.delay} both` }}
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/10">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M3 8.5L6.5 12L13 4"
-                    stroke="#5C6B5C"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeDasharray="20"
-                    style={{ animation: `drawCheck 0.4s ease-out ${item.delay} both` }}
-                  />
-                </svg>
-              </div>
+      {/* Chat area */}
+      <div className="mx-auto max-w-lg px-6 py-6 space-y-4 pb-32">
+        {/* Rendered messages */}
+        {messages.map((msg) => (
+          msg.sender === "kate" ? (
+            <KateBubble key={msg.id}>{msg.content}</KateBubble>
+          ) : msg.sender === "user" ? (
+            <UserBubble key={msg.id}>{msg.content}</UserBubble>
+          ) : null
+        ))}
+
+        {/* Typing indicator */}
+        {typing && <KateBubble typing>{null}</KateBubble>}
+
+        {/* ── Phase-specific interactive content ── */}
+
+        {/* Intro: response buttons */}
+        {phase === "intro" && !typing && messages.length >= 3 && (
+          <OptionButtons
+            options={[
+              { label: "Yeah, that's me", value: "relatable" },
+              { label: "I'm actually pretty on top of it", value: "organized" },
+            ]}
+            onSelect={(v) => { setPhase("intro-responded"); handleIntroResponse(v); }}
+          />
+        )}
+
+        {/* Value Props */}
+        {phase === "value-props" && !typing && (
+          <div className="space-y-3 animate-fadeIn">
+            <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
+              <Search size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
               <div>
-                <div className="text-sm font-medium text-[#1A1D2E]">{item.label}</div>
-                <div className="text-xs text-[#7A7F8A]">{item.detail}</div>
+                <div className="text-sm font-semibold text-[#1A1D2E]">Find every doctor you've seen</div>
+                <p className="mt-1 text-xs text-[#7A7F8A]">I scan your co-pays and pull your complete provider history. No typing, no remembering.</p>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Kate intro — below the pitch */}
-        <div className="mt-8 float-item" style={{ animationDelay: "1.5s" }}>
-          <CharacterWithBubble pose="waving">
-            <TypeWriter text="Hey! I'm Kate, your care coordinator. A few quick questions and I'll get everything set up for you." delay={1600} speed={20} />
-          </CharacterWithBubble>
-        </div>
-
-        <div className="sticky bottom-0 z-20 pb-4">
-          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
-          <GoldButton onClick={() => goToStep(1)}>Get Started &rarr;</GoldButton>
-        </div>
-      </Shell>
-    );
-  }
-
-  // Step 1: What do you want help staying on top of?
-  if (step === 1) {
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <button type="button" onClick={() => goToStep(0)} className="mb-4 text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition">
-          &larr; Previous
-        </button>
-        <StepCounter current={SURVEY_STEP_MAP[1]} total={4} />
-        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          What do you want help staying on top of?
-        </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">Select as many as you&apos;d like</p>
-        <div className="mt-6 flex flex-col gap-3">
-          {STEP1_OPTIONS.map((opt, optIdx) => (
-            <OptionRow
-              key={opt}
-              index={optIdx}
-              label={opt}
-              selected={survey.step1.includes(opt)}
-              onClick={() => toggleMulti("step1", opt)}
-              multi
-            />
-          ))}
-        </div>
-        <div className="sticky bottom-0 z-20 pb-4">
-          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
-          <GoldButton
-            onClick={() => goToStep(3)}
-            disabled={survey.step1.length === 0}
-          >
-            Continue &rarr;
-          </GoldButton>
-        </div>
-      </Shell>
-    );
-  }
-
-  // Step 2: Skipped (social proof removed). Step 1 advances directly to step 3.
-  // Safety fallback if step 2 is reached via any path:
-  // (Note: useEffect in SocialProofScreen handled this before; now we auto-advance with 0ms delay)
-  if (step === 2) {
-    return <SocialProofScreen onContinue={() => setStep(3)} />;
-  }
-
-  // Step 3: What's hardest to manage today? (was step 2)
-  if (step === 3) {
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <button type="button" onClick={() => goToStep(1)} className="mb-4 text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition">
-          &larr; Previous
-        </button>
-        <StepCounter current={SURVEY_STEP_MAP[3]} total={4} />
-        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          What&apos;s hardest to manage today?
-        </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">This helps Kate, your care coordinator, prioritize where to jump in first</p>
-        <div className="mt-6 flex flex-col gap-3">
-          {STEP2_OPTIONS.map((opt, optIdx) => (
-            <OptionRow
-              key={opt}
-              index={optIdx}
-              label={opt}
-              selected={survey.step2.includes(opt)}
-              onClick={() => toggleMulti("step2", opt)}
-              multi
-            />
-          ))}
-        </div>
-        <div className="sticky bottom-0 z-20 pb-4">
-          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
-          <GoldButton
-            onClick={() => goToStep(4)}
-            disabled={survey.step2.length === 0}
-          >
-            Continue &rarr;
-          </GoldButton>
-        </div>
-      </Shell>
-    );
-  }
-
-  // Step 4: Who are you managing care for? (was step 3)
-  if (step === 4) {
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <button type="button" onClick={() => goToStep(3)} className="mb-4 text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition">
-          &larr; Previous
-        </button>
-        <StepCounter current={SURVEY_STEP_MAP[4]} total={4} />
-        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          Who are you managing care for?
-        </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">Choose as many as you&apos;d like — Your care coordinator can organize by person</p>
-        <div className="mt-6 flex flex-col gap-3">
-          {STEP3_OPTIONS.map((opt, optIdx) => (
-            <OptionRow
-              key={opt}
-              index={optIdx}
-              label={opt}
-              selected={survey.step3.includes(opt)}
-              onClick={() => toggleMulti("step3", opt)}
-              multi
-            />
-          ))}
-        </div>
-        <div className="sticky bottom-0 z-20 pb-4">
-          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
-          <GoldButton
-            onClick={() => goToStep(5)}
-            disabled={survey.step3.length === 0}
-          >
-            Continue &rarr;
-          </GoldButton>
-        </div>
-      </Shell>
-    );
-  }
-
-  // Step 5: What would you want QB to handle? (was step 4)
-  if (step === 5) {
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <button type="button" onClick={() => goToStep(4)} className="mb-4 text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition">
-          &larr; Previous
-        </button>
-        <StepCounter current={SURVEY_STEP_MAP[5]} total={4} />
-        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          What health admin would you like off of your plate?
-        </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">Select as many as you&apos;d like</p>
-        <div className="mt-6 flex flex-col gap-3">
-          {STEP4_OPTIONS.map((opt, optIdx) => (
-            <OptionRow
-              key={opt}
-              index={optIdx}
-              label={opt}
-              selected={survey.step4.includes(opt)}
-              onClick={() => toggleMulti("step4", opt)}
-              multi
-            />
-          ))}
-        </div>
-        <div className="sticky bottom-0 z-20 pb-4">
-          <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#E8EFF5] to-transparent" />
-          <GoldButton
-            onClick={() => goToStep(6)}
-            disabled={survey.step4.length === 0}
-          >
-            Continue &rarr;
-          </GoldButton>
-        </div>
-      </Shell>
-    );
-  }
-
-  // Step 6: NEW — "Here's what happens next" explainer
-  if (step === 6) {
-    const connectionOptions = [
-      {
-        id: "bank",
-        label: "Connect Your Bank",
-        desc: "We\u2019ll scan your co-pays to find every doctor you\u2019ve seen. Powered by Plaid — bank-level encryption, read-only, never stores credentials.",
-        selected: connectBank,
-      },
-      {
-        id: "calendar",
-        label: "Connect Your Calendar",
-        desc: "We\u2019ll scan for past and future doctor appointments. Kate also checks your schedule before booking to avoid conflicts.",
-        selected: connectCalendar,
-      },
-      {
-        id: "manual",
-        label: "Add Providers Manually",
-        desc: "Search for your doctors by name and add them yourself.",
-        selected: connectManual,
-      },
-    ];
-
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <div className="mt-4">
-          <CharacterWithBubble pose="pointing">
-            <TypeWriter text="How would you like to get started? Choose any or all." delay={300} speed={20} />
-          </CharacterWithBubble>
-        </div>
-
-        <div className="mt-8 flex flex-col gap-3">
-          {connectionOptions.map((opt, idx) => (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => {
-                if (opt.id === "bank") setConnectBank(!connectBank);
-                if (opt.id === "calendar") setConnectCalendar(!connectCalendar);
-                if (opt.id === "manual") setConnectManual(!connectManual);
-              }}
-              className="flex items-center gap-4 rounded-xl px-5 py-4 text-left text-sm transition shadow-sm cascade-item"
-              style={{
-                animationDelay: `${idx * 0.15}s`,
-                backgroundColor: opt.selected ? "#5C6B5C10" : CARD_BG,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderColor: opt.selected ? ACCENT : CARD_BORDER,
-              }}
-            >
-              <span
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
-                style={{
-                  borderColor: opt.selected ? ACCENT : "#B0B4BC",
-                  backgroundColor: opt.selected ? ACCENT : "transparent",
-                }}
-              >
-                {opt.selected && (
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 8.5L6.5 12L13 4" />
-                  </svg>
-                )}
-              </span>
+            <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
+              <Phone size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
               <div>
-                <div className="font-medium text-[#1A1D2E]">{opt.label}</div>
-                <div className="text-xs text-[#7A7F8A] mt-0.5">{opt.desc}</div>
+                <div className="text-sm font-semibold text-[#1A1D2E]">Book appointments for you</div>
+                <p className="mt-1 text-xs text-[#7A7F8A]">I call the office, navigate the phone tree, and schedule. You don't pick up the phone.</p>
               </div>
-            </button>
-          ))}
-        </div>
-
-        <GoldButton
-          onClick={() => {
-            if (connectCalendar) {
-              setCalendarPending(true);
-            }
-            goToStep(65);
-          }}
-          disabled={!connectBank && !connectCalendar && !connectManual}
-        >
-          Continue &rarr;
-        </GoldButton>
-
-        {!connectBank && !connectCalendar && !connectManual && (
-          <div className="mt-3 text-center text-xs text-[#B0B4BC]">
-            Select at least one option to continue
+            </div>
+            <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
+              <Brain size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
+              <div>
+                <div className="text-sm font-semibold text-[#1A1D2E]">Connect the dots</div>
+                <p className="mt-1 text-xs text-[#7A7F8A]">I track what's overdue, prep you before visits, and follow up after. Your health — organized.</p>
+              </div>
+            </div>
+            <OptionButtons options={[{ label: "Let's do it", value: "go" }]} onSelect={handleValuePropsNext} />
           </div>
         )}
-      </Shell>
-    );
-  }
 
-  // Interstitial: Kate intro before account creation
-  if (step === 65) {
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <style jsx global>{`
-          @keyframes fadeScale {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          @keyframes floatUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <div style={{ animation: "fadeScale 0.6s ease-out both" }}>
-            <img
-              src="/kate-avatar.png"
-              alt="Kate"
-              className="mx-auto h-24 w-24 rounded-full shadow-lg"
-            />
-          </div>
-          <h1
-            className="mt-8 text-2xl font-light text-[#1A1D2E] leading-relaxed"
-            style={{ animation: "floatUp 0.5s ease-out 0.4s both" }}
-          >
-            Next up &mdash; a little about you.
-          </h1>
-          <p
-            className="mt-3 max-w-sm text-base text-[#7A7F8A]"
-            style={{ animation: "floatUp 0.5s ease-out 0.7s both" }}
-          >
-            This helps Kate book appointments faster. Don&apos;t have everything? No worries &mdash; you can always add it later.
-          </p>
-        </div>
-      </Shell>
-    );
-  }
-
-  // Step 7: Account creation (universal — all paths)
-  if (step === 7) {
-    const isUnder18 = (() => {
-      if (!patientDob) return false;
-      const dob = new Date(patientDob + "T00:00:00");
-      const today = new Date();
-      let age = today.getFullYear() - dob.getFullYear();
-      const m = today.getMonth() - dob.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
-      return age < 18;
-    })();
-    const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && allConsentsGiven && !isUnder18;
-    const kateText = "Almost there! Create your account and we'll find your providers and get everything set up.";
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <div className="mb-6">
-          <CharacterWithBubble pose="pointing">
-            <TypeWriter text={kateText} delay={300} speed={18} />
-          </CharacterWithBubble>
-        </div>
-        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          Create Your Account
-        </h1>
-
-        <div className="mt-6 flex flex-col gap-4">
-          <div>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="First name"
-                className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-              />
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Last name"
-                className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-              />
-            </div>
-            <WhyWeAsk text="Kate uses your full name when calling offices on your behalf" />
-          </div>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full rounded-xl border px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-            style={{
-              backgroundColor: CARD_BG,
-              borderColor: CARD_BORDER,
-            }}
+        {/* Who for */}
+        {phase === "who-for" && !typing && (
+          <OptionButtons
+            options={[
+              { label: "Just me", value: "just-me" },
+              { label: "Me and my family", value: "family" },
+            ]}
+            onSelect={handleWhoFor}
           />
-          <div>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password"
-                minLength={6}
-                className="w-full rounded-xl border px-4 py-3 pr-12 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1"
-                style={{
-                  backgroundColor: CARD_BG,
-                  borderColor: CARD_BORDER,
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A7F8A] hover:text-[#1A1D2E] transition"
-                title={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
-              </button>
-            </div>
-            {password.length > 0 && (() => {
-              const hasUpper = /[A-Z]/.test(password);
-              const hasLower = /[a-z]/.test(password);
-              const hasNumber = /[0-9]/.test(password);
-              const hasSpecial = /[^A-Za-z0-9]/.test(password);
-              const score = (password.length >= 8 ? 1 : 0) + (hasUpper && hasLower ? 1 : 0) + (hasNumber ? 1 : 0) + (hasSpecial ? 1 : 0);
-              const strength = score <= 1 ? { label: "Weak", color: "#E04030", width: "33%" } : score <= 2 ? { label: "Medium", color: "#B8860B", width: "66%" } : { label: "Strong", color: "#22C55E", width: "100%" };
-              return (
-                <div className="mt-2">
-                  <div className="h-1.5 rounded-full bg-[#EBEDF0] overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-300" style={{ width: strength.width, backgroundColor: strength.color }} />
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]">
-                    <span style={{ color: password.length >= 8 ? "#22C55E" : "#B0B4BC" }}>{password.length >= 8 ? "✓" : "○"} 8+ characters</span>
-                    <span style={{ color: hasUpper && hasLower ? "#22C55E" : "#B0B4BC" }}>{hasUpper && hasLower ? "✓" : "○"} Upper & lowercase</span>
-                    <span style={{ color: hasNumber ? "#22C55E" : "#B0B4BC" }}>{hasNumber ? "✓" : "○"} Number</span>
-                    <span style={{ color: hasSpecial ? "#22C55E" : "#B0B4BC" }}>{hasSpecial ? "✓" : "○"} Special character</span>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
+        )}
 
-        {/* Additional info — helps Kate book appointments */}
-        <div className="mt-6">
-          <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">Your Info</div>
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Date of Birth</label>
-                <input
-                  type="date"
-                  value={patientDob}
-                  onChange={(e) => setPatientDob(e.target.value)}
-                  className="w-full rounded-xl border px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                  style={{ backgroundColor: CARD_BG, borderColor: isUnder18 ? "#E53E3E" : CARD_BORDER }}
-                />
-                {isUnder18 && (
-                  <p className="mt-1 text-[10px] text-red-500">You must be 18 or older to use Quarterback Health.</p>
-                )}
+        {/* Family select */}
+        {phase === "family-select" && !typing && (
+          <div className="space-y-2 animate-fadeIn">
+            {[
+              { label: "My partner/spouse", value: "partner" },
+              { label: "My kid(s)", value: "children" },
+              { label: "My parent(s)", value: "parents" },
+              { label: "Someone else", value: "other" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setFamilyMembers((prev) => prev.includes(opt.value) ? prev.filter((v) => v !== opt.value) : [...prev, opt.value])}
+                className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
+                  familyMembers.includes(opt.value) ? "border-[#5C6B5C] bg-[#5C6B5C]/5 text-[#1A1D2E]" : "border-[#EBEDF0] bg-white text-[#7A7F8A]"
+                }`}
+              >
+                {familyMembers.includes(opt.value) ? "✓ " : ""}{opt.label}
+              </button>
+            ))}
+            <button
+              onClick={handleFamilyDone}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white mt-2"
+              style={{ backgroundColor: ACCENT }}
+            >
+              That's everyone
+            </button>
+          </div>
+        )}
+
+        {/* Discovery method */}
+        {phase === "discovery-method" && !typing && (
+          <div className="space-y-3 animate-fadeIn">
+            <ToggleCard
+              icon={Building2}
+              title="Scan your bank"
+              description="Your co-pays are a breadcrumb trail to every doctor you've seen. Powered by Plaid — bank-level encryption, read-only, never stores credentials."
+              selected={connectBank}
+              onToggle={() => setConnectBank(!connectBank)}
+            />
+            <ToggleCard
+              icon={Calendar}
+              title="Scan your calendar"
+              description="I'll look through your Google or Outlook calendar for past and future doctor appointments, and add them to your timeline."
+              selected={connectCalendar}
+              onToggle={() => setConnectCalendar(!connectCalendar)}
+            />
+            <ToggleCard
+              icon={Search}
+              title="I'll add them myself"
+              description="Know your doctors? You can search by name and add them one by one from your dashboard."
+              selected={connectManual}
+              onToggle={() => setConnectManual(!connectManual)}
+            />
+            {(connectBank || connectCalendar || connectManual) && (
+              <button
+                onClick={handleDiscoveryMethodDone}
+                className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                style={{ backgroundColor: ACCENT }}
+              >
+                Let's go
+              </button>
+            )}
+            {!connectBank && !connectCalendar && !connectManual && (
+              <p className="text-center text-xs text-[#B0B4BC]">Pick at least one to continue</p>
+            )}
+          </div>
+        )}
+
+        {/* Account creation */}
+        {phase === "account-create" && !typing && (
+          <div className="animate-fadeIn rounded-2xl backdrop-blur-sm p-5 space-y-3" style={{ background: theme.glass, border: `1px solid ${theme.glassBorder}`, boxShadow: theme.cardShadow }}>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">First name</label>
+                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
               </div>
-              <div className="flex-1">
+              <div>
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Last name</label>
+                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Password</label>
+              <div className="relative">
+                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] pr-10 focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B0B4BC]">
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {password.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]">
+                  <span style={{ color: password.length >= 8 ? "#22C55E" : "#B0B4BC" }}>{password.length >= 8 ? "✓" : "○"} 8+ characters</span>
+                  <span style={{ color: hasUpper && hasLower ? "#22C55E" : "#B0B4BC" }}>{hasUpper && hasLower ? "✓" : "○"} Upper & lower</span>
+                  <span style={{ color: hasNumber ? "#22C55E" : "#B0B4BC" }}>{hasNumber ? "✓" : "○"} Number</span>
+                  <span style={{ color: hasSpecial ? "#22C55E" : "#B0B4BC" }}>{hasSpecial ? "✓" : "○"} Special char</span>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Date of birth</label>
+                <input type="date" value={patientDob} onChange={(e) => setPatientDob(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" style={isUnder18 ? { borderColor: "#E53E3E" } : {}} />
+                {isUnder18 && <p className="mt-1 text-[10px] text-red-500">Must be 18 or older.</p>}
+              </div>
+              <div>
                 <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Sex</label>
                 <div className="flex gap-1.5">
-                  {[{ value: "male", label: "M" }, { value: "female", label: "F" }, { value: "other", label: "—" }].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setPatientGender(opt.value)}
-                      className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition ${
-                        patientGender === opt.value ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
-                      }`}
-                    >
-                      {opt.label}
+                  {[{ v: "male", l: "Male" }, { v: "female", l: "Female" }, { v: "other", l: "Prefer not to say" }].map((o) => (
+                    <button key={o.v} type="button" onClick={() => setPatientGender(o.v)}
+                      className={`flex-1 rounded-xl py-2.5 text-[10px] font-medium transition ${patientGender === o.v ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"}`}>
+                      {o.l}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
-            <div>
-              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Insurance Provider</label>
-              <input
-                type="text"
-                value={patientInsurance}
-                onChange={(e) => setPatientInsurance(e.target.value)}
-                placeholder="Start typing your insurance..."
-                autoComplete="off"
-                className="w-full rounded-xl border px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-              />
-              {patientInsurance.trim().length >= 2 && (() => {
-                const KNOWN = ["Aetna","Anthem","Anthem Blue Cross Blue Shield","Blue Cross Blue Shield","Blue Shield of California","Cigna","ConnectiCare","EmblemHealth","Empire BCBS","Excellus BCBS","Florida Blue","Harvard Pilgrim","Highmark BCBS","Horizon BCBS","Humana","Independence Blue Cross","Kaiser Permanente","Medicaid","Medicare","Molina Healthcare","Oscar Health","Oxford","Premera Blue Cross","Priority Health","TRICARE","UnitedHealthcare","UnitedHealthcare BCBS","WellCare","Ambetter","Centene","CareFirst BCBS","Regence BCBS"];
-                const matches = KNOWN.filter((ins) => ins.toLowerCase().includes(patientInsurance.trim().toLowerCase()));
-                if (matches.length === 0 || matches.some((m) => m.toLowerCase() === patientInsurance.trim().toLowerCase())) return null;
-                return (
-                  <div className="mt-1 max-h-36 overflow-y-auto rounded-lg border border-[#EBEDF0] bg-white divide-y divide-[#EBEDF0]">
-                    {matches.slice(0, 5).map((ins) => (
-                      <button key={ins} type="button" onClick={() => setPatientInsurance(ins)} className="w-full px-3 py-2 text-left text-sm text-[#1A1D2E] hover:bg-[#F8F9FA] transition">
-                        {ins}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })()}
+            <div className="relative">
+              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Insurance provider</label>
+              <input type="text" value={patientInsurance} onChange={(e) => setPatientInsurance(e.target.value)} placeholder="Start typing..." className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+              {filteredInsurance.length > 0 && patientInsurance.length >= 2 && !KNOWN_INSURANCE.includes(patientInsurance) && (
+                <div className="absolute z-10 mt-1 w-full rounded-xl border border-[#EBEDF0] bg-white shadow-lg max-h-40 overflow-y-auto">
+                  {filteredInsurance.map((ins) => (
+                    <button key={ins} onClick={() => setPatientInsurance(ins)} className="w-full px-3 py-2 text-left text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]">{ins}</button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Member / Policy ID</label>
-                <input
-                  type="text"
-                  value={patientMemberId}
-                  onChange={(e) => setPatientMemberId(e.target.value)}
-                  placeholder="Found on your insurance card"
-                  className="w-full rounded-xl border px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-                />
+            <div>
+              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Phone number</label>
+              <input type="tel" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} placeholder="(555) 123-4567" className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+            </div>
+            <label className="flex items-start gap-2 mt-2">
+              <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-0.5 h-4 w-4 rounded accent-[#5C6B5C]" />
+              <span className="text-[10px] text-[#7A7F8A] leading-relaxed">
+                I agree to the <a href="/terms" target="_blank" className="underline text-[#5C6B5C]">Terms</a> and <a href="/privacy" target="_blank" className="underline text-[#5C6B5C]">Privacy Policy</a>, and authorize Quarterback Health to call offices and use my info to coordinate my care.
+              </span>
+            </label>
+            {error && (
+              <div className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-600 ring-1 ring-red-200">
+                {error}
+                {error.toLowerCase().includes("already") && (
+                  <a href="/login" className="mt-1 block font-semibold text-[#5C6B5C] underline">Sign in instead</a>
+                )}
               </div>
-              <div className="flex-1">
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Phone Number</label>
-                <input
-                  type="tel"
-                  value={patientPhone}
-                  onChange={(e) => setPatientPhone(e.target.value)}
-                  placeholder="(555) 123-4567"
-                  className="w-full rounded-xl border px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
-                  style={{ backgroundColor: CARD_BG, borderColor: CARD_BORDER }}
-                />
-              </div>
+            )}
+            <button
+              onClick={handleCreateAccount}
+              disabled={!canCreate}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50"
+              style={{ backgroundColor: ACCENT }}
+            >
+              {creatingAccount ? "Creating..." : "Create my account"}
+            </button>
+          </div>
+        )}
+
+        {/* Plaid connect */}
+        {phase === "plaid-connect" && !typing && (
+          <div className="animate-fadeIn">
+            <button
+              onClick={openPlaidLink}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: ACCENT }}
+            >
+              Connect your bank
+            </button>
+            <div className="mt-2 flex items-center justify-center gap-3 text-[10px] text-[#B0B4BC]">
+              <ShieldCheck size={12} /> Encrypted &middot; Read-only &middot; Powered by Plaid
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Consent — single checkbox */}
-        <div className="mt-5">
-          <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-[#EBEDF0] bg-white p-3">
-            <input
-              type="checkbox"
-              checked={consentCalls && consentPhi && consentTerms}
-              onChange={(e) => {
-                setConsentCalls(e.target.checked);
-                setConsentPhi(e.target.checked);
-                setConsentTerms(e.target.checked);
+        {/* Calendar connect */}
+        {phase === "calendar-connect" && !typing && (
+          <div className="animate-fadeIn space-y-3">
+            <button
+              onClick={async () => {
+                try {
+                  const res = await apiFetch("/api/google-calendar/connect", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ app_user_id: userId }),
+                  });
+                  const data = await res.json();
+                  if (data?.ok && data?.authorize_url) {
+                    window.location.href = data.authorize_url;
+                  }
+                } catch {}
               }}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#EBEDF0] accent-[#5C6B5C]"
-            />
-            <span className="text-xs text-[#7A7F8A] leading-relaxed">
-              I agree to the{" "}
-              <a href="/terms" target="_blank" className="underline underline-offset-2 text-[#5C6B5C]">Terms of Service</a>
-              {" "}and{" "}
-              <a href="/privacy" target="_blank" className="underline underline-offset-2 text-[#5C6B5C]">Privacy Policy</a>
-              , and authorize Quarterback Health to call offices and use my info to organize my care
-            </span>
-          </label>
-        </div>
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: ACCENT }}
+            >
+              Connect Google Calendar
+            </button>
+            <button
+              onClick={() => {
+                addKateMessage("No problem. Let me pull your bank records now.");
+                setTimeout(() => {
+                  setPhase("discovery-reveal");
+                  runBankDiscovery();
+                }, 1000);
+              }}
+              className="w-full text-center text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
+            >
+              Skip for now
+            </button>
+          </div>
+        )}
 
-        {error && (
-          <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
-            {error}
-            {error.toLowerCase().includes("already") && (
-              <a href="/login" className="mt-1 block text-xs font-semibold text-[#5C6B5C] underline underline-offset-2">
-                Sign in instead &rarr;
-              </a>
+        {/* Discovery reveal */}
+        {phase === "discovery-reveal" && (
+          <div className="space-y-2 animate-fadeIn">
+            {discoveredProviders.slice(0, revealIndex).map((p) => (
+              <div key={p.id} className="flex items-center gap-3 rounded-xl bg-white border border-[#EBEDF0] shadow-sm px-4 py-3 animate-fadeIn">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.overdue ? "#E04030" : "#5C6B5C" }} />
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-[#1A1D2E]">{p.name}</div>
+                  {p.overdue && <span className="text-[10px] text-[#E04030]">might be overdue</span>}
+                  {!p.overdue && <span className="text-[10px] text-[#5C6B5C]">on track</span>}
+                </div>
+              </div>
+            ))}
+            {!revealDone && revealIndex < discoveredProviders.length && (
+              <div className="flex items-center gap-2 text-xs text-[#B0B4BC]">
+                <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-pulse" /> Scanning...
+              </div>
             )}
           </div>
         )}
 
-        {connectBank ? (
-          plaidConnected ? (
-            <GoldButton id="step7-continue-btn" onClick={handleStep7Continue} disabled={!canContinue}>
-              Hold Tight &mdash; Setting Things Up...
-            </GoldButton>
-          ) : canContinue ? (
-            <GoldButton onClick={async () => {
-              // Create account first, then open Plaid
-              setError(null);
-              try {
-                const careFor = survey.step3;
-                const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
-                if (careFor.includes("Myself")) careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
-                if (careFor.includes("My partner / spouse")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
-                if (careFor.includes("My child(ren)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
-                if (careFor.includes("My parent(s)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
-                if (careFor.includes("Someone else")) careRecipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
-
-                const signupRes = await apiFetch("/api/auth/signup", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    email: email.trim(), password, app_user_id: userId, name: name.trim(),
-                    survey_answers: JSON.stringify(survey),
-                    care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
-                    patient_info: {
-                      date_of_birth: patientDob || undefined, gender: patientGender || undefined,
-                      insurance_provider: patientInsurance.trim() || undefined,
-                      insurance_member_id: patientMemberId.trim() || undefined,
-                      callback_phone: patientPhone.trim() || undefined,
-                    },
-                    consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
-                  }),
-                });
-                const signupData = await signupRes.json();
-                if (!signupRes.ok || !signupData?.ok) throw new Error(signupData?.error || "Failed to create account.");
-
-                const supabase = createClient();
-                await supabase.auth.signInWithPassword({ email: email.trim(), password });
-
-                // Now open Plaid
-                openPlaidLink();
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to create account.");
-              }
-            }}>
-              Create Account &rarr;
-            </GoldButton>
-          ) : (
-            <div className="mt-8 text-center text-sm text-[#7A7F8A]">
-              Fill in your info above to continue
-            </div>
-          )
-        ) : canContinue ? (
-          <GoldButton onClick={async () => {
-            // No bank — create account and go to celebration
-            setError(null);
-            try {
-              const careFor = survey.step3;
-              const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
-              if (careFor.includes("Myself")) careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
-              if (careFor.includes("My partner / spouse")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
-              if (careFor.includes("My child(ren)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
-              if (careFor.includes("My parent(s)")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
-              if (careFor.includes("Someone else")) careRecipients.push({ id: crypto.randomUUID(), name: "Other", relationship: "Other" });
-
-              const signupRes = await apiFetch("/api/auth/signup", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  email: email.trim(),
-                  password,
-                  app_user_id: userId,
-                  name: name.trim(),
-                  survey_answers: JSON.stringify(survey),
-                  care_recipients: careRecipients.length > 0 ? careRecipients : undefined,
-                  patient_info: {
-                    date_of_birth: patientDob || undefined,
-                    gender: patientGender || undefined,
-                    insurance_provider: patientInsurance.trim() || undefined,
-                    insurance_member_id: patientMemberId.trim() || undefined,
-                    callback_phone: patientPhone.trim() || undefined,
-                  },
-                  consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
-                }),
-              });
-              const signupData = await signupRes.json();
-              if (!signupRes.ok || !signupData?.ok) throw new Error(signupData?.error || "Failed to create account.");
-
-              const supabase = createClient();
-              const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-              if (signInError) throw signInError;
-
-              goToStep(9);
-            } catch (err) {
-              setError(err instanceof Error ? err.message : "Failed to create account.");
-            }
-          }}>
-            Create Account &rarr;
-          </GoldButton>
-        ) : (
-          <div className="mt-8 text-center text-sm text-[#7A7F8A]">
-            Fill in your info above to continue
-          </div>
-        )}
-      </Shell>
-    );
-  }
-
-  // Step 8 — Provider review (shows after discovery finds providers to review)
-  if (step === 8 && reviewingProviders) {
-    // Build person options from step 3 survey answers
-    const personLabelMap: Record<string, string> = {
-      "Myself": "Me",
-      "My partner / spouse": "Partner",
-      "My child(ren)": "Child",
-      "My parent(s)": "Parent",
-      "Someone else": "Other",
-    };
-    const personOptions = survey.step3
-      .map((s) => ({ value: s.toLowerCase().replace(/[^a-z]/g, "_"), label: personLabelMap[s] || s }))
-      .filter((o) => o.label);
-    const singlePerson = personOptions.length === 1;
-
-    // If only "Myself" was selected, options are just "Me" and "Ignore"
-    // Otherwise, show all selected people plus "Ignore"
-
-    function toggleProviderPerson(providerId: string, personValue: string) {
-      setProviderPeople((prev) => {
-        const current = new Set(prev[providerId] || []);
-        if (current.has(personValue)) {
-          current.delete(personValue);
-        } else {
-          current.add(personValue);
-        }
-        return { ...prev, [providerId]: current };
-      });
-    }
-
-    async function handleProviderAssign(providerId: string, careRecipients: string[], providerType?: string, existingPatient?: boolean) {
-      const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
-      try {
-        await apiFetch("/api/providers/review", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            provider_id: providerId,
-            action: "approve",
-            app_user_id: effectiveUserId,
-            care_recipients: careRecipients,
-            ...(providerType ? { provider_type: providerType } : {}),
-            ...(existingPatient !== undefined ? { existing_patient: existingPatient } : {}),
-          }),
-        });
-      } catch {
-        // Best-effort
-      }
-      setApprovedCount((c) => c + 1);
-      setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
-    }
-
-    async function handleProviderDismiss(providerId: string) {
-      // Mark as dismissed visually first, then remove after a brief delay
-      setPendingProviders((prev) => prev.map((p) => p.id === providerId ? { ...p, status: "dismissed" as any } : p));
-      const effectiveUserId = userId || window.localStorage.getItem("qbh_user_id") || "";
-      try {
-        await apiFetch("/api/providers/review", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ provider_id: providerId, action: "dismiss", app_user_id: effectiveUserId }),
-        });
-      } catch {
-        // Best-effort
-      }
-      setTimeout(() => {
-        setPendingProviders((prev) => prev.filter((p) => p.id !== providerId));
-      }, 400);
-    }
-
-    const confirmedProviders = pendingProviders.filter((p) => p.status === "active");
-    const needsReview = pendingProviders.filter((p) => p.status === "review_needed");
-    const allReviewed = needsReview.length === 0;
-
-    // Detect chain stores that could be retail OR pharmacy
-    // Only major retail chains that also have pharmacies — not standalone pharmacies
-    const CHAIN_STORES = [
-      "CVS", "WALGREENS", "RITE AID", "DUANE READE", "WALMART",
-      "COSTCO", "SAM'S CLUB", "TARGET", "KROGER", "PUBLIX",
-      "SAFEWAY", "ALBERTSONS", "HEB", "MEIJER",
-    ];
-    function isChainStore(name: string): boolean {
-      const upper = name.toUpperCase();
-      return CHAIN_STORES.some((chain) => upper.includes(chain));
-    }
-
-    // Render a provider card with appropriate question
-    function renderProviderCard(provider: typeof pendingProviders[0], isConfirmed: boolean) {
-      const selected = providerPeople[provider.id] || new Set<string>();
-      const chain = isChainStore(provider.name);
-      const existingPatient = providerExisting[provider.id];
-
-      return (
-        <div
-          key={provider.id}
-          className={`rounded-xl border px-4 py-3 transition-all duration-300 ${(provider as any).status === "dismissed" ? "opacity-30 scale-95" : ""}`}
-          style={{ backgroundColor: CARD_BG, borderColor: isConfirmed ? "#5C6B5C" : CARD_BORDER }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-[#1A1D2E] break-words">{provider.name}</div>
-              <div className="text-xs text-[#7A7F8A]">
-                {provider.visit_count} {isConfirmed ? "visit" : "transaction"}{provider.visit_count !== 1 ? "s" : ""}
+        {/* Score reveal */}
+        {phase === "score-reveal" && score !== null && (
+          <div className="animate-fadeIn text-center">
+            <div className="relative mx-auto" style={{ width: 140, height: 140 }}>
+              <svg width={140} height={140} viewBox="0 0 140 140" className="transform -rotate-90">
+                <circle cx={70} cy={70} r={58} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={7} />
+                <defs>
+                  <linearGradient id="revealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#0FA5A5" />
+                    <stop offset="100%" stopColor="#D4A44C" />
+                  </linearGradient>
+                </defs>
+                <circle cx={70} cy={70} r={58} fill="none" stroke="url(#revealGrad)" strokeWidth={7} strokeLinecap="round"
+                  strokeDasharray={`${(score / 100) * 2 * Math.PI * 58} ${2 * Math.PI * 58}`}
+                  className="transition-all duration-1000" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-light text-[#0FA5A5]">{score}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A] mt-0.5">
+                  {score >= 85 ? "Excellent" : score >= 60 ? "On Track" : score >= 30 ? "Building" : "Getting Started"}
+                </span>
               </div>
             </div>
-            {isConfirmed && <span className="text-xs text-[#5C6B5C] shrink-0 ml-2">&#10003;</span>}
-          </div>
-
-          {chain ? (
-            <>
-              <p className="mt-2 text-xs text-[#7A7F8A] italic">
-                Do you use {provider.name} as a pharmacy?
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                <button
-                  onClick={() => {
-                    // Auto-assign to first person and approve
-                    const defaultPeople = personOptions.length === 1
-                      ? [personOptions[0].value]
-                      : Array.from(selected.size > 0 ? selected : new Set([personOptions[0]?.value || "myself"]));
-                    handleProviderAssign(provider.id, defaultPeople, "pharmacy");
-                  }}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold"
-                  style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
-                >
-                  Yes, it&apos;s my pharmacy
-                </button>
-                <button
-                  onClick={() => handleProviderDismiss(provider.id)}
-                  className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#7A7F8A]"
-                >
-                  No, I just shop there
-                </button>
-              </div>
-            </>
-          ) : singlePerson ? (
-            /* Single person mode: one tap to approve, no Confirm step needed */
-            <div className="mt-2">
-              {/* New/existing patient toggle */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-[#7A7F8A]">Have you visited this provider before?</span>
-                <button
-                  onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: true }))}
-                  className="rounded-lg px-2 py-0.5 text-xs font-semibold"
-                  style={{
-                    backgroundColor: existingPatient === true ? ACCENT : "transparent",
-                    color: existingPatient === true ? "#FFFFFF" : "#7A7F8A",
-                    border: existingPatient === true ? "none" : "1px solid #EBEDF0",
-                  }}
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: false }))}
-                  className="rounded-lg px-2 py-0.5 text-xs font-semibold"
-                  style={{
-                    backgroundColor: existingPatient === false ? ACCENT : "transparent",
-                    color: existingPatient === false ? "#FFFFFF" : "#7A7F8A",
-                    border: existingPatient === false ? "none" : "1px solid #EBEDF0",
-                  }}
-                >
-                  No
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  onClick={() => handleProviderAssign(provider.id, [personOptions[0].value], undefined, existingPatient)}
-                  className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                  style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
-                >
-                  {personOptions[0].label} &#10003;
-                </button>
-                <button
-                  onClick={() => handleProviderDismiss(provider.id)}
-                  className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-2.5 py-1 text-xs text-[#7A7F8A]"
-                >
-                  Ignore
-                </button>
-              </div>
+            <div className="mt-4">
+              <KateBubble>
+                {score >= 50
+                  ? `${score} is a great start. Let's keep building from here.`
+                  : `${score} isn't bad for day one. Most people start around 30. Let's get it higher.`}
+              </KateBubble>
             </div>
-          ) : (
-            <div className="mt-2">
-              {/* New/existing patient toggle */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-[#7A7F8A]">Have you visited this provider before?</span>
-                <button
-                  onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: true }))}
-                  className="rounded-lg px-2 py-0.5 text-xs font-semibold"
-                  style={{
-                    backgroundColor: existingPatient === true ? ACCENT : "transparent",
-                    color: existingPatient === true ? "#FFFFFF" : "#7A7F8A",
-                    border: existingPatient === true ? "none" : "1px solid #EBEDF0",
-                  }}
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setProviderExisting((prev) => ({ ...prev, [provider.id]: false }))}
-                  className="rounded-lg px-2 py-0.5 text-xs font-semibold"
-                  style={{
-                    backgroundColor: existingPatient === false ? ACCENT : "transparent",
-                    color: existingPatient === false ? "#FFFFFF" : "#7A7F8A",
-                    border: existingPatient === false ? "none" : "1px solid #EBEDF0",
-                  }}
-                >
-                  No
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {personOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => {
-                      // One-click: select person and auto-confirm
-                      handleProviderAssign(provider.id, [opt.value], undefined, existingPatient);
-                    }}
-                    className="rounded-lg px-2.5 py-1 text-xs font-semibold"
-                    style={{
-                      backgroundColor: selected.has(opt.value) ? ACCENT : "transparent",
-                      color: selected.has(opt.value) ? "#FFFFFF" : "#7A7F8A",
-                      border: selected.has(opt.value) ? "none" : "1px solid #EBEDF0",
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-                <button
-                  onClick={() => handleProviderDismiss(provider.id)}
-                  className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-2.5 py-1 text-xs text-[#7A7F8A]"
-                >
-                  Ignore
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <div className="mb-6">
-          <CharacterWithBubble pose="celebrating">
-            Great news &mdash; I found some providers! Take a quick look and
-            let me know who each one is for. If something doesn&apos;t look like
-            a healthcare provider, just hit ignore. I want to make sure I&apos;m
-            only tracking the right ones.
-          </CharacterWithBubble>
-        </div>
-        <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-          We found your healthcare providers
-        </h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">
-          Who is each provider for? Tap to assign or ignore.
-        </p>
-
-        {confirmedProviders.length > 0 && (
-          <div className="mt-6">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#5C6B5C]">
-              Confirmed providers
-            </div>
-            <div className="flex flex-col gap-2">
-              {confirmedProviders.map((provider) => renderProviderCard(provider, true))}
-            </div>
-          </div>
-        )}
-
-        {needsReview.length > 0 && (
-          <div className="mt-6">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>
-              Could be a provider ({needsReview.length} remaining)
-            </div>
-            <div className="flex flex-col gap-2">
-              {needsReview.map((provider) => renderProviderCard(provider, false))}
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between mt-4">
-          <button
-            onClick={() => goToStep(7)}
-            className="text-xs text-[#7A7F8A] hover:text-[#1A1D2E]"
-          >
-            &larr; Back
-          </button>
-          {allReviewed && (
-            <GoldButton onClick={() => goToStep(9)}>
-              Continue &rarr;
-            </GoldButton>
-          )}
-        </div>
-      </Shell>
-    );
-  }
-
-  // Step 8 — Discovery processing with animated checkmarks
-  if (step === 8) {
-    if (error) {
-      return (
-        <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-          <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-            Something went wrong
-          </h1>
-          <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-200">
-            {error}
-          </div>
-          <GoldButton onClick={() => window.location.href = "/dashboard"}>
-            Continue to dashboard &rarr;
-          </GoldButton>
-        </Shell>
-      );
-    }
-
-    const progressIconMap: Record<string, React.ComponentType<any>> = {
-      "Scanning your transactions": Search,
-      "Finding healthcare providers": Building2,
-      "Verifying against medical databases": ShieldCheck,
-      "Building your care timeline": Calendar,
-      "Checking for overdue care": Clock,
-      "Preparing your dashboard": Sparkles,
-    };
-    const progressItems = [
-      { label: "Scanning your transactions" },
-      { label: "Finding healthcare providers" },
-      { label: "Verifying against medical databases" },
-      { label: "Building your care timeline" },
-      { label: "Checking for overdue care" },
-      { label: "Preparing your dashboard" },
-    ];
-
-    const healthFacts = [
-      "The average person sees 7 different doctors but none of them talk to each other",
-      "73% of patients say their healthcare feels disconnected and siloed",
-      "People who track their providers report feeling 2x more in control of their health",
-      "The #1 reason people miss follow-ups? They simply forget to book",
-      "Having all your providers in one place saves an average of 4 hours per month",
-      "Most people can't name their last visit date for half their doctors",
-      "Care coordination — connecting the dots between providers — is the #1 gap in healthcare",
-      "People who use a care coordinator are 40% more likely to stay on top of preventive care",
-      "The average American spends 3+ hours per year on hold with doctor's offices",
-      "Organized patients have better outcomes — because they ask better questions",
-    ];
-
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <div className="mb-8 text-left w-full">
-            <CharacterWithBubble pose="thinking">
-              I&apos;ll take a look through your records and identify what I find. Give me just a moment!
-            </CharacterWithBubble>
-          </div>
-
-          <h1 className="text-2xl font-light text-[#1A1D2E] sm:text-3xl">
-            Kate is getting started
-          </h1>
-          <p className="mt-2 text-sm text-[#7A7F8A]">
-            This usually takes a minute or two
-          </p>
-
-          {/* Rotating health fact — above fold */}
-          <div className="mt-6 w-full max-w-sm rounded-xl bg-white border border-[#EBEDF0] shadow-sm px-5 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5C6B5C] mb-1">
-              Did you know?
-            </div>
-            <div
-              className="text-sm text-[#7A7F8A] transition-opacity duration-400"
-              style={{ opacity: healthFactFading ? 0 : 1 }}
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: ACCENT }}
             >
-              {healthFacts[healthFactIndex]}
-            </div>
+              Take me to my dashboard
+            </button>
           </div>
+        )}
 
-          {/* Progress steps */}
-          <div className="mt-6 flex flex-col gap-2.5 text-left w-full max-w-sm">
-            {progressItems.map((item, i) => {
-              const done = analysisProgress >= i + 1;
-              const active = analysisProgress === i;
-              return (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-500 shadow-sm"
-                  style={{
-                    backgroundColor: CARD_BG,
-                    borderWidth: 1,
-                    borderStyle: "solid",
-                    borderColor: done ? ACCENT : active ? "#B0D0E8" : CARD_BORDER,
-                    opacity: analysisProgress >= i ? 1 : 0.3,
-                    transform: active ? "scale(1.02)" : "scale(1)",
-                  }}
-                >
-                  {done ? (
-                    <span
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                      style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}
-                    >
-                      ✓
-                    </span>
-                  ) : active ? (
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
-                    </span>
-                  ) : (
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-                      {(() => {
-                        const IC = progressIconMap[item.label] || Search;
-                        return <IC size={16} strokeWidth={1.5} color="#B0B4BC" />;
-                      })()}
-                    </span>
-                  )}
-                  <span
-                    className="text-sm transition-colors duration-500"
-                    style={{ color: done ? "#1A1D2E" : active ? "#1A1D2E" : "#B0B4BC" }}
-                  >
-                    {item.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </Shell>
-    );
-  }
-
-  // Step 9: Celebration — skip counts (they're unreliable here) and go straight to review
-  if (step === 9) {
-    const isManualOnboarding = manualPath;
-    // Only count active providers (not review_needed, dismissed, etc.)
-    const totalProviders = approvedCount + (isManualOnboarding ? manualProviders.length : 0);
-
-    return (
-      <Shell slideVisible={slideVisible} slideDirection={slideDirection}>
-        <div className="mt-8">
-          <CharacterWithBubble pose="celebrating">
-            {isManualOnboarding
-              ? `Great — I\u2019ve got your providers saved. Let\u2019s get your healthcare on track!`
-              : totalProviders > 0
-                ? `Nice! I found ${totalProviders} provider${totalProviders !== 1 ? "s" : ""} from your records. Let\u2019s take a look and get you set up.`
-                : `You\u2019re all set! Let\u2019s get your healthcare on track.`}
-          </CharacterWithBubble>
-        </div>
-
-        {/* Summary */}
-        <div className="mt-8 flex flex-col gap-3">
-          <div className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}>&#10003;</span>
-            <span className="text-[#1A1D2E]">Account created</span>
-          </div>
-          {totalProviders > 0 && (
-            <div className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-light" style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}>{totalProviders}</span>
-              <span className="text-[#1A1D2E]">providers found</span>
-            </div>
-          )}
-          {connectCalendar && (
-            <div className="flex items-center gap-4 rounded-xl px-5 py-4 text-sm" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ backgroundColor: ACCENT, color: "#FFFFFF" }}>&#10003;</span>
-              <span className="text-[#1A1D2E]">Calendar connected</span>
-            </div>
-          )}
-        </div>
-
-        {/* What's next */}
-        <div className="mt-6 rounded-xl px-5 py-4 text-sm" style={{ backgroundColor: CARD_BG, border: `1px solid ${CARD_BORDER}` }}>
-          <div className="font-semibold text-[#1A1D2E] mb-2">What happens next:</div>
-          <ul className="space-y-1 text-xs text-[#7A7F8A]">
-            <li>&#x2022; Kate will show you what&apos;s overdue and what needs attention</li>
-            <li>&#x2022; You can book appointments with one tap — Kate calls the office</li>
-            <li>&#x2022; Your Health Coordination Score starts building from here</li>
-          </ul>
-        </div>
-
-        <GoldButton onClick={() => window.location.href = "/dashboard"}>
-          Go To Your Dashboard &rarr;
-        </GoldButton>
-      </Shell>
-    );
-  }
-
-  // Step 10: Dashboard redirect (fallback)
-  if (step === 10) {
-    window.location.href = "/dashboard";
-    return null;
-  }
-
-  // Fallback (should never render)
-  return null;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Social Proof Screen (Step 2) — auto-advances after 4s             */
-/* ------------------------------------------------------------------ */
-
-function SocialProofScreen({ onContinue }: { onContinue: () => void }) {
-  const hasFired = useRef(false);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (!hasFired.current) {
-        hasFired.current = true;
-        onContinue();
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [onContinue]);
-
-  function handleClick() {
-    if (!hasFired.current) {
-      hasFired.current = true;
-      onContinue();
-    }
-  }
-
-  return (
-    <Shell >
-      <div className="mt-8">
-        <CharacterWithBubble pose="thinking">
-          QB found three providers I&apos;d completely forgotten about and booked
-          my overdue physical in minutes. You&apos;re in good hands.
-        </CharacterWithBubble>
+        <div ref={chatEndRef} />
       </div>
-
-      <p className="mt-4 text-center text-xs text-[#7A7F8A]">&mdash; Early QB member</p>
-
-      {/* Trust points */}
-      <div className="mt-8 flex justify-center gap-4">
-        {[
-          { icon: "\u25C9", label: "Bank-level security" },
-          { icon: "\u25C9", label: "Read-only access" },
-          { icon: "\u25C9", label: "No data sold" },
-        ].map((item) => (
-          <div key={item.label} className="flex flex-col items-center gap-2" style={{ minWidth: 88 }}>
-            <span className="text-lg">{item.icon}</span>
-            <span className="text-xs text-[#7A7F8A]">{item.label}</span>
-          </div>
-        ))}
-      </div>
-
-      <GoldButton onClick={handleClick}>Continue &rarr;</GoldButton>
-    </Shell>
+    </div>
   );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Shell layout wrapper                                               */
-/* ------------------------------------------------------------------ */
-
-function Shell({ children, slideVisible, slideDirection }: { children: React.ReactNode; slideVisible?: boolean; slideDirection?: "forward" | "back" }) {
-  const enterClass = slideDirection === "back" ? "slideInFromLeft" : "slideInFromRight";
-  const exitClass = slideDirection === "back" ? "slideOutToRight" : "slideOutToLeft";
-  const animClass = slideVisible === false ? exitClass : enterClass;
-
-  return (
-    <main
-      className="relative min-h-screen text-[#1A1D2E] overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
-    >
-      <style jsx global>{`
-        @keyframes slideInFromRight {
-          from { opacity: 0; transform: translateX(60px) scale(0.97); }
-          to { opacity: 1; transform: translateX(0) scale(1); }
-        }
-        @keyframes slideOutToLeft {
-          from { opacity: 1; transform: translateX(0) scale(1); }
-          to { opacity: 0; transform: translateX(-60px) scale(0.97); }
-        }
-        @keyframes slideInFromLeft {
-          from { opacity: 0; transform: translateX(-60px) scale(0.97); }
-          to { opacity: 1; transform: translateX(0) scale(1); }
-        }
-        @keyframes slideOutToRight {
-          from { opacity: 1; transform: translateX(0) scale(1); }
-          to { opacity: 0; transform: translateX(60px) scale(0.97); }
-        }
-        @keyframes cascadeIn {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes popIn {
-          0% { opacity: 0; transform: scale(0.8); }
-          70% { transform: scale(1.05); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes gentlePulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.02); box-shadow: 0 10px 30px rgba(92,107,92,0.4); }
-        }
-        @keyframes floatIn {
-          from { opacity: 0; transform: translateY(24px) rotate(-2deg); }
-          to { opacity: 1; transform: translateY(0) rotate(0deg); }
-        }
-        @keyframes spinIn {
-          from { opacity: 0; transform: rotate(-90deg) scale(0.6); }
-          50% { opacity: 1; }
-          to { opacity: 1; transform: rotate(0deg) scale(1); }
-        }
-        @keyframes typeIn {
-          from { max-height: 0; opacity: 0; }
-          to { max-height: 200px; opacity: 1; }
-        }
-        .slide-container {
-          animation: ${animClass} 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-        .cascade-item { animation: cascadeIn 0.4s ease-out both; }
-        .cascade-1 { animation-delay: 0.1s; }
-        .cascade-2 { animation-delay: 0.2s; }
-        .cascade-3 { animation-delay: 0.3s; }
-        .cascade-4 { animation-delay: 0.4s; }
-        .cascade-5 { animation-delay: 0.5s; }
-        .cascade-6 { animation-delay: 0.6s; }
-        .cascade-7 { animation-delay: 0.7s; }
-        .pop-item { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-        .float-item { animation: floatIn 0.5s ease-out both; }
-        .spin-item { animation: spinIn 1s cubic-bezier(0.22, 1, 0.36, 1) both; }
-        .pulse-btn { animation: gentlePulse 2s ease-in-out infinite; }
-      `}</style>
-      <DecorativeCircle />
-      <div className={`relative z-10 mx-auto max-w-lg px-6 py-12 sm:max-w-xl sm:py-20 md:max-w-2xl slide-container`}>
-        {children}
-      </div>
-    </main>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Plaid CDN script loader                                            */
-/* ------------------------------------------------------------------ */
-
-function ensurePlaidScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (
-      (window as unknown as Record<string, unknown>)["Plaid"]
-    ) {
-      resolve();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdn.plaid.com/link/v2/stable/link-initialize.js";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Plaid script"));
-    document.head.appendChild(script);
-  });
 }
