@@ -205,7 +205,7 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.redirect(
-      new URL(dashboardHref(parsedState.app_user_id), url.origin)
+      new URL(calendarConnectHref(parsedState.app_user_id), url.origin)
     );
   } catch (error) {
     const message =

@@ -436,7 +436,11 @@ export default function OnboardingV2() {
           startReveal(providers);
         }
       } catch {}
-      if (attempts > 30) clearInterval(poll);
+      if (attempts > 30) {
+        clearInterval(poll);
+        addKateMessage("I didn\u2019t find any healthcare co-pays in your recent transactions. That\u2019s okay \u2014 you might use a different bank, or your insurance covers everything. You can add providers manually from your dashboard.");
+        setTimeout(() => setPhase("score-reveal"), 1500);
+      }
     }, 3000);
   }
 
@@ -456,10 +460,12 @@ export default function OnboardingV2() {
         setDiscoveredProviders(providers);
         startReveal(providers);
       } else {
-        setPhase("score-reveal");
+        addKateMessage("I didn\u2019t find any doctor appointments on your calendar. No worries \u2014 you can add providers from your dashboard.");
+        setTimeout(() => setPhase("score-reveal"), 1500);
       }
     } catch {
-      setPhase("score-reveal");
+      addKateMessage("Couldn\u2019t scan your calendar right now. No worries \u2014 you can connect it later from settings.");
+      setTimeout(() => setPhase("score-reveal"), 1500);
     }
   }
 
