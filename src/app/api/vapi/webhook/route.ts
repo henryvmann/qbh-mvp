@@ -695,13 +695,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // Auto-analyze test calls — fires on every terminal webhook with a transcript,
-    // independent of whether the call_notes row was just inserted/updated. The
-    // test-analyze endpoint dedupes by call_id so multiple terminal webhooks won't
-    // create duplicate analyses. Awaited so Vercel doesn't kill the function before
-    // the outbound fetch completes.
-    if (isTerminalWebhook(body)) {
-      await triggerAutoAnalyze({ transcript, attemptId, reason: messageType || "terminal" });
+    // Auto-analyze test calls — gate on end-of-call-report specifically. VAPI also
+    // emits a status-update with status=ended for the same call, which would race
+    // the dedupe check in test-analyze and create duplicate rows. end-of-call-report
+    // is the canonical terminal event and ships with the full final transcript.
+    // Awaited so Vercel doesn't kill the function before the outbound fetch lands.
+    const messageTypeLower = (messageType || "").toLowerCase();
+    if (messageTypeLower === "end-of-call-report") {
+      await triggerAutoAnalyze({ transcript, attemptId, reason: messageTypeLower });
     }
   } catch (e) {
     console.error("WEBHOOK_STORE_ERROR:", e);
