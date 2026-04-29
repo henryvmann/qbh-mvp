@@ -427,7 +427,13 @@ export async function POST(req: Request) {
   // Use doctor_name if set, otherwise use provider_name if it looks like a person's name (2-3 words, no business keywords)
   let doctorName = (providerRow?.doctor_name || "").trim();
   if (!doctorName && provider_name) {
-    const cleaned = provider_name.replace(/,\s*(DDS|MD|DO|NP|PA|OD|DC)$/i, "").trim();
+    // Strip credentials from both front and back
+    let cleaned = provider_name
+      .replace(/,\s*(DDS|MD|DO|NP|PA|OD|DC|DMD|PhD|PsyD|LCSW|LMFT|APRN)$/i, "")
+      .replace(/^(D\.?D\.?S\.?|M\.?D\.?|D\.?O\.?|D\.?M\.?D\.?|N\.?P\.?|P\.?A\.?|O\.?D\.?|D\.?C\.?)\s+/i, "")
+      .trim();
+    // Strip a second time for double credentials
+    cleaned = cleaned.replace(/^(D\.?D\.?S\.?|M\.?D\.?|D\.?O\.?)\s+/i, "").trim();
     const words = cleaned.split(/\s+/);
     const businessWords = /\b(health|medical|clinic|center|group|associates|practice|consultants|hospital|care|inc|llc|pc|pllc)\b/i;
     if (words.length >= 2 && words.length <= 4 && !businessWords.test(cleaned)) {
