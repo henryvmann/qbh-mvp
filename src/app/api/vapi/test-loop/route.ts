@@ -171,6 +171,22 @@ export async function POST() {
     // Pick a random provider
     const provider = providers[Math.floor(Math.random() * providers.length)];
 
+    // Wipe stale future bookings for the test user with THIS provider so Kate
+    // doesn't hit EXISTING_FUTURE_CONFIRMED_EVENT in confirm-booking and bail.
+    // (Real users wouldn't have phantom test bookings; this only runs for the
+    // test app_user.)
+    try {
+      await supabaseAdmin
+        .from("calendar_events")
+        .update({ status: "cancelled" })
+        .eq("app_user_id", TEST_USER_ID)
+        .eq("provider_id", provider.id)
+        .eq("status", "confirmed")
+        .gte("start_at", new Date().toISOString());
+    } catch (cleanupErr) {
+      console.error("[test-loop] calendar cleanup failed:", cleanupErr);
+    }
+
     // Trigger Kate's call
     const baseUrl = process.env.QBH_BASE_URL || process.env.PUBLIC_BASE_URL || "https://getquarterback.com";
     const callRes = await fetch(`${baseUrl}/api/vapi/start-call`, {
