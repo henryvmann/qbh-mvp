@@ -151,7 +151,10 @@ export async function POST() {
       .select("id, name, phone_number")
       .eq("app_user_id", TEST_USER_ID)
       .eq("status", "active")
-      .neq("provider_type", "pharmacy");
+      .neq("provider_type", "pharmacy")
+      .neq("provider_type", "calendar")
+      .not("name", "ilike", "%google%")
+      .not("name", "ilike", "%calendar%");
 
     if (!providers || providers.length === 0) {
       return NextResponse.json({ ok: false, error: "No providers found" }, { status: 400 });
