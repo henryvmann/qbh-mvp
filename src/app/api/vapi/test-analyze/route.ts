@@ -81,7 +81,7 @@ Return a JSON object (no markdown, just raw JSON) with this exact structure:
     "no_forced_booking": { "pass": true/false, "note": "did Kate AVOID pushing for a booking when the scenario clearly didn't allow one (walk-in only, voicemail, balance owed, etc.)?" },
     "patient_info_protected": { "pass": true/false, "note": "did Kate share only the info that was actually requested? Didn't leak DOB/insurance/SSN unnecessarily?" },
     "graceful_close": { "pass": true/false, "note": "did Kate end the call politely with a clear next step (booked / will call back / message left)?" },
-    "correct_doctor_name": { "pass": true/false, "note": "did Kate use the right doctor name without weird credential prefixes (DDS/MD)?" }
+    "correct_doctor_name": { "pass": true/false, "note": "did Kate use the right doctor name (ignore phonetic transcript drift like Nasonson↔Niesanson↔Nissenson — the speech-to-text frequently mis-spells unusual names; only fail this if Kate clearly said a DIFFERENT person's name or used DDS/MD/Dr. prefixes wrong)?" }
   },
   "issues": ["specific things Kate did wrong, given the scenario"],
   "wins": ["specific things Kate did well, given the scenario"],
