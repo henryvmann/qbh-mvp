@@ -169,6 +169,10 @@ export default function OnboardingPage() {
   // Active during the bank/calendar discovery polling window so we can show
   // a "Skip and continue" escape hatch (T3-3 — page used to look frozen).
   const [discoveryActive, setDiscoveryActive] = useState(false);
+  // True after the bank reveal already routed us to calendar-connect, so
+  // when calendar discovery's reveal finishes we go to score-reveal instead
+  // of looping.
+  const [calendarHandledByReveal, setCalendarHandledByReveal] = useState(false);
   const [revealIndex, setRevealIndex] = useState(0);
   const [revealDone, setRevealDone] = useState(false);
 
@@ -234,10 +238,12 @@ export default function OnboardingPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom — include discoveryActive so the Skip button is
+  // brought into view the moment it renders (otherwise it sits below the
+  // fold while the user stares at "Give me a sec").
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, phase, typing]);
+  }, [messages, phase, typing, discoveryActive]);
 
   // Add Kate message with typing delay
   function addKateMessage(content: React.ReactNode, delayMs = 800) {
@@ -450,19 +456,15 @@ export default function OnboardingPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ public_token: publicToken, app_user_id: userId }),
           }).then(() => {
-            if (connectCalendar) {
-              // Also connect calendar before discovery
-              setTimeout(() => {
-                addKateMessage("Bank connected. Now let's grab your calendar too \u2014 I'll scan for doctor appointments.");
-                setTimeout(() => setPhase("calendar-connect"), 1200);
-              }, 500);
-            } else {
-              setTimeout(() => {
-                addKateMessage("Give me a sec \u2014 I'm pulling your records now.");
-                setPhase("discovery-reveal");
-                runBankDiscovery();
-              }, 500);
-            }
+            // Always run bank discovery first and let the user see their
+            // bank-discovered providers reveal. AFTER the reveal completes,
+            // startReveal's last callback decides whether to go to the
+            // calendar-connect step (if connectCalendar) or score-reveal.
+            setTimeout(() => {
+              addKateMessage("Give me a sec \u2014 I'm pulling your records now.");
+              setPhase("discovery-reveal");
+              runBankDiscovery();
+            }, 500);
           });
         },
         onExit: () => {},
@@ -512,7 +514,7 @@ export default function OnboardingPage() {
           startReveal(providers);
         }
       } catch {}
-      if (attempts > 30) {
+      if (attempts > 15) {
         clearInterval(poll);
         clearTimeout(progress15);
         clearTimeout(progress45);
@@ -525,10 +527,22 @@ export default function OnboardingPage() {
   }
 
   async function runCalendarDiscovery() {
+    // Surface activity + skip button \u2014 same UX as runBankDiscovery so the
+    // calendar path doesn't go silent for 30+ seconds during scan.
+    setDiscoveryActive(true);
+    setTyping(true);
+
+    const progress15 = setTimeout(() => {
+      addKateMessage("Still scanning \u2014 checking the last year of events\u2026");
+    }, 15000);
+
     try {
       await apiFetch("/api/calendar/scan", { method: "POST" });
       const res = await apiFetch("/api/dashboard/data");
       const data = await res.json();
+      clearTimeout(progress15);
+      setDiscoveryActive(false);
+      setTyping(false);
       if (data?.ok && data.snapshots?.length > 0) {
         const providers = data.snapshots
           .filter((s: any) => s.provider.provider_type !== "pharmacy")
@@ -544,6 +558,9 @@ export default function OnboardingPage() {
         setTimeout(() => setPhase("score-reveal"), 1500);
       }
     } catch {
+      clearTimeout(progress15);
+      setDiscoveryActive(false);
+      setTyping(false);
       addKateMessage("Couldn\u2019t scan your calendar right now. No worries \u2014 you can connect it later from settings.");
       setTimeout(() => setPhase("score-reveal"), 1500);
     }
@@ -561,7 +578,20 @@ export default function OnboardingPage() {
             const onTrack = providers.length - overdueCount;
             addKateMessage(`Found ${providers.length} provider${providers.length !== 1 ? "s" : ""}. ${onTrack} on track, ${overdueCount} might be overdue.`);
             setRevealDone(true);
-            setTimeout(() => setPhase("score-reveal"), 1500);
+            // After the bank reveal completes, branch on whether the user
+            // also opted into calendar. Calendar OAuth happens here so we
+            // pull calendar providers AFTER bank providers are revealed.
+            // calendarHandledByReveal flag prevents the calendar-only path
+            // (no bank) from also triggering this branch incorrectly.
+            if (connectCalendar && !calendarHandledByReveal) {
+              setCalendarHandledByReveal(true);
+              setTimeout(() => {
+                addKateMessage("Now let's grab your calendar too — I'll scan for doctor appointments.");
+                setTimeout(() => setPhase("calendar-connect"), 1200);
+              }, 1500);
+            } else {
+              setTimeout(() => setPhase("score-reveal"), 1500);
+            }
           }, 800);
         }
       }, 1500 * (i + 1));
@@ -931,12 +961,18 @@ export default function OnboardingPage() {
               </div>
             )}
             {/* Active scan progress + skip — visible while discovery is polling
-                so the user has visible feedback and an escape hatch (T3-3). */}
+                so the user has visible feedback and an escape hatch (T3-3).
+                Made prominent: full-width card, larger "Skip" button, animated
+                progress dot. Skip transitions to whichever phase is next. */}
             {discoveryActive && (
-              <div className="mt-2 rounded-xl bg-white border border-[#EBEDF0] px-4 py-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs text-[#7A7F8A]">
-                  <span className="h-2 w-2 rounded-full bg-[#5C6B5C] animate-pulse" />
-                  Scanning your accounts…
+              <div className="mt-3 rounded-2xl bg-white border-2 border-[#5C6B5C]/20 shadow-sm p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    <span className="h-2 w-2 rounded-full bg-[#5C6B5C] animate-pulse" />
+                    <span className="h-2 w-2 rounded-full bg-[#5C6B5C] animate-pulse" style={{ animationDelay: "0.2s" }} />
+                    <span className="h-2 w-2 rounded-full bg-[#5C6B5C] animate-pulse" style={{ animationDelay: "0.4s" }} />
+                  </div>
+                  <span className="text-sm font-medium text-[#1A2E1A]">Scanning your accounts…</span>
                 </div>
                 <button
                   type="button"
@@ -944,11 +980,15 @@ export default function OnboardingPage() {
                     setDiscoveryActive(false);
                     setTyping(false);
                     addKateMessage("No problem — you can always add providers from your dashboard.");
+                    // Skip jumps past whatever discovery branch we're in.
+                    // If calendar was queued (bank+calendar path), still
+                    // surface the calendar connect so user can opt in later
+                    // — but for skip, send straight to score-reveal.
                     setTimeout(() => setPhase("score-reveal"), 800);
                   }}
-                  className="text-xs font-semibold text-[#5C6B5C] hover:text-[#1A2E1A] underline underline-offset-2"
+                  className="w-full rounded-xl border border-[#5C6B5C]/30 bg-white px-4 py-2.5 text-sm font-semibold text-[#5C6B5C] hover:bg-[#5C6B5C]/5"
                 >
-                  Skip and continue
+                  Skip and continue to dashboard
                 </button>
               </div>
             )}
