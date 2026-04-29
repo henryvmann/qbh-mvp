@@ -52,7 +52,16 @@ const BASE_PERSONAS: BasePersona[] = [
   },
 ];
 
-type EdgeCase = { name: string; situation: string };
+type EdgeCase = {
+  name: string;
+  situation: string;
+  // If set, overrides the base persona's firstMessage. Use for edge cases
+  // that fundamentally change call structure (voicemail, dead line, etc.).
+  firstMessageOverride?: string;
+  // If true, the edge case fully replaces the base personality. Use when the
+  // base's "warm receptionist" framing makes no sense (e.g. voicemail).
+  fullReplace?: boolean;
+};
 
 const EDGE_CASES: EdgeCase[] = [
   {
@@ -125,7 +134,9 @@ const EDGE_CASES: EdgeCase[] = [
   },
   {
     name: "voicemail",
-    situation: `You are an answering machine, NOT a person. Say only: "You've reached the office of [provider]. We're closed or assisting other patients. Please leave your name, callback number, and reason for calling after the tone. [pause] *beep*" Do not respond after that. If the caller talks, just stay silent until they hang up.`,
+    firstMessageOverride: "You've reached the office of doctor [provider]. We're closed or assisting other patients. Please leave your name, callback number, and reason for calling after the tone. *beep*",
+    fullReplace: true,
+    situation: `You are an answering machine, NOT a person. Your firstMessage is the entire greeting. After delivering it, stay completely silent. Do NOT respond to anything the caller says. Do NOT have a conversation. The caller is supposed to leave a voicemail and hang up. After the caller has spoken once or twice (whether or not they leave a real message), call the endCall tool.`,
   },
   {
     name: "walk_in_only",
@@ -142,6 +153,17 @@ function composePersona(base: BasePersona, edgeCase: EdgeCase): {
   firstMessage: string;
   prompt: string;
 } {
+  // fullReplace edge cases (voicemail) own the entire prompt — no warm
+  // receptionist framing, no slots, no general flow.
+  if (edgeCase.fullReplace) {
+    const prompt = `${edgeCase.situation}\n${COMMON_END_RULE}`;
+    return {
+      name: `${base.name} / ${edgeCase.name}`,
+      firstMessage: edgeCase.firstMessageOverride ?? base.firstMessage,
+      prompt,
+    };
+  }
+
   const prompt = `You are Sandra, a receptionist at a doctor's office. You answer calls to schedule appointments. You schedule for ANY doctor — when the caller mentions a provider name, just check availability.
 
 ${base.personality}
@@ -162,7 +184,7 @@ ${COMMON_END_RULE}`;
 
   return {
     name: `${base.name} / ${edgeCase.name}`,
-    firstMessage: base.firstMessage,
+    firstMessage: edgeCase.firstMessageOverride ?? base.firstMessage,
     prompt,
   };
 }
