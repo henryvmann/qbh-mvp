@@ -406,11 +406,21 @@ function ProvidersInner() {
         </div>
 
         {doctors.length === 0 && pharmacies.length === 0 ? (
-          <div className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
-            <div className="font-semibold text-[#1A1D2E]">No providers yet</div>
-            <p className="mt-2 text-sm text-[#7A7F8A]">
-              Providers will appear here once discovered from your bank data, your calendar, or added manually.
-            </p>
+          <div className="mt-6 space-y-4">
+            {/* Kate prompt at top */}
+            <div className="flex items-start gap-3 rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 p-5 shadow-sm">
+              <img src="/kate-avatar.png" alt="Kate" className="w-8 h-8 rounded-full shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-[#1A2E1A]">Start building your care team. Add your primary care doctor, dentist, or any specialists you see.</p>
+                <a href="/providers?add=true" className="mt-2 inline-block text-xs font-semibold text-[#5C6B5C] underline underline-offset-2">Add a provider &rarr;</a>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+              <div className="font-semibold text-[#1A1D2E]">No providers yet</div>
+              <p className="mt-2 text-sm text-[#7A7F8A]">
+                Providers will appear here once discovered from your bank data, your calendar, or added manually.
+              </p>
+            </div>
           </div>
         ) : (
           <>

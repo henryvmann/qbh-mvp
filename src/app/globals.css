@@ -42,3 +42,14 @@ a {
 * {
   box-sizing: border-box;
 }
+
+/* Cookiebot — less intrusive on mobile */
+@media (max-width: 640px) {
+  #CybotCookiebotDialog {
+    font-size: 12px !important;
+    max-height: 40vh !important;
+  }
+  #CybotCookiebotDialogBody {
+    padding: 12px !important;
+  }
+}
