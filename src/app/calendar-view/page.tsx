@@ -492,14 +492,14 @@ export default function CalendarViewPage() {
           </div>
         )}
         {/* Availability preferences */}
-        <div data-tour="availability" className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
-          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">Your Availability</h2>
-          <p className="text-xs text-[#7A7F8A] mb-4">Tell Kate when you&apos;re available so she books at the right times.</p>
+        <div data-tour="availability" className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-5 sm:p-6">
+          <h2 className="text-base font-semibold text-[#1A1D2E] mb-1">Your Availability</h2>
+          <p className="text-xs text-[#7A7F8A] mb-5">Tell Kate when you&apos;re available so she books at the right times.</p>
 
-          <div className="space-y-3">
+          <div className="space-y-5">
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">Preferred Days</label>
-              <div className="flex flex-wrap gap-2">
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-2">Preferred Days</label>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day) => {
                   const short = day.slice(0, 3);
                   const isSelected = (availDays || []).includes(day);
@@ -513,7 +513,7 @@ export default function CalendarViewPage() {
                           return current.includes(day) ? current.filter((d) => d !== day) : [...current, day];
                         });
                       }}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                      className={`rounded-lg px-2 py-2.5 text-sm font-medium transition ${
                         isSelected ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
                       }`}
                     >
@@ -525,8 +525,8 @@ export default function CalendarViewPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">Preferred Times</label>
-              <div className="flex flex-wrap gap-2">
+              <label className="block text-xs font-medium text-[#7A7F8A] mb-2">Preferred Times</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {[
                   { value: "morning", label: "Morning (8–12)" },
                   { value: "afternoon", label: "Afternoon (12–5)" },
@@ -538,7 +538,7 @@ export default function CalendarViewPage() {
                       key={time.value}
                       type="button"
                       onClick={() => setAvailTime(time.value)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                      className={`rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                         isSelected ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
                       }`}
                     >

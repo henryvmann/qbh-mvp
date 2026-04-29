@@ -342,9 +342,9 @@ export default function HandleItButton({
       {/* Upgrade prompt for free users */}
       {showUpgradePrompt && (
         <div className="rounded-2xl border border-[#EBEDF0] bg-white p-4 shadow-sm">
-          <p className="text-sm font-semibold text-[#1A1D2E]">Loved your free call? Upgrade for unlimited.</p>
+          <p className="text-sm font-semibold text-[#1A1D2E]">You&apos;ve used your one free Kate call.</p>
           <p className="mt-1 text-xs text-[#7A7F8A]">
-            You&apos;ve used your free AI call. Upgrade to Solo or Family for unlimited appointment scheduling with Kate.
+            Free accounts get one trial call to test out Kate. To have her keep scheduling for you, upgrade to Solo or Family.
           </p>
           <div className="mt-3 flex gap-2">
             <a

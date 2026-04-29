@@ -33,11 +33,14 @@ export const theme = {
   statusUpcoming: "#D4A44C",
   statusRecurring: "#7C3AED",
 
-  // Grid overlay
-  gridOpacity: 0.04,
-  gridTeal: "#0FA5A5",
-  gridGold: "#D4A44C80",
-  gridSize: "80px",
+  // Grid overlay — softened for readability (Jenny called the original
+  // teal/gold grid hard to read against the glass cards). Use a single
+  // muted gray-green for both axes at low opacity so it reads as texture,
+  // not pattern.
+  gridOpacity: 0.025,
+  gridTeal: "#9CA8A0",
+  gridGold: "#9CA8A0",
+  gridSize: "100px",
 } as const;
 
 /** CSS string for the greenhouse grid overlay */

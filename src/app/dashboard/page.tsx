@@ -76,11 +76,11 @@ function DashboardInner() {
 
   return (
     <main className="min-h-screen pb-16" style={{ background: BG }}>
-      {/* Subtle greenhouse grid */}
+      {/* Subtle greenhouse grid — softened gray-green for readability */}
       <div className="fixed inset-0 pointer-events-none" style={{
-        opacity: 0.04,
-        backgroundImage: "linear-gradient(#0FA5A5 1px, transparent 1px), linear-gradient(90deg, #D4A44C80 1px, transparent 1px)",
-        backgroundSize: "80px 80px",
+        opacity: 0.025,
+        backgroundImage: "linear-gradient(#9CA8A0 1px, transparent 1px), linear-gradient(90deg, #9CA8A0 1px, transparent 1px)",
+        backgroundSize: "100px 100px",
       }} />
 
       <TopNav />
