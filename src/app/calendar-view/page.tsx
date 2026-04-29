@@ -215,11 +215,19 @@ export default function CalendarViewPage() {
     <PageShell>
       
       <div className="mx-auto max-w-3xl px-6 pb-16 pt-10">
-        <div className="mb-6 flex items-center gap-3">
-          <Calendar size={22} strokeWidth={1.5} color="#5C6B5C" />
-          <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
-            Calendar
-          </h1>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Calendar size={22} strokeWidth={1.5} color="#5C6B5C" />
+            <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
+              Calendar
+            </h1>
+          </div>
+          <Link
+            href="/dashboard"
+            className="text-xs font-semibold text-[#5C6B5C] hover:text-[#1A2E1A] underline underline-offset-2"
+          >
+            Back to dashboard
+          </Link>
         </div>
 
         {/* Connect calendar card */}
