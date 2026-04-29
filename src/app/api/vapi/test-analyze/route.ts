@@ -48,30 +48,57 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: `You are a QA analyst for an AI voice calling system. Kate is an AI care coordinator calling doctor's offices to book appointments. Analyze this call transcript.
+          content: `You are a QA analyst for Kate, an AI care coordinator who calls doctor's offices on behalf of patients to schedule appointments, ask about availability, or check in on existing appointments.
+
+CRITICAL: score Kate on whether she handled the situation appropriately, NOT on a fixed checklist. The right outcome depends on what the receptionist actually said and did. Some scenarios SHOULD end without a booking — and Kate is correct to bail. Examples of appropriate non-booking outcomes:
+- Office is voicemail only → leave a clear callback message
+- Walk-in clinic, no appointments → acknowledge and end politely
+- Office refuses to book with an AI → ask if a callback is OK and end politely
+- Outstanding balance / payment required first → relay the issue to the patient and end
+- Practice is wrong specialty / patient was sent to wrong number → confirm and end politely
+- Doctor retired or no longer at practice → ask about alternatives, end if none fit
+- Referral required → ask what the office needs and end with a plan
+- Office is closing / relocating → confirm next steps and end politely
+
+In each of these, "didn't book" is the CORRECT outcome — score appropriateness, not bookings.
+
+STEP 1 — Identify the scenario in one sentence ("what kind of office/situation was this?").
+STEP 2 — Determine the IDEAL outcome for that scenario (booking vs graceful exit vs request follow-up).
+STEP 3 — Score Kate on whether her behavior matched that ideal.
 
 Return a JSON object (no markdown, just raw JSON) with this exact structure:
 {
+  "scenario": "one-sentence description of what the receptionist threw at Kate",
+  "ideal_outcome": "one-sentence description of what a great human care coordinator would have done",
+  "actual_outcome": "one-sentence description of what Kate actually did",
   "pass": true/false,
   "score": 0-10,
   "rubric": {
-    "intro_correct": { "pass": true/false, "note": "brief reason" },
-    "accepted_first_time": { "pass": true/false, "note": "did Kate accept the first offered time without asking to repeat?" },
-    "followed_tool_response": { "pass": true/false, "note": "did Kate say message_to_say word for word?" },
-    "confirmed_before_ending": { "pass": true/false, "note": "did Kate confirm date+time+provider?" },
-    "asked_what_to_bring": { "pass": true/false, "note": "did Kate ask about what to bring?" },
-    "natural_goodbye": { "pass": true/false, "note": "did Kate say goodbye naturally?" },
-    "no_repetition": { "pass": true/false, "note": "did Kate avoid repeating herself?" },
-    "correct_doctor_name": { "pass": true/false, "note": "did Kate use the right doctor name, no DDS/MD prefix issues?" }
+    "identified_situation": { "pass": true/false, "note": "did Kate correctly understand what the office was telling her?" },
+    "appropriate_response": { "pass": true/false, "note": "given the scenario, did Kate take the right next step (book / ask follow-up / end politely)?" },
+    "tool_use_correct": { "pass": true/false, "note": "did Kate call the right tools at the right time, or skip them appropriately when no booking was possible?" },
+    "natural_voice": { "pass": true/false, "note": "did Kate sound like a real care coordinator — warm, concise, not robotic? Paraphrasing tool messages naturally is FINE." },
+    "no_forced_booking": { "pass": true/false, "note": "did Kate AVOID pushing for a booking when the scenario clearly didn't allow one (walk-in only, voicemail, balance owed, etc.)?" },
+    "patient_info_protected": { "pass": true/false, "note": "did Kate share only the info that was actually requested? Didn't leak DOB/insurance/SSN unnecessarily?" },
+    "graceful_close": { "pass": true/false, "note": "did Kate end the call politely with a clear next step (booked / will call back / message left)?" },
+    "correct_doctor_name": { "pass": true/false, "note": "did Kate use the right doctor name without weird credential prefixes (DDS/MD)?" }
   },
-  "issues": ["issue 1", "issue 2"],
+  "issues": ["specific things Kate did wrong, given the scenario"],
+  "wins": ["specific things Kate did well, given the scenario"],
   "prompt_fixes": [
-    { "find": "text to find in current prompt", "replace": "text to replace with", "confidence": "high/medium/low", "reason": "why" }
+    { "find": "exact text from Kate's prompt to find", "replace": "exact replacement text", "confidence": "high/medium/low", "reason": "why this fix is needed" }
   ],
-  "summary": "One paragraph summary of the call quality"
+  "summary": "One paragraph summary of the call quality."
 }
 
-Be precise. Only suggest prompt_fixes that are specific text changes, not vague suggestions. Use "high" confidence only when you're certain the fix will help without side effects.`,
+GUIDANCE FOR PROMPT FIXES — be conservative:
+- Only suggest "high" confidence when the fix is specific, would not break behavior on OTHER scenarios, and addresses a clear root cause.
+- Do NOT suggest fixes that would push Kate to book in scenarios where booking is wrong.
+- Do NOT suggest fixes that would force Kate to recite tool messages verbatim — natural paraphrasing is correct.
+- Do NOT suggest fixes that punish Kate for asking clarifying questions when the office was unclear.
+- If Kate handled the call well, return prompt_fixes: [].
+
+Score 9-10 = handled an edge case excellently. Score 7-8 = solid, minor wobble. Score 5-6 = correct outcome but rough execution. Score 3-4 = wrong outcome or significant issues. Score 0-2 = catastrophic.`,
         },
         { role: "user", content: `Transcript:\n\n${transcript}` },
       ],
@@ -87,9 +114,16 @@ Be precise. Only suggest prompt_fixes that are specific text changes, not vague 
       analysisData = { pass: false, score: 0, summary: analysis.choices[0]?.message?.content || "Parse error", issues: [], prompt_fixes: [] };
     }
 
-    // Step 2: Auto-apply high-confidence prompt fixes
+    // Step 2: Auto-apply high-confidence prompt fixes.
+    // Gated on AUTO_APPLY_PROMPT_FIXES=true AND the rubric being explicitly
+    // marked as calibrated (RUBRIC_CALIBRATED=true). The rubric was rewritten
+    // to be scenario-aware and could still produce bad fixes during the
+    // calibration window — keep auto-apply OFF until we're confident.
     let appliedFixes: string[] = [];
-    if (process.env.AUTO_APPLY_PROMPT_FIXES === "true" && analysisData.prompt_fixes?.length > 0) {
+    const autoApplyEnabled =
+      process.env.AUTO_APPLY_PROMPT_FIXES === "true" &&
+      process.env.RUBRIC_CALIBRATED === "true";
+    if (autoApplyEnabled && analysisData.prompt_fixes?.length > 0) {
       const vapiKey = process.env.VAPI_API_KEY;
       if (vapiKey) {
         // Fetch current Kate prompt
