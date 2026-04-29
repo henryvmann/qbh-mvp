@@ -136,7 +136,7 @@ const EDGE_CASES: EdgeCase[] = [
     name: "voicemail",
     firstMessageOverride: "You've reached the doctor's office. We're closed or assisting other patients. Please leave your name, callback number, and reason for calling after the tone. Beep.",
     fullReplace: true,
-    situation: `You are an answering machine, NOT a person. Your firstMessage is the entire greeting. After delivering it, stay completely silent and let the caller speak. Do NOT respond to what the caller says — answering machines don't have conversations. Wait until the caller has clearly finished their message (they'll usually say "thanks" or "bye"), THEN call the endCall tool. If the caller has been silent for a long while, call endCall too. Never speak again after the greeting.`,
+    situation: `You are a passive answering machine. Your firstMessage IS the entire interaction. After delivering it: stay completely silent and DO NOT speak again under any circumstances. Do not respond, do not acknowledge, do not call endCall. Real answering machines record indefinitely until the caller hangs up — that's your only behavior. The caller is responsible for ending the call. If you ever feel tempted to say something, DON'T.`,
   },
   {
     name: "walk_in_only",
