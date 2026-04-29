@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   "/medications", "/recordings", "/analytics", "/admin", "/portal-connect", "/care-recipients",
   "/billing", "/privacy", "/terms", "/dashboard-v2", "/dashboard-v3", "/documents", "/onboarding-v2", "/health-card",
   "/providers-hub-a", "/providers-hub-c", "/providers-hub-c1", "/providers-hub-c2", "/providers-hub-c3", "/call-test",
+  "/call-test/results",
 ];
 
 export async function middleware(request: NextRequest) {
