@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/vapi/test-loop",
-      "schedule": "0 3 * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }

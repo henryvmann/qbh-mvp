@@ -338,14 +338,40 @@ async function handleOne(
     attemptRow.provider_id = providerIdMaybeUuid;
   }
 
-  const { data: proposal, error: proposalErr } = await supabaseAdmin
+  const { data: proposalDirect, error: proposalErr } = await supabaseAdmin
     .from("proposals")
     .select("id, attempt_id, normalized_start, normalized_end, timezone, payload")
     .eq("id", proposalIdStr)
-    .single();
+    .maybeSingle();
 
+  let proposal = proposalDirect;
+
+  // Fallback: Kate sometimes hallucinates a proposal_id or replays a stale one.
+  // If the direct lookup misses, fall back to the latest proposal we have on
+  // record for THIS attempt — that's almost always the slot Sandra just offered
+  // and Kate is trying to confirm.
   if (proposalErr || !proposal?.id) {
-    return toolError(toolCallId, { stage: "proposal_not_found" });
+    const { data: latestProposal } = await supabaseAdmin
+      .from("proposals")
+      .select("id, attempt_id, normalized_start, normalized_end, timezone, payload")
+      .eq("attempt_id", attemptIdStr)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestProposal?.id) {
+      console.log("CONFIRM_BOOKING_PROPOSAL_FALLBACK:", {
+        attemptIdStr,
+        receivedProposalId: proposalIdStr,
+        usingLatestProposalId: latestProposal.id,
+      });
+      proposal = latestProposal;
+    } else {
+      return toolError(toolCallId, {
+        stage: "proposal_not_found",
+        received_proposal_id: proposalIdStr,
+      });
+    }
   }
 
   if (String(proposal.attempt_id) !== attemptIdStr) {

@@ -185,6 +185,64 @@ function formatForSpeechFromIso(iso: string) {
   return `${month} ${ordinal(dayNum)} at ${time}`;
 }
 
+// Normalize spoken time phrases ("three forty five PM", "two thirty", "noon")
+// to digit form ("3:45 PM", "2:30", "12:00 PM") so the downstream HH(:MM)? regex
+// can pick them up. TTS-rendered transcripts almost always speak times in words,
+// so without this every "Monday at three forty five PM" trips the NEED_TIME branch.
+function normalizeTimeWords(text: string): string {
+  if (!text) return text;
+  let s = text;
+
+  const hourWords: Record<string, string> = {
+    one: "1", two: "2", three: "3", four: "4", five: "5",
+    six: "6", seven: "7", eight: "8", nine: "9", ten: "10",
+    eleven: "11", twelve: "12",
+  };
+
+  // Compound minute phrases — order matters (longest first so "twenty five" is
+  // caught before "twenty"). The right-hand side is a zero-padded minute string.
+  const compoundMinutes: Array<[string, string]> = [
+    ["o'?\\s*clock", "00"],
+    ["fifty\\s+five", "55"],
+    ["fifty", "50"],
+    ["forty\\s+five", "45"],
+    ["forty", "40"],
+    ["thirty\\s+five", "35"],
+    ["thirty", "30"],
+    ["twenty\\s+five", "25"],
+    ["twenty", "20"],
+    ["fifteen", "15"],
+    ["ten", "10"],
+    ["oh\\s+five", "05"],
+    ["five", "05"],
+  ];
+
+  // "<hour-word> <minute-phrase> [am|pm]" → "H:MM AM/PM"
+  for (const [hw, hd] of Object.entries(hourWords)) {
+    for (const [mw, md] of compoundMinutes) {
+      const re = new RegExp(
+        `\\b${hw}\\s+${mw}\\s*(a\\.?m\\.?|p\\.?m\\.?)?\\b`,
+        "gi",
+      );
+      s = s.replace(re, (_full, ap) => `${hd}:${md}${ap ? ` ${ap}` : ""}`);
+    }
+  }
+
+  // "<hour-word> [am|pm]" (no minute) → "H AM/PM" — leave for the existing parser
+  for (const [hw, hd] of Object.entries(hourWords)) {
+    s = s.replace(
+      new RegExp(`\\b${hw}\\s+(a\\.?m\\.?|p\\.?m\\.?)\\b`, "gi"),
+      `${hd} $1`,
+    );
+    s = s.replace(new RegExp(`\\bat\\s+${hw}\\b`, "gi"), `at ${hd}`);
+  }
+
+  s = s.replace(/\bnoon\b/gi, "12:00 PM");
+  s = s.replace(/\bmidnight\b/gi, "12:00 AM");
+
+  return s;
+}
+
 function safeParseArgs(raw: any): Record<string, any> {
   if (!raw) return {};
   if (typeof raw === "object") return raw as Record<string, any>;
@@ -232,6 +290,10 @@ async function handleOne(
 
   let proposalId = String(args?.proposal_id ?? args?.proposalId ?? "").trim();
   const officeOfferRawText = String(args?.office_offer_raw_text ?? "").trim();
+  // parsableText is officeOfferRawText with spoken time phrases pre-normalized.
+  // All time-regex matching below should use parsableText so word-form times like
+  // "three forty five PM" don't trip the NEED_TIME branch.
+  const parsableText = normalizeTimeWords(officeOfferRawText);
 
   const toolPayload = {
     toolCallId,
@@ -302,6 +364,22 @@ async function handleOne(
     return null;
   }
 
+  // Tolerate stale/hallucinated proposal_id: if Kate hands us a proposal_id that
+  // doesn't exist in the DB AND we also have raw office text, drop the bad id so
+  // the create-from-raw-text branch below runs instead of looping on PROPOSAL_NOT_FOUND.
+  if (proposalId && proposalId !== "proposal_id" && officeOfferRawText) {
+    const { data: probe } = await supabaseAdmin
+      .from("proposals")
+      .select("id")
+      .eq("id", proposalId)
+      .eq("attempt_id", attemptIdStr)
+      .maybeSingle();
+    if (!probe) {
+      console.log("PROPOSE_STALE_PROPOSAL_ID:", { attemptIdStr, proposalId, willRecreate: true });
+      proposalId = "";
+    }
+  }
+
   // If no proposal_id but we have office_offer_raw_text, create a proposal on the fly
   if ((!proposalId || proposalId === "proposal_id") && officeOfferRawText) {
     try {
@@ -327,7 +405,10 @@ async function handleOne(
         // Has a month name — parse as month + day (handled below in the month+day section)
       } else if (!dayMatch && !hasMonthName) {
         // No day-of-week and no month name — might be "the 21st" or "the twenty first"
-        // Extract any number and assume it's a day of the current or next month
+        // Extract any number and assume it's a day of the current or next month.
+        // Run dayNumMatch on the ORIGINAL raw text so a time like "at 3 PM" doesn't
+        // get mistaken for a day-of-month (e.g. "the twentieth at 3 PM" should
+        // resolve to day=20 from wordNumMatch, not day=3 from a stray time digit).
         const dayNumMatch = officeOfferRawText.match(/\b(\d{1,2})(?:st|nd|rd|th)?\b/);
         const wordNumMatch = officeOfferRawText.match(/\b(twenty[- ]?first|twenty[- ]?second|twenty[- ]?third|twenty[- ]?fourth|twenty[- ]?fifth|twenty[- ]?sixth|twenty[- ]?seventh|twenty[- ]?eighth|twenty[- ]?ninth|thirtieth|thirty[- ]?first|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth)\b/i);
 
@@ -362,17 +443,8 @@ async function handleOne(
             if (month > 11) { month = 0; year++; }
           }
 
-          // Normalize word numbers to digits for time parsing
-          let timeText = officeOfferRawText;
-          const wordTimeMap: Record<string, string> = {
-            "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
-            "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",
-            "eleven": "11", "twelve": "12",
-          };
-          for (const [word, digit] of Object.entries(wordTimeMap)) {
-            timeText = timeText.replace(new RegExp(`\\b${word}\\s*(am|pm|a\\.m\\.|p\\.m\\.)`, "gi"), `${digit} $1`);
-            timeText = timeText.replace(new RegExp(`\\bat\\s+${word}\\b`, "gi"), `at ${digit}`);
-          }
+          // parsableText already has compound time words pre-normalized.
+          const timeText = parsableText;
 
           // Check for time — if no time given, ask for it instead of defaulting to 9AM
           const tMatch = timeText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?)\b/i);
@@ -412,7 +484,7 @@ async function handleOne(
 
       // Handle relative dates like "this Friday at noon", "Friday at 2pm"
       if (!parsedStart) {
-        const timeMatch = officeOfferRawText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
+        const timeMatch = parsableText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
 
         if (dayMatch) {
           const dayNames = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
@@ -465,7 +537,9 @@ async function handleOne(
         if (monthOnlyMatch) {
           const month = monthNames.indexOf(monthOnlyMatch[1].toLowerCase());
 
-          // Try digit day first
+          // Try digit day first — must use the raw text, not parsableText, so a
+          // time like "at three PM" → "at 3 PM" doesn't get misread as day=3
+          // when the actual day is "twenty first" matched below by wordday.
           const digitDay = officeOfferRawText.match(/\b(\d{1,2})(?:st|nd|rd|th)?\b/);
           let day: number | null = digitDay ? parseInt(digitDay[1]) : null;
 
@@ -489,7 +563,7 @@ async function handleOne(
           }
 
           if (day && day >= 1 && day <= 31) {
-            const timeMatch2 = officeOfferRawText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
+            const timeMatch2 = parsableText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
             if (!timeMatch2) {
               // No time given — ask for it instead of defaulting to 9AM
               const spokenDate = `${monthOnlyMatch![1]} ${ordinal(day)}`;
