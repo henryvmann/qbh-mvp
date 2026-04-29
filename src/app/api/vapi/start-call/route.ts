@@ -323,7 +323,12 @@ export async function POST(req: Request) {
 
   const mode = getStartCallMode(body?.mode);
 
-  const app_user_id = await getSessionAppUserId(req);
+  let app_user_id = await getSessionAppUserId(req);
+
+  // Allow server-to-server calls (from test-loop cron) with app_user_id in body
+  if (!app_user_id && body?.app_user_id) {
+    app_user_id = String(body.app_user_id).trim();
+  }
 
   if (!app_user_id) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
