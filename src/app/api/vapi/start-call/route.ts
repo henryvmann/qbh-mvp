@@ -424,7 +424,16 @@ export async function POST(req: Request) {
     .single();
 
   const isManualProvider = providerRow?.source === "manual";
-  const doctorName = (providerRow?.doctor_name || "").trim();
+  // Use doctor_name if set, otherwise use provider_name if it looks like a person's name (2-3 words, no business keywords)
+  let doctorName = (providerRow?.doctor_name || "").trim();
+  if (!doctorName && provider_name) {
+    const cleaned = provider_name.replace(/,\s*(DDS|MD|DO|NP|PA|OD|DC)$/i, "").trim();
+    const words = cleaned.split(/\s+/);
+    const businessWords = /\b(health|medical|clinic|center|group|associates|practice|consultants|hospital|care|inc|llc|pc|pllc)\b/i;
+    if (words.length >= 2 && words.length <= 4 && !businessWords.test(cleaned)) {
+      doctorName = cleaned;
+    }
+  }
 
   // Check if patient has visit history with this provider (determines new vs existing)
   let patientStatus = isManualProvider ? "unknown" : "likely_new";
@@ -438,6 +447,24 @@ export async function POST(req: Request) {
   } catch {
     // Non-critical — default to unknown
   }
+
+  // Check for existing upcoming appointment with this provider
+  let existingAppointmentInfo = "";
+  try {
+    const { data: existingEvents } = await supabaseAdmin
+      .from("calendar_events")
+      .select("start_at, timezone")
+      .eq("app_user_id", app_user_id)
+      .eq("provider_id", provider_id)
+      .eq("status", "confirmed")
+      .gte("start_at", new Date().toISOString())
+      .order("start_at", { ascending: true })
+      .limit(1);
+    if (existingEvents && existingEvents.length > 0) {
+      const apptDate = new Date(existingEvents[0].start_at).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" });
+      existingAppointmentInfo = `IMPORTANT: There is already an existing appointment with this provider on ${apptDate}. Before booking a new one, mention this to the office and ask if they'd like to keep it or reschedule.`;
+    }
+  } catch {}
 
   // Test mode: if QBH_TEST_MODE=true, always call the demo destination
   const testMode = (process.env.QBH_TEST_MODE || "").trim().toLowerCase() === "true";
@@ -578,6 +605,7 @@ export async function POST(req: Request) {
           call_purpose: isManualProvider ? "INQUIRY" : mode,
           is_manual_provider: isManualProvider,
           patient_status: patientStatus,
+          existing_appointment_note: existingAppointmentInfo || "none",
           doctor_name: doctorName || "not specified",
           patient_date_of_birth: formatDobForSpeech(patientProfile.date_of_birth) || "not available — the patient will provide when they arrive",
           patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
