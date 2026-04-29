@@ -177,6 +177,28 @@ export default function OnboardingPage() {
     localStorage.setItem("qbh_user_id", userId);
   }, [userId]);
 
+  // Resume after Google Calendar OAuth round-trip. The callback redirects to
+  // /onboarding?calendar_connected=1 when the user came in via the onboarding
+  // calendar-connect step. Pick up the flow and run calendar discovery.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("calendar_connected") !== "1") return;
+
+    // Strip the param so a refresh doesn't loop
+    const url = new URL(window.location.href);
+    url.searchParams.delete("calendar_connected");
+    url.searchParams.delete("user_id");
+    window.history.replaceState({}, "", url.toString());
+
+    setPhase("discovery-reveal");
+    addKateMessage("Calendar connected. Scanning for doctor appointments now…");
+    setTimeout(() => {
+      runCalendarDiscovery();
+    }, 800);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Auto-scroll to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -807,7 +829,7 @@ export default function OnboardingPage() {
                   const res = await apiFetch("/api/google-calendar/connect", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ app_user_id: userId }),
+                    body: JSON.stringify({ app_user_id: userId, return_to: "onboarding" }),
                   });
                   const data = await res.json();
                   if (data?.ok && data?.authorize_url) {

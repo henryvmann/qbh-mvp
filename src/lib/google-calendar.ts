@@ -169,7 +169,10 @@ export async function ensureGoogleCalendarProvider(
   };
 }
 
-export async function buildGoogleCalendarState(appUserId: string): Promise<string> {
+export async function buildGoogleCalendarState(
+  appUserId: string,
+  returnTo?: string,
+): Promise<string> {
   const provider = await ensureGoogleCalendarProvider(appUserId);
 
   return JSON.stringify({
@@ -177,6 +180,7 @@ export async function buildGoogleCalendarState(appUserId: string): Promise<strin
     provider_id: provider.id,
     provider_name: provider.name,
     provider: "google_calendar",
+    ...(returnTo ? { return_to: returnTo } : {}),
   });
 }
 
@@ -187,6 +191,7 @@ export function parseGoogleCalendarState(
   provider_id: string;
   provider_name: string;
   provider: string;
+  return_to?: string;
 } {
   if (!rawState) {
     throw new Error("Missing Google OAuth state");
@@ -232,19 +237,28 @@ export function parseGoogleCalendarState(
     throw new Error("Google OAuth state missing provider_id");
   }
 
+  const returnTo =
+    "return_to" in parsed && typeof (parsed as { return_to?: unknown }).return_to === "string"
+      ? ((parsed as { return_to: string }).return_to)
+      : undefined;
+
   return {
     app_user_id: appUserId,
     provider_id: providerId,
     provider_name: providerName,
     provider,
+    return_to: returnTo,
   };
 }
 
-export async function buildGoogleCalendarAuthUrl(appUserId: string): Promise<string> {
+export async function buildGoogleCalendarAuthUrl(
+  appUserId: string,
+  returnTo?: string,
+): Promise<string> {
   const clientId = getGoogleCalendarClientId();
   const redirectUri = getGoogleCalendarRedirectUri();
   const scope = getGoogleCalendarScopes().join(" ");
-  const state = await buildGoogleCalendarState(appUserId);
+  const state = await buildGoogleCalendarState(appUserId, returnTo);
 
   const params = new URLSearchParams({
     client_id: clientId,

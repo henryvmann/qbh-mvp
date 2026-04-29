@@ -204,6 +204,19 @@ export async function GET(req: Request) {
       // Never block the OAuth callback redirect
     }
 
+    // Honor the return_to hint from OAuth state so callers like onboarding
+    // can resume their flow instead of dumping the user on /calendar-connect.
+    const returnTo = (parsedState.return_to || "").trim();
+    if (returnTo === "onboarding") {
+      const params = new URLSearchParams({
+        user_id: parsedState.app_user_id,
+        calendar_connected: "1",
+      });
+      return NextResponse.redirect(
+        new URL(`/onboarding?${params.toString()}`, url.origin)
+      );
+    }
+
     return NextResponse.redirect(
       new URL(calendarConnectHref(parsedState.app_user_id), url.origin)
     );
