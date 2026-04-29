@@ -664,8 +664,8 @@ export async function POST(req: Request) {
         booking_summary: structured.booking_summary,
       });
 
-      // Auto-analyze test calls (fire-and-forget)
-      if (process.env.AUTO_ANALYZE_CALLS === "true" && transcript) {
+      // Auto-analyze test calls — only on terminal (call-ended) webhooks
+      if (process.env.AUTO_ANALYZE_CALLS === "true" && transcript && isTerminalWebhook(body)) {
         const baseUrl = process.env.QBH_BASE_URL || process.env.PUBLIC_BASE_URL || "";
         if (baseUrl) {
           fetch(`${baseUrl}/api/vapi/test-analyze`, {
