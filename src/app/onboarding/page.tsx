@@ -177,6 +177,38 @@ export default function OnboardingPage() {
     localStorage.setItem("qbh_user_id", userId);
   }, [userId]);
 
+  // T3-4: if the visitor already has an authenticated session, they
+  // already created their account — don't restart the intro. Send them
+  // to the dashboard instead. (Common case: user creates account, mid-
+  // Plaid the page freezes, they refresh, and end up looking at the
+  // welcome screen they just completed.)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Honor the Google-Calendar return path — that effect runs separately
+    // and we don't want to redirect away before it can resume the flow.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("calendar_connected") === "1") return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (data?.session?.user) {
+          router.replace("/dashboard");
+        }
+      } catch {
+        // If auth check fails, fall through to normal onboarding
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  // Run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Resume after Google Calendar OAuth round-trip. The callback redirects to
   // /onboarding?calendar_connected=1 when the user came in via the onboarding
   // calendar-connect step. Pick up the flow and run calendar discovery.
