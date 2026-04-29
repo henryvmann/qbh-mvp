@@ -302,6 +302,28 @@ function ProvidersInner() {
     }
   }, [searchParams]);
 
+  // ?action=book — coming from the First Booking achievement. Expand the first
+  // bookable provider so the user lands on a Have-Kate-book affordance, or
+  // open the add form if they have no providers yet.
+  useEffect(() => {
+    if (searchParams.get("action") !== "book" || loading) return;
+    const bookable = snapshots.find(
+      (s) =>
+        s.provider.provider_type !== "pharmacy" &&
+        s.provider.provider_type !== "calendar" &&
+        (s.booking_state?.status !== "BOOKED")
+    );
+    if (bookable) {
+      setExpandedId(bookable.provider.id);
+      setTimeout(() => {
+        const el = document.querySelector(`[data-provider-id="${bookable.provider.id}"]`);
+        if (el) (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 200);
+    } else {
+      setShowAddForm(true);
+    }
+  }, [searchParams, snapshots, loading]);
+
   if (loading) {
     return <PageShell><div /></PageShell>;
   }
@@ -440,6 +462,7 @@ function ProvidersInner() {
                   return (
                     <div
                       key={snapshot.provider.id}
+                      data-provider-id={snapshot.provider.id}
                       className="rounded-2xl shadow-sm overflow-hidden transition-shadow hover:shadow-md"
                       style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
                     >

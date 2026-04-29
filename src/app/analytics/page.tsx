@@ -45,11 +45,13 @@ function AchievementBadge({
   title,
   description,
   earned,
+  actionHref,
 }: {
   icon: React.ComponentType<any>;
   title: string;
   description: string;
   earned: boolean;
+  actionHref?: string;
 }) {
   return (
     <div
@@ -60,17 +62,25 @@ function AchievementBadge({
       }`}
     >
       <IconComp size={24} strokeWidth={1.5} color={earned ? "#5C6B5C" : "#7A7F8A"} />
-      <div>
+      <div className="flex-1 min-w-0">
         <div className={`text-sm font-semibold ${earned ? "text-[#1A1D2E]" : "text-[#3A3F4B]"}`}>
           {title}
         </div>
         <div className="text-xs text-[#7A7F8A]">{description}</div>
       </div>
-      {earned && (
-        <span className="ml-auto">
+      {earned ? (
+        <span className="shrink-0">
           <Check size={16} strokeWidth={2} color="#5C6B5C" />
         </span>
-      )}
+      ) : actionHref ? (
+        <a
+          href={actionHref}
+          className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+          style={{ backgroundColor: "#5C6B5C" }}
+        >
+          Go
+        </a>
+      ) : null}
     </div>
   );
 }
@@ -203,12 +213,16 @@ export default function AnalyticsPage() {
           const earned = achievements.filter((a) => a.earned);
           const outstanding = achievements.filter((a) => !a.earned);
           const actionLinks: Record<string, string> = {
-            "First Booking": "/providers",
+            // First Booking: jump straight into the booking flow on the
+            // providers page so the user lands on a Have-Kate-book affordance,
+            // not just the list.
+            "First Booking": "/providers?action=book",
             "Health Historian": "/visits",
             "Goal Setter": "/goals",
             "Connected": "/calendar-connect",
             "On Track": "/providers",
             "Health Champion": "/providers?add=true",
+            "Provider Tracker": "/providers?add=true",
           };
 
           return (
@@ -233,20 +247,14 @@ export default function AnalyticsPage() {
                   </div>
                   <div className="space-y-2">
                     {outstanding.map((a) => (
-                      <div key={a.title} className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <AchievementBadge icon={a.icon} title={a.title} description={a.description} earned={false} />
-                        </div>
-                        {actionLinks[a.title] && (
-                          <a
-                            href={actionLinks[a.title]}
-                            className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                            style={{ backgroundColor: "#5C6B5C" }}
-                          >
-                            Go
-                          </a>
-                        )}
-                      </div>
+                      <AchievementBadge
+                        key={a.title}
+                        icon={a.icon}
+                        title={a.title}
+                        description={a.description}
+                        earned={false}
+                        actionHref={actionLinks[a.title]}
+                      />
                     ))}
                   </div>
                 </div>

@@ -186,7 +186,7 @@ function buildSuggestions(
     const first = overdueSnapshots[0];
     suggestions.push({
       id: `book-overdue-${first.provider.id}`,
-      text: `Kate can book ${first.provider.name} for you — let her handle it?`,
+      text: `${first.provider.name} is overdue for a visit.`,
       actionLabel: "Let Kate book",
       actionType: "vapi-call",
       providerId: first.provider.id,
