@@ -13,9 +13,7 @@ type Slide = {
 
 const PAGE_INTROS: Record<string, Slide[]> = {
   "/providers": [
-    { title: "Your Provider Hub", body: "All your doctors, organized by specialty. Each one stores contact info, visit history, documents, and notes — everything in one place.", target: "center", position: "below" },
-    { title: "Your Providers", body: "Each provider card shows their status — on track, overdue, or upcoming. Tap any name for full details.", target: "provider-list", position: "above" },
-    { title: "Build Your Team", body: "Missing someone? Search by name and add them, or let Kate help you find one.", target: "add-provider", position: "below" },
+    { title: "Your Provider Hub", body: "All your doctors, organized by specialty — contact info, visit history, documents, and notes in one place. Status badges show on track, overdue, or upcoming. Use the + button to add anyone we missed.", target: "center", position: "below" },
   ],
   "/visits": [
     { title: "Your Appointments", body: "See upcoming visits and past appointments all in one view.", target: "center", position: "below" },
@@ -28,9 +26,7 @@ const PAGE_INTROS: Record<string, Slide[]> = {
     { title: "Provider History", body: "Scroll down to see your providers grouped by year with visit dots.", target: "timeline-history", position: "above" },
   ],
   "/goals": [
-    { title: "Set Your Goals", body: "Tell Kate what you want to work on and she'll suggest specific goals.", target: "center", position: "below" },
-    { title: "What's Important", body: "Type a health topic and Kate will suggest actionable goals with the right provider types.", target: "goals-input", position: "below" },
-    { title: "Track Progress", body: "Goals update automatically as you book visits and add providers.", target: "goals-sections", position: "above" },
+    { title: "Your Goals", body: "Tell Kate what you want to work on — she'll suggest the right provider types and your progress updates as you book visits.", target: "center", position: "below" },
   ],
   "/calendar-view": [
     { title: "Your Health Calendar", body: "See what's coming up and set your availability for booking.", target: "center", position: "below" },
@@ -162,37 +158,30 @@ export default function PageIntro() {
 
   return (
     <>
-      {/* Overlay with spotlight cutout */}
-      <div
-        className="fixed inset-0 z-[55] transition-all duration-300"
-        onClick={handleSkip}
-        style={
-          spotlightStyle
-            ? {
-                background: "rgba(0,0,0,0.4)",
-                clipPath: `polygon(
-                  0% 0%, 100% 0%, 100% 100%, 0% 100%,
-                  0% ${spotlightStyle.top}px,
-                  ${spotlightStyle.left}px ${spotlightStyle.top}px,
-                  ${spotlightStyle.left}px ${spotlightStyle.top + spotlightStyle.height}px,
-                  ${spotlightStyle.left + spotlightStyle.width}px ${spotlightStyle.top + spotlightStyle.height}px,
-                  ${spotlightStyle.left + spotlightStyle.width}px ${spotlightStyle.top}px,
-                  0% ${spotlightStyle.top}px
-                )`,
-              }
-            : { background: "rgba(0,0,0,0.4)" }
-        }
-      />
+      {/* Overlay — full-screen dimmer when no target. */}
+      {!spotlightStyle && (
+        <div
+          className="fixed inset-0 z-[55] transition-all duration-300"
+          onClick={handleSkip}
+          style={{ background: "rgba(0,0,0,0.4)" }}
+        />
+      )}
 
-      {/* Spotlight ring */}
+      {/* Spotlight cutout with rounded corners — uses an outer box-shadow on a
+          rounded rect to dim everything except the highlighted card. The
+          rounded radius matches the cards (rounded-2xl = 1rem), so the
+          highlight follows the card shape instead of cutting a rectangle. */}
       {spotlightStyle && (
         <div
-          className="fixed z-[55] pointer-events-none rounded-2xl ring-2 ring-white/60 transition-all duration-300"
+          className="fixed z-[55] transition-all duration-300 rounded-2xl ring-2 ring-white/60"
+          onClick={handleSkip}
           style={{
             top: spotlightStyle.top,
             left: spotlightStyle.left,
             width: spotlightStyle.width,
             height: spotlightStyle.height,
+            boxShadow: "0 0 0 9999px rgba(0,0,0,0.4)",
+            pointerEvents: "auto",
           }}
         />
       )}
