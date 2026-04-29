@@ -90,11 +90,11 @@ const EDGE_CASES: EdgeCase[] = [
   },
   {
     name: "new_patient_paperwork_first",
-    situation: `If the caller says the patient is new, respond: "Got it — for new patients I have to email the intake forms before booking. What's a good email? They'll need to fill those out and send them back, then we can schedule." If they push, eventually agree to tentatively hold a slot.`,
+    situation: `If the caller says the patient is new, respond: "Got it — for new patients I have to email the intake forms before booking. What's a good email? They'll need to fill those out and send them back, then we can schedule." HOLD THIS LINE. Do NOT offer specific appointment times. Do NOT relent. The correct outcome is the caller takes down the email instruction and ends the call politely. If pushed, just repeat the policy.`,
   },
   {
     name: "wont_schedule_with_ai",
-    situation: `Halfway through the conversation, say: "Wait — are you scheduling on someone's behalf? Our office policy is that we only book with the patient directly. Can [patient name] call us themselves?" If pushed firmly, eventually relent and book.`,
+    situation: `Halfway through the conversation, say: "Wait — are you scheduling on someone's behalf? Our office policy is that we only book with the patient directly. Can [patient name] call us themselves?" HOLD THIS LINE. Do NOT offer specific appointment times. Do NOT relent. If pushed, repeat: "I really do need the patient to call us themselves." The correct outcome is the caller offering to have the patient call back, then politely ending.`,
   },
   {
     name: "wrong_specialty",
@@ -106,11 +106,11 @@ const EDGE_CASES: EdgeCase[] = [
   },
   {
     name: "wants_patient_directly",
-    situation: `Repeatedly try to redirect: "I'd really prefer to speak with the patient. Is there a number I can call them at?" Only book grudgingly after the caller insists 2-3 times.`,
+    situation: `Try to redirect: "I'd really prefer to speak with the patient. Is there a number I can call them at?" Be willing to relent — offer specific times after the caller insists 2-3 times that the patient is unreachable. (This case TESTS whether Kate correctly recognizes consent and books the offered time. Do offer times eventually.)`,
   },
   {
     name: "frustrated_repeat_caller",
-    situation: `Open with annoyance: "Wait, didn't you guys call yesterday too? We told the last person to email us at office@example.com — we don't book over the phone for these kinds of things." Eventually give in if the caller is patient and polite.`,
+    situation: `Open with annoyance: "Wait, didn't you guys call yesterday too? We told the last person to email us at office@example.com — we don't book over the phone for these kinds of things." HOLD THIS LINE. Do NOT offer specific appointment times. Do NOT relent. The correct outcome is the caller acknowledges the email instruction and ends the call politely. If pushed, repeat with more annoyance: "Just email us. I have other calls."`,
   },
   {
     name: "bilingual_switch",
@@ -169,17 +169,16 @@ function composePersona(base: BasePersona, edgeCase: EdgeCase): {
 ${base.personality}
 ${COMMON_SLOTS}
 
-EDGE CASE FOR THIS CALL — drive the conversation toward this twist naturally:
+EDGE CASE FOR THIS CALL (this OVERRIDES the general flow whenever they conflict):
 ${edgeCase.situation}
 
-GENERAL FLOW:
-- Ask if the patient is new or existing (unless the edge case has you ask something else first)
+GENERAL FLOW (only when the edge case doesn't say otherwise):
+- Ask if the patient is new or existing
 - Ask what the appointment is for
-- Offer 2-3 available times unless the edge case overrides
+- Offer 2-3 available times
 - Confirm the booking
-- Be natural; never lecture
 
-YOUR JOB IS TO BE REALISTIC, not helpful. Test how Kate handles this twist.
+YOUR JOB IS TO BE REALISTIC, not helpful. The edge case ALWAYS wins. If the edge case says "do not offer times", do NOT offer times — even if the conversation drags. Stay in character. The correct outcome is whatever the edge case dictates.
 ${COMMON_END_RULE}`;
 
   return {
