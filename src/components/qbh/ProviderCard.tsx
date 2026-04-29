@@ -15,6 +15,10 @@ type ProviderCardProps = {
   snapshot: ProviderDashboardSnapshot;
   userId: string;
   hasGoogleCalendarConnection?: boolean;
+  // List of care-recipient names ("Self", "Partner — Sarah", etc.) the user
+  // can assign this provider to. When provided, the card renders an
+  // "Also assign to" control replacing the old drag-and-drop flow.
+  careRecipients?: string[];
 };
 
 type StartCallMode = "BOOK" | "ADJUST";
@@ -205,10 +209,56 @@ export default function ProviderCard({
   snapshot,
   userId,
   hasGoogleCalendarConnection = false,
+  careRecipients = [],
 }: ProviderCardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCalendarPrompt, setShowCalendarPrompt] = useState(false);
+  const [showAssign, setShowAssign] = useState(false);
+  const [assignSaving, setAssignSaving] = useState(false);
+
+  // Decode the provider's current care_recipient (stored as JSON-stringified
+  // array, single string, or null). Local state so we can optimistically
+  // update without waiting for the parent to refetch.
+  const initialAssigned: string[] = useMemo(() => {
+    const raw = (snapshot.provider as { care_recipient?: unknown }).care_recipient;
+    if (!raw) return [];
+    if (typeof raw === "string") {
+      const trimmed = raw.trim();
+      if (trimmed.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          return Array.isArray(parsed) ? parsed.map(String) : [trimmed];
+        } catch {
+          return [trimmed];
+        }
+      }
+      return [trimmed];
+    }
+    if (Array.isArray(raw)) return raw.map(String);
+    return [];
+  }, [snapshot.provider]);
+  const [assigned, setAssigned] = useState<string[]>(initialAssigned);
+
+  async function saveAssignments(next: string[]) {
+    setAssignSaving(true);
+    const prev = assigned;
+    setAssigned(next);
+    try {
+      const res = await apiFetch("/api/providers/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider_id: provider.id, care_recipients: next }),
+      });
+      if (!res.ok) {
+        setAssigned(prev);
+      }
+    } catch {
+      setAssigned(prev);
+    } finally {
+      setAssignSaving(false);
+    }
+  }
 
   const provider = snapshot.provider;
   const state = useMemo(() => getState(snapshot), [snapshot]);
@@ -558,7 +608,52 @@ export default function ProviderCard({
 
       <p className="mt-4 text-sm text-[#7A7F8A]">{state.description}</p>
 
-      {/* TODO: "Also assign to..." for sharing providers across care recipients */}
+      {/* "Also assign to..." — share a provider across care recipients.
+          Shown only when the user actually has additional recipients. */}
+      {careRecipients.length > 0 && (
+        <div className="mt-3 rounded-xl bg-[#F4F5F7] border border-[#EBEDF0] px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setShowAssign((prev) => !prev)}
+            className="flex w-full items-center justify-between text-xs text-[#7A7F8A] hover:text-[#1A1D2E]"
+          >
+            <span>
+              <span className="font-semibold">Assigned to:</span>{" "}
+              {assigned.length > 0 ? assigned.join(", ") : "no one yet"}
+            </span>
+            <span className="text-[#5C6B5C] font-semibold">
+              {showAssign ? "Done" : "Edit"}
+            </span>
+          </button>
+          {showAssign && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {careRecipients.map((name) => {
+                const checked = assigned.includes(name);
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    disabled={assignSaving}
+                    onClick={() => {
+                      const next = checked
+                        ? assigned.filter((r) => r !== name)
+                        : [...assigned, name];
+                      saveAssignments(next);
+                    }}
+                    className={`rounded-full px-3 py-1 text-xs font-medium border transition ${
+                      checked
+                        ? "bg-[#5C6B5C] text-white border-[#5C6B5C]"
+                        : "bg-white text-[#7A7F8A] border-[#EBEDF0] hover:border-[#5C6B5C]"
+                    }`}
+                  >
+                    {checked ? "✓ " : ""}{name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Appointment prep — show for non-pharmacy providers */}
       {!isPharmacy && (

@@ -719,6 +719,7 @@ function ProvidersInner() {
                               snapshot={snapshot}
                               userId={userId}
                               hasGoogleCalendarConnection={hasCalendar}
+                              careRecipients={careRecipients.map((r) => r.name)}
                             />
                           </div>
                         </div>

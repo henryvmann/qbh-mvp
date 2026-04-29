@@ -14,6 +14,10 @@ type UpdateBody = {
   care_team?: string | null;
   confirmed_status?: string | null;
   name?: string | null;
+  // Array of care-recipient names this provider is assigned to. Stored in
+  // the providers.care_recipient column as a JSON-stringified array. An
+  // empty array clears the assignment.
+  care_recipients?: string[];
 };
 
 export async function POST(req: Request) {
@@ -56,6 +60,10 @@ export async function POST(req: Request) {
   if (body.care_team !== undefined) updates.care_team = body.care_team;
   if (body.confirmed_status !== undefined) updates.confirmed_status = body.confirmed_status;
   if (body.name !== undefined) updates.name = body.name;
+  if (Array.isArray(body.care_recipients)) {
+    updates.care_recipient =
+      body.care_recipients.length > 0 ? JSON.stringify(body.care_recipients) : null;
+  }
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ ok: true, message: "Nothing to update" });
