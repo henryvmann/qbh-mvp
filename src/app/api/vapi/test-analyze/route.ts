@@ -20,6 +20,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "No transcript" }, { status: 400 });
   }
 
+  // Dedupe: if a row for this call_id already exists, return it instead of re-analyzing.
+  // VAPI can send multiple terminal webhooks for the same call (status-update with
+  // ended status + end-of-call-report); without this guard we'd analyze twice.
+  try {
+    const { data: existing } = await supabaseAdmin
+      .from("call_test_logs")
+      .select("id, call_id, score, analysis")
+      .eq("call_id", callId)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      console.log("[test-analyze] dedupe hit, skipping re-analysis:", callId);
+      return NextResponse.json({ ok: true, callId, deduped: true });
+    }
+  } catch (dedupeErr) {
+    console.error("[test-analyze] dedupe check failed:", dedupeErr);
+  }
+
   try {
     // Step 1: Analyze and score
     const analysis = await openai.chat.completions.create({
@@ -114,12 +133,17 @@ Be precise. Only suggest prompt_fixes that are specific text changes, not vague 
 
     // Step 3: Save to database
     try {
-      await supabaseAdmin.from("call_test_logs").insert({
+      const { error: insertError } = await supabaseAdmin.from("call_test_logs").insert({
         call_id: callId,
         transcript,
         analysis: JSON.stringify(analysisData),
         score: analysisData.score || 0,
       });
+      if (insertError) {
+        console.error("[test-analyze] DB insert error:", insertError);
+      } else {
+        console.log("[test-analyze] saved to call_test_logs:", { callId, score: analysisData.score });
+      }
     } catch (dbErr) {
       console.error("[test-analyze] DB save failed:", dbErr);
     }

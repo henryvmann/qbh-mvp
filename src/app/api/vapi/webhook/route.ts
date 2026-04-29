@@ -357,6 +357,38 @@ function buildStructuredBookingNotes(transcript: string): StructuredBookingNotes
   };
 }
 
+async function triggerAutoAnalyze(params: {
+  transcript: string;
+  attemptId: number;
+  reason: string;
+}): Promise<void> {
+  if (process.env.AUTO_ANALYZE_CALLS !== "true") return;
+
+  const baseUrl = process.env.QBH_BASE_URL || process.env.PUBLIC_BASE_URL || "";
+  if (!baseUrl) {
+    console.error("AUTO_ANALYZE_SKIP: missing QBH_BASE_URL/PUBLIC_BASE_URL");
+    return;
+  }
+
+  const callId = `attempt-${params.attemptId}`;
+  console.log("AUTO_ANALYZE_TRIGGER:", { callId, reason: params.reason, transcriptLength: params.transcript.length });
+
+  try {
+    const res = await fetch(`${baseUrl}/api/vapi/test-analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript: params.transcript, call_id: callId }),
+    });
+    if (!res.ok) {
+      console.error("AUTO_ANALYZE_FAILED:", { status: res.status, body: await res.text().catch(() => "") });
+    } else {
+      console.log("AUTO_ANALYZE_SUCCESS:", { callId });
+    }
+  } catch (err) {
+    console.error("AUTO_ANALYZE_FETCH_ERROR:", err);
+  }
+}
+
 function isTerminalWebhook(body: VapiWebhookBody): boolean {
   const messageType = asTrimmedString(body?.message?.type)?.toLowerCase() ?? "";
   const messageStatus = asTrimmedString(body?.message?.status)?.toLowerCase() ?? "";
@@ -637,44 +669,39 @@ export async function POST(req: Request) {
         if (updateError) {
           console.error("WEBHOOK_NOTE_UPDATE_ERROR:", updateError);
         }
-        return Response.json({ ok: true });
+      } else {
+        console.log("WEBHOOK_NOTE_SKIP:", { attemptId, reason: "note_already_exists_with_longer_transcript" });
       }
-
-      console.log("WEBHOOK_NOTE_SKIP:", { attemptId, reason: "note_already_exists_with_longer_transcript" });
-      return Response.json({ ok: true });
-    }
-
-    const { error } = await supabase.from("call_notes").insert({
-      attempt_id: attemptId,
-      transcript,
-      summary: callSummary,
-      booking_summary: structured.booking_summary,
-      appointment_time_spoken: structured.appointment_time_spoken,
-      office_instructions: structured.office_instructions,
-      documents_to_bring: structured.documents_to_bring,
-      follow_up_notes: structured.follow_up_notes,
-    });
-
-    if (error) {
-      console.error("WEBHOOK_STORE_ERROR:", error);
     } else {
-      console.log("WEBHOOK_STORE_SUCCESS:", {
-        attemptId,
-        messageType,
+      const { error } = await supabase.from("call_notes").insert({
+        attempt_id: attemptId,
+        transcript,
+        summary: callSummary,
         booking_summary: structured.booking_summary,
+        appointment_time_spoken: structured.appointment_time_spoken,
+        office_instructions: structured.office_instructions,
+        documents_to_bring: structured.documents_to_bring,
+        follow_up_notes: structured.follow_up_notes,
       });
 
-      // Auto-analyze test calls — only on terminal (call-ended) webhooks
-      if (process.env.AUTO_ANALYZE_CALLS === "true" && transcript && isTerminalWebhook(body)) {
-        const baseUrl = process.env.QBH_BASE_URL || process.env.PUBLIC_BASE_URL || "";
-        if (baseUrl) {
-          fetch(`${baseUrl}/api/vapi/test-analyze`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ transcript, call_id: `attempt-${attemptId}` }),
-          }).catch(() => {});
-        }
+      if (error) {
+        console.error("WEBHOOK_STORE_ERROR:", error);
+      } else {
+        console.log("WEBHOOK_STORE_SUCCESS:", {
+          attemptId,
+          messageType,
+          booking_summary: structured.booking_summary,
+        });
       }
+    }
+
+    // Auto-analyze test calls — fires on every terminal webhook with a transcript,
+    // independent of whether the call_notes row was just inserted/updated. The
+    // test-analyze endpoint dedupes by call_id so multiple terminal webhooks won't
+    // create duplicate analyses. Awaited so Vercel doesn't kill the function before
+    // the outbound fetch completes.
+    if (isTerminalWebhook(body)) {
+      await triggerAutoAnalyze({ transcript, attemptId, reason: messageType || "terminal" });
     }
   } catch (e) {
     console.error("WEBHOOK_STORE_ERROR:", e);
