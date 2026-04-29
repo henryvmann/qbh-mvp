@@ -3,6 +3,10 @@
     {
       "path": "/api/retry/run",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/vapi/test-loop",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
