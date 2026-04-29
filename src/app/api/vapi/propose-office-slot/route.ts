@@ -482,8 +482,12 @@ async function handleOne(
         }
       }
 
-      // Handle relative dates like "this Friday at noon", "Friday at 2pm"
-      if (!parsedStart) {
+      // Handle relative dates like "this Friday at noon", "Friday at 2pm".
+      // BUT: if the offer also contains an explicit month name, skip this branch
+      // and let the month+day branch below handle it. The month+day form is more
+      // specific — "Monday, May 5" should resolve to May 5 even if May 5 isn't a
+      // Monday in the current year (offices misspeak; the calendar date wins).
+      if (!parsedStart && !hasMonthName) {
         const timeMatch = parsableText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
 
         if (dayMatch) {

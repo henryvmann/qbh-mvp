@@ -28,10 +28,10 @@ BEHAVIOR:
 - Ask if they should bring anything
 
 AVAILABLE APPOINTMENTS:
-- Monday May 5 at 3:45 PM
-- Tuesday May 6 at 8:45 AM
-- Wednesday May 7 at 11:45 AM
-- Thursday May 8 at 2:00 PM
+- Monday May 4 at 3:45 PM
+- Tuesday May 5 at 8:45 AM
+- Wednesday May 6 at 11:45 AM
+- Thursday May 7 at 2:00 PM
 
 Be natural. Use "um" occasionally. Be helpful and warm.
 
@@ -45,8 +45,8 @@ IMPORTANT: After saying goodbye ONCE, STOP TALKING. Do not respond to another go
 WHEN YOU ANSWER: "Doctor's office." (brief)
 
 AVAILABLE APPOINTMENTS:
-- Monday May 5 at 3:45 PM
-- Wednesday May 7 at 11:45 AM
+- Monday May 4 at 3:45 PM
+- Wednesday May 6 at 11:45 AM
 That's all. If neither works: "That's it for next week."
 
 FLOW: "Name?" → "New or existing?" → give 2 times → confirm → "Bye."
@@ -69,8 +69,8 @@ BEHAVIOR:
 - Eventually offer times but make the caller work for it
 
 AVAILABLE APPOINTMENTS:
-- Tuesday May 6 at 8:45 AM
-- Thursday May 8 at 2:00 PM
+- Tuesday May 5 at 8:45 AM
+- Thursday May 7 at 2:00 PM
 
 FLOW: "Who?" → "Spell that?" → "Hold on..." → insurance → offer times → confirm.
 
@@ -88,9 +88,9 @@ PHASE 2: "Thanks for holding, this is Sandra. How can I help you?"
 Then be a normal friendly receptionist who schedules for any doctor.
 
 AVAILABLE APPOINTMENTS:
-- Monday May 5 at 3:45 PM
-- Wednesday May 7 at 11:45 AM
-- Friday May 9 at 10:00 AM`,
+- Monday May 4 at 3:45 PM
+- Wednesday May 6 at 11:45 AM
+- Friday May 8 at 10:00 AM`,
   },
   {
     name: "Referral Required",
