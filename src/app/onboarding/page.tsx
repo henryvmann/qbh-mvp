@@ -644,7 +644,7 @@ export default function OnboardingPage() {
         {/* Discovery method */}
         {phase === "discovery-method" && !typing && (
           <div className="space-y-3 animate-fadeIn">
-            <p className="text-xs text-[#7A7F8A] mb-1">Pick at least one to continue</p>
+            <p className="text-sm font-semibold text-[#1A2E1A] mb-2">Pick at least one to continue</p>
             <ToggleCard
               icon={Building2}
               title="Scan your bank"

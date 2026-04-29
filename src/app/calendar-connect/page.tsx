@@ -168,7 +168,8 @@ function CalendarConnectPageInner() {
             Connect Your Calendar
           </h1>
           <p className="mt-2 text-base text-[#7A7F8A]">
-            Kate checks your calendar before booking so appointments never conflict.
+            Two reasons: Kate checks your calendar before booking so appointments never conflict —
+            and she scans past events to find doctors you've already seen and fill in your health timeline.
           </p>
 
           {/* Visual — what happens */}
@@ -180,13 +181,13 @@ function CalendarConnectPageInner() {
             </div>
             <div className="rounded-xl bg-white border border-[#EBEDF0] p-4">
               <div className="text-2xl mb-2">2</div>
-              <div className="text-xs font-medium text-[#1A1D2E]">Kate Checks</div>
-              <div className="text-[10px] text-[#7A7F8A] mt-1">She reads your free/busy times</div>
+              <div className="text-xs font-medium text-[#1A1D2E]">Kate Scans</div>
+              <div className="text-[10px] text-[#7A7F8A] mt-1">Past visits + upcoming appointments</div>
             </div>
             <div className="rounded-xl bg-white border border-[#EBEDF0] p-4">
               <div className="text-2xl mb-2">3</div>
-              <div className="text-xs font-medium text-[#1A1D2E]">No Conflicts</div>
-              <div className="text-[10px] text-[#7A7F8A] mt-1">Appointments booked around your schedule</div>
+              <div className="text-xs font-medium text-[#1A1D2E]">Stay Organized</div>
+              <div className="text-[10px] text-[#7A7F8A] mt-1">Timeline filled in, future bookings around your schedule</div>
             </div>
           </div>
 
