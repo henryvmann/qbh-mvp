@@ -218,7 +218,7 @@ function CalendarConnectPageInner() {
                     disabled={submitting}
                     className="w-full rounded-2xl px-6 py-2.5 text-sm font-medium border border-[#EBEDF0] text-[#1A1D2E] hover:bg-[#F0F2F5] transition disabled:opacity-60"
                   >
-                    {submitting ? "Scanning..." : "Rescan Calendar"}
+                    {submitting ? "Scanning..." : "Scan for doctor appointments"}
                   </button>
                 </div>
               ) : (

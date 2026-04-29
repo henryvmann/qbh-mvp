@@ -193,7 +193,9 @@ export default function SettingsPage() {
                 {[
                   { value: "male", label: "Male" },
                   { value: "female", label: "Female" },
-                  { value: "other", label: "Prefer Not To Say" },
+                  { value: "non-binary", label: "Non-binary" },
+                  { value: "other", label: "Other" },
+                  { value: "prefer-not-to-say", label: "Prefer not to say" },
                 ].map((opt) => (
                   <button
                     key={opt.value}

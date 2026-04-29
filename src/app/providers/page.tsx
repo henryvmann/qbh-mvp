@@ -409,7 +409,7 @@ function ProvidersInner() {
           <div className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
             <div className="font-semibold text-[#1A1D2E]">No providers yet</div>
             <p className="mt-2 text-sm text-[#7A7F8A]">
-              Providers will appear here once discovered from your bank data or added manually.
+              Providers will appear here once discovered from your bank data, your calendar, or added manually.
             </p>
           </div>
         ) : (

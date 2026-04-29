@@ -345,8 +345,6 @@ export default function GoalsPage() {
           Goals
         </h1>
 
-        <BestNextStep context="goals" />
-
         <div className="mt-4" />
 
         {goals.length === 0 && (

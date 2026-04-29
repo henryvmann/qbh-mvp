@@ -96,11 +96,6 @@ function buildPromptChips(
     });
   }
 
-  // Default: chat with Kate
-  if (chips.length < 3) {
-    chips.push({ id: "chat-kate", label: "Chat with Kate", href: "#kate-chat" });
-  }
-
   return chips.slice(0, 3);
 }
 

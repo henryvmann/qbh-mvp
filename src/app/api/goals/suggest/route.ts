@@ -57,7 +57,7 @@ Return JSON: {
 IMPORTANT — when suggesting provider types for a health topic:
 - Heart health → Primary care, Cardiologist, Nutritionist. Mention cholesterol, blood panels as things their doctor can test.
 - Digestive/stomach issues → Primary care, Gastroenterologist, Nutritionist
-- Mental health → Therapist, Psychiatrist, Primary care
+- Mental health → Therapist, Psychiatrist, Psychiatric NP (APRN/PMHNP), Primary care
 - Joint/bone pain → Orthopedist, Physical therapist, Primary care
 - Skin concerns → Dermatologist, Primary care
 - Weight management → Nutritionist, Primary care, Endocrinologist

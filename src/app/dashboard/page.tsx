@@ -93,7 +93,8 @@ function DashboardInner() {
         </div>
 
         {/* ── Health Coordination Score ── */}
-        <div className="mt-4 flex justify-center" data-wizard="hero">
+        <div className="mt-4 flex flex-col items-center" data-wizard="hero">
+          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#7A7F8A] mb-2">Health Coordination Score</div>
           <HealthScoreRing />
         </div>
 
@@ -184,9 +185,9 @@ function DashboardInner() {
               );
             })}
             {snapshots.length === 0 && (
-              <div className="px-5 py-8 text-center text-sm text-[#B0B4BC]">
-                Add your first provider to get started.
-              </div>
+              <a href="/providers?add=true" className="block px-5 py-8 text-center text-sm text-[#5C6B5C] font-medium hover:underline">
+                Add your first provider to get started &rarr;
+              </a>
             )}
           </div>
         </div>

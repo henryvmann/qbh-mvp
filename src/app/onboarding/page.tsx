@@ -84,9 +84,9 @@ function OptionButtons({ options, onSelect }: { options: Array<{ label: string; 
           onClick={() => onSelect(opt.value)}
           className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
           style={{
-            backgroundColor: "#D4A44C15",
-            border: "1px solid #D4A44C40",
-            color: "#8B6914",
+            backgroundColor: "#4A6B4A",
+            border: "1px solid #4A6B4A",
+            color: "#FFFFFF",
           }}
         >
           {opt.label}
@@ -235,7 +235,7 @@ export default function OnboardingPage() {
       setTimeout(() => {
         addKateMessages([
           "No judgment \u2014 that's literally everyone. The system isn't built for you to keep track.",
-          "But I am."
+          "But I am. Here's what you can look forward to:"
         ]);
         setTimeout(() => setPhase("value-props"), 2400);
       }, 400);
@@ -244,7 +244,7 @@ export default function OnboardingPage() {
       setTimeout(() => {
         addKateMessages([
           "Love that. But I bet even you have a provider or two that's slipped through the cracks.",
-          "Either way \u2014 I'm about to make your life easier."
+          "Either way \u2014 I'm about to make your life easier. Here's what you can look forward to:"
         ]);
         setTimeout(() => setPhase("value-props"), 2400);
       }, 400);
@@ -614,6 +614,7 @@ export default function OnboardingPage() {
         {/* Family select */}
         {phase === "family-select" && !typing && (
           <div className="space-y-2 animate-fadeIn">
+            <p className="text-xs text-[#7A7F8A] mb-1">Select as many as you need</p>
             {[
               { label: "My partner/spouse", value: "partner" },
               { label: "My kid(s)", value: "children" },
@@ -643,6 +644,7 @@ export default function OnboardingPage() {
         {/* Discovery method */}
         {phase === "discovery-method" && !typing && (
           <div className="space-y-3 animate-fadeIn">
+            <p className="text-xs text-[#7A7F8A] mb-1">Pick at least one to continue</p>
             <ToggleCard
               icon={Building2}
               title="Scan your bank"
@@ -672,9 +674,6 @@ export default function OnboardingPage() {
               >
                 Let's go
               </button>
-            )}
-            {!connectBank && !connectCalendar && !connectManual && (
-              <p className="text-center text-xs text-[#B0B4BC]">Pick at least one to continue</p>
             )}
           </div>
         )}
@@ -722,7 +721,7 @@ export default function OnboardingPage() {
               <div>
                 <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Sex</label>
                 <div className="flex gap-1.5">
-                  {[{ v: "male", l: "Male" }, { v: "female", l: "Female" }, { v: "other", l: "Prefer not to say" }].map((o) => (
+                  {[{ v: "male", l: "Male" }, { v: "female", l: "Female" }, { v: "non-binary", l: "Non-binary" }, { v: "other", l: "Other" }, { v: "prefer-not-to-say", l: "Prefer not to say" }].map((o) => (
                     <button key={o.v} type="button" onClick={() => setPatientGender(o.v)}
                       className={`flex-1 rounded-xl py-2.5 text-[10px] font-medium transition ${patientGender === o.v ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"}`}>
                       {o.l}
