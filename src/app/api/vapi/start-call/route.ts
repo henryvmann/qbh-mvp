@@ -606,7 +606,7 @@ export async function POST(req: Request) {
           is_manual_provider: isManualProvider,
           patient_status: patientStatus,
           existing_appointment_note: existingAppointmentInfo || "none",
-          doctor_name: doctorName || "not specified",
+          doctor_name: doctorName ? (doctorName.match(/^(Dr\.?|Doctor)\s/i) ? doctorName : `Dr. ${doctorName}`) : "not specified",
           patient_date_of_birth: formatDobForSpeech(patientProfile.date_of_birth) || "not available — the patient will provide when they arrive",
           patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
           patient_insurance_member_id: formatMemberIdForSpeech(patientProfile.insurance_member_id) || "not available — the patient will provide when they arrive",
