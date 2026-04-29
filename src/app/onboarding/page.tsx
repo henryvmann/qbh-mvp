@@ -166,6 +166,9 @@ export default function OnboardingPage() {
 
   // Discovery
   const [discoveredProviders, setDiscoveredProviders] = useState<DiscoveredProvider[]>([]);
+  // Active during the bank/calendar discovery polling window so we can show
+  // a "Skip and continue" escape hatch (T3-3 — page used to look frozen).
+  const [discoveryActive, setDiscoveryActive] = useState(false);
   const [revealIndex, setRevealIndex] = useState(0);
   const [revealDone, setRevealDone] = useState(false);
 
@@ -473,7 +476,19 @@ export default function OnboardingPage() {
 
   // ── Discovery ──
   async function runBankDiscovery() {
-    // Poll for providers
+    // Surface activity so the page does not look frozen (T3-3 - without
+    // these, "Give me a sec, I'm pulling your records now" sits static
+    // for up to 90s with no movement and users refresh assuming it broke).
+    setDiscoveryActive(true);
+    setTyping(true);
+
+    const progress15 = setTimeout(() => {
+      addKateMessage("Still pulling — a large transaction history can take a sec…");
+    }, 15000);
+    const progress45 = setTimeout(() => {
+      addKateMessage("Almost there — just finishing up.");
+    }, 45000);
+
     let attempts = 0;
     const poll = setInterval(async () => {
       attempts++;
@@ -482,6 +497,10 @@ export default function OnboardingPage() {
         const data = await res.json();
         if (data?.ok && data.snapshots?.length > 0) {
           clearInterval(poll);
+          clearTimeout(progress15);
+          clearTimeout(progress45);
+          setDiscoveryActive(false);
+          setTyping(false);
           const providers = data.snapshots
             .filter((s: any) => s.provider.provider_type !== "pharmacy")
             .map((s: any) => ({
@@ -495,6 +514,10 @@ export default function OnboardingPage() {
       } catch {}
       if (attempts > 30) {
         clearInterval(poll);
+        clearTimeout(progress15);
+        clearTimeout(progress45);
+        setDiscoveryActive(false);
+        setTyping(false);
         addKateMessage("I didn\u2019t find any healthcare co-pays in your recent transactions. That\u2019s okay \u2014 you might use a different bank, or your insurance covers everything. You can add providers manually from your dashboard.");
         setTimeout(() => setPhase("score-reveal"), 1500);
       }
@@ -905,6 +928,28 @@ export default function OnboardingPage() {
             {!revealDone && revealIndex < discoveredProviders.length && (
               <div className="flex items-center gap-2 text-xs text-[#B0B4BC]">
                 <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-pulse" /> Scanning...
+              </div>
+            )}
+            {/* Active scan progress + skip — visible while discovery is polling
+                so the user has visible feedback and an escape hatch (T3-3). */}
+            {discoveryActive && (
+              <div className="mt-2 rounded-xl bg-white border border-[#EBEDF0] px-4 py-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-[#7A7F8A]">
+                  <span className="h-2 w-2 rounded-full bg-[#5C6B5C] animate-pulse" />
+                  Scanning your accounts…
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDiscoveryActive(false);
+                    setTyping(false);
+                    addKateMessage("No problem — you can always add providers from your dashboard.");
+                    setTimeout(() => setPhase("score-reveal"), 800);
+                  }}
+                  className="text-xs font-semibold text-[#5C6B5C] hover:text-[#1A2E1A] underline underline-offset-2"
+                >
+                  Skip and continue
+                </button>
               </div>
             )}
           </div>
