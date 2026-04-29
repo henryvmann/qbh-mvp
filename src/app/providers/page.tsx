@@ -78,11 +78,16 @@ function AddProviderForm({
   initialSearch,
   onClose,
   onAdded,
+  defaultCareRecipient,
 }: {
   userId: string;
   initialSearch?: string;
   onClose: () => void;
   onAdded: () => void;
+  // If the user is viewing a specific care recipient tab, default new
+  // providers to that recipient so the freshly-added provider doesn't
+  // disappear into "All" only. Empty string means "no default".
+  defaultCareRecipient?: string;
 }) {
   const [query, setQuery] = useState(initialSearch || "");
   const [results, setResults] = useState<NpiResult[]>([]);
@@ -145,6 +150,9 @@ function AddProviderForm({
           phone_number: result.phone,
           specialty: result.specialty,
           npi: result.npi,
+          ...(defaultCareRecipient
+            ? { care_recipients: [defaultCareRecipient] }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -414,6 +422,10 @@ function ProvidersInner() {
               initialSearch={initialSearch}
               onClose={() => { setShowAddForm(false); setInitialSearch(""); }}
               onAdded={() => loadData()}
+              defaultCareRecipient={
+                selectedPerson ||
+                (careRecipients.find((r) => r.relationship === "Self")?.name ?? "Self")
+              }
             />
           ) : (
             <button
