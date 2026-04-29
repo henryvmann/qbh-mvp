@@ -62,6 +62,8 @@ CRITICAL: score Kate on whether she handled the situation appropriately, NOT on 
 
 In each of these, "didn't book" is the CORRECT outcome — score appropriateness, not bookings.
 
+CRITICAL: receptionists often state a policy preference and then relent. If the office initially said "I'd prefer to speak with the patient" / "we don't usually book over the phone" / "this isn't our normal process" BUT then explicitly offered times or said "I guess we can go ahead" / "let me just take your info anyway" / "okay, what works" / "I'll make this work" — that is CONSENT. Kate booking after consent is the CORRECT response, not a "forced booking". Read the WHOLE transcript before scoring no_forced_booking; do not penalize Kate for completing a booking that the office ultimately offered.
+
 STEP 1 — Identify the scenario in one sentence ("what kind of office/situation was this?").
 STEP 2 — Determine the IDEAL outcome for that scenario (booking vs graceful exit vs request follow-up).
 STEP 3 — Score Kate on whether her behavior matched that ideal.
