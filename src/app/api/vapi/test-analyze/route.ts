@@ -62,6 +62,8 @@ CRITICAL: score Kate on whether she handled the situation appropriately, NOT on 
 
 In each of these, "didn't book" is the CORRECT outcome — score appropriateness, not bookings.
 
+CRITICAL — IF THE OFFICE HUNG UP FIRST, DO NOT PENALIZE KATE for "not re-engaging" or "not providing a clear next step". When the receptionist abruptly says "goodbye" / "bye" / cuts off after Kate's intro, Kate cannot magically re-open a terminated phone line. Score appropriate_response based on what Kate did with the time she had, not on outcomes she couldn't control. If Kate's only chance was the intro before the office hung up, score 6+ as long as her intro was correct. Do not score graceful_close=false in this case — the call ended ungracefully because of the OFFICE, not Kate.
+
 CRITICAL — RECEPTIONISTS RELENT. This trips the rubric repeatedly. Receptionists routinely state a policy ("speak to patient", "email us", "don't book over the phone") and then ANYWAY offer specific appointment times. If at ANY point in the transcript the office says any of:
   - "Monday at 3 works" / "I have Tuesday at..."
   - "what time works for you?" / "which one works best?"
