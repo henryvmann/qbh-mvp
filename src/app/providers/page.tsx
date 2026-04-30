@@ -172,7 +172,7 @@ function AddProviderForm({
   return (
     <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b border-[#EBEDF0]">
-        <span className="text-sm font-semibold text-[#1A1D2E]">Add a provider</span>
+        <span className="text-sm font-semibold text-[#1A1D2E]">Hand off a provider</span>
         <button type="button" onClick={onClose} className="p-1 text-[#B0B4BC] hover:text-[#7A7F8A]">
           <X size={16} />
         </button>
@@ -379,7 +379,7 @@ function ProvidersInner() {
   return (
     <PageShell>
         <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
-          {selectedPerson ? `${selectedPerson}\u2019s Providers` : userName ? `${userName}\u2019s Providers` : "Your Providers"}
+          {selectedPerson ? `${selectedPerson}\u2019s care team` : userName ? `${userName}\u2019s care team` : "Your care team"}
         </h1>
         <p className="mt-1 text-sm text-[#7A7F8A]">
           {allDoctors.length} provider{allDoctors.length !== 1 ? "s" : ""}{selectedPerson ? "" : " on file"}
@@ -434,7 +434,7 @@ function ProvidersInner() {
               className="flex items-center gap-2 rounded-xl border border-dashed border-[#C0C8D0] px-4 py-2.5 text-sm font-medium text-[#5C6B5C] transition hover:bg-white hover:border-[#5C6B5C]"
             >
               <Plus size={16} />
-              Add provider
+              Hand off a provider
             </button>
           )}
         </div>
@@ -445,14 +445,14 @@ function ProvidersInner() {
             <div className="flex items-start gap-3 rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 p-5 shadow-sm">
               <img src="/kate-avatar.png" alt="Kate" className="w-8 h-8 rounded-full shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm text-[#1A2E1A]">Start building your care team. Add your primary care doctor, dentist, or any specialists you see.</p>
-                <a href="/providers?add=true" className="mt-2 inline-block text-xs font-semibold text-[#5C6B5C] underline underline-offset-2">Add a provider &rarr;</a>
+                <p className="text-sm text-[#1A2E1A]">Let's get your team set up. Tell me who you've seen — primary care, dentist, anyone — and I'll handle the rest.</p>
+                <a href="/providers?add=true" className="mt-2 inline-block text-xs font-semibold text-[#5C6B5C] underline underline-offset-2">Hand off a provider &rarr;</a>
               </div>
             </div>
             <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
-              <div className="font-semibold text-[#1A1D2E]">No providers yet</div>
+              <div className="font-semibold text-[#1A1D2E]">Your team starts here</div>
               <p className="mt-2 text-sm text-[#7A7F8A]">
-                Providers will appear here once discovered from your bank data, your calendar, or added manually.
+                I'll pull them in from your bank, your calendar, or you can hand me a name. Either way — handled.
               </p>
             </div>
           </div>

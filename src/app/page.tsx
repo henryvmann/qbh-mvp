@@ -54,7 +54,7 @@ export default function HomePage() {
         </h1>
 
         <p className="mt-4 max-w-xl mx-auto text-lg text-[#7A7F8A] text-center">
-          Healthcare is fragmented. Quarterback Health connects the dots &mdash; tracking your providers, booking appointments, and organizing your care so you don&apos;t have to.
+          Healthcare, handled. We track your providers, book your appointments, and follow up on the details &mdash; so you don&apos;t have to.
         </p>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center">

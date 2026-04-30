@@ -278,7 +278,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (phase !== "intro") return;
     const t1 = setTimeout(() => {
-      setMessages([{ id: "k1", sender: "kate", content: "Hey \u2014 I'm Kate. I help people get their healthcare together." }]);
+      setMessages([{ id: "k1", sender: "kate", content: "Hey \u2014 I'm Kate. I take healthcare off your plate." }]);
     }, 600);
     const t2 = setTimeout(() => {
       setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Here's what I've noticed: most people have five, six, maybe seven doctors. And if I asked you when you last saw each one..." }]);
@@ -329,7 +329,7 @@ export default function OnboardingPage() {
       setFamilyMembers([]);
       setTimeout(() => {
         setPhase("discovery-method");
-        addKateMessage("Now for the fun part. I need to find your doctors. Pick whichever you're comfortable with \u2014 or do all three.");
+        addKateMessage("Let's pull in your doctors. Pick whichever's easiest \u2014 or all three. I'll handle the rest.");
       }, 400);
     } else {
       addUserMessage("Me and my family");
@@ -345,7 +345,7 @@ export default function OnboardingPage() {
     setTimeout(() => {
       addKateMessages([
         "I'll set up a separate hub for each person. Everyone's providers, appointments, and history \u2014 organized individually but managed by you.",
-        "Now for the fun part. I need to find your doctors. Pick whichever you're comfortable with \u2014 or do all three."
+        "Let's pull in your doctors. Pick whichever's easiest \u2014 or all three. I'll handle the rest."
       ]);
       setTimeout(() => setPhase("discovery-method"), 2400);
     }, 400);
@@ -406,7 +406,7 @@ export default function OnboardingPage() {
 
       if (connectBank) {
         setTimeout(() => {
-          addKateMessage("Account created. Now let's connect your bank \u2014 this is where the magic happens.");
+          addKateMessage("Account's saved. Let's connect your bank \u2014 this is where it gets handled.");
           setTimeout(() => setPhase("plaid-connect"), 1200);
         }, 400);
       } else if (connectCalendar) {
@@ -418,12 +418,12 @@ export default function OnboardingPage() {
         // OAuth round trip \u2192 ?calendar_connected=1 effect runs runCalendar-
         // Discovery for real.
         setTimeout(() => {
-          addKateMessage("Account created. Let's connect your calendar so I can scan for doctor appointments.");
+          addKateMessage("Account's saved. Let's connect your calendar — I'll pull anything healthcare-related.");
           setTimeout(() => setPhase("calendar-connect"), 1200);
         }, 400);
       } else {
         setTimeout(() => {
-          addKateMessage("Account created. Let's head to your dashboard \u2014 you can add providers from there.");
+          addKateMessage("Account's saved. Let's head to your dashboard \u2014 you can hand me a provider anytime.");
           setTimeout(() => setPhase("score-reveal"), 1200);
         }, 400);
       }
@@ -464,7 +464,7 @@ export default function OnboardingPage() {
             // startReveal's last callback decides whether to go to the
             // calendar-connect step (if connectCalendar) or score-reveal.
             setTimeout(() => {
-              addKateMessage("Give me a sec \u2014 I'm pulling your records now.");
+              addKateMessage("On it \u2014 pulling your records now.");
               setPhase("discovery-reveal");
               runBankDiscovery();
             }, 500);
@@ -523,7 +523,7 @@ export default function OnboardingPage() {
         clearTimeout(progress45);
         setDiscoveryActive(false);
         setTyping(false);
-        addKateMessage("I didn\u2019t find any healthcare co-pays in your recent transactions. That\u2019s okay \u2014 you might use a different bank, or your insurance covers everything. You can add providers manually from your dashboard.");
+        addKateMessage("Nothing healthcare-related in your recent transactions \u2014 could be a different bank, or insurance covers it. No worries, you can hand me a name from the dashboard anytime.");
         setTimeout(() => setPhase("score-reveal"), 1500);
       }
     }, 3000);
@@ -557,7 +557,7 @@ export default function OnboardingPage() {
         setDiscoveredProviders(providers);
         startReveal(providers);
       } else {
-        addKateMessage("I didn\u2019t find any doctor appointments on your calendar. No worries \u2014 you can add providers from your dashboard.");
+        addKateMessage("Nothing healthcare-related on your calendar yet. No worries \u2014 you can hand me a name from the dashboard anytime.");
         setTimeout(() => setPhase("score-reveal"), 1500);
       }
     } catch {
@@ -579,7 +579,7 @@ export default function OnboardingPage() {
           setTimeout(() => {
             const overdueCount = providers.filter((p) => p.overdue).length;
             const onTrack = providers.length - overdueCount;
-            addKateMessage(`Found ${providers.length} provider${providers.length !== 1 ? "s" : ""}. ${onTrack} on track, ${overdueCount} might be overdue.`);
+            addKateMessage(`Found ${providers.length} on your team. ${onTrack} on track, ${overdueCount} might be overdue — I'll get those scheduled.`);
             setRevealDone(true);
             // After the bank reveal completes, branch on whether the user
             // also opted into calendar. Calendar OAuth happens here so we
@@ -688,7 +688,7 @@ export default function OnboardingPage() {
             <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
               <Search size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
               <div>
-                <div className="text-sm font-semibold text-[#1A1D2E]">Find every doctor you've seen</div>
+                <div className="text-sm font-semibold text-[#1A1D2E]">I'll find every doctor you've seen</div>
                 <p className="mt-1 text-xs text-[#7A7F8A]">I scan your co-pays and pull your complete provider history. No typing, no remembering.</p>
               </div>
             </div>
@@ -1024,8 +1024,8 @@ export default function OnboardingPage() {
             <div className="mt-4">
               <KateBubble>
                 {score >= 50
-                  ? `${score} is a great start. Let's keep building from here.`
-                  : `${score} isn't bad for day one. Most people start around 30. Let's get it higher.`}
+                  ? `${score} today. We'll build from here — I'll keep things on track so you don't have to.`
+                  : `${score} today. Most people start around 30. We'll build from here — I've got it.`}
               </KateBubble>
             </div>
             <button

@@ -13,7 +13,7 @@ type Slide = {
 
 const PAGE_INTROS: Record<string, Slide[]> = {
   "/providers": [
-    { title: "Your Provider Hub", body: "All your doctors, organized by specialty — contact info, visit history, documents, and notes in one place. Status badges show on track, overdue, or upcoming. Use the + button to add anyone we missed.", target: "center", position: "below" },
+    { title: "Your care team", body: "All your doctors in one place — contact info, visit history, documents, notes. Status badges show on track, overdue, or upcoming. Hand me a new provider with the + button anytime.", target: "center", position: "below" },
   ],
   "/visits": [
     { title: "Your Appointments", body: "See upcoming visits and past appointments all in one view.", target: "center", position: "below" },

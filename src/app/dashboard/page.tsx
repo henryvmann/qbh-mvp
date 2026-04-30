@@ -142,7 +142,7 @@ function DashboardInner() {
         {/* ── Provider List ── */}
         <div className="mt-8" data-wizard="providers">
           <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7A7F8A]">
-            Your Providers
+            Your care team
           </div>
           <div className="mt-3 rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 shadow-sm overflow-hidden">
             {snapshots.map((s: any, idx: number) => {
@@ -186,7 +186,7 @@ function DashboardInner() {
             })}
             {snapshots.length === 0 && (
               <a href="/providers?add=true" className="block px-5 py-8 text-center text-sm text-[#5C6B5C] font-medium hover:underline">
-                Add your first provider to get started &rarr;
+                Hand off your first provider &rarr;
               </a>
             )}
           </div>
