@@ -141,11 +141,9 @@ export default function OnboardingPage() {
   const [userId] = useState(() => typeof window !== "undefined" ? (localStorage.getItem("qbh_user_id") || crypto.randomUUID()) : crypto.randomUUID());
   const [careFor, setCareFor] = useState<string>("just-me");
   const [familyMembers, setFamilyMembers] = useState<string[]>([]);
-  // Default all three on — "Pick whichever's easiest — or all three" implies
-  // opt-out, not opt-in. User can toggle off any they don't want.
-  const [connectBank, setConnectBank] = useState(true);
-  const [connectCalendar, setConnectCalendar] = useState(true);
-  const [connectManual, setConnectManual] = useState(true);
+  const [connectBank, setConnectBank] = useState(false);
+  const [connectCalendar, setConnectCalendar] = useState(false);
+  const [connectManual, setConnectManual] = useState(false);
 
   // Account fields
   const [firstName, setFirstName] = useState("");
