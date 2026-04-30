@@ -59,6 +59,8 @@ export async function POST(req: NextRequest) {
     customer: customerId,
     mode: "subscription",
     line_items: [{ price: PRICES[plan], quantity: 1 }],
+    allow_promotion_codes: true,
+    payment_method_collection: "if_required",
     success_url: `${baseUrl}/billing?success=true`,
     cancel_url: `${baseUrl}/billing?canceled=true`,
     metadata: { app_user_id: appUserId, plan },
