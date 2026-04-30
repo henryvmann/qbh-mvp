@@ -169,12 +169,18 @@ export default function OnboardingPage() {
   // Active during the bank/calendar discovery polling window so we can show
   // a "Skip and continue" escape hatch (T3-3 — page used to look frozen).
   const [discoveryActive, setDiscoveryActive] = useState(false);
-  // True after the bank reveal already routed us to calendar-connect, so
-  // when calendar discovery's reveal finishes we go to score-reveal instead
-  // of looping.
-  const [calendarHandledByReveal, setCalendarHandledByReveal] = useState(false);
+  // Tracks which selected step is mid-flight so the inline Skip button
+  // can advance to the next selected step instead of jumping to score.
+  const [currentDiscoveryStep, setCurrentDiscoveryStep] = useState<"bank" | "calendar" | null>(null);
   const [revealIndex, setRevealIndex] = useState(0);
   const [revealDone, setRevealDone] = useState(false);
+
+  // Manual NPI search (third step in the discovery pipeline)
+  const [manualSearchQuery, setManualSearchQuery] = useState("");
+  const [manualSearchResults, setManualSearchResults] = useState<Array<{ name: string; npi: string; specialty?: string; phone?: string; address?: string }>>([]);
+  const [manualSearching, setManualSearching] = useState(false);
+  const [manualAdding, setManualAdding] = useState<string | null>(null);
+  const [manualAdded, setManualAdded] = useState<Set<string>>(new Set());
 
   // Score
   const [score, setScore] = useState<number | null>(null);
@@ -363,6 +369,29 @@ export default function OnboardingPage() {
     }, 400);
   }
 
+  // ── Discovery pipeline sequencing ──
+  // After each step (bank / calendar / manual), advance to the next one the
+  // user opted into. Order is fixed: bank → calendar → manual → score-reveal.
+  // Pass null to start from the top (right after account-create).
+  function advanceAfter(completed: "bank" | "calendar" | "manual" | null): string {
+    const order: Array<"bank" | "calendar" | "manual"> = ["bank", "calendar", "manual"];
+    const phaseFor: Record<"bank" | "calendar" | "manual", string> = {
+      bank: "plaid-connect",
+      calendar: "calendar-connect",
+      manual: "manual-search",
+    };
+    const flagFor: Record<"bank" | "calendar" | "manual", boolean> = {
+      bank: connectBank,
+      calendar: connectCalendar,
+      manual: connectManual,
+    };
+    const startIdx = completed === null ? 0 : order.indexOf(completed) + 1;
+    for (let i = startIdx; i < order.length; i++) {
+      if (flagFor[order[i]]) return phaseFor[order[i]];
+    }
+    return "score-reveal";
+  }
+
   // ── Account creation ──
   async function handleCreateAccount() {
     if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6 || !consentGiven) return;
@@ -404,29 +433,18 @@ export default function OnboardingPage() {
 
       addUserMessage("Account created");
 
-      if (connectBank) {
-        setTimeout(() => {
-          addKateMessage("Account's saved. Let's connect your bank \u2014 this is where it gets handled.");
-          setTimeout(() => setPhase("plaid-connect"), 1200);
-        }, 400);
-      } else if (connectCalendar) {
-        // Calendar-only path: route through OAuth FIRST, not straight to scan.
-        // Picking the "Scan calendar" toggle only expresses intent \u2014 the
-        // actual Google authorization hasn't happened yet, and runCalendar-
-        // Discovery against a never-authorized account just returns empty.
-        // Calendar-connect phase has the Connect Google Calendar button \u2192
-        // OAuth round trip \u2192 ?calendar_connected=1 effect runs runCalendar-
-        // Discovery for real.
-        setTimeout(() => {
-          addKateMessage("Account's saved. Let's connect your calendar — I'll pull anything healthcare-related.");
-          setTimeout(() => setPhase("calendar-connect"), 1200);
-        }, 400);
-      } else {
-        setTimeout(() => {
-          addKateMessage("Account's saved. Let's head to your dashboard \u2014 you can hand me a provider anytime.");
-          setTimeout(() => setPhase("score-reveal"), 1200);
-        }, 400);
-      }
+      // Sequenced pipeline: bank → calendar → manual → score, executed
+      // only for the steps the user opted into on the discovery-method screen.
+      const next = advanceAfter(null);
+      const msg =
+        next === "plaid-connect"      ? "Account's saved. Let's connect your bank — this is where it gets handled."
+        : next === "calendar-connect" ? "Account's saved. Let's connect your calendar — I'll pull anything healthcare-related."
+        : next === "manual-search"    ? "Account's saved. Let's add the providers you already see."
+        :                                "Account's saved. Let's head to your dashboard — you can hand me a provider anytime.";
+      setTimeout(() => {
+        addKateMessage(msg);
+        setTimeout(() => setPhase(next), 1200);
+      }, 400);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
     } finally {
@@ -490,6 +508,7 @@ export default function OnboardingPage() {
     // Surface activity so the page does not look frozen (T3-3 - without
     // these, "Give me a sec, I'm pulling your records now" sits static
     // for up to 90s with no movement and users refresh assuming it broke).
+    setCurrentDiscoveryStep("bank");
     setDiscoveryActive(true);
     setTyping(true);
 
@@ -520,7 +539,7 @@ export default function OnboardingPage() {
               overdue: s.followUpNeeded && s.booking_state?.status !== "BOOKED",
             }));
           setDiscoveredProviders(providers);
-          startReveal(providers);
+          startReveal(providers, "bank");
         }
       } catch {}
       if (attempts > 15) {
@@ -529,28 +548,21 @@ export default function OnboardingPage() {
         clearTimeout(progress45);
         setDiscoveryActive(false);
         setTyping(false);
-        addKateMessage("Nothing healthcare-related in your recent transactions \u2014 could be a different bank, or insurance covers it. No worries, you can hand me a name from the dashboard anytime.");
-        if (connectCalendar && !calendarHandledByReveal) {
-          setCalendarHandledByReveal(true);
-          setTimeout(() => {
-            addKateMessage("Let's check your calendar too \u2014 I'll scan for doctor appointments.");
-            setTimeout(() => setPhase("calendar-connect"), 1200);
-          }, 1500);
-        } else {
-          setTimeout(() => setPhase("score-reveal"), 1500);
-        }
+        addKateMessage("Nothing healthcare-related in your recent transactions — could be a different bank, or insurance covers it. No worries, you can hand me a name from the dashboard anytime.");
+        setTimeout(() => setPhase(advanceAfter("bank")), 1500);
       }
     }, 3000);
   }
 
   async function runCalendarDiscovery() {
-    // Surface activity + skip button \u2014 same UX as runBankDiscovery so the
+    // Surface activity + skip button — same UX as runBankDiscovery so the
     // calendar path doesn't go silent for 30+ seconds during scan.
+    setCurrentDiscoveryStep("calendar");
     setDiscoveryActive(true);
     setTyping(true);
 
     const progress15 = setTimeout(() => {
-      addKateMessage("Still scanning \u2014 checking the last year of events\u2026");
+      addKateMessage("Still scanning — checking the last year of events…");
     }, 15000);
 
     try {
@@ -569,23 +581,35 @@ export default function OnboardingPage() {
             overdue: s.followUpNeeded && s.booking_state?.status !== "BOOKED",
           }));
         setDiscoveredProviders(providers);
-        startReveal(providers);
+        startReveal(providers, "calendar");
       } else {
-        addKateMessage("Nothing healthcare-related on your calendar yet. No worries \u2014 you can hand me a name from the dashboard anytime.");
-        setTimeout(() => setPhase("score-reveal"), 1500);
+        addKateMessage("Nothing healthcare-related on your calendar yet. No worries — you can hand me a name from the dashboard anytime.");
+        setTimeout(() => setPhase(advanceAfter("calendar")), 1500);
       }
     } catch {
       clearTimeout(progress15);
       setDiscoveryActive(false);
       setTyping(false);
-      addKateMessage("Couldn\u2019t scan your calendar right now. No worries \u2014 you can connect it later from settings.");
-      setTimeout(() => setPhase("score-reveal"), 1500);
+      addKateMessage("Couldn't scan your calendar right now. No worries — you can connect it later from settings.");
+      setTimeout(() => setPhase(advanceAfter("calendar")), 1500);
     }
   }
 
-  function startReveal(providers: DiscoveredProvider[]) {
+  function startReveal(providers: DiscoveredProvider[], justCompleted: "bank" | "calendar") {
     setRevealIndex(0);
     setRevealDone(false);
+    // 0 providers: skip the per-item reveal animation but still announce
+    // the empty result and advance to the next selected step.
+    if (providers.length === 0) {
+      addKateMessage(
+        justCompleted === "bank"
+          ? "Nothing healthcare-related in your transactions yet — could be a different bank, or insurance covers it."
+          : "Nothing healthcare-related on your calendar yet."
+      );
+      setRevealDone(true);
+      setTimeout(() => setPhase(advanceAfter(justCompleted)), 1500);
+      return;
+    }
     providers.forEach((_, i) => {
       setTimeout(() => {
         setRevealIndex(i + 1);
@@ -595,19 +619,19 @@ export default function OnboardingPage() {
             const onTrack = providers.length - overdueCount;
             addKateMessage(`Found ${providers.length} on your team. ${onTrack} on track, ${overdueCount} might be overdue — I'll get those scheduled.`);
             setRevealDone(true);
-            // After the bank reveal completes, branch on whether the user
-            // also opted into calendar. Calendar OAuth happens here so we
-            // pull calendar providers AFTER bank providers are revealed.
-            // calendarHandledByReveal flag prevents the calendar-only path
-            // (no bank) from also triggering this branch incorrectly.
-            if (connectCalendar && !calendarHandledByReveal) {
-              setCalendarHandledByReveal(true);
+            const next = advanceAfter(justCompleted);
+            if (next === "calendar-connect") {
               setTimeout(() => {
                 addKateMessage("Now let's grab your calendar too — I'll scan for doctor appointments.");
-                setTimeout(() => setPhase("calendar-connect"), 1200);
+                setTimeout(() => setPhase(next), 1200);
+              }, 1500);
+            } else if (next === "manual-search") {
+              setTimeout(() => {
+                addKateMessage("Last step — add anyone else you already see by name.");
+                setTimeout(() => setPhase(next), 1200);
               }, 1500);
             } else {
-              setTimeout(() => setPhase("score-reveal"), 1500);
+              setTimeout(() => setPhase(next), 1500);
             }
           }, 800);
         }
@@ -946,11 +970,8 @@ export default function OnboardingPage() {
             </button>
             <button
               onClick={() => {
-                addKateMessage("No problem. Let me pull your bank records now.");
-                setTimeout(() => {
-                  setPhase("discovery-reveal");
-                  runBankDiscovery();
-                }, 1000);
+                addKateMessage("No problem — we'll move on.");
+                setTimeout(() => setPhase(advanceAfter("calendar")), 1000);
               }}
               className="w-full text-center text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
             >
@@ -996,19 +1017,124 @@ export default function OnboardingPage() {
                   onClick={() => {
                     setDiscoveryActive(false);
                     setTyping(false);
-                    addKateMessage("No problem — you can always add providers from your dashboard.");
-                    // Skip jumps past whatever discovery branch we're in.
-                    // If calendar was queued (bank+calendar path), still
-                    // surface the calendar connect so user can opt in later
-                    // — but for skip, send straight to score-reveal.
-                    setTimeout(() => setPhase("score-reveal"), 800);
+                    addKateMessage("No problem — moving on.");
+                    // Skip advances past the in-flight step to the next selected
+                    // step in the pipeline (or score-reveal if none remain).
+                    setTimeout(() => setPhase(advanceAfter(currentDiscoveryStep)), 800);
                   }}
                   className="w-full rounded-xl border border-[#5C6B5C]/30 bg-white px-4 py-2.5 text-sm font-semibold text-[#5C6B5C] hover:bg-[#5C6B5C]/5"
                 >
-                  Skip and continue to dashboard
+                  Skip and continue
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Manual NPI search — third step in the discovery pipeline.
+            Opted into via "Enter providers yourself" on discovery-method.
+            Always renders after bank/calendar (if selected) and before score. */}
+        {phase === "manual-search" && !typing && (
+          <div className="animate-fadeIn space-y-3">
+            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-4 space-y-3">
+              <input
+                type="text"
+                placeholder="Search by name, specialty, or city"
+                value={manualSearchQuery}
+                onChange={(e) => {
+                  const q = e.target.value;
+                  setManualSearchQuery(q);
+                  if (q.trim().length < 2) { setManualSearchResults([]); return; }
+                  setManualSearching(true);
+                  // Debounce via timestamped setTimeout — last keystroke wins.
+                  const myQuery = q;
+                  setTimeout(async () => {
+                    if (myQuery !== manualSearchQuery && myQuery !== q) return;
+                    try {
+                      const res = await apiFetch(`/api/npi/search?q=${encodeURIComponent(myQuery)}`);
+                      const data = await res.json();
+                      if (data?.ok) setManualSearchResults(data.results || []);
+                    } catch {}
+                    finally { setManualSearching(false); }
+                  }, 300);
+                }}
+                className="w-full rounded-xl border border-[#EBEDF0] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C6B5C]/30"
+              />
+              {manualSearching && (
+                <div className="text-xs text-[#B0B4BC]">Searching…</div>
+              )}
+              {manualSearchResults.length > 0 && (
+                <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                  {manualSearchResults.slice(0, 10).map((r) => {
+                    const key = `${r.name}|${r.npi}`;
+                    const isAdded = manualAdded.has(key);
+                    return (
+                      <div key={key} className="flex items-center gap-2 rounded-xl border border-[#EBEDF0] px-3 py-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-[#1A1D2E] truncate">{r.name}</div>
+                          {r.specialty && <div className="text-[10px] text-[#7A7F8A] truncate">{r.specialty}</div>}
+                          {r.address && <div className="text-[10px] text-[#B0B4BC] truncate">{r.address}</div>}
+                        </div>
+                        <button
+                          disabled={isAdded || manualAdding === key}
+                          onClick={async () => {
+                            setManualAdding(key);
+                            try {
+                              const res = await apiFetch("/api/providers/add-manual", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  app_user_id: userId,
+                                  name: r.name,
+                                  phone_number: r.phone,
+                                  specialty: r.specialty,
+                                  npi: r.npi,
+                                }),
+                              });
+                              const data = await res.json();
+                              if (data?.ok) {
+                                setManualAdded((prev) => new Set([...prev, key]));
+                              }
+                            } finally {
+                              setManualAdding(null);
+                            }
+                          }}
+                          className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                          style={{ backgroundColor: isAdded ? "#EBEDF0" : ACCENT, color: isAdded ? "#7A7F8A" : "white" }}
+                        >
+                          {isAdded ? "Added" : manualAdding === key ? "Adding…" : "Add"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {manualSearchQuery.trim().length >= 2 && !manualSearching && manualSearchResults.length === 0 && (
+                <div className="text-xs text-[#B0B4BC]">No matches — try a different name or specialty.</div>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                const count = manualAdded.size;
+                addKateMessage(count > 0
+                  ? `Added ${count} — I've got them now.`
+                  : "All set — you can hand me a name from the dashboard anytime.");
+                setTimeout(() => setPhase(advanceAfter("manual")), 1000);
+              }}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: ACCENT }}
+            >
+              {manualAdded.size > 0 ? `Done — ${manualAdded.size} added` : "Done"}
+            </button>
+            <button
+              onClick={() => {
+                addKateMessage("No problem — moving on.");
+                setTimeout(() => setPhase(advanceAfter("manual")), 800);
+              }}
+              className="w-full text-center text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
+            >
+              Skip for now
+            </button>
           </div>
         )}
 
