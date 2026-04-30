@@ -141,9 +141,11 @@ export default function OnboardingPage() {
   const [userId] = useState(() => typeof window !== "undefined" ? (localStorage.getItem("qbh_user_id") || crypto.randomUUID()) : crypto.randomUUID());
   const [careFor, setCareFor] = useState<string>("just-me");
   const [familyMembers, setFamilyMembers] = useState<string[]>([]);
-  const [connectBank, setConnectBank] = useState(false);
-  const [connectCalendar, setConnectCalendar] = useState(false);
-  const [connectManual, setConnectManual] = useState(false);
+  // Default all three on — "Pick whichever's easiest — or all three" implies
+  // opt-out, not opt-in. User can toggle off any they don't want.
+  const [connectBank, setConnectBank] = useState(true);
+  const [connectCalendar, setConnectCalendar] = useState(true);
+  const [connectManual, setConnectManual] = useState(true);
 
   // Account fields
   const [firstName, setFirstName] = useState("");
@@ -181,6 +183,16 @@ export default function OnboardingPage() {
   const [manualSearching, setManualSearching] = useState(false);
   const [manualAdding, setManualAdding] = useState<string | null>(null);
   const [manualAdded, setManualAdded] = useState<Set<string>>(new Set());
+
+  // Review queue — providers the classifier flagged ambiguous (review_needed
+  // status) plus pharmacies. We surface them once at the end of all bank/
+  // calendar discovery so the user can confirm "this is care for me" or
+  // dismiss "just shopping" before reaching the dashboard.
+  type AmbiguousProvider = { id: string; name: string; status: string; provider_type: string | null };
+  const [ambiguousProviders, setAmbiguousProviders] = useState<AmbiguousProvider[]>([]);
+  const [reviewActioning, setReviewActioning] = useState<string | null>(null);
+  // Where to go when review-team completes (set when we route into it).
+  const [postReviewPhase, setPostReviewPhase] = useState<string>("score-reveal");
 
   // Score
   const [score, setScore] = useState<number | null>(null);
@@ -373,6 +385,49 @@ export default function OnboardingPage() {
   // After each step (bank / calendar / manual), advance to the next one the
   // user opted into. Order is fixed: bank → calendar → manual → score-reveal.
   // Pass null to start from the top (right after account-create).
+  //
+  // Use advanceWithReview when leaving discovery (bank/calendar) to interject
+  // the review-team step if any ambiguous providers (pharmacies, classifier-
+  // flagged review_needed) need user confirmation before they hit the
+  // dashboard. advanceAfter is the raw helper used by the manual/skip paths.
+  async function advanceWithReview(completed: "bank" | "calendar"): Promise<void> {
+    const next = advanceAfter(completed);
+    // Only interject review-team if discovery is done (we're heading to manual
+    // or score). Skip if next is another discovery step (e.g., calendar still
+    // pending after bank).
+    if (next === "manual-search" || next === "score-reveal") {
+      try {
+        const res = await apiFetch(`/api/providers/pending?app_user_id=${userId}`);
+        const data = await res.json();
+        // Pending endpoint returns active + review_needed. Pull provider_type
+        // from the dashboard snapshots so we can flag pharmacies. (The pending
+        // route doesn't include provider_type today.)
+        const dashRes = await apiFetch("/api/dashboard/data");
+        const dashData = await dashRes.json().catch(() => ({}));
+        const typeByName: Record<string, string | null> = {};
+        for (const s of dashData?.snapshots || []) {
+          if (s?.provider?.name) typeByName[s.provider.name] = s.provider.provider_type ?? null;
+        }
+        const ambig = (data?.providers || []).filter((p: any) => {
+          if (p.status === "review_needed") return true;
+          if (typeByName[p.name] === "pharmacy") return true;
+          return false;
+        }).map((p: any) => ({
+          id: p.id, name: p.name, status: p.status, provider_type: typeByName[p.name] ?? null,
+        }));
+        if (ambig.length > 0) {
+          setAmbiguousProviders(ambig);
+          setPostReviewPhase(next);
+          setPhase("review-team");
+          return;
+        }
+      } catch {
+        // If review-fetch fails, just continue without the review step.
+      }
+    }
+    setPhase(next);
+  }
+
   function advanceAfter(completed: "bank" | "calendar" | "manual" | null): string {
     const order: Array<"bank" | "calendar" | "manual"> = ["bank", "calendar", "manual"];
     const phaseFor: Record<"bank" | "calendar" | "manual", string> = {
@@ -604,14 +659,14 @@ export default function OnboardingPage() {
         startReveal(providers, "calendar");
       } else {
         addKateMessage("Nothing healthcare-related on your calendar yet. No worries — you can hand me a name from the dashboard anytime.");
-        setTimeout(() => setPhase(advanceAfter("calendar")), 1500);
+        setTimeout(() => { advanceWithReview("calendar"); }, 1500);
       }
     } catch {
       clearTimeout(progress15);
       setDiscoveryActive(false);
       setTyping(false);
       addKateMessage("Couldn't scan your calendar right now. No worries — you can connect it later from settings.");
-      setTimeout(() => setPhase(advanceAfter("calendar")), 1500);
+      setTimeout(() => { advanceWithReview("calendar"); }, 1500);
     }
   }
 
@@ -627,9 +682,11 @@ export default function OnboardingPage() {
           : "Nothing healthcare-related on your calendar yet."
       );
       setRevealDone(true);
-      setTimeout(() => setPhase(advanceAfter(justCompleted)), 1500);
+      setTimeout(() => { advanceWithReview(justCompleted); }, 1500);
       return;
     }
+    // Faster, more responsive reveal: first card lands immediately so the
+    // panel doesn't sit blank while the chat message is still being shown.
     providers.forEach((_, i) => {
       setTimeout(() => {
         setRevealIndex(i + 1);
@@ -641,21 +698,19 @@ export default function OnboardingPage() {
             setRevealDone(true);
             const next = advanceAfter(justCompleted);
             if (next === "calendar-connect") {
+              // Calendar comes next — go straight in, no review interjection yet
               setTimeout(() => {
                 addKateMessage("Now let's grab your calendar too — I'll scan for doctor appointments.");
                 setTimeout(() => setPhase(next), 1200);
               }, 1500);
-            } else if (next === "manual-search") {
-              setTimeout(() => {
-                addKateMessage("Last step — add anyone else you already see by name.");
-                setTimeout(() => setPhase(next), 1200);
-              }, 1500);
             } else {
-              setTimeout(() => setPhase(next), 1500);
+              // Bank or calendar finished and there's no further discovery —
+              // route through review-team if any ambiguous providers exist.
+              setTimeout(() => { advanceWithReview(justCompleted); }, 1500);
             }
-          }, 800);
+          }, 600);
         }
-      }, 1500 * (i + 1));
+      }, 700 * i + 200);
     });
   }
 
@@ -667,6 +722,24 @@ export default function OnboardingPage() {
       .then((d) => { if (d.ok) setScore(d.score); })
       .catch(() => setScore(0));
   }, [phase]);
+
+  // ── Manual-search debounce ──
+  // Single source of truth for the NPI search query; cancels stale fetches.
+  useEffect(() => {
+    if (phase !== "manual-search") return;
+    const q = manualSearchQuery.trim();
+    if (q.length < 2) { setManualSearchResults([]); setManualSearching(false); return; }
+    let cancelled = false;
+    setManualSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await apiFetch(`/api/npi/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if (!cancelled && data?.ok) setManualSearchResults(data.results || []);
+      } catch {} finally { if (!cancelled) setManualSearching(false); }
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [manualSearchQuery, phase]);
 
   // ── Insurance autocomplete ──
   const KNOWN_INSURANCE = ["Aetna","Anthem","Anthem Blue Cross Blue Shield","Blue Cross Blue Shield","Cigna","ConnectiCare","EmblemHealth","Empire BCBS","Excellus BCBS","Florida Blue","Harvard Pilgrim","Highmark BCBS","Horizon BCBS","Humana","Independence Blue Cross","Kaiser Permanente","Medicaid","Medicare","Molina Healthcare","Oscar Health","Oxford","Premera Blue Cross","TRICARE","UnitedHealthcare","WellCare"];
@@ -912,7 +985,24 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Phone number</label>
-                <input type="tel" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} placeholder="(555) 123-4567" className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={patientPhone}
+                  onChange={(e) => {
+                    const d = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    const f = d.length === 0
+                      ? ""
+                      : d.length <= 3
+                        ? `(${d}`
+                        : d.length <= 6
+                          ? `(${d.slice(0, 3)}) ${d.slice(3)}`
+                          : `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+                    setPatientPhone(f);
+                  }}
+                  placeholder="(555) 123-4567"
+                  className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                />
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Zip code <span className="text-[#B0B4BC]">(optional)</span></label>
@@ -1051,6 +1141,82 @@ export default function OnboardingPage() {
           </div>
         )}
 
+        {/* Review-team — surfaces ambiguous discoveries (pharmacies + the
+            classifier's review_needed bucket) so the user can confirm "this
+            is care for me" or dismiss "just shopping" before reaching the
+            dashboard. Inserted automatically when bank/calendar discovery
+            yields ambiguous rows; transitions to postReviewPhase on done. */}
+        {phase === "review-team" && !typing && (
+          <div className="animate-fadeIn space-y-3">
+            <KateBubble>I picked up a few I wasn't sure about — care for you, or just somewhere you shop?</KateBubble>
+            <div className="space-y-2">
+              {ambiguousProviders.map((p) => {
+                const isPharmacy = p.provider_type === "pharmacy";
+                const acted = !ambiguousProviders.find((x) => x.id === p.id); // unused; placeholder
+                void acted;
+                return (
+                  <div key={p.id} className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-3 flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-[#1A1D2E] truncate">{p.name}</div>
+                      <div className="text-[10px] text-[#7A7F8A]">
+                        {isPharmacy ? "Pharmacy" : "Possible provider"}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={reviewActioning === p.id}
+                        onClick={async () => {
+                          setReviewActioning(p.id);
+                          try {
+                            await apiFetch("/api/providers/review", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ provider_id: p.id, action: "approve", app_user_id: userId }),
+                            });
+                            setAmbiguousProviders((prev) => prev.filter((x) => x.id !== p.id));
+                          } finally { setReviewActioning(null); }
+                        }}
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                        style={{ backgroundColor: ACCENT, color: "white" }}
+                      >
+                        Keep
+                      </button>
+                      <button
+                        disabled={reviewActioning === p.id}
+                        onClick={async () => {
+                          setReviewActioning(p.id);
+                          try {
+                            await apiFetch("/api/providers/review", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ provider_id: p.id, action: "dismiss", app_user_id: userId }),
+                            });
+                            setAmbiguousProviders((prev) => prev.filter((x) => x.id !== p.id));
+                          } finally { setReviewActioning(null); }
+                        }}
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#EBEDF0] text-[#7A7F8A] hover:bg-[#F0F2F5] disabled:opacity-50"
+                      >
+                        Drop
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => {
+                addKateMessage("Got it — moving on.");
+                setTimeout(() => setPhase(postReviewPhase), 600);
+              }}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: ACCENT }}
+              disabled={ambiguousProviders.length > 0}
+            >
+              {ambiguousProviders.length > 0 ? `Decide on ${ambiguousProviders.length} more` : "Done"}
+            </button>
+          </div>
+        )}
+
         {/* Manual NPI search — third step in the discovery pipeline.
             Opted into via "Enter providers yourself" on discovery-method.
             Always renders after bank/calendar (if selected) and before score. */}
@@ -1061,23 +1227,7 @@ export default function OnboardingPage() {
                 type="text"
                 placeholder="Search by name, specialty, or city"
                 value={manualSearchQuery}
-                onChange={(e) => {
-                  const q = e.target.value;
-                  setManualSearchQuery(q);
-                  if (q.trim().length < 2) { setManualSearchResults([]); return; }
-                  setManualSearching(true);
-                  // Debounce via timestamped setTimeout — last keystroke wins.
-                  const myQuery = q;
-                  setTimeout(async () => {
-                    if (myQuery !== manualSearchQuery && myQuery !== q) return;
-                    try {
-                      const res = await apiFetch(`/api/npi/search?q=${encodeURIComponent(myQuery)}`);
-                      const data = await res.json();
-                      if (data?.ok) setManualSearchResults(data.results || []);
-                    } catch {}
-                    finally { setManualSearching(false); }
-                  }, 300);
-                }}
+                onChange={(e) => setManualSearchQuery(e.target.value)}
                 className="w-full rounded-xl border border-[#EBEDF0] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C6B5C]/30"
               />
               {manualSearching && (
@@ -1177,7 +1327,7 @@ export default function OnboardingPage() {
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-4xl font-light text-[#0FA5A5]">{score}</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A] mt-0.5">
-                  {score >= 85 ? "Excellent" : score >= 60 ? "On Track" : score >= 30 ? "Building" : "Getting Started"}
+                  {score >= 85 ? "Strong" : score >= 60 ? "On Track" : score >= 30 ? "Building" : "Starting"}
                 </span>
               </div>
             </div>
