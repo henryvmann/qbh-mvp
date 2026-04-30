@@ -453,22 +453,28 @@ export default function OnboardingPage() {
         token: data.link_token,
         onSuccess: (publicToken: string) => {
           setPlaidConnected(true);
-          // Exchange token and start discovery
-          apiFetch("/api/plaid/exchange-and-discover", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ public_token: publicToken, app_user_id: userId }),
-          }).then(() => {
-            // Always run bank discovery first and let the user see their
-            // bank-discovered providers reveal. AFTER the reveal completes,
-            // startReveal's last callback decides whether to go to the
-            // calendar-connect step (if connectCalendar) or score-reveal.
+          (async () => {
+            const exchangeRes = await apiFetch("/api/plaid/exchange-token", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ public_token: publicToken, app_user_id: userId }),
+            });
+            if (!exchangeRes.ok) {
+              setError("Bank connection failed. Try again from settings.");
+              return;
+            }
+            // Kick off discovery; runBankDiscovery polls dashboard for the result.
+            apiFetch("/api/discovery/run", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ app_user_id: userId }),
+            }).catch(() => {});
             setTimeout(() => {
               addKateMessage("On it \u2014 pulling your records now.");
               setPhase("discovery-reveal");
               runBankDiscovery();
             }, 500);
-          });
+          })();
         },
         onExit: () => {},
       });
@@ -524,7 +530,15 @@ export default function OnboardingPage() {
         setDiscoveryActive(false);
         setTyping(false);
         addKateMessage("Nothing healthcare-related in your recent transactions \u2014 could be a different bank, or insurance covers it. No worries, you can hand me a name from the dashboard anytime.");
-        setTimeout(() => setPhase("score-reveal"), 1500);
+        if (connectCalendar && !calendarHandledByReveal) {
+          setCalendarHandledByReveal(true);
+          setTimeout(() => {
+            addKateMessage("Let's check your calendar too \u2014 I'll scan for doctor appointments.");
+            setTimeout(() => setPhase("calendar-connect"), 1200);
+          }, 1500);
+        } else {
+          setTimeout(() => setPhase("score-reveal"), 1500);
+        }
       }
     }, 3000);
   }
