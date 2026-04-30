@@ -410,13 +410,16 @@ export default function OnboardingPage() {
           setTimeout(() => setPhase("plaid-connect"), 1200);
         }, 400);
       } else if (connectCalendar) {
+        // Calendar-only path: route through OAuth FIRST, not straight to scan.
+        // Picking the "Scan calendar" toggle only expresses intent \u2014 the
+        // actual Google authorization hasn't happened yet, and runCalendar-
+        // Discovery against a never-authorized account just returns empty.
+        // Calendar-connect phase has the Connect Google Calendar button \u2192
+        // OAuth round trip \u2192 ?calendar_connected=1 effect runs runCalendar-
+        // Discovery for real.
         setTimeout(() => {
-          addKateMessage("Account created. Let me scan your calendar for doctor appointments.");
-          setTimeout(() => {
-            // Trigger calendar scan
-            setPhase("discovery-reveal");
-            runCalendarDiscovery();
-          }, 1200);
+          addKateMessage("Account created. Let's connect your calendar so I can scan for doctor appointments.");
+          setTimeout(() => setPhase("calendar-connect"), 1200);
         }, 400);
       } else {
         setTimeout(() => {
