@@ -568,16 +568,51 @@ export async function getValidGoogleCalendarAccessToken(
 
 const GOOGLE_EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
 
+// Strict keyword list — only terms that strongly imply a healthcare visit.
+// Removed words that produced false positives in the live test:
+//   "appointment" (too broad — landlord, dentist's office, real estate)
+//   "health" (too broad — health club, mental-health-day)
+//   "medical" alone (too broad — medical leave)
+//   "annual exam" (could be vehicle/property)
+//   "therapy" alone (retail therapy / massage therapy)
+// Substring match is fine for unambiguous terms; credential abbreviations
+// (MD, DDS, etc.) get explicit word boundaries via the pattern below.
 const HEALTHCARE_KEYWORDS = [
-  "doctor", "dr.", "dr ", "dentist", "dental", "medical", "clinic",
-  "hospital", "health", "therapy", "physical therapy", "chiropractic",
-  "optom", "eye exam", "eye doctor", "derma", "cardio", "ortho",
-  "urgent care", "checkup", "check-up", "check up", "appointment",
-  "annual exam", "wellness visit",
+  // Titles / honorifics
+  "dr.", "dr ", "doctor",
+  // Specialties (stems catch -ology / -ologist / -ic etc.)
+  "dentist", "dental", "orthodont",
+  "dermatolog", "cardiolog", "neurolog", "urolog", "gastroenterolog",
+  "pediatric", "psychiatr", "psycholog",
+  "gynecolog", "obgyn", "ob/gyn",
+  "podiatr", "chiropract",
+  "optometr", "ophthalmolog",
+  "orthopedic", "orthopedist",
+  "physical therap", "occupational therap",
+  "therapist", "therapy session", "couples therapy",
+  // Places
+  "hospital", "urgent care", "emergency room",
+  "medical center", "medical clinic", "health clinic", "healthcare clinic",
+  // Visit types (specific enough not to overmatch)
+  "checkup", "check-up",
+  "physical exam", "annual physical",
+  "mammogram", "colonoscopy",
+  "blood work", "lab work", "blood draw",
+  "flu shot", "booster shot", "vaccin",
+  "wellness visit", "well-woman", "well-child",
+];
+
+// Credentials need word boundaries so "MD" doesn't match "MDF" / "made" etc.
+const HEALTHCARE_CREDENTIALS = [
+  "md", "m.d.", "dds", "d.d.s.", "dmd", "do", "d.o.",
+  "np", "n.p.", "pa-c", "od", "o.d.", "rn", "lmhc", "lcsw", "lpc",
 ];
 
 const HEALTHCARE_PATTERN = new RegExp(
-  HEALTHCARE_KEYWORDS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
+  [
+    HEALTHCARE_KEYWORDS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
+    "\\b(" + HEALTHCARE_CREDENTIALS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b",
+  ].join("|"),
   "i"
 );
 
