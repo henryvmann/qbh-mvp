@@ -481,12 +481,9 @@ export default function OnboardingPage() {
               setError("Bank connection failed. Try again from settings.");
               return;
             }
-            // Kick off discovery; runBankDiscovery polls dashboard for the result.
-            apiFetch("/api/discovery/run", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ app_user_id: userId }),
-            }).catch(() => {});
+            // discovery/run is driven from inside runBankDiscovery's poll
+            // loop so we naturally retry past Plaid's PRODUCT_NOT_READY
+            // window (typically 30-60s after Link).
             setTimeout(() => {
               addKateMessage("On it \u2014 pulling your records now.");
               setPhase("discovery-reveal");
@@ -519,39 +516,62 @@ export default function OnboardingPage() {
       addKateMessage("Almost there — just finishing up.");
     }, 45000);
 
+    // Drive discovery from inside the loop so PRODUCT_NOT_READY (Plaid's
+    // 30-60s post-Link warmup) naturally retries on the next tick. Once
+    // discovery returns concrete provider counts (or determines truly empty),
+    // we advance.
+    // Drive discovery from inside the loop so Plaid's PRODUCT_NOT_READY
+    // (typical 30-60s warmup after Link) naturally retries on each tick.
     let attempts = 0;
-    const poll = setInterval(async () => {
+    let inFlight = false;
+    const finish = (providers: DiscoveredProvider[]) => {
+      clearInterval(poll);
+      clearTimeout(progress15);
+      clearTimeout(progress45);
+      setDiscoveryActive(false);
+      setTyping(false);
+      setDiscoveredProviders(providers);
+      startReveal(providers, "bank");
+    };
+    const tick = async () => {
+      if (inFlight) return;
+      inFlight = true;
       attempts++;
       try {
-        const res = await apiFetch("/api/dashboard/data");
-        const data = await res.json();
-        if (data?.ok && data.snapshots?.length > 0) {
-          clearInterval(poll);
-          clearTimeout(progress15);
-          clearTimeout(progress45);
-          setDiscoveryActive(false);
-          setTyping(false);
-          const providers = data.snapshots
+        const runRes = await apiFetch("/api/discovery/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_user_id: userId }),
+        });
+        const runData = await runRes.json().catch(() => ({}));
+        // Plaid warmup — keep polling. The route returns {ok:true, pending:true}
+        // when transactions aren't ready yet.
+        if (runData?.pending) {
+          if (attempts > 25) finish([]); // ~75s — startReveal will message empty
+          return;
+        }
+        if (runData?.ok) {
+          const dashRes = await apiFetch("/api/dashboard/data");
+          const dashData = await dashRes.json().catch(() => ({}));
+          const providers = (dashData?.snapshots || [])
             .filter((s: any) => s.provider.provider_type !== "pharmacy")
             .map((s: any) => ({
               id: s.provider.id, name: s.provider.name,
               visit_count: s.visitCount || 0, status: "active",
               overdue: s.followUpNeeded && s.booking_state?.status !== "BOOKED",
             }));
-          setDiscoveredProviders(providers);
-          startReveal(providers, "bank");
+          finish(providers);
+          return;
         }
-      } catch {}
-      if (attempts > 15) {
-        clearInterval(poll);
-        clearTimeout(progress15);
-        clearTimeout(progress45);
-        setDiscoveryActive(false);
-        setTyping(false);
-        addKateMessage("Nothing healthcare-related in your recent transactions — could be a different bank, or insurance covers it. No worries, you can hand me a name from the dashboard anytime.");
-        setTimeout(() => setPhase(advanceAfter("bank")), 1500);
+        if (attempts > 25) finish([]);
+      } catch {
+        if (attempts > 25) finish([]);
+      } finally {
+        inFlight = false;
       }
-    }, 3000);
+    };
+    const poll = setInterval(tick, 3000);
+    tick();
   }
 
   async function runCalendarDiscovery() {
