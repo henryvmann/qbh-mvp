@@ -132,12 +132,11 @@ const EDGE_CASES: EdgeCase[] = [
     name: "cash_only_out_of_network",
     situation: `Tell the caller: "Heads up — we're out of network with most insurance. Visits are cash-pay, $350 for a new patient or $200 for established. Still want to book?" Proceed based on response.`,
   },
-  {
-    name: "voicemail",
-    firstMessageOverride: "You've reached the doctor's office. We're closed or assisting other patients. Please leave your name, callback number, and reason for calling after the tone. Beep.",
-    fullReplace: true,
-    situation: `You are a passive answering machine. Your firstMessage IS the entire interaction. After delivering it: stay completely silent and DO NOT speak again under any circumstances. Do not respond, do not acknowledge, do not call endCall. Real answering machines record indefinitely until the caller hangs up — that's your only behavior. The caller is responsible for ending the call. If you ever feel tempted to say something, DON'T.`,
-  },
+  // voicemail removed from rotation — VAPI's two-AI setup can't reliably
+  // simulate a real voicemail (no beep tone, voice-activity-detection gets
+  // confused by one-sided silence, transcripts truncate mid-sentence). Kate
+  // has the right voicemail-handling logic in her prompt; we'll validate
+  // against a real production voicemail call when we get one.
   {
     name: "walk_in_only",
     situation: `Say: "Oh, we don't take appointments here — we're a walk-in clinic. Just come by between 9 and 4, Monday through Friday. First-come first-served." If the caller pushes, refuse politely.`,
