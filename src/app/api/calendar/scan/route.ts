@@ -68,8 +68,21 @@ export async function POST(req: NextRequest) {
       return false;
     }
 
-    // Filter to only truly new providers
-    const newMatches = matches.filter((m) => !isDuplicate(m.name));
+    // Filter to only truly new providers — first against pre-existing rows
+    // in providers, then against each other so a recurring calendar event
+    // (e.g. "Dr. Echelman yearly appointment" appearing on multiple dates)
+    // doesn't insert duplicate provider rows.
+    const seenInBatch = new Set<string>();
+    const newMatches = matches.filter((m) => {
+      if (isDuplicate(m.name)) return false;
+      const key = m.name.toLowerCase().trim();
+      if (seenInBatch.has(key)) return false;
+      seenInBatch.add(key);
+      // Also feed this name into existingProviderList so subsequent matches
+      // in the same batch see it for the word-overlap dedupe rule.
+      existingProviderList.push(key);
+      return true;
+    });
 
     // Insert new providers with source="calendar" and status="active"
     // Auto-lookup phone numbers and addresses

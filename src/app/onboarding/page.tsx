@@ -534,9 +534,14 @@ export default function OnboardingPage() {
               setError("Bank connection failed. Try again from settings.");
               return;
             }
-            // discovery/run is driven from inside runBankDiscovery's poll
-            // loop so we naturally retry past Plaid's PRODUCT_NOT_READY
-            // window (typically 30-60s after Link).
+            // Fire discovery in the background; runBankDiscovery polls the
+            // dashboard for results. One retry inside runBankDiscovery
+            // covers Plaid's PRODUCT_NOT_READY warmup case.
+            apiFetch("/api/discovery/run", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ app_user_id: userId }),
+            }).catch(() => {});
             setTimeout(() => {
               addKateMessage("On it \u2014 pulling your records now.");
               setPhase("discovery-reveal");
@@ -573,10 +578,12 @@ export default function OnboardingPage() {
     // 30-60s post-Link warmup) naturally retries on the next tick. Once
     // discovery returns concrete provider counts (or determines truly empty),
     // we advance.
-    // Drive discovery from inside the loop so Plaid's PRODUCT_NOT_READY
-    // (typical 30-60s warmup after Link) naturally retries on each tick.
+    // Lightweight poll: discovery/run is already running in the background
+    // (kicked off by Plaid onSuccess). Poll the dashboard cheaply for
+    // results. If we still see nothing at the 30s mark, fire a one-shot
+    // retry of discovery/run to cover Plaid's PRODUCT_NOT_READY warmup.
     let attempts = 0;
-    let inFlight = false;
+    let retried = false;
     const finish = (providers: DiscoveredProvider[]) => {
       clearInterval(poll);
       clearTimeout(progress15);
@@ -586,27 +593,14 @@ export default function OnboardingPage() {
       setDiscoveredProviders(providers);
       startReveal(providers, "bank");
     };
-    const tick = async () => {
-      if (inFlight) return;
-      inFlight = true;
+    const poll = setInterval(async () => {
       attempts++;
       try {
-        const runRes = await apiFetch("/api/discovery/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ app_user_id: userId }),
-        });
-        const runData = await runRes.json().catch(() => ({}));
-        // Plaid warmup — keep polling. The route returns {ok:true, pending:true}
-        // when transactions aren't ready yet.
-        if (runData?.pending) {
-          if (attempts > 25) finish([]); // ~75s — startReveal will message empty
-          return;
-        }
-        if (runData?.ok) {
-          const dashRes = await apiFetch("/api/dashboard/data");
-          const dashData = await dashRes.json().catch(() => ({}));
-          const providers = (dashData?.snapshots || [])
+        const dashRes = await apiFetch("/api/dashboard/data");
+        const dashData = await dashRes.json().catch(() => ({}));
+        const snapshots = dashData?.snapshots || [];
+        if (snapshots.length > 0) {
+          const providers = snapshots
             .filter((s: any) => s.provider.provider_type !== "pharmacy")
             .map((s: any) => ({
               id: s.provider.id, name: s.provider.name,
@@ -616,15 +610,20 @@ export default function OnboardingPage() {
           finish(providers);
           return;
         }
-        if (attempts > 25) finish([]);
+        // Plaid warmup retry at 30s: once.
+        if (!retried && attempts >= 10) {
+          retried = true;
+          apiFetch("/api/discovery/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ app_user_id: userId }),
+          }).catch(() => {});
+        }
+        if (attempts > 25) finish([]); // ~75s ceiling
       } catch {
         if (attempts > 25) finish([]);
-      } finally {
-        inFlight = false;
       }
-    };
-    const poll = setInterval(tick, 3000);
-    tick();
+    }, 3000);
   }
 
   async function runCalendarDiscovery() {
@@ -719,6 +718,17 @@ export default function OnboardingPage() {
       .then((r) => r.json())
       .then((d) => { if (d.ok) setScore(d.score); })
       .catch(() => setScore(0));
+  }, [phase]);
+
+  // ── Manual-search entry message ──
+  // Whenever we land in manual-search, drop a Kate message explaining
+  // what to do (covers all entry paths — including review-team Done).
+  const manualSearchAnnouncedRef = useRef(false);
+  useEffect(() => {
+    if (phase !== "manual-search") return;
+    if (manualSearchAnnouncedRef.current) return;
+    manualSearchAnnouncedRef.current = true;
+    addKateMessage("Last step — search and add anyone else you already see. Just type a name or specialty.");
   }, [phase]);
 
   // ── Manual-search debounce ──
@@ -1221,12 +1231,14 @@ export default function OnboardingPage() {
         {phase === "manual-search" && !typing && (
           <div className="animate-fadeIn space-y-3">
             <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-4 space-y-3">
+              <label className="block text-xs font-semibold text-[#1A2E1A] mb-1">Search for a provider</label>
+              <p className="text-[11px] text-[#7A7F8A] mb-2">Type a name, specialty (e.g. "dermatologist"), or "doctor [city]". Tap Add on any match.</p>
               <input
                 type="text"
-                placeholder="Search by name, specialty, or city"
+                placeholder="e.g. Dr. Smith, dentist, cardiologist NYC"
                 value={manualSearchQuery}
                 onChange={(e) => setManualSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-[#EBEDF0] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C6B5C]/30"
+                className="w-full rounded-xl border border-[#EBEDF0] bg-white px-3 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-2 focus:ring-[#5C6B5C]/30"
               />
               {manualSearching && (
                 <div className="text-xs text-[#B0B4BC]">Searching…</div>
