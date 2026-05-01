@@ -78,6 +78,9 @@ CRITICAL RULES:
 4. If the merchant name sounds like it COULD be a restaurant, store, or consumer business, it is NOT healthcare
 5. "Pharmacy" in the name = healthcare. But "Market" or "Store" in the name = NOT healthcare
 6. When in doubt, classify as NOT healthcare. We'd rather miss a provider than include a non-provider.
+7. Ambiguous LLC / "Practice" names (e.g. "Family Practice LLC", "Westside Practice Group", "Premier Office LLC", "X Associates LLC") — these COULD be a medical practice OR a law firm / consulting / accounting / professional-services firm. WITHOUT explicit medical signal in the name (a credential like MD/DDS/DO, or a specialty word like Dental/Cardiology/Pediatric/Dermatology/Orthopedic), you MUST classify as is_healthcare=false. The word "Practice" alone is NOT a medical signal — lawyers and accountants also call themselves "Practice". Only output is_healthcare=true if the name explicitly says "Medical Practice" or "Family Medicine" or contains a clinical specialty.
+8. "Health" alone in a name is NOT enough — "Premier Health Club" is a gym, "Health Foods Market" is a grocery, "Mental Health Clinic" IS healthcare. Look for the qualifying word.
+9. Words like "Wellness", "Mind Body", "Spa" usually mean spa/yoga/massage, NOT a medical provider. Classify as NOT healthcare unless paired with a medical credential.
 
 THERAPIST DETECTION:
 - Many therapists bill under their personal name (e.g., "Jane Smith").

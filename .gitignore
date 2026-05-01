@@ -56,3 +56,5 @@ next-env.d.ts
 # Exception: public assets needed for the app
 !public/kate-avatar.png
 "From ChatGPT - Current Source Files/"
+.env*.local
+scripts/classifier-eval/runs/*.json

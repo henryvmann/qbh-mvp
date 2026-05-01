@@ -181,8 +181,11 @@ export async function buildProviderRegistry(
     "GAS STATION", "CAR WASH", "AUTO ", "PARKING", "TOLL ", "TAXI",
     // Beauty / personal
     "SALON", "BARBER", "NAIL", "SPA ", "BEAUTY", "HAIR", "WAXING", "LASH", "TATTOO",
-    // Fitness
+    // Fitness — including "HEALTH CLUB", "FITNESS CLUB" and similar that
+    // confused the classifier into treating the word "HEALTH" as a signal.
     "GYM", "FITNESS", "CROSSFIT", "YOGA", "PILATES",
+    "HEALTH CLUB", "FITNESS CLUB", "ATHLETIC CLUB", "SPORTS CLUB",
+    "SOULCYCLE", "EQUINOX", "PURE BARRE", "BARRY'S",
     // Entertainment
     "CINEMA", "MOVIE", "THEATER", "THEATRE", "ARCADE", "BOWLING",
     // Finance / transfers
@@ -197,9 +200,12 @@ export async function buildProviderRegistry(
     "UNITED HEALTH", "UNITEDHEALTH", "BLUE CROSS", "BLUECROSS", "BCBS",
     "GUARDIAN", "LINCOLN FINANCIAL", "AFLAC", "PRUDENTIAL", "HARTFORD",
     "TRAVELERS", "MUTUAL OF OMAHA",
-    // Healthcare platforms/tools (not providers)
+    // Healthcare platforms/tools (not providers themselves — billing /
+    // booking / credentialing layers that show up on a card statement).
     "SIMPLEPRACTICE", "SIMPLE PRACTICE", "PSYCHTODAY", "PSYCH TODAY", "PSYCHOLOGY TODAY",
     "THERAPYNOTES", "THERAPY NOTES", "HEADWAY", "ZOCDOC", "HEALTHGRADES",
+    "ALMA THERAPY", "ALMA HEALTH", "BETTERHELP", "TALKSPACE", "GROW THERAPY",
+    "SPRING HEALTH", "LYRA HEALTH", "MODERN HEALTH",
     // Misc
     "PET ", "VET ", "VETERINA", "LANDSCAP", "CLEANING", "LAUNDRY", "DRY CLEAN",
   ];
@@ -210,6 +216,7 @@ export async function buildProviderRegistry(
     "DOCTOR", " MD", "DR ", "PEDIATRIC", "CARDIO", "ORTHO", "DERMA",
     "RADIOLOGY", "IMAGING", "LABCORP", "QUEST DIAG", "URGENT CARE",
     "CHIROPRACTIC", "PHYSICAL THERAPY", "MENTAL HEALTH", "PSYCHIATR", "PSYCHOLOG",
+    "WARBY PARKER", "ONE MEDICAL", "MOUNT SINAI", "KAISER PERMANENTE", "NORTHWELL",
   ];
 
   const NON_HEALTHCARE_PLAID_CATEGORIES = [
@@ -235,23 +242,24 @@ export async function buildProviderRegistry(
   // Pre-classify: split merchants into definite buckets vs ambiguous (needs AI)
   const preClassified = new Map<string, { bucket: "HEALTHCARE" | "IGNORE"; provider_type: string | null }>();
 
+  // Order matters and is subtle:
+  //   1) NON_HEALTHCARE name first — multi-word disqualifiers like
+  //      "HEALTH CLUB" / "PET HOSPITAL" need to win over the bare
+  //      "HEALTH" / "HOSPITAL" hints in OBVIOUS_HEALTHCARE.
+  //   2) HEALTHCARE name next — catches CVS / Rite Aid / MD / etc.
+  //   3) HEALTHCARE category — catches pharmacies that Plaid tags as
+  //      ["Shops","Pharmacy"], BEFORE the bare "SHOPS" non-healthcare
+  //      category check kicks in and IGNOREs them.
+  //   4) NON_HEALTHCARE category — sweeps everything else.
   for (const entry of grouped.values()) {
     const n = entry.normalized_name;
     const cats = entry.categories.join(" ").toUpperCase();
 
-    // Check obvious non-healthcare by name
     if (OBVIOUS_NOT_HEALTHCARE.some((hint) => n.includes(hint))) {
       preClassified.set(n, { bucket: "IGNORE", provider_type: null });
       continue;
     }
 
-    // Check obvious non-healthcare by Plaid category
-    if (NON_HEALTHCARE_PLAID_CATEGORIES.some((cat) => cats.includes(cat))) {
-      preClassified.set(n, { bucket: "IGNORE", provider_type: null });
-      continue;
-    }
-
-    // Check obvious healthcare by name — detect specific types
     if (OBVIOUS_HEALTHCARE.some((hint) => n.includes(hint))) {
       const isPharmacy = PHARMACY_HINTS.some((h) => n.includes(h));
       const isLab = LAB_HINTS.some((h) => n.includes(h));
@@ -260,17 +268,26 @@ export async function buildProviderRegistry(
       continue;
     }
 
-    // Check healthcare by Plaid category
     if (["DOCTOR", "HOSPITAL", "PHARMACY", "MEDICAL", "HEALTHCARE"].some((cat) => cats.includes(cat))) {
       const isPharmacy = cats.includes("PHARMACY");
       preClassified.set(n, { bucket: "HEALTHCARE", provider_type: isPharmacy ? "pharmacy" : null });
       continue;
     }
 
+    if (NON_HEALTHCARE_PLAID_CATEGORIES.some((cat) => cats.includes(cat))) {
+      preClassified.set(n, { bucket: "IGNORE", provider_type: null });
+      continue;
+    }
+
     // Ambiguous — will go to AI
   }
 
-  console.log(`[buildProviderRegistry] Pre-filter: ${Array.from(preClassified.values()).filter(v => v.bucket === "IGNORE").length} ignored, ${Array.from(preClassified.values()).filter(v => v.bucket === "HEALTHCARE").length} healthcare, ${grouped.size - preClassified.size} need AI`);
+  {
+    const _vals = Array.from(preClassified.values());
+    const _ig = _vals.filter(v => v.bucket === "IGNORE").length;
+    const _hc = _vals.filter(v => v.bucket === "HEALTHCARE").length;
+    console.log(`[buildProviderRegistry] Pre-filter: ${_ig} ignored, ${_hc} healthcare, ${grouped.size - preClassified.size} need AI (grouped=${grouped.size}, preClassified=${preClassified.size})`);
+  }
 
   // Step 2: Prepare ONLY ambiguous merchants for AI classification
   const merchantInputs = Array.from(grouped.values())
@@ -383,7 +400,18 @@ export async function buildProviderRegistry(
     let care_action_type: string | null;
     let provider_type: string | null = null;
 
-    // Priority: pre-filter → NPI → AI → ignore
+    // Heuristic: a bare person-name merchant (2-4 ALL-CAPS words) that
+    // recurs 3+ times in the $100-$500 therapy/specialist range is almost
+    // certainly a healthcare provider that NPI happened to miss. Surface
+    // it as REVIEW_NEEDED so the user can confirm in onboarding's review-
+    // team step. We don't claim confidence; we just refuse to silently
+    // drop it like we did before.
+    const _words = entry.normalized_name.split(" ").filter(Boolean);
+    const _looksLikePersonName = _words.length >= 2 && _words.length <= 4 && _words.every((w) => /^[A-Z]+$/.test(w));
+    const _avgAmount = entry.amounts.length > 0 ? entry.amounts.reduce((s, v) => s + v, 0) / entry.amounts.length : 0;
+    const _therapistFrequencyHit = _looksLikePersonName && entry.transaction_ids.length >= 3 && _avgAmount >= 100 && _avgAmount <= 500;
+
+    // Priority: pre-filter → NPI → AI → therapist heuristic → ignore
     if (preResult?.bucket === "IGNORE") {
       bucket = "IGNORE";
       care_action_type = null;
@@ -392,10 +420,23 @@ export async function buildProviderRegistry(
       care_action_type = "CHECK_APPOINTMENT_STATUS";
       provider_type = preResult.provider_type;
     } else if (npiResult?.found) {
-      bucket = "HEALTHCARE";
-      care_action_type = "CHECK_APPOINTMENT_STATUS";
-      provider_type = npiResult.provider_type;
-      console.log(`[buildProviderRegistry] NPI override: "${entry.provider_name}" → HEALTHCARE (${npiResult.provider_type})`);
+      // NPI lookup by name has a non-trivial false-positive rate — common
+      // first/last name combos collide with real registered providers.
+      // Treat it as authoritative only when the spending pattern also
+      // suggests a real provider relationship (2+ recurring visits).
+      // Otherwise route to REVIEW_NEEDED so the user makes the call.
+      const isRecurring = entry.transaction_ids.length >= 2;
+      if (isRecurring) {
+        bucket = "HEALTHCARE";
+        care_action_type = "CHECK_APPOINTMENT_STATUS";
+        provider_type = npiResult.provider_type;
+        console.log(`[buildProviderRegistry] NPI override: "${entry.provider_name}" → HEALTHCARE (${npiResult.provider_type})`);
+      } else {
+        bucket = "REVIEW_NEEDED";
+        care_action_type = "REVIEW_PROVIDER";
+        provider_type = npiResult.provider_type;
+        console.log(`[buildProviderRegistry] NPI single-visit: "${entry.provider_name}" → REVIEW_NEEDED (${npiResult.provider_type})`);
+      }
     } else if (aiResult) {
       if (aiResult.is_healthcare && aiResult.confidence === "high") {
         bucket = "HEALTHCARE";
@@ -405,10 +446,23 @@ export async function buildProviderRegistry(
         bucket = "REVIEW_NEEDED";
         care_action_type = "REVIEW_PROVIDER";
         provider_type = aiResult.provider_type;
+      } else if (_therapistFrequencyHit) {
+        // AI said no, NPI missed, but the spend pattern is very-therapist —
+        // surface it for user confirmation rather than silently dropping.
+        bucket = "REVIEW_NEEDED";
+        care_action_type = "REVIEW_PROVIDER";
+        provider_type = "mental_health";
+        console.log(`[buildProviderRegistry] Therapist heuristic: "${entry.provider_name}" → REVIEW_NEEDED (visits=${entry.transaction_ids.length}, avg=$${_avgAmount.toFixed(0)})`);
       } else {
         bucket = "IGNORE";
         care_action_type = null;
       }
+    } else if (_therapistFrequencyHit) {
+      // AI returned nothing AND NPI missed — same heuristic catches it.
+      bucket = "REVIEW_NEEDED";
+      care_action_type = "REVIEW_PROVIDER";
+      provider_type = "mental_health";
+      console.log(`[buildProviderRegistry] Therapist heuristic: "${entry.provider_name}" → REVIEW_NEEDED (visits=${entry.transaction_ids.length}, avg=$${_avgAmount.toFixed(0)})`);
     } else {
       bucket = "IGNORE";
       care_action_type = null;

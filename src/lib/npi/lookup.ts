@@ -14,6 +14,33 @@ type NpiResult = {
   state: string | null;
 };
 
+// NPI taxonomies that are technically licensed but aren't the kind of
+// "doctor visit" the user means by a provider. NPI returns a desc string
+// like "Specialist/Technologist, Athletic Trainer" — we treat any match
+// to one of these stems as a non-provider hit.
+const NON_MEDICAL_NPI_TAXONOMIES = [
+  "athletic trainer",
+  "personal care",
+  "personal emergency",
+  "respite care",
+  "home delivered meals",
+  "case management",
+  "developmental therapy",
+  "homemaker",
+  "transportation",
+  "nutritionist", // dietitians count as healthcare; pure nutritionists often don't
+  "supplier", // covers "Eyewear Supplier", "DME Supplier", etc.
+  "supplies",
+  "social worker (non-clinical)",
+  "veterinar",
+];
+
+function isMedicalTaxonomy(taxonomy: string | null): boolean {
+  if (!taxonomy) return true; // no taxonomy returned — give benefit of the doubt
+  const t = taxonomy.toLowerCase();
+  return !NON_MEDICAL_NPI_TAXONOMIES.some((bad) => t.includes(bad));
+}
+
 function formatPhoneE164(phone: string | null | undefined): string | null {
   if (!phone) return null;
   const digits = phone.replace(/\D/g, "");
@@ -70,6 +97,11 @@ export async function lookupNpi(name: string): Promise<NpiResult> {
     if (data.result_count > 0) {
       const result = data.results[0];
       const taxonomy = result.taxonomies?.[0]?.desc || null;
+      // Reject licensed-but-non-doctor NPI taxonomies (athletic trainer,
+      // equipment supplier, etc.) so they don't get flagged as healthcare.
+      if (!isMedicalTaxonomy(taxonomy)) {
+        return { found: false, provider_type: null, npi: null, phone_number: null, address: null, city: null, state: null };
+      }
       const loc = extractLocationAddress(result.addresses);
       return {
         found: true,
@@ -89,6 +121,9 @@ export async function lookupNpi(name: string): Promise<NpiResult> {
     if (orgData.result_count > 0) {
       const result = orgData.results[0];
       const taxonomy = result.taxonomies?.[0]?.desc || null;
+      if (!isMedicalTaxonomy(taxonomy)) {
+        return { found: false, provider_type: null, npi: null, phone_number: null, address: null, city: null, state: null };
+      }
       const loc = extractLocationAddress(result.addresses);
       return {
         found: true,
