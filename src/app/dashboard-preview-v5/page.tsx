@@ -36,13 +36,23 @@ const C = {
 
 type Tab = "today" | "timeline" | "you";
 type Sender = "kate" | "user";
+type ChipIntent = "handle" | "elaborate" | "defer" | "thanks" | "custom";
+type BubbleChip = {
+  label: string;
+  intent: ChipIntent;
+  onClick: () => void;
+  primary?: boolean;
+};
 type Bubble = {
   id: string;
   sender: Sender;
   text: React.ReactNode;
-  // Quick replies attached to this bubble; only the latest Kate bubble
-  // shows chips, but we store them per-bubble so flow is reproducible.
-  chips?: { label: string; onClick: () => void; primary?: boolean }[];
+  // Chips Kate offered with this bubble. We split them at render time:
+  //   - intent="handle" → embedded action card INSIDE the bubble
+  //   - everything else → suggested-replies row above the keyboard
+  // Only the latest Kate bubble's chips render; the rest are kept for
+  // history / replay only.
+  chips?: BubbleChip[];
 };
 
 export default function DashboardPreviewV5() {
@@ -167,6 +177,7 @@ function TodayChatScreen() {
       text: <KateMarkdown text={state.message} />,
       chips: state.chips.map((c) => ({
         label: c.label,
+        intent: (c.intent as ChipIntent) || "custom",
         primary: c.primary,
         onClick: async () => {
           userSays(c.label);
@@ -285,9 +296,9 @@ function TodayChatScreen() {
           </>
         ),
         chips: [
-          { label: "Handle it", primary: true, onClick: () => onChipDemo("Handle it") },
-          { label: "Tell me more", onClick: () => onChipDemo("Tell me more") },
-          { label: "Not now", onClick: () => onChipDemo("Not now") },
+          { label: "Handle it", intent: "handle", primary: true, onClick: () => onChipDemo("Handle it") },
+          { label: "Tell me more", intent: "elaborate", onClick: () => onChipDemo("Tell me more") },
+          { label: "Not now", intent: "defer", onClick: () => onChipDemo("Not now") },
         ],
       },
     ];
@@ -385,7 +396,14 @@ function TodayChatScreen() {
         {kateTyping && <TypingIndicator />}
       </div>
 
-      {/* 4. Input bar */}
+      {/* 4. Suggested replies (non-handle chips from latest Kate bubble) */}
+      {!kateTyping && lastKateIdx >= 0 && (
+        <SuggestedReplies
+          chips={(bubbles[lastKateIdx].chips ?? []).filter((c) => c.intent !== "handle")}
+        />
+      )}
+
+      {/* 5. Input bar */}
       <ChatInput
         draft={draft}
         setDraft={setDraft}
@@ -662,6 +680,13 @@ function KateHero() {
 
 function BubbleRow({ bubble, showChips }: { bubble: Bubble; showChips: boolean }) {
   const isUser = bubble.sender === "user";
+  // Only handle-intent chips render as embedded action cards inside the
+  // bubble. Everything else lives above the keyboard (SuggestedReplies)
+  // so the bubble stays purely conversational.
+  const actionChips = showChips
+    ? (bubble.chips ?? []).filter((c) => c.intent === "handle")
+    : [];
+
   return (
     <div
       style={{
@@ -684,37 +709,78 @@ function BubbleRow({ bubble, showChips }: { bubble: Bubble; showChips: boolean }
         }}
       >
         {bubble.text}
+        {actionChips.length > 0 && (
+          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+            {actionChips.map((c, i) => (
+              <ActionCard key={i} chip={c} />
+            ))}
+          </div>
+        )}
       </div>
-      {showChips && bubble.chips && (
-        <div
+    </div>
+  );
+}
+
+function ActionCard({ chip }: { chip: BubbleChip }) {
+  return (
+    <button
+      onClick={chip.onClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        background: C.deepBlue,
+        color: C.white,
+        border: "none",
+        borderRadius: 12,
+        padding: "11px 14px",
+        fontSize: 14,
+        fontWeight: 600,
+        cursor: "pointer",
+        textAlign: "left",
+        width: "100%",
+      }}
+    >
+      <span>{chip.label}</span>
+      <span aria-hidden style={{ fontSize: 16, opacity: 0.85 }}>›</span>
+    </button>
+  );
+}
+
+function SuggestedReplies({ chips }: { chips: BubbleChip[] }) {
+  if (chips.length === 0) return null;
+  return (
+    <div
+      style={{
+        flexShrink: 0,
+        background: C.bone,
+        padding: "8px 14px 0",
+        display: "flex",
+        gap: 8,
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
+      {chips.map((c, i) => (
+        <button
+          key={i}
+          onClick={c.onClick}
           style={{
-            marginTop: 8,
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-            justifyContent: "flex-start",
+            flexShrink: 0,
+            background: C.white,
+            color: C.deepBlue,
+            border: `1px solid ${C.softGray}`,
+            borderRadius: 999,
+            padding: "8px 14px",
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: "pointer",
           }}
         >
-          {bubble.chips.map((c, i) => (
-            <button
-              key={i}
-              onClick={c.onClick}
-              style={{
-                background: c.primary ? C.deepBlue : C.white,
-                color: c.primary ? C.white : C.deepBlue,
-                border: c.primary ? "none" : `1px solid ${C.softGray}`,
-                borderRadius: 999,
-                padding: "9px 15px",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-      )}
+          {c.label}
+        </button>
+      ))}
     </div>
   );
 }
