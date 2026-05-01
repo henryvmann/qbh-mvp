@@ -59,13 +59,58 @@ function normalize(s: string): string {
   return s.toUpperCase().replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
 
+// Mirror the classifier's abbreviation map so the eval recognizes
+// expanded names ("VISION CNSLTS OF" vs "VISION CONSULTANTS") as the
+// same merchant rather than scoring them as both FN and FP.
+const ABBREV_EXPANSION: Record<string, string> = {
+  CNSLTS: "CONSULTANTS", CNSLT: "CONSULTANT", ASSOC: "ASSOCIATES",
+  HLTH: "HEALTH", MED: "MEDICAL", DNTL: "DENTAL", GRP: "GROUP",
+  CTR: "CENTER", SVCS: "SERVICES", MGMT: "MANAGEMENT",
+  PHYS: "PHYSICAL", THRPY: "THERAPY", ORTHO: "ORTHOPEDIC",
+  PEDS: "PEDIATRIC", DERM: "DERMATOLOGY", PSYCH: "PSYCHIATRY",
+  OBGYN: "OBGYN", SURG: "SURGERY", HOSP: "HOSPITAL",
+  FAM: "FAMILY", REHAB: "REHABILITATION",
+  DIAG: "DIAGNOSTIC", IMG: "IMAGING", LAB: "LABORATORY",
+  PHARM: "PHARMACY", RX: "PHARMACY", PROF: "PROFESSIONAL",
+};
+
+function expandAbbrevs(s: string): string {
+  return s
+    .split(" ")
+    .map((w) => ABBREV_EXPANSION[w] ?? w)
+    .join(" ");
+}
+
+const STOP_WORDS = new Set(["OF", "AND", "THE", "FOR", "INC", "LLC", "PC", "PA", "LLP", "CORP"]);
+
+function significantTokens(s: string): string[] {
+  return s
+    .split(" ")
+    .filter((w) => w.length >= 4 && !STOP_WORDS.has(w));
+}
+
 function nameMatch(a: string, b: string): boolean {
   const na = normalize(a);
   const nb = normalize(b);
   if (na === nb) return true;
-  // Allow either-direction substring containment for variants like
+  // Either-direction substring containment for variants like
   // "MODERN DERMATOLOGY" vs "MODERN DERMATOLOGY ASSOC".
   if (na.length >= 6 && nb.length >= 6 && (na.includes(nb) || nb.includes(na))) return true;
+  // Abbreviation-aware: expand both sides and re-test substring containment.
+  const ea = expandAbbrevs(na);
+  const eb = expandAbbrevs(nb);
+  if (ea === eb) return true;
+  if (ea.length >= 6 && eb.length >= 6 && (ea.includes(eb) || eb.includes(ea))) return true;
+  // Token-overlap fallback: ≥2 significant tokens shared (post-expansion).
+  // Catches truncated variants like "VISION CNSLTS OF" vs "VISION
+  // CONSULTANTS GROUP" where neither contains the other.
+  const at = new Set(significantTokens(ea));
+  const bt = new Set(significantTokens(eb));
+  if (at.size >= 2 && bt.size >= 2) {
+    let shared = 0;
+    for (const t of at) if (bt.has(t)) shared++;
+    if (shared >= 2) return true;
+  }
   return false;
 }
 
@@ -75,8 +120,11 @@ function nameMatch(a: string, b: string): boolean {
  *  for accuracy comparison. */
 function broadBucket(s: string | null): string | null {
   if (!s) return null;
-  const t = s.toLowerCase();
-  if (/mental_health|psychiatr|psycholog|counselor|social worker|marriage and family|behavioral|therapist, mental/.test(t)) return "mental_health";
+  // Normalize underscores to spaces so "urgent_care" and "urgent care"
+  // both match the same patterns. Classifier emits the underscore form
+  // for its own bucket names; NPI taxonomies use spaces.
+  const t = s.toLowerCase().replace(/_/g, " ");
+  if (/mental health|psychiatr|psycholog|counselor|social worker|marriage and family|behavioral|therapist, mental/.test(t)) return "mental_health";
   if (/^pt$|physical therap|occupational therap|kinesiotherap/.test(t)) return "pt";
   if (/dentist|dental|orthodont|periodont/.test(t)) return "dentist";
   if (/optometr|ophthalmolog|vision|eyewear/.test(t)) return "vision";

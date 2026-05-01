@@ -66,7 +66,10 @@ function cleanTransactionName(raw: string): string {
 
   // Remove common transaction prefixes/suffixes
   name = name
-    .replace(/\b(ORIG CO NAME|ORIG ID|DESC DATE|CO ENTRY|DESCR|CREDIT|SEC|PPD|TRACE#|EED|IND ID|IND NAME|TRN)[:# ]*[A-Z0-9]*/gi, "")
+    // The trailing \b is critical — without it, a token like "SEC" greedily
+    // eats the rest of any word it starts ("SECKLER" → ""). The ACH-header
+    // tokens we want to strip are always followed by a separator anyway.
+    .replace(/\b(ORIG CO NAME|ORIG ID|DESC DATE|CO ENTRY|DESCR|CREDIT|SEC|PPD|TRACE#|EED|IND ID|IND NAME|TRN)\b[:# ]*[A-Z0-9]*/gi, "")
     .replace(/\b(ACH|POS|PURCHASE|DEBIT|CHECKCARD|CHECK CARD|ONLINE|PMT|PAYMENT)\b/gi, "")
     .replace(/\d{6,}/g, "") // Remove long number sequences (trace IDs, etc.)
     .replace(/[:\/#]+/g, " ")
@@ -257,7 +260,34 @@ export async function buildProviderRegistry(
   ];
 
   const PHARMACY_HINTS = ["PHARMACY", "CVS", "WALGREENS", "RITE AID", "DUANE READE"];
-  const LAB_HINTS = ["LABCORP", "QUEST DIAG"];
+  const LAB_HINTS = ["LABCORP", "QUEST DIAG", "RADIOLOGY", "IMAGING"];
+  const DENTIST_HINTS = ["DENTAL", "DENTIST", "ORTHODONT", "PERIODONT", " DDS"];
+  const VISION_HINTS = ["WARBY PARKER", "OPTOMETR", "OPHTHALMOL", "VISION CNSLT", "VISION CARE"];
+  const HOSPITAL_HINTS = ["HOSPITAL", "HEALTH SYSTEM", "MEDICAL CENTER", "MOUNT SINAI", "KAISER PERMANENTE", "NORTHWELL"];
+  const URGENT_CARE_HINTS = ["URGENT CARE", "CITYMD"];
+  const MENTAL_HEALTH_HINTS = ["MENTAL HEALTH", "PSYCHIATR", "PSYCHOLOG", "THERAPY", "COUNSEL", "BEHAVIORAL HEALTH"];
+  const PT_HINTS = ["PHYSICAL THERAPY", "PHYSICAL THERAP", "DPT ", " DPT", "REHABILITATION"];
+  const SPECIALTY_HINTS = ["DERMATOLOG", "CARDIOLOG", "GASTROENTEROLOG", "NEUROLOG", "ORTHOPEDIC", "GYNECOLOG", "OBGYN", "ONCOLOG", "UROLOG", "ENDOCRINOLOG", "RHEUMATOLOG", "PULMONOLOG"];
+  const PEDIATRIC_HINTS = ["PEDIATRIC", "WILLOWS PEDIATRIC"];
+
+  /** Pick the most specific provider_type a name implies, or null. */
+  function inferProviderType(n: string): string | null {
+    if (PHARMACY_HINTS.some((h) => n.includes(h))) return "pharmacy";
+    if (LAB_HINTS.some((h) => n.includes(h))) return "lab";
+    if (URGENT_CARE_HINTS.some((h) => n.includes(h))) return "urgent_care";
+    if (DENTIST_HINTS.some((h) => n.includes(h))) return "dentist";
+    if (VISION_HINTS.some((h) => n.includes(h))) return "vision";
+    if (HOSPITAL_HINTS.some((h) => n.includes(h))) return "hospital";
+    if (MENTAL_HEALTH_HINTS.some((h) => n.includes(h))) return "mental_health";
+    if (PT_HINTS.some((h) => n.includes(h))) return "pt";
+    if (SPECIALTY_HINTS.some((h) => n.includes(h))) return "specialist";
+    if (PEDIATRIC_HINTS.some((h) => n.includes(h))) return "doctor";
+    if (n.includes("ONE MEDICAL")) return "doctor";
+    // Generic credential markers as last resort — credentialed names
+    // like "DR JANE CARTER MD" without a specialty fall here.
+    if (/\bMD\b/.test(n) || /\bDR\s/.test(n) || n.includes("DOCTOR")) return "doctor";
+    return null;
+  }
 
   // Pre-classify: split merchants into definite buckets vs ambiguous (needs AI)
   const preClassified = new Map<string, { bucket: "HEALTHCARE" | "IGNORE"; provider_type: string | null }>();
@@ -281,10 +311,7 @@ export async function buildProviderRegistry(
     }
 
     if (OBVIOUS_HEALTHCARE.some((hint) => n.includes(hint))) {
-      const isPharmacy = PHARMACY_HINTS.some((h) => n.includes(h));
-      const isLab = LAB_HINTS.some((h) => n.includes(h));
-      const pType = isPharmacy ? "pharmacy" : isLab ? "lab" : null;
-      preClassified.set(n, { bucket: "HEALTHCARE", provider_type: pType });
+      preClassified.set(n, { bucket: "HEALTHCARE", provider_type: inferProviderType(n) });
       continue;
     }
 
