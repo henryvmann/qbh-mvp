@@ -208,6 +208,26 @@ export async function buildProviderRegistry(
     "SPRING HEALTH", "LYRA HEALTH", "MODERN HEALTH",
     // Misc
     "PET ", "VET ", "VETERINA", "LANDSCAP", "CLEANING", "LAUNDRY", "DRY CLEAN",
+    // Pet pharmacies (have "pharmacy" in name but aren't human healthcare)
+    "CHEWY", "PETCO", "PETSMART",
+    // "Dr.-named" non-medical brands. The "DR" / "DR." prefix is a strong
+    // doctor signal, so without explicit denylist these brands get
+    // classified as physicians.
+    "DR PEPPER", "DR. PEPPER", "DR SQUATCH", "DR. SQUATCH",
+    "DR MARTENS", "DR. MARTENS", "DR BRONNER", "DR. BRONNER",
+    "DR SCHOLL", "DR. SCHOLL", "DR OETKER", "DR. OETKER",
+    // Supplement / vitamin / wellness retailers (have "Health" in names)
+    "DESIGNS FOR HEALTH", "VITAMIN SHOPPE", "GNC", "HEALTH FOODS",
+    "WHOLE FOODS",
+    // HOA / housing / building fees (often have geographic + "Commons" / "HOA"
+    // patterns that have nothing to do with healthcare)
+    "HOA", "HOMEOWNERS",
+    // Utilities — recurring ACH debits that look therapist-shaped to the
+    // heuristic ($150–$300, monthly cadence) but obviously aren't.
+    "EVERSOURCE", "CON EDISON", "CONED", "PG&E", "DUKE ENERGY",
+    "NATIONAL GRID", "DOMINION ENERGY", "OPTIMUM", "VERIZON", "AT&T",
+    "T-MOBILE", "TMOBILE", "COMCAST", "XFINITY", "SPECTRUM",
+    "WEB_PAY", "WEBPAY", "AUTOPAY", "AUTO-PAY",
   ];
 
   const OBVIOUS_HEALTHCARE = [
@@ -320,13 +340,30 @@ export async function buildProviderRegistry(
   // Person-name merchants (2+ words, recurring, $100-500 avg) might be therapists
   const npiCandidates: Array<{ normalized_name: string; original_name: string }> = [];
 
+  // Generic English words that, when they make up the WHOLE merchant
+  // name, mean we shouldn't ping NPI — the registry has matches for
+  // common phrases like "Family Practice" / "Premier Office" that are
+  // unrelated to whatever real person paid this LLC.
+  const GENERIC_WORDS = new Set([
+    "FAMILY", "PRACTICE", "OFFICE", "GROUP", "ASSOCIATES", "ASSOCIATE",
+    "PREMIER", "WESTSIDE", "EASTSIDE", "NORTHSIDE", "SOUTHSIDE", "DOWNTOWN",
+    "CENTER", "CENTRE", "CONSULTING", "CONSULTANTS", "SOLUTIONS", "SERVICES",
+    "LLC", "INC", "PC", "PA", "LLP", "CORP", "COMPANY", "HOLDINGS",
+    "WELLNESS", "HEALTH", "HEALTHCARE", "CARE",
+  ]);
+
   for (const input of merchantInputs) {
     const aiResult = aiClassifications.get(input.normalized_name);
     const words = input.normalized_name.split(" ").filter(Boolean);
     const looksLikePersonName = words.length >= 2 && words.length <= 4 && words.every(w => /^[A-Z]+$/.test(w));
+    // Suppress NPI when the merchant name is ENTIRELY generic English —
+    // no specific person name, no clinical specialty. NPI's name match
+    // is too easy to false-positive on phrases like "Family Practice LLC".
+    const allGeneric = words.length > 0 && words.every((w) => GENERIC_WORDS.has(w));
 
-    // Check NPI for: person-name merchants that AI said "not healthcare" or had no result
-    if (looksLikePersonName && (!aiResult || !aiResult.is_healthcare)) {
+    // Check NPI for: person-name merchants that AI said "not healthcare"
+    // or had no result, AND aren't entirely generic English.
+    if (looksLikePersonName && !allGeneric && (!aiResult || !aiResult.is_healthcare)) {
       npiCandidates.push({
         normalized_name: input.normalized_name,
         original_name: input.name,

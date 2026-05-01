@@ -23,7 +23,9 @@ import { config } from "dotenv";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 config({ path: path.resolve(__dirname, "../../.env.local") });
 
-import { makeFixtureBatch, truthProvidersFromBatch, type FixtureBatch } from "./generate";
+import { makeFixtureBatch, truthProvidersFromBatch, type FixtureBatch, type LabeledTx } from "./generate";
+import { expandGoldenSet, GOLDEN_SEEDS } from "./golden";
+import { expandEmbarrassmentList, EMBARRASSMENT_LIST } from "./embarrassment";
 import type { DiscoveredProvider } from "../../src/lib/qbh/discovery/build-provider-registry";
 
 // Dynamically import the classifier so OPENAI_API_KEY is available.
@@ -264,6 +266,27 @@ async function runOne(opts: { seed?: number; size?: number }): Promise<EvalResul
   return result;
 }
 
+/** Wrap a fixed LabeledTx[] into a FixtureBatch and run the same scorer. */
+async function runFixed(label: string, txs: LabeledTx[]): Promise<EvalResult> {
+  const batch: FixtureBatch = {
+    seed: 0,
+    txs,
+    stats: {
+      total: txs.length,
+      healthcare_tx: txs.filter((t) => t.truth.is_healthcare).length,
+      non_healthcare_tx: txs.filter((t) => !t.truth.is_healthcare).length,
+      ambiguous_tx: 0,
+    },
+  };
+  console.log(`[eval] ${label}: ${batch.txs.length} txs (${batch.stats.healthcare_tx} healthcare, ${batch.stats.non_healthcare_tx} non)`);
+  const buildProviderRegistry = await getBuildProviderRegistry();
+  const start = Date.now();
+  const output = await buildProviderRegistry(batch.txs.map((r) => r.tx));
+  const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+  console.log(`[eval] classifier completed in ${elapsed}s`);
+  return score(batch, output);
+}
+
 function saveRun(r: EvalResult) {
   const dir = path.resolve(__dirname, "runs");
   fs.mkdirSync(dir, { recursive: true });
@@ -278,10 +301,58 @@ async function main() {
     const i = args.indexOf(`--${k}`);
     return i >= 0 ? args[i + 1] : undefined;
   };
+  const has = (k: string) => args.includes(`--${k}`);
 
   const size = Number(get("size") ?? 2000);
   const seed = get("seed") ? Number(get("seed")) : undefined;
   const variance = get("variance") ? Number(get("variance")) : 0;
+
+  // ── Embarrassment mode ──────────────────────────────────────────
+  // Zero-tolerance test. ANY confident false-positive on this list
+  // exits non-zero — meant to be wired into a CI / pre-deploy gate.
+  if (has("embarrassment") || has("all")) {
+    console.log("\n[eval] running EMBARRASSMENT LIST — zero-tolerance gate");
+    const r = await runFixed(
+      `embarrassment (${EMBARRASSMENT_LIST.length} merchants)`,
+      expandEmbarrassmentList()
+    );
+    printResult(r);
+    saveRun(r);
+    if (r.false_positives.length > 0) {
+      console.error(
+        `\n❌ EMBARRASSMENT GATE FAILED — ${r.false_positives.length} merchants would surface as healthcare to a real user. Hard launch blocker.\n`
+      );
+      if (!has("all")) process.exit(1);
+    } else {
+      console.log("\n✅ Embarrassment gate clean — zero false positives.\n");
+    }
+    if (!has("all")) return;
+  }
+
+  // ── Golden mode ────────────────────────────────────────────────
+  // Curated regression suite. Tracks F1; gates on F1 ≥ 0.95.
+  if (has("golden") || has("all")) {
+    console.log("\n[eval] running GOLDEN SET — regression gate");
+    const r = await runFixed(
+      `golden (${GOLDEN_SEEDS.length} merchants)`,
+      expandGoldenSet()
+    );
+    printResult(r);
+    saveRun(r);
+    const threshold = Number(get("golden-threshold") ?? 0.95);
+    if (r.f1 < threshold) {
+      console.error(
+        `\n❌ GOLDEN F1 ${r.f1.toFixed(3)} below ${threshold}. Regression in classifier behavior.\n`
+      );
+      if (!has("all")) process.exit(1);
+    } else {
+      console.log(`\n✅ Golden gate passed — F1 ${r.f1.toFixed(3)} ≥ ${threshold}.\n`);
+    }
+    if (!has("all")) return;
+  }
+
+  // After --all, both gates above ran. Report combined status.
+  if (has("all")) return;
 
   if (variance > 0) {
     console.log(`[eval] running variance test: ${variance} batches`);

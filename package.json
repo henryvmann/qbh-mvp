@@ -10,7 +10,10 @@
     "smoke:prod": "BASE_URL=https://qbh-mvp.vercel.app ./scripts/smoke-tools.sh",
     "build:capacitor": "./scripts/build-capacitor.sh",
     "classifier:eval": "tsx scripts/classifier-eval/run.ts --size 2000",
-    "classifier:variance": "tsx scripts/classifier-eval/run.ts --size 2000 --variance 10"
+    "classifier:variance": "tsx scripts/classifier-eval/run.ts --size 2000 --variance 10",
+    "classifier:golden": "tsx scripts/classifier-eval/run.ts --golden",
+    "classifier:embarrass": "tsx scripts/classifier-eval/run.ts --embarrassment",
+    "classifier:gate": "tsx scripts/classifier-eval/run.ts --all"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
