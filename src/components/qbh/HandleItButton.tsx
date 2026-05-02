@@ -90,15 +90,27 @@ export default function HandleItButton({
 
     try {
       setLoading(true);
-      const res = await apiFetch("/api/patient-profile");
+      // Pass providerId so the API also tells us whether we already
+      // know patient_status for this provider (via prior visit history).
+      const res = await apiFetch(
+        providerId ? `/api/patient-profile?provider_id=${encodeURIComponent(providerId)}` : "/api/patient-profile"
+      );
       const data = await res.json();
       const profile: PatientProfile = data?.profile || {};
+      const providerVisitCount: number = typeof data?.provider_visit_count === "number" ? data.provider_visit_count : 0;
+      const patientStatusKnown = providerVisitCount > 0;
 
-      if (isProfileComplete(profile)) {
+      // Skip the form ONLY when both: (a) profile is complete AND (b) we
+      // already know patient_status for this provider (via prior visit
+      // history). Otherwise we ask, even if the profile is otherwise
+      // filled — Kate's call quality drops sharply when she has to
+      // guess "new vs existing" with the receptionist.
+      if (isProfileComplete(profile) && patientStatusKnown) {
         setProfileChecked(true);
         startCall();
       } else {
-        // Pre-fill whatever we have
+        // Pre-fill whatever we have so the form just has the missing
+        // bits to fill in (often only patient_status).
         setFullName(profile.full_name || "");
         setDob(profile.date_of_birth || "");
         setInsuranceProvider(profile.insurance_provider || "");

@@ -47,7 +47,26 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, profile });
+  // Optional: if the caller passes ?provider_id=X, also return whether
+  // the user has any visit history with that provider. Used by
+  // HandleItButton to gate the "Have you visited this provider before?"
+  // pre-call question — we ask it only when we don't already know.
+  const providerIdParam = new URL(req.url).searchParams.get("provider_id");
+  let providerVisitCount: number | null = null;
+  if (providerIdParam) {
+    const { count } = await supabaseAdmin
+      .from("provider_visits")
+      .select("id", { count: "exact", head: true })
+      .eq("app_user_id", appUserId)
+      .eq("provider_id", providerIdParam);
+    providerVisitCount = count ?? 0;
+  }
+
+  return NextResponse.json({
+    ok: true,
+    profile,
+    ...(providerVisitCount !== null ? { provider_visit_count: providerVisitCount } : {}),
+  });
 }
 
 export async function POST(req: NextRequest) {
