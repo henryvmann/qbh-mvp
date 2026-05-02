@@ -220,3 +220,73 @@ function emptyFacts(appUserId: string) {
 
 // Backwards-compat alias for callers that haven't migrated yet.
 export const getKateState = getOpeningKateState;
+
+// ─────────────────────────────────────────────────────────────────
+// Eval entry points — drive the rule + voice + LLM stack with
+// pre-built synthetic facts, bypassing the DB. Used by the kate-eval
+// harness in scripts/kate-eval/. NOT used in production code paths.
+// ─────────────────────────────────────────────────────────────────
+
+import type { KateFacts } from "./types";
+
+export async function composeOpeningFromFacts(facts: KateFacts): Promise<KateState> {
+  const rule = classify(facts);
+  const templateMessage = composeMessage(rule, facts);
+  const status = composeStatusBand(rule, facts);
+  const candidate: KateState = {
+    bucket: rule.bucket,
+    tone: rule.tone,
+    daysSinceSignup: facts.daysSinceSignup,
+    confidence: rule.confidence,
+    message: templateMessage,
+    items: rule.items.map(formatItemForUI),
+    chips: rule.chips,
+    status,
+    meta: {
+      generatedAt: new Date().toISOString(),
+      rulesVersion: RULES_VERSION,
+      voiceVersion: VOICE_VERSION,
+    },
+  };
+  return applyLLMVoice(candidate, { facts, rule });
+}
+
+export async function composeReplyFromFacts(opts: {
+  facts: KateFacts;
+  userReply: { chipIntent?: string; typedText?: string };
+  history?: MessageRow[];
+}): Promise<KateState> {
+  const facts = opts.facts;
+  const confidence: KateState["confidence"] =
+    facts.daysSinceSignup < 8 ? "new" : facts.daysSinceSignup < 30 ? "settled" : "established";
+  const rule = {
+    bucket: "quiet" as const,
+    tone: "calm" as const,
+    confidence,
+    items: [],
+    chips: [],
+  };
+  const status = composeStatusBand(rule, facts);
+  const templateMessage = "Got it.";
+  const candidate: KateState = {
+    bucket: "quiet",
+    tone: "calm",
+    daysSinceSignup: facts.daysSinceSignup,
+    confidence,
+    message: templateMessage,
+    items: [],
+    chips: [],
+    status,
+    meta: {
+      generatedAt: new Date().toISOString(),
+      rulesVersion: RULES_VERSION,
+      voiceVersion: VOICE_VERSION,
+    },
+  };
+  return applyLLMVoice(candidate, {
+    facts,
+    rule,
+    history: opts.history,
+    userReply: opts.userReply,
+  });
+}

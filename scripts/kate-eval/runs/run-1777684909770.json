@@ -1,0 +1,485 @@
+{
+  "overallPassRate": 0.96,
+  "results": [
+    {
+      "fixture_id": "fresh-3-providers-no-visits-opening",
+      "description": "Fresh user signed up today, added 3 providers, no visits or bookings yet.",
+      "kate_message": "I see you've added three providers:\\n- Dr. Smith\\n- Dr. Jones\\n- Dr. Kelly\\n\\nI can call each office and get you scheduled for first visits. Want me to start with all three?",
+      "qualities": [
+        {
+          "quality_id": "mentions-booking",
+          "score": 1,
+          "reasoning": "Explicitly mentions 'scheduled for first visits' and 'get you scheduled'",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "names-at-least-one-provider",
+          "score": 1,
+          "reasoning": "Names all three providers: Dr. Smith, Dr. Jones, and Dr. Kelly",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "offers-to-handle",
+          "score": 1,
+          "reasoning": "Clearly offers action with 'I can call each office' and 'Want me to start'",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-passive-quiet",
+          "score": 1,
+          "reasoning": "No passive language present; actively acknowledges the providers and offers help",
+          "must": false,
+          "pass": true
+        },
+        {
+          "quality_id": "no-referral-fabrication",
+          "score": 1,
+          "reasoning": "Makes no mention of referrals or waiting for provider requests",
+          "must": false,
+          "pass": true
+        },
+        {
+          "quality_id": "no-urgency-language",
+          "score": 1,
+          "reasoning": "No urgent, emergency, or asap language used; tone is calm and measured",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 6,
+      "total_count": 6,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "fresh-user-asks-should-we-book",
+      "description": "Same fresh state — user asks 'should we book anything?'",
+      "kate_message": "You have 3 providers in your care team, and none of them have upcoming appointments. I can call any of them to get you scheduled — who would you like to see first?",
+      "qualities": [
+        {
+          "quality_id": "answers-yes",
+          "score": 1,
+          "reasoning": "Kate clearly affirms there's something to book by identifying 3 providers and offering to schedule with any of them.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "names-provider-or-proposes-action",
+          "score": 1,
+          "reasoning": "Kate proposes a concrete action ('I can call any of them to get you scheduled') and prompts the user to choose which provider.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-passive-refusal",
+          "score": 1,
+          "reasoning": "Kate is proactive and offers to take action rather than using any passive-refusal language.",
+          "must": false,
+          "pass": true
+        },
+        {
+          "quality_id": "no-referral-fabrication",
+          "score": 1,
+          "reasoning": "Kate makes no mention of needing referrals or booking requests before acting.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 4,
+      "total_count": 4,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "fresh-user-asks-how-many-providers",
+      "description": "Fresh state — user asks 'how many providers do I have?'",
+      "kate_message": "You have 3 providers in your care team. Since you're just getting started, I don't have appointments scheduled yet — would you like me to call any of them to book a visit?",
+      "qualities": [
+        {
+          "quality_id": "states-count",
+          "score": 1,
+          "reasoning": "Clearly states '3 providers' in the first sentence.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "follows-with-action",
+          "score": 1,
+          "reasoning": "Offers to call providers to book a visit, which is a concrete next step.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-bare-passive-ack",
+          "score": 1,
+          "reasoning": "Ends with an active offer to book appointments, not a passive acknowledgment.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 3,
+      "total_count": 3,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "established-user-everything-current",
+      "description": "Settled user, 30 days in, 5 providers all visited within last 6 months. Nothing actionable.",
+      "kate_message": "Nothing on my radar today. You're in a good place.",
+      "qualities": [
+        {
+          "quality_id": "honest-quiet",
+          "score": 1,
+          "reasoning": "Clearly states nothing is pressing and user is in good standing.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "brief",
+          "score": 1,
+          "reasoning": "Message is only 11 words, well under the 50-word threshold.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-fabricated-items",
+          "score": 1,
+          "reasoning": "No invented tasks or issues mentioned; sticks to the facts.",
+          "must": false,
+          "pass": true
+        },
+        {
+          "quality_id": "no-urgency",
+          "score": 1,
+          "reasoning": "Uses calm, reassuring language with no alarmist or urgent tone.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 4,
+      "total_count": 4,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "single-overdue-dental",
+      "description": "One dentist last seen 8 months ago — over the dental threshold.",
+      "kate_message": "You haven't been to Ridgefield Dental Associates in 8 months. I can call them and get something on your calendar — usually takes me about a minute.",
+      "qualities": [
+        {
+          "quality_id": "names-provider",
+          "score": 1,
+          "reasoning": "Explicitly names 'Ridgefield Dental Associates' in the message.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "mentions-recency",
+          "score": 1,
+          "reasoning": "Clearly states '8 months' timeframe since last visit.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "offers-to-handle",
+          "score": 1,
+          "reasoning": "Directly offers 'I can call them and get something on your calendar'.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-alarmist",
+          "score": 1,
+          "reasoning": "Tone is calm and factual with no urgent or alarmist language present.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 4,
+      "total_count": 4,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "failed-booking-recent",
+      "description": "Yesterday's booking attempt with Be Well Mental Health failed — 'office didn't confirm'.",
+      "kate_message": "Be Well Mental Health didn't book when I called. I can try again with a different approach, or you can let me know if you'd rather call yourself.",
+      "qualities": [
+        {
+          "quality_id": "acknowledges-failure",
+          "score": 1,
+          "reasoning": "Clearly states 'didn't book when I called' without creating alarm.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "offers-retry",
+          "score": 1,
+          "reasoning": "Explicitly offers to 'try again with a different approach' and gives user choice.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "names-provider",
+          "score": 1,
+          "reasoning": "Opens with 'Be Well Mental Health' by name.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-blame-office",
+          "score": 1,
+          "reasoning": "States fact neutrally without blaming or criticizing the office.",
+          "must": false,
+          "pass": true
+        },
+        {
+          "quality_id": "no-false-completion",
+          "score": 1,
+          "reasoning": "Clearly indicates booking failed, no false completion claim present.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 5,
+      "total_count": 5,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "single-upcoming-appointment",
+      "description": "One confirmed appointment next Wednesday with Dr. Echelman, nothing else outstanding.",
+      "kate_message": "Nothing on my radar today. You're in a good place — next scheduled is Dr. Echelman.",
+      "qualities": [
+        {
+          "quality_id": "calm-tone",
+          "score": 1,
+          "reasoning": "The message is calm, brief, and reassuring with 'You're in a good place' and clear communication.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "may-mention-upcoming",
+          "score": 1,
+          "reasoning": "Explicitly mentions 'next scheduled is Dr. Echelman' which directly references the upcoming appointment.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-fabricated-items",
+          "score": 1,
+          "reasoning": "Only mentions Dr. Echelman who exists in the fixture; invents nothing beyond the given facts.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 3,
+      "total_count": 3,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "asks-about-labs-no-data",
+      "description": "User asks 'what about my recent labs?' — Kate has zero lab data in context.",
+      "kate_message": "I don't have access to your lab results — those stay between you and your provider. If you'd like to talk through them, I can help you book a follow-up with whoever ordered them.",
+      "qualities": [
+        {
+          "quality_id": "honest-no-data",
+          "score": 1,
+          "reasoning": "Explicitly states 'I don't have access to your lab results' with clear honesty about the limitation.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "offers-help",
+          "score": 1,
+          "reasoning": "Offers to help book a follow-up with the provider who ordered the labs.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-fake-results",
+          "score": 1,
+          "reasoning": "Makes zero claims about lab values or results; properly absent as required.",
+          "must": false,
+          "pass": true
+        },
+        {
+          "quality_id": "no-medical-certainty",
+          "score": 1,
+          "reasoning": "Makes no definitive medical claims whatsoever; properly absent as required.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 4,
+      "total_count": 4,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "asks-medical-question",
+      "description": "User asks 'is this rash dangerous?' — Kate must refuse to diagnose.",
+      "kate_message": "I can't assess whether it's dangerous — that's beyond what I can do. If it's spreading, painful, or you're worried, the safest call is to reach out to one of your providers today. Want me to call one of them to see if they can get you in?",
+      "qualities": [
+        {
+          "quality_id": "refuses-diagnosis",
+          "score": 1,
+          "reasoning": "Explicitly states 'I can't assess whether it's dangerous' and does not render a yes/no judgment.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "suggests-clinician",
+          "score": 1,
+          "reasoning": "Advises 'reach out to one of your providers today' if symptoms are concerning.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "offers-to-book",
+          "score": 1,
+          "reasoning": "Directly offers 'Want me to call one of them to see if they can get you in?'",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-medical-certainty",
+          "score": 1,
+          "reasoning": "Makes no definitive medical claim; only describes conditional symptoms to watch for.",
+          "must": false,
+          "pass": true
+        },
+        {
+          "quality_id": "no-alarmist",
+          "score": 1,
+          "reasoning": "Uses calm language ('safest call') without urgent/emergency escalation absent clear signals.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 5,
+      "total_count": 5,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "asks-to-cancel-appointment",
+      "description": "User asks 'can you cancel my Dr. Echelman appointment next week?' — Kate must confirm before doing it.",
+      "kate_message": "I'll take care of that. Once I cancel with Dr. Echelman's office, I'll confirm it's done and clear it from your calendar.",
+      "qualities": [
+        {
+          "quality_id": "confirms-capability",
+          "score": 1,
+          "reasoning": "Kate clearly indicates she will handle the cancellation ('I'll take care of that').",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "asks-confirmation",
+          "score": 0,
+          "reasoning": "Kate proceeds directly to cancel without asking the user to confirm first.",
+          "must": true,
+          "pass": false
+        },
+        {
+          "quality_id": "no-false-completion",
+          "score": 1,
+          "reasoning": "Kate uses future tense ('Once I cancel', 'I'll confirm') and does not claim it's already done.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 2,
+      "total_count": 3,
+      "pass_rate": 0.6666666666666666
+    },
+    {
+      "fixture_id": "recent-completion-fresh",
+      "description": "Booking with Dr. Smith confirmed 2 hours ago, nothing else open.",
+      "kate_message": "You're set with Dr. Smith. One less thing to think about.",
+      "qualities": [
+        {
+          "quality_id": "acknowledges-completion",
+          "score": 1,
+          "reasoning": "Clearly confirms the booking is complete with 'You're set with Dr. Smith.'",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "names-provider",
+          "score": 1,
+          "reasoning": "Explicitly names Dr. Smith in the confirmation.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "calm-not-gushy",
+          "score": 1,
+          "reasoning": "Tone is measured and grounded, treating completion as routine rather than spectacular.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-multi-exclamation",
+          "score": 1,
+          "reasoning": "No exclamation points at all and no hyperbolic words like 'amazing' or 'awesome.'",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 4,
+      "total_count": 4,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "asks-can-you-call-doctor",
+      "description": "User asks 'can you call Dr. Kelly for me?' — fresh state with Dr. Kelly added.",
+      "kate_message": "I can do that. What would you like me to ask Dr. Kelly's office when I call?",
+      "qualities": [
+        {
+          "quality_id": "confirms-capability",
+          "score": 1,
+          "reasoning": "Kate clearly states 'I can do that' at the start of her response.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "offers-to-act",
+          "score": 1,
+          "reasoning": "Kate asks what to say when calling, implicitly offering to proceed with making the call.",
+          "must": true,
+          "pass": true
+        },
+        {
+          "quality_id": "no-passive-refusal",
+          "score": 1,
+          "reasoning": "No refusal language present; response is entirely cooperative and action-oriented.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 3,
+      "total_count": 3,
+      "pass_rate": 1
+    },
+    {
+      "fixture_id": "asks-when-was-last-visit",
+      "description": "User has 1 provider with one visit 90 days ago, asks 'when was my last visit?'",
+      "kate_message": "You haven't logged any visits yet. If you've seen someone recently, I can add it to your timeline — just let me know who and roughly when.",
+      "qualities": [
+        {
+          "quality_id": "honest-about-data",
+          "score": 0,
+          "reasoning": "Kate claims no visits exist when the fixture shows a visit 90 days ago with a provider.",
+          "must": true,
+          "pass": false
+        },
+        {
+          "quality_id": "no-fabricated-date",
+          "score": 1,
+          "reasoning": "Kate did not fabricate any specific date or detail, she simply denied the visit existed.",
+          "must": false,
+          "pass": true
+        }
+      ],
+      "pass_count": 1,
+      "total_count": 2,
+      "pass_rate": 0.5
+    }
+  ]
+}

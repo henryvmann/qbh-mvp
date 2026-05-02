@@ -13,7 +13,8 @@
     "classifier:variance": "tsx scripts/classifier-eval/run.ts --size 2000 --variance 10",
     "classifier:golden": "tsx scripts/classifier-eval/run.ts --golden",
     "classifier:embarrass": "tsx scripts/classifier-eval/run.ts --embarrassment",
-    "classifier:gate": "tsx scripts/classifier-eval/run.ts --all"
+    "classifier:gate": "tsx scripts/classifier-eval/run.ts --all",
+    "kate:eval": "tsx scripts/kate-eval/run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
