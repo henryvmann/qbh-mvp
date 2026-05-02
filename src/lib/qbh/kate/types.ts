@@ -141,4 +141,8 @@ export type KateFacts = {
   /** Score signals — null when we genuinely don't have data yet. */
   score: number | null;
   scoreDelta: number | null; // +/- vs ~7d ago, null if we lack history
+  /** User-selected priority areas Kate should bias toward (booking,
+   *  reminders, mental health, preventive, etc.). Pulled from
+   *  app_users.patient_profile.kate_focus_areas. Empty = no bias. */
+  focusAreas: string[];
 };

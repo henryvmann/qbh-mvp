@@ -215,6 +215,7 @@ function emptyFacts(appUserId: string) {
     lastKateMessage: null,
     score: null,
     scoreDelta: null,
+    focusAreas: [],
   };
 }
 

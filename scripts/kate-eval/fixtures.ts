@@ -49,6 +49,7 @@ function emptyFacts(overrides: Partial<KateFacts> = {}): KateFacts {
     lastKateMessage: null,
     score: null,
     scoreDelta: null,
+    focusAreas: [],
     ...overrides,
   };
 }

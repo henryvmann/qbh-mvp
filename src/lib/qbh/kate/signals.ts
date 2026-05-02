@@ -244,15 +244,20 @@ export async function gatherKateFacts(appUserId: string): Promise<KateFacts> {
     }
   }
 
-  // ── 6. Days since signup (for confidence scaling) ────────────────
+  // ── 6. Days since signup + Kate focus areas ─────────────────────
   const { data: appUser } = await supabaseAdmin
     .from("app_users")
-    .select("created_at")
+    .select("created_at, patient_profile")
     .eq("id", appUserId)
     .maybeSingle();
   const daysSinceSignup = appUser?.created_at
     ? Math.max(0, Math.floor((now.getTime() - new Date(appUser.created_at).getTime()) / 86400000))
     : 0;
+  const focusAreas = Array.isArray(
+    (appUser?.patient_profile as { kate_focus_areas?: unknown } | null)?.kate_focus_areas
+  )
+    ? ((appUser!.patient_profile as { kate_focus_areas: string[] }).kate_focus_areas)
+    : [];
 
   // ── 7. Score + delta — best-effort from health_score_snapshots ──
   // Both null when the snapshot table is empty / not yet migrated;
@@ -280,6 +285,7 @@ export async function gatherKateFacts(appUserId: string): Promise<KateFacts> {
     lastKateMessage,
     score,
     scoreDelta,
+    focusAreas,
   };
 }
 

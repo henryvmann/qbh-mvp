@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("app_users")
-    .select("patient_profile")
+    .select("patient_profile, auth_user_id")
     .eq("id", appUserId)
     .single();
 
@@ -28,7 +28,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, profile: data?.patient_profile || {} });
+  const profile: Record<string, unknown> = { ...(data?.patient_profile || {}) };
+
+  // Fallback: pull `full_name` from auth user metadata when the
+  // patient_profile field is missing/empty. Catches legacy accounts
+  // that signed up before patient_profile.full_name was set, and
+  // means the HandleItButton pre-call form pre-fills correctly across
+  // all account ages instead of showing a blank name input.
+  if (!profile.full_name && data?.auth_user_id) {
+    try {
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(data.auth_user_id);
+      const meta = authUser?.user?.user_metadata as { name?: string } | undefined;
+      if (meta?.name && meta.name.trim()) {
+        profile.full_name = meta.name.trim();
+      }
+    } catch {
+      // ignore — caller still gets whatever's in patient_profile
+    }
+  }
+
+  return NextResponse.json({ ok: true, profile });
 }
 
 export async function POST(req: NextRequest) {

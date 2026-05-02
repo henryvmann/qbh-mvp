@@ -66,6 +66,9 @@ export async function llmComposeMessage(opts: {
     activeProviderCount: opts.facts.activeProviderCount,
     upcomingNext:
       opts.facts.upcomingAppointments[0]?.provider_name ?? null,
+    // The user's stated priorities. The LLM should bias toward
+    // these when picking what to surface or how to phrase it.
+    focusAreas: opts.facts.focusAreas ?? [],
   };
 
   const historyForLLM = (opts.history ?? [])
@@ -185,6 +188,12 @@ CONFIDENCE BAND
 - "new" (under 8 days since signup): hedge a little. Acceptable to say "I'm still getting to know your care."
 - "settled" (8-29 days): confident on what you have, no apology language.
 - "established" (30+ days): full operator. You can refer to the user's patterns ("you usually book afternoon").
+
+FOCUS AREAS
+The user may have selected priority areas (e.g. "booking", "reminders", "mental health", "preventive"). When focusAreas is non-empty:
+- Prefer surfacing items in those areas first when multiple items compete for attention.
+- Phrase suggestions in language that matches the focus (e.g. for "mental health" focus, an overdue therapist visit reads as "let's get your therapy back on track").
+- Do NOT fabricate items in those areas just because the user picked them. Real items only.
 
 REPLIES TO USER ACTIONS
 When the user has just acted (chip-tap or typed text), produce a SHORT reply (1-3 sentences) that confirms what's happening and points to what's next. Don't restart the conversation; respond to what they just said.`;
