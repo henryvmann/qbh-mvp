@@ -72,6 +72,33 @@ function cleanProviderNameForSpeech(raw: string | null | undefined): string {
     name = name.replace(prefix, "");
   }
 
+  // Trailing credentials are even more common in real provider data —
+  // "Eric Echelman, DDS" / "Eric Echelman MD" / "Eric Echelman, PsyD".
+  // Strip the credential plus any preceding comma + whitespace so it
+  // reads naturally when Kate says it on a call.
+  const suffixes = [
+    /,?\s+D\.?D\.?S\.?$/i,
+    /,?\s+M\.?D\.?$/i,
+    /,?\s+D\.?O\.?$/i,
+    /,?\s+N\.?P\.?$/i,
+    /,?\s+P\.?A\.?-?C?$/i,
+    /,?\s+A\.?P\.?R\.?N\.?$/i,
+    /,?\s+D\.?M\.?D\.?$/i,
+    /,?\s+O\.?D\.?$/i,
+    /,?\s+D\.?C\.?$/i,
+    /,?\s+R\.?N\.?$/i,
+    /,?\s+L\.?P\.?N\.?$/i,
+    /,?\s+L\.?C\.?S\.?W\.?$/i,
+    /,?\s+L\.?M\.?F\.?T\.?$/i,
+    /,?\s+L\.?M\.?H\.?C\.?$/i,
+    /,?\s+L\.?P\.?C\.?$/i,
+    /,?\s+Psy\.?D\.?$/i,
+    /,?\s+Ph\.?D\.?$/i,
+  ];
+  for (const suffix of suffixes) {
+    name = name.replace(suffix, "");
+  }
+
   // Title-case if the name is ALL-CAPS (e.g. "ERIC ECHELMAN" → "Eric Echelman")
   if (name === name.toUpperCase() && name.length > 1) {
     name = name

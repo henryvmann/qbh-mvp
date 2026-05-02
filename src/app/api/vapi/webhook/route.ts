@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { createClient } from "@supabase/supabase-js";
 import { classifyCallOutcome } from "../../../../lib/openai/classify-call-outcome";
+import { summarizeOfficeNotes } from "../../../../lib/openai/summarize-office-notes";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -292,7 +293,7 @@ function extractFollowUpNotes(lines: string[]): string | null {
     .join(". ");
 }
 
-function buildStructuredBookingNotes(transcript: string): StructuredBookingNotes {
+async function buildStructuredBookingNotes(transcript: string): Promise<StructuredBookingNotes> {
   const lines = transcript
     .split("\n")
     .map((line) => line.replace(/\s+/g, " ").trim())
@@ -313,8 +314,16 @@ function buildStructuredBookingNotes(transcript: string): StructuredBookingNotes
 
   const appointmentTimeSpoken = extractAppointmentTimeSpoken(transcript);
   const documentsToBring = extractDocumentsToBring(transcript);
-  const officeInstructions = extractOfficeInstructions(lines);
-  const followUpNotes = extractFollowUpNotes(lines);
+
+  // Prefer AI summarization for the user-facing fields. Fall back to
+  // the regex-based extractors only when AI fails — they leak raw
+  // verbatim dialogue ("Oh hold on, I just wanted to make sure...")
+  // and we never want that on a real user's provider page.
+  const aiSummary = await summarizeOfficeNotes(transcript);
+  const officeInstructions =
+    aiSummary?.office_instructions ?? extractOfficeInstructions(lines);
+  const followUpNotes =
+    aiSummary?.follow_up_notes ?? extractFollowUpNotes(lines);
 
   const summaryParts: string[] = [];
 
@@ -584,7 +593,7 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    const structured = buildStructuredBookingNotes(transcript);
+    const structured = await buildStructuredBookingNotes(transcript);
 
     const { data: attemptForClassification } = await supabase
       .from("schedule_attempts")
