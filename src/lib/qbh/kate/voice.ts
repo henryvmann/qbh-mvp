@@ -92,7 +92,17 @@ function quietMessage(facts: KateFacts): string {
 
 function oneThingMessage(rule: RuleResult, facts: KateFacts): string {
   const item = rule.items[0];
-  void facts; // confidence-flavored variants come in Phase 2
+  void facts;
+  // New-provider items get a slightly different opener — the user just
+  // told us this provider matters, so framing as "first appointment"
+  // reads more accurately than "follow-up."
+  if (item.type === "new_provider_no_visits") {
+    return [
+      `**${item.title}** is on your team but doesn't have an appointment yet.`,
+      "",
+      "Want me to book a first visit?",
+    ].join("\n");
+  }
   return [
     `Hey — I've got one thing for you.`,
     "",
@@ -103,8 +113,24 @@ function oneThingMessage(rule: RuleResult, facts: KateFacts): string {
 }
 
 function coupleThingsMessage(rule: RuleResult, facts: KateFacts): string {
-  const lines = rule.items
-    .slice(0, 4)
+  void facts;
+  // Detect "all of these are new providers with no visits yet" and
+  // open with proactive booking framing rather than the generic
+  // "I've got a couple of things" opener.
+  const items = rule.items.slice(0, 4);
+  const allNew = items.every((i) => i.type === "new_provider_no_visits");
+  if (allNew) {
+    const lines = items.map((i) => `• **${i.title}**`).join("\n");
+    return [
+      `You added ${items.length === 1 ? "one provider" : `${items.length} providers`} but haven't booked anything yet:`,
+      "",
+      lines,
+      "",
+      "Want me to start booking first appointments?",
+    ].join("\n");
+  }
+
+  const lines = items
     .map((i) => `• **${i.title}** — ${i.detail}`)
     .join("\n");
 
@@ -113,7 +139,6 @@ function coupleThingsMessage(rule: RuleResult, facts: KateFacts): string {
       ? "Hey — I'm still getting to know your care, but I'm seeing a couple of things:"
       : "Hey — I've got a couple of things for you today.";
 
-  void facts;
   return [opener, "", lines, "", "Want me to handle it?"].join("\n");
 }
 

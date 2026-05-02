@@ -190,6 +190,40 @@ export async function gatherKateFacts(appUserId: string): Promise<KateFacts> {
     }
   }
 
+  // ── 4.5. Newly added providers with no visits / nothing in motion ──
+  // If a user just added Dr. Smith and hasn't booked anything yet, Kate
+  // should notice and offer to handle the first appointment. Without
+  // this, the rule layer goes quiet on a user who just signaled exactly
+  // what they want help with. Filter out providers that already have
+  // upcoming appointments or in-flight booking attempts to avoid
+  // double-surfacing.
+  const NEW_PROVIDER_DAYS = 30;
+  const upcomingProviderIds = new Set(
+    upcomingAppointments
+      .map((u) => realProviders.find((p) => p.name === u.provider_name)?.id)
+      .filter(Boolean) as string[]
+  );
+  const inFlightProviderIds = new Set(
+    inFlightAttempts
+      .map((a) => realProviders.find((p) => p.name === a.provider_name)?.id)
+      .filter(Boolean) as string[]
+  );
+
+  const newProvidersNeverSeen: KateFacts["newProvidersNeverSeen"] = [];
+  for (const p of realProviders) {
+    if (visitsByProvider.has(p.id)) continue; // Has visit history → overdue path
+    if (upcomingProviderIds.has(p.id)) continue; // Already booked
+    if (inFlightProviderIds.has(p.id)) continue; // Booking in progress
+    const addedAt = new Date(p.created_at);
+    const daysAgo = Math.floor((now.getTime() - addedAt.getTime()) / 86400000);
+    if (daysAgo > NEW_PROVIDER_DAYS) continue;
+    newProvidersNeverSeen.push({
+      provider_id: p.id,
+      name: p.name,
+      addedDaysAgo: daysAgo,
+    });
+  }
+
   // ── 5. Recent completions (celebratory) ──────────────────────────
   const completionCutoff = new Date(now.getTime());
   completionCutoff.setDate(completionCutoff.getDate() - COMPLETION_LOOKBACK_DAYS);
@@ -238,6 +272,7 @@ export async function gatherKateFacts(appUserId: string): Promise<KateFacts> {
     daysSinceSignup,
     activeProviderCount,
     overdueFollowUps,
+    newProvidersNeverSeen,
     upcomingAppointments,
     inFlightAttempts,
     failedAttempts,

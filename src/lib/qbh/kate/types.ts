@@ -13,6 +13,7 @@ export type KateItem = {
   id: string;
   type:
     | "follow_up_overdue"
+    | "new_provider_no_visits"
     | "appointment_upcoming"
     | "booking_in_progress"
     | "booking_failed"
@@ -99,6 +100,13 @@ export type KateFacts = {
     name: string;
     monthsSinceVisit: number | null;
     lastVisitDate: string | null;
+  }>;
+  /** Providers added recently with no visit history and nothing in
+   *  motion — Kate should offer to book a first appointment. */
+  newProvidersNeverSeen: Array<{
+    provider_id: string;
+    name: string;
+    addedDaysAgo: number;
   }>;
   /** Confirmed upcoming appointments in the next 14 days. */
   upcomingAppointments: Array<{

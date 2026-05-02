@@ -123,6 +123,22 @@ function pickItems(facts: KateFacts): KateItem[] {
     });
   }
 
+  // 1.5. Newly added providers with no visits yet — user just told us
+  // these matter; offer to book the first appointment.
+  for (const np of facts.newProvidersNeverSeen) {
+    items.push({
+      id: `new-${np.provider_id}`,
+      type: "new_provider_no_visits",
+      title: `${np.name}`,
+      detail:
+        np.addedDaysAgo <= 1
+          ? "you just added them — want me to book a first visit?"
+          : "no appointment booked yet — want me to set one up?",
+      urgency: "soon",
+      refs: { provider_id: np.provider_id },
+    });
+  }
+
   // 2. Overdue follow-ups, ordered by months since visit (oldest first).
   const overdueSorted = [...facts.overdueFollowUps].sort(
     (a, b) => (b.monthsSinceVisit ?? 0) - (a.monthsSinceVisit ?? 0)

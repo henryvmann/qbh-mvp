@@ -37,12 +37,15 @@ export async function getOpeningKateState(appUserId: string): Promise<KateState>
   }
 
   // Apply dedup at the rule-input level: items the user said "not now"
-  // to in the last 36h are filtered out of the overdue / failed lists
+  // to in the last 36h are filtered out of the various candidate lists
   // so the rules don't re-pitch them.
   const filteredFacts = {
     ...facts,
     overdueFollowUps: facts.overdueFollowUps.filter(
       (o) => !dismissed.has(`overdue-${o.provider_id}`)
+    ),
+    newProvidersNeverSeen: facts.newProvidersNeverSeen.filter(
+      (n) => !dismissed.has(`new-${n.provider_id}`)
     ),
     failedAttempts: facts.failedAttempts.filter(
       (f) => !dismissed.has(`failed-${f.schedule_attempt_id}`)
@@ -204,6 +207,7 @@ function emptyFacts(appUserId: string) {
     daysSinceSignup: 0,
     activeProviderCount: 0,
     overdueFollowUps: [],
+    newProvidersNeverSeen: [],
     upcomingAppointments: [],
     inFlightAttempts: [],
     failedAttempts: [],
