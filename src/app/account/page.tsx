@@ -324,6 +324,49 @@ export default function AccountPage() {
           )}
         </div>
 
+        {/* Care & Settings — links to the existing dedicated pages.
+            Surfacing them here makes /account a real "You" hub instead
+            of just a profile-edit page. */}
+        <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C] mb-4">
+            Care & Settings
+          </h2>
+          <div className="divide-y divide-[#EBEDF0]">
+            {[
+              { href: "/care-recipients", label: "Care recipients", sub: "Who you're managing care for" },
+              { href: "/providers", label: "Care team", sub: "Doctors, dentists, specialists" },
+              { href: "/documents", label: "Documents & labs", sub: "Uploads, imports, history" },
+              { href: "/billing", label: "Plan & billing", sub: "Subscription and payment method" },
+              { href: "/settings", label: "Notifications & preferences", sub: "Quiet hours, Kate focus areas" },
+            ].map((row) => (
+              <Link
+                key={row.href}
+                href={row.href}
+                className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0 hover:bg-[#FAFBFC] -mx-6 px-6 transition"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-[#1A1D2E]">{row.label}</div>
+                  <div className="text-xs text-[#7A7F8A] mt-0.5">{row.sub}</div>
+                </div>
+                <span className="text-[#B0B4BC] text-lg leading-none">›</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Trust card — exact copy from the v5 design spec. */}
+        <div
+          className="rounded-2xl p-6"
+          style={{ backgroundColor: "rgba(167,199,231,0.22)" }}
+        >
+          <div className="text-base font-serif font-medium text-[#0F2A44] mb-1">
+            Your data is yours.
+          </div>
+          <div className="text-sm text-[#5A6675] leading-relaxed">
+            QBH works for you. Nothing leaves without your say-so.
+          </div>
+        </div>
+
         {/* Password Section (collapsible) */}
         <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0]">
           <button
