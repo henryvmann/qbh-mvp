@@ -1,1268 +1,1045 @@
 "use client";
 
 /**
- * /dashboard-preview-v5 — "Kate IS the Today screen" sandbox.
+ * /dashboard-preview-v5 — Quarterback Health brand sandbox.
  *
- * Layout:
- *   1. Compact status band at the very top (state text + score + delta).
- *   2. Kate hero — large avatar, name, "Active Now" indicator under her.
- *   3. Conversation thread below, like iMessage. Kate's opener, then any
- *      replies. Quick-reply chips render under her latest message.
- *   4. Text input pinned at the bottom for free-form typing.
- *   5. Three-tab bottom nav. Switching tabs leaves the chat — Today is
- *      the only Kate-led screen.
+ * Three view modes (toggle top-right):
+ *   1. Light home — warm cream, premium feel. Approve & handle CTA.
+ *   2. Dark home — deep navy, electric-blue glow. Same content.
+ *   3. Provider hub — dark only. Care team | Refills segment.
  *
- * Static mockup. Quick-reply chips are wired so you can feel the loop;
- * typing in the input + sending appends a user bubble + a stub Kate
- * reply so the texting feel is real.
+ * Layout (home):
+ *   Header wordmark · user avatar · Kate active card · "Health,
+ *   organized." hero with subtle orbit · NEXT STEP card · "Everything
+ *   else is on track" status · 5-tab bottom nav (sparkle for Kate).
+ *
+ * Static mockup. No API calls — this is a brand/visual reference for
+ * the redesign. Real /api/kate wiring stays in the live /dashboard
+ * route until we promote this design.
  */
 
+import React, { useState } from "react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { Inter, Fraunces } from "next/font/google";
 
-const C = {
-  deepBlue: "#0F2A44",
-  primaryBlue: "#2F5DBC",
-  skyBlue: "#A7C7E7",
-  bone: "#F7F8FA",
-  softGray: "#E6EAF0",
-  textGray: "#5A6675",
-  olive: "#7ABA6B",
-  gold: "#E6C15A",
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+// Fraunces stands in for Austin until the licensed file is installed —
+// same display-serif feel, free, drop-in.
+const austin = Fraunces({ subsets: ["latin"], weight: ["400", "500", "600"] });
+
+// ─────────────────────────────────────────────────────────────────
+// Brand tokens (per spec)
+// ─────────────────────────────────────────────────────────────────
+
+const T = {
+  navy: "#061225",
+  navySurface: "#081A33",
+  cardNavy: "#0B2545",
+  electric: "#1677FF",
+  royal: "#006BFF",
+  glow: "#2E8CFF",
+  green: "#27C46B",
+  lightBg: "#FAF8F4",
   white: "#FFFFFF",
-  ink: "#0F1721",
-  active: "#3FBE6F", // active-now glow
+  lightBorder: "#E5EAF2",
+  lightText: "#071832",
+  lightMuted: "#4F5F73",
+  darkText: "#FFFFFF",
+  darkMuted: "#C9D6EA",
 };
 
-type Tab = "today" | "timeline" | "you";
-type Sender = "kate" | "user";
-type ChipIntent = "handle" | "elaborate" | "defer" | "thanks" | "custom";
-type BubbleChip = {
-  label: string;
-  intent: ChipIntent;
-  onClick: () => void;
-  primary?: boolean;
-};
-type Bubble = {
-  id: string;
-  sender: Sender;
-  text: React.ReactNode;
-  // Chips Kate offered with this bubble. We split them at render time:
-  //   - intent="handle" → embedded action card INSIDE the bubble
-  //   - everything else → suggested-replies row above the keyboard
-  // Only the latest Kate bubble's chips render; the rest are kept for
-  // history / replay only.
-  chips?: BubbleChip[];
-};
+type Mode = "light" | "dark" | "hub";
+
+// Theme bundle — what light/dark/hub each resolve to.
+function theme(mode: Mode) {
+  const dark = mode !== "light";
+  return {
+    bg: dark ? T.navy : T.lightBg,
+    surface: dark ? T.cardNavy : T.white,
+    surfaceTint: dark
+      ? "rgba(46,140,255,0.08)"
+      : "rgba(22,119,255,0.04)",
+    border: dark ? "rgba(46,140,255,0.12)" : T.lightBorder,
+    text: dark ? T.darkText : T.lightText,
+    muted: dark ? T.darkMuted : T.lightMuted,
+    glassBg: dark ? "rgba(11,37,69,0.65)" : "rgba(255,255,255,0.75)",
+    shadow: dark
+      ? "0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(46,140,255,0.08)"
+      : "0 4px 18px rgba(7,24,50,0.06)",
+    inputBorder: dark ? "rgba(201,214,234,0.15)" : T.lightBorder,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Page shell
+// ─────────────────────────────────────────────────────────────────
 
 export default function DashboardPreviewV5() {
-  const [tab, setTab] = useState<Tab>("today");
+  const [mode, setMode] = useState<Mode>("light");
   return (
     <div
+      className={inter.className}
       style={{
         minHeight: "100vh",
-        background: C.bone,
-        fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif",
-        color: C.ink,
+        background: mode === "light" ? "#F2F0EC" : "#03060E",
         WebkitFontSmoothing: "antialiased",
+        padding: "24px 16px 48px",
       }}
     >
-      <PhoneFrame>
-        {tab === "today" && <TodayChatScreen />}
-        {tab === "timeline" && <TimelineScreen />}
-        {tab === "you" && <YouScreen />}
-        <TabBar tab={tab} setTab={setTab} />
+      <ModeToggle mode={mode} setMode={setMode} />
+      <PhoneFrame mode={mode}>
+        {mode === "hub" ? <ProviderHubScreen /> : <HomeScreen mode={mode} />}
       </PhoneFrame>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Phone frame
-// ─────────────────────────────────────────────────────────────────
+function ModeToggle({
+  mode,
+  setMode,
+}: {
+  mode: Mode;
+  setMode: (m: Mode) => void;
+}) {
+  const opts: { key: Mode; label: string }[] = [
+    { key: "light", label: "Light" },
+    { key: "dark", label: "Dark" },
+    { key: "hub", label: "Hub" },
+  ];
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 18,
+        right: 18,
+        zIndex: 50,
+        display: "flex",
+        gap: 4,
+        background: "rgba(7,24,50,0.85)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        padding: 4,
+        borderRadius: 999,
+        border: "1px solid rgba(201,214,234,0.2)",
+      }}
+    >
+      {opts.map((o) => {
+        const active = mode === o.key;
+        return (
+          <button
+            key={o.key}
+            onClick={() => setMode(o.key)}
+            style={{
+              border: "none",
+              background: active ? T.electric : "transparent",
+              color: T.white,
+              padding: "6px 12px",
+              borderRadius: 999,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              letterSpacing: 0.2,
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
-function PhoneFrame({ children }: { children: React.ReactNode }) {
+function PhoneFrame({
+  mode,
+  children,
+}: {
+  mode: Mode;
+  children: React.ReactNode;
+}) {
+  const t = theme(mode);
   return (
     <div
       style={{
         margin: "0 auto",
         width: "100%",
-        maxWidth: 420,
-        height: "100vh",
-        minHeight: "100vh",
+        maxWidth: 392,
+        minHeight: 820,
+        borderRadius: 44,
+        background: t.bg,
+        boxShadow:
+          mode === "light"
+            ? "0 30px 80px rgba(7,24,50,0.18), 0 0 0 8px #E0DAD0"
+            : "0 30px 80px rgba(0,0,0,0.6), 0 0 0 8px #1A1F2E",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        background: C.bone,
-        boxShadow: "0 24px 80px rgba(15,23,33,0.12)",
         position: "relative",
-        overflow: "hidden",
+        color: t.text,
       }}
     >
-      <div
-        style={{
-          height: 44,
-          padding: "0 24px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          fontSize: 14,
-          fontWeight: 600,
-          color: C.ink,
-          background: C.bone,
-          flexShrink: 0,
-        }}
-      >
-        <span>9:41</span>
-        <span style={{ display: "flex", gap: 6, opacity: 0.8 }}>
-          <span>•••</span>
-          <span>◐</span>
-          <span>▮</span>
-        </span>
-      </div>
+      <StatusBar mode={mode} />
       {children}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────
-// TODAY — the Kate chat screen
-// ─────────────────────────────────────────────────────────────────
-
-// API response shapes for the wire-up
-type ApiKateChip = { id: string; label: string; intent: string; primary?: boolean };
-type ApiKateState = {
-  bucket: string;
-  tone: string;
-  daysSinceSignup: number;
-  confidence: string;
-  message: string;
-  items: { id: string; type: string; title: string; detail: string; urgency: string }[];
-  chips: ApiKateChip[];
-  status: { stateText: string; score: number | null; deltaText: string | null };
-  meta: { generatedAt: string; rulesVersion: string; voiceVersion: string };
-};
-
-function TodayChatScreen() {
-  const [bubbles, setBubbles] = useState<Bubble[]>([]);
-  const [draft, setDraft] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [kateTyping, setKateTyping] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [statusState, setStatusState] = useState<ApiKateState["status"]>({
-    stateText: "",
-    score: null,
-    deltaText: null,
-  });
-  const [apiError, setApiError] = useState<string | null>(null);
-
-  function bid() {
-    return `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  }
-
-  function addBubble(b: Bubble) {
-    setBubbles((prev) => [...prev, b]);
-  }
-
-  function userSays(text: string) {
-    addBubble({ id: bid(), sender: "user", text });
-  }
-
-  // Render an API-returned KateState as a bubble with working chips
-  // that POST back through /api/kate/respond.
-  function bubbleFromState(state: ApiKateState): Bubble {
-    return {
-      id: bid(),
-      sender: "kate",
-      text: <KateMarkdown text={state.message} />,
-      chips: state.chips.map((c) => ({
-        label: c.label,
-        intent: (c.intent as ChipIntent) || "custom",
-        primary: c.primary,
-        onClick: async () => {
-          userSays(c.label);
-          setKateTyping(true);
-          try {
-            const res = await fetch("/api/kate/respond", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({
-                conversationId,
-                chipIntent: c.intent,
-                chipLabel: c.label,
-              }),
-            });
-            const data = await res.json();
-            if (data?.ok && data.state) {
-              if (data.conversationId) setConversationId(data.conversationId);
-              addBubble(bubbleFromState(data.state));
-            } else {
-              addBubble({
-                id: bid(),
-                sender: "kate",
-                text: <>I hit a snag pulling that up. Give me a sec.</>,
-              });
-            }
-          } catch {
-            addBubble({
-              id: bid(),
-              sender: "kate",
-              text: <>Network hiccup — try again in a moment.</>,
-            });
-          } finally {
-            setKateTyping(false);
-          }
-        },
-      })),
-    };
-  }
-
-  // Initial load — fetch Kate's opening from the API.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/kate/state", { credentials: "include" });
-        const data = await res.json();
-        if (cancelled) return;
-        if (res.status === 401) {
-          setApiError("Sign in to see live Kate. Showing demo conversation instead.");
-          setBubbles(demoFallbackBubbles(handleDemoChip));
-          return;
-        }
-        if (data?.ok && data.state) {
-          if (data.conversationId) setConversationId(data.conversationId);
-          setStatusState(data.state.status ?? statusState);
-          setBubbles([bubbleFromState(data.state)]);
-        } else {
-          setApiError("Couldn't reach Kate. Showing demo conversation.");
-          setBubbles(demoFallbackBubbles(handleDemoChip));
-        }
-      } catch {
-        if (!cancelled) {
-          setApiError("Couldn't reach Kate. Showing demo conversation.");
-          setBubbles(demoFallbackBubbles(handleDemoChip));
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Demo fallback chip handler — purely client-side stub for unauthed
-  // viewers. Mirrors the old hardcoded experience.
-  function handleDemoChip(label: string) {
-    userSays(label);
-    setKateTyping(true);
-    setTimeout(() => {
-      setKateTyping(false);
-      addBubble({
-        id: bid(),
-        sender: "kate",
-        text: <>Got it.</>,
-      });
-    }, 700);
-  }
-
-  // Auto-scroll on new bubble
-  useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [bubbles, kateTyping]);
-
-  // ---- demo fallback (unauthed) ----------------------------------
-  function demoFallbackBubbles(onChipDemo: (label: string) => void): Bubble[] {
-    return [
-      {
-        id: "b-1",
-        sender: "kate",
-        text: (
-          <>
-            Hey — I&rsquo;ve got a couple of things for you today.
-            <ul style={{ margin: "8px 0 4px", paddingLeft: 18, lineHeight: 1.55 }}>
-              <li>
-                <strong>Dr. Smith follow-up</strong> — last seen 11 months ago.
-              </li>
-              <li>
-                <strong>Levothyroxine refill</strong> — runs out Friday.
-              </li>
-            </ul>
-            Want me to handle it?
-          </>
-        ),
-        chips: [
-          { label: "Handle it", intent: "handle", primary: true, onClick: () => onChipDemo("Handle it") },
-          { label: "Tell me more", intent: "elaborate", onClick: () => onChipDemo("Tell me more") },
-          { label: "Not now", intent: "defer", onClick: () => onChipDemo("Not now") },
-        ],
-      },
-    ];
-  }
-
-  // ---- send (text input) -----------------------------------------
-  async function send() {
-    const t = draft.trim();
-    if (!t) return;
-    userSays(t);
-    setDraft("");
-    setKateTyping(true);
-    try {
-      const res = await fetch("/api/kate/respond", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ conversationId, typedText: t }),
-      });
-      const data = await res.json();
-      if (data?.ok && data.state) {
-        if (data.conversationId) setConversationId(data.conversationId);
-        addBubble(bubbleFromState(data.state));
-      } else if (res.status === 401) {
-        addBubble({
-          id: bid(),
-          sender: "kate",
-          text: <>(Demo mode — sign in to actually chat with me.)</>,
-        });
-      } else {
-        addBubble({
-          id: bid(),
-          sender: "kate",
-          text: <>I hit a snag. Try again in a sec.</>,
-        });
-      }
-    } catch {
-      addBubble({
-        id: bid(),
-        sender: "kate",
-        text: <>Network hiccup — try again in a moment.</>,
-      });
-    } finally {
-      setKateTyping(false);
-    }
-  }
-
-  // Latest Kate bubble's chips (only show on the most recent Kate message)
-  const lastKateIdx = (() => {
-    for (let i = bubbles.length - 1; i >= 0; i--) {
-      if (bubbles[i].sender === "kate") return i;
-    }
-    return -1;
-  })();
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-      {/* 1. Status band (top) */}
-      <StatusBand status={statusState} />
-
-      {/* 2. Kate hero — avatar + name + Active Now */}
-      <KateHero />
-
-      {apiError && (
-        <div
-          style={{
-            background: "rgba(230,193,90,0.18)",
-            color: "#85651A",
-            fontSize: 11,
-            textAlign: "center",
-            padding: "6px 14px",
-          }}
-        >
-          {apiError}
-        </div>
-      )}
-
-      {/* 3. Conversation thread */}
-      <div
-        ref={scrollRef}
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "8px 16px 12px",
-          background: C.bone,
-        }}
-      >
-        {bubbles.map((b, i) => (
-          <BubbleRow
-            key={b.id}
-            bubble={b}
-            showChips={i === lastKateIdx && b.sender === "kate"}
-          />
-        ))}
-        {kateTyping && <TypingIndicator />}
-      </div>
-
-      {/* 4. Suggested replies (non-handle chips from latest Kate bubble) */}
-      {!kateTyping && lastKateIdx >= 0 && (
-        <SuggestedReplies
-          chips={(bubbles[lastKateIdx].chips ?? []).filter((c) => c.intent !== "handle")}
-        />
-      )}
-
-      {/* 5. Input bar */}
-      <ChatInput
-        draft={draft}
-        setDraft={setDraft}
-        onSend={send}
-      />
-    </div>
-  );
-}
-
-/**
- * Lightweight markdown renderer for Kate's messages — handles:
- *   - **bold**
- *   - leading "• " or "- " bullet lines
- *   - blank-line paragraph breaks
- * Anything else passes through as text. Templates and the LLM voice
- * both stay within these patterns.
- */
-function KateMarkdown({ text }: { text: string }) {
-  const lines = text.split("\n");
-  const blocks: React.ReactNode[] = [];
-  let bulletGroup: string[] = [];
-
-  function flushBullets() {
-    if (bulletGroup.length === 0) return;
-    blocks.push(
-      <ul key={`u-${blocks.length}`} style={{ margin: "6px 0", paddingLeft: 18, lineHeight: 1.55 }}>
-        {bulletGroup.map((b, i) => (
-          <li key={i}>{renderInline(b)}</li>
-        ))}
-      </ul>
-    );
-    bulletGroup = [];
-  }
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith("•") || trimmed.startsWith("- ")) {
-      bulletGroup.push(trimmed.replace(/^[•\-]\s*/, ""));
-      continue;
-    }
-    flushBullets();
-    if (trimmed === "") {
-      blocks.push(<div key={`s-${blocks.length}`} style={{ height: 8 }} />);
-    } else {
-      blocks.push(
-        <div key={`p-${blocks.length}`}>{renderInline(trimmed)}</div>
-      );
-    }
-  }
-  flushBullets();
-  return <>{blocks}</>;
-}
-
-function renderInline(s: string): React.ReactNode {
-  // **bold** → <strong>
-  const parts = s.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((p, i) => {
-    const m = p.match(/^\*\*([^*]+)\*\*$/);
-    if (m) return <strong key={i}>{m[1]}</strong>;
-    return <span key={i}>{p}</span>;
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Status band — compact, sits above Kate
-// ─────────────────────────────────────────────────────────────────
-
-function StatusBand({
-  status,
-}: {
-  status: { stateText: string; score: number | null; deltaText: string | null };
-}) {
-  const stateText = status.stateText || "You're in a good place.";
+function StatusBar({ mode }: { mode: Mode }) {
+  const t = theme(mode);
   return (
     <div
       style={{
-        background: C.bone,
-        padding: "4px 18px 12px",
-        borderBottom: `1px solid ${C.softGray}`,
-        flexShrink: 0,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 0.8,
-              textTransform: "uppercase",
-              color: C.textGray,
-            }}
-          >
-            Today
-          </div>
-          <div
-            style={{
-              fontFamily: "'Source Serif Pro', Georgia, serif",
-              fontSize: 19,
-              fontWeight: 500,
-              color: C.ink,
-              marginTop: 2,
-            }}
-          >
-            {stateText}
-          </div>
-        </div>
-        {status.score !== null && (
-          <ScorePill value={status.score} deltaText={status.deltaText} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ScorePill({ value, deltaText }: { value: number; deltaText: string | null }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        background: C.white,
-        border: `1px solid ${C.softGray}`,
-        borderRadius: 999,
-        padding: "8px 14px",
-      }}
-    >
-      <OpenRing />
-      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-        <span
-          style={{
-            fontFamily: "'Source Serif Pro', Georgia, serif",
-            fontSize: 18,
-            fontWeight: 500,
-            color: C.ink,
-          }}
-        >
-          {value}
-        </span>
-        {deltaText && (
-          <span style={{ fontSize: 10, color: C.olive, fontWeight: 600 }}>
-            {deltaText}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function OpenRing() {
-  // Mini open ring — same visual idea as the mockup, scaled down.
-  const r = 11;
-  return (
-    <svg width={28} height={28} viewBox="0 0 28 28">
-      <circle cx={14} cy={14} r={r} fill="none" stroke={C.softGray} strokeWidth={1.5} />
-      <circle cx={14 + r} cy={14} r={2.4} fill={C.deepBlue} />
-    </svg>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Kate hero — avatar + name + Active Now
-// ─────────────────────────────────────────────────────────────────
-
-function KateHero() {
-  return (
-    <div
-      style={{
-        background: C.bone,
-        padding: "14px 18px 12px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        flexShrink: 0,
-      }}
-    >
-      <div style={{ position: "relative" }}>
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            overflow: "hidden",
-            boxShadow: `0 0 0 3px ${C.white}, 0 0 0 4px ${C.softGray}`,
-          }}
-        >
-          <Image
-            src="/kate-avatar.png"
-            alt="Kate"
-            width={64}
-            height={64}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-        </div>
-        {/* Active-now dot — pulsing */}
-        <span
-          style={{
-            position: "absolute",
-            bottom: 2,
-            right: 2,
-            width: 14,
-            height: 14,
-            borderRadius: 7,
-            background: C.active,
-            boxShadow: `0 0 0 3px ${C.bone}`,
-            display: "block",
-          }}
-        />
-        <style>{`
-          @keyframes pulseGlow {
-            0% { box-shadow: 0 0 0 3px ${C.bone}, 0 0 0 4px rgba(63,190,111,0.45); }
-            70% { box-shadow: 0 0 0 3px ${C.bone}, 0 0 0 10px rgba(63,190,111,0); }
-            100% { box-shadow: 0 0 0 3px ${C.bone}, 0 0 0 4px rgba(63,190,111,0); }
-          }
-        `}</style>
-      </div>
-
-      <div
-        style={{
-          marginTop: 8,
-          fontFamily: "'Source Serif Pro', Georgia, serif",
-          fontSize: 18,
-          fontWeight: 500,
-          color: C.ink,
-        }}
-      >
-        Kate
-      </div>
-      <div
-        style={{
-          marginTop: 2,
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          fontSize: 11,
-          color: C.active,
-          fontWeight: 600,
-          letterSpacing: 0.4,
-          textTransform: "uppercase",
-        }}
-      >
-        <span
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: 3,
-            background: C.active,
-            display: "inline-block",
-            animation: "blink 1.6s ease-in-out infinite",
-          }}
-        />
-        Active now
-        <style>{`
-          @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.45; }
-          }
-        `}</style>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Bubbles + typing
-// ─────────────────────────────────────────────────────────────────
-
-function BubbleRow({ bubble, showChips }: { bubble: Bubble; showChips: boolean }) {
-  const isUser = bubble.sender === "user";
-  // Only handle-intent chips render as embedded action cards inside the
-  // bubble. Everything else lives above the keyboard (SuggestedReplies)
-  // so the bubble stays purely conversational.
-  const actionChips = showChips
-    ? (bubble.chips ?? []).filter((c) => c.intent === "handle")
-    : [];
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: isUser ? "flex-end" : "flex-start",
-        marginTop: 8,
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "82%",
-          background: isUser ? C.deepBlue : C.white,
-          color: isUser ? C.white : C.ink,
-          borderRadius: isUser ? "20px 20px 6px 20px" : "20px 20px 20px 6px",
-          padding: "11px 14px",
-          fontSize: 14.5,
-          lineHeight: 1.45,
-          boxShadow: isUser ? "none" : "0 2px 10px rgba(15,23,33,0.05)",
-        }}
-      >
-        {bubble.text}
-        {actionChips.length > 0 && (
-          <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
-            {actionChips.map((c, i) => (
-              <ActionCard key={i} chip={c} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ActionCard({ chip }: { chip: BubbleChip }) {
-  return (
-    <button
-      onClick={chip.onClick}
-      style={{
+        height: 44,
+        padding: "0 28px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 12,
-        background: C.deepBlue,
-        color: C.white,
-        border: "none",
-        borderRadius: 12,
-        padding: "11px 14px",
         fontSize: 14,
         fontWeight: 600,
-        cursor: "pointer",
-        textAlign: "left",
-        width: "100%",
-      }}
-    >
-      <span>{chip.label}</span>
-      <span aria-hidden style={{ fontSize: 16, opacity: 0.85 }}>›</span>
-    </button>
-  );
-}
-
-function SuggestedReplies({ chips }: { chips: BubbleChip[] }) {
-  if (chips.length === 0) return null;
-  return (
-    <div
-      style={{
+        color: t.text,
         flexShrink: 0,
-        background: C.bone,
-        padding: "8px 14px 0",
-        display: "flex",
-        gap: 8,
-        overflowX: "auto",
-        WebkitOverflowScrolling: "touch",
       }}
     >
-      {chips.map((c, i) => (
-        <button
-          key={i}
-          onClick={c.onClick}
-          style={{
-            flexShrink: 0,
-            background: C.white,
-            color: C.deepBlue,
-            border: `1px solid ${C.softGray}`,
-            borderRadius: 999,
-            padding: "8px 14px",
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-        >
-          {c.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function TypingIndicator() {
-  return (
-    <div style={{ display: "flex", marginTop: 8, alignItems: "center" }}>
-      <div
-        style={{
-          background: C.white,
-          borderRadius: "20px 20px 20px 6px",
-          padding: "10px 14px",
-          display: "flex",
-          gap: 4,
-          boxShadow: "0 2px 10px rgba(15,23,33,0.05)",
-        }}
-      >
-        <Dot delay="0s" />
-        <Dot delay="0.18s" />
-        <Dot delay="0.36s" />
-      </div>
-      <style>{`
-        @keyframes typing-bounce {
-          0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-          40% { transform: translateY(-3px); opacity: 1; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function Dot({ delay }: { delay: string }) {
-  return (
-    <span
-      style={{
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        background: C.textGray,
-        display: "inline-block",
-        animation: `typing-bounce 1.2s infinite`,
-        animationDelay: delay,
-      }}
-    />
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Chat input
-// ─────────────────────────────────────────────────────────────────
-
-function ChatInput({
-  draft,
-  setDraft,
-  onSend,
-}: {
-  draft: string;
-  setDraft: (s: string) => void;
-  onSend: () => void;
-}) {
-  return (
-    <div
-      style={{
-        flexShrink: 0,
-        background: C.bone,
-        borderTop: `1px solid ${C.softGray}`,
-        padding: "10px 14px 12px",
-        display: "flex",
-        gap: 8,
-        alignItems: "center",
-      }}
-    >
-      <input
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") onSend();
-        }}
-        placeholder="Message Kate…"
-        style={{
-          flex: 1,
-          height: 40,
-          borderRadius: 20,
-          border: `1px solid ${C.softGray}`,
-          background: C.white,
-          padding: "0 14px",
-          fontSize: 14,
-          color: C.ink,
-          outline: "none",
-        }}
-      />
-      <button
-        onClick={onSend}
-        disabled={!draft.trim()}
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          border: "none",
-          background: draft.trim() ? C.deepBlue : C.softGray,
-          color: C.white,
-          fontSize: 16,
-          cursor: draft.trim() ? "pointer" : "default",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        ↑
-      </button>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Other tabs (Kate is NOT here — these are utility surfaces).
-// A small "talk to Kate" launcher floats at the bottom-right so the
-// user can always start a conversation; tapping it would route back
-// to Today in the real app.
-// ─────────────────────────────────────────────────────────────────
-
-function TimelineScreen() {
-  return (
-    <div
-      style={{
-        flex: 1,
-        overflowY: "auto",
-        background: C.bone,
-        padding: "8px 18px 100px",
-        position: "relative",
-      }}
-    >
-      <h1
-        style={{
-          fontFamily: "'Source Serif Pro', Georgia, serif",
-          fontSize: 26,
-          fontWeight: 500,
-          color: C.ink,
-          margin: "12px 0 4px",
-          letterSpacing: -0.3,
-        }}
-      >
-        Timeline
-      </h1>
-      <p style={{ fontSize: 13, color: C.textGray, margin: "0 0 16px" }}>
-        Everything Kate&rsquo;s tracking, in order.
-      </p>
-
-      <SegmentControl />
-
-      <SectionLabel>This week</SectionLabel>
-      <TimelineCard icon="🩺" title="Dr. Echelman annual" sub="Wed, May 21 · 2:00 PM" badge="Scheduled" tone="good" />
-      <TimelineCard icon="🧪" title="Blood work" sub="Results came in this morning" badge="Looks normal" tone="good" />
-
-      <SectionLabel>Handled this month</SectionLabel>
-      <TimelineCard icon="💊" title="Levothyroxine refill" sub="Auto-managed — arrives Thursday" badge="Done" tone="muted" />
-      <TimelineCard icon="📞" title="Insurance pre-auth follow-up" sub="Kate called Cigna for you" badge="Done" tone="muted" />
-      <TimelineCard icon="📅" title="Pediatric well-visit moved" sub="Pushed to June 4" badge="Done" tone="muted" />
-
-      <KateLauncher />
-    </div>
-  );
-}
-
-function YouScreen() {
-  return (
-    <div
-      style={{
-        flex: 1,
-        overflowY: "auto",
-        background: C.bone,
-        padding: "8px 18px 100px",
-        position: "relative",
-      }}
-    >
-      <h1
-        style={{
-          fontFamily: "'Source Serif Pro', Georgia, serif",
-          fontSize: 26,
-          fontWeight: 500,
-          color: C.ink,
-          margin: "12px 0 4px",
-          letterSpacing: -0.3,
-        }}
-      >
-        You
-      </h1>
-      <p style={{ fontSize: 13, color: C.textGray, margin: "0 0 16px" }}>
-        Your account and care setup.
-      </p>
-
-      <SectionLabel>Care</SectionLabel>
-      <SettingsRow icon="👥" title="Care recipients" sub="You + 2 others" />
-      <SettingsRow icon="🩺" title="Providers" sub="6 on your team" />
-      <SettingsRow icon="🗓" title="Calendar" sub="Google · connected" />
-      <SettingsRow icon="📄" title="Documents & labs" sub="3 recent" />
-
-      <SectionLabel>Account</SectionLabel>
-      <SettingsRow icon="💳" title="Plan & billing" sub="Family · $49/mo" />
-      <SettingsRow icon="🔔" title="Notifications" sub="Quiet 9pm – 7am" />
-      <SettingsRow icon="🔒" title="Privacy & data" sub="You control everything" />
-
-      <div
-        style={{
-          marginTop: 22,
-          background: "rgba(167,199,231,0.22)",
-          borderRadius: 16,
-          padding: 18,
-        }}
-      >
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.deepBlue, marginBottom: 4 }}>
-          Your data is yours.
-        </div>
-        <div style={{ fontSize: 13, color: C.textGray, lineHeight: 1.5 }}>
-          QBH works for you. Nothing leaves without your say-so.
-        </div>
-      </div>
-
-      <KateLauncher />
-    </div>
-  );
-}
-
-function KateLauncher() {
-  // Floating button on non-Today screens to start a Kate conversation
-  // anywhere. Clicking would route to Today in the real app; here it's
-  // a hint that she's always reachable.
-  return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 96,
-        right: 22,
-        zIndex: 5,
-      }}
-    >
-      <button
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          border: "none",
-          background: C.white,
-          boxShadow: "0 8px 24px rgba(15,23,33,0.16)",
-          cursor: "pointer",
-          padding: 0,
-          position: "relative",
-          overflow: "hidden",
-        }}
-        title="Talk to Kate"
-      >
-        <Image
-          src="/kate-avatar.png"
-          alt="Kate"
-          width={56}
-          height={56}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
-        <span
-          style={{
-            position: "absolute",
-            bottom: 4,
-            right: 4,
-            width: 12,
-            height: 12,
-            borderRadius: 6,
-            background: C.active,
-            boxShadow: `0 0 0 2px ${C.white}`,
-          }}
-        />
-      </button>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Shared (timeline + settings UI lifted from v3)
-// ─────────────────────────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: 0.8,
-        textTransform: "uppercase",
-        color: C.textGray,
-        marginTop: 22,
-        marginBottom: 6,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function SegmentControl() {
-  const segs = ["Upcoming", "Past", "All"];
-  return (
-    <div
-      style={{
-        background: C.white,
-        borderRadius: 12,
-        padding: 4,
-        display: "flex",
-        boxShadow: `inset 0 0 0 1px ${C.softGray}`,
-        marginTop: 4,
-      }}
-    >
-      {segs.map((s, i) => (
-        <button
-          key={s}
-          style={{
-            flex: 1,
-            padding: "10px 0",
-            border: "none",
-            background: i === 0 ? C.deepBlue : "transparent",
-            color: i === 0 ? C.white : C.textGray,
-            fontSize: 13,
-            fontWeight: 600,
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          {s}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function TimelineCard({
-  icon,
-  title,
-  sub,
-  badge,
-  tone,
-}: {
-  icon: string;
-  title: string;
-  sub: string;
-  badge: string;
-  tone: "good" | "muted" | "fair";
-}) {
-  const badgeColors: Record<string, { bg: string; fg: string }> = {
-    good: { bg: "rgba(122,186,107,0.16)", fg: "#3F7B33" },
-    muted: { bg: C.bone, fg: C.textGray },
-    fair: { bg: "rgba(230,193,90,0.18)", fg: "#85651A" },
-  };
-  const bc = badgeColors[tone];
-  return (
-    <div
-      style={{
-        background: C.white,
-        borderRadius: 16,
-        padding: 14,
-        marginTop: 10,
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        boxShadow: "0 4px 12px rgba(15,23,33,0.04)",
-      }}
-    >
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          background: C.bone,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 18,
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.ink }}>{title}</div>
-        <div style={{ fontSize: 12, color: C.textGray, marginTop: 2 }}>{sub}</div>
-      </div>
-      <span
-        style={{
-          background: bc.bg,
-          color: bc.fg,
-          fontSize: 11,
-          fontWeight: 600,
-          padding: "5px 10px",
-          borderRadius: 999,
-          flexShrink: 0,
-        }}
-      >
-        {badge}
+      <span>9:41</span>
+      <span style={{ display: "flex", gap: 6, opacity: 0.85, fontSize: 12 }}>
+        <span>•••</span>
+        <span>◐</span>
+        <span>▮▮▮</span>
       </span>
     </div>
   );
 }
 
-function SettingsRow({ icon, title, sub }: { icon: string; title: string; sub: string }) {
+// ─────────────────────────────────────────────────────────────────
+// Wordmark — "Quarterback Health" in Austin/Fraunces, two-tone
+// ─────────────────────────────────────────────────────────────────
+
+function Wordmark({ mode, size = 18 }: { mode: Mode; size?: number }) {
+  const navyShade = mode === "light" ? T.lightText : T.darkText;
+  return (
+    <span
+      className={austin.className}
+      style={{
+        fontSize: size,
+        fontWeight: 500,
+        letterSpacing: -0.2,
+        lineHeight: 1,
+      }}
+    >
+      <span style={{ color: navyShade }}>Quarterback</span>{" "}
+      <span style={{ color: T.electric }}>Health</span>
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// HOME SCREEN
+// ─────────────────────────────────────────────────────────────────
+
+function HomeScreen({ mode }: { mode: Mode }) {
+  return (
+    <>
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "8px 22px 110px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 18,
+        }}
+      >
+        <HomeHeader mode={mode} />
+        <KateActiveCard mode={mode} />
+        <Hero mode={mode} />
+        <NextStepCard mode={mode} />
+        <StatusOnTrackCard mode={mode} />
+      </div>
+      <BottomNav mode={mode} active="home" />
+    </>
+  );
+}
+
+function HomeHeader({ mode }: { mode: Mode }) {
   return (
     <div
       style={{
-        background: C.white,
-        borderRadius: 14,
-        padding: "14px 16px",
-        marginTop: 8,
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        boxShadow: "0 2px 8px rgba(15,23,33,0.04)",
+        justifyContent: "space-between",
+        marginTop: 4,
       }}
     >
+      <Wordmark mode={mode} size={19} />
       <div
         style={{
           width: 36,
           height: 36,
           borderRadius: 18,
-          background: C.bone,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 16,
+          overflow: "hidden",
+          border: `1.5px solid ${mode === "light" ? T.lightBorder : "rgba(201,214,234,0.2)"}`,
         }}
       >
-        {icon}
+        <Image
+          src="/kate-avatar.png"
+          alt="You"
+          width={36}
+          height={36}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
       </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.ink }}>{title}</div>
-        <div style={{ fontSize: 12, color: C.textGray, marginTop: 1 }}>{sub}</div>
-      </div>
-      <span style={{ color: C.textGray, fontSize: 18 }}>›</span>
     </div>
   );
 }
 
+function KateActiveCard({ mode }: { mode: Mode }) {
+  const t = theme(mode);
+  return (
+    <button
+      type="button"
+      style={{
+        all: "unset",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "14px 16px",
+        background: t.glassBg,
+        backdropFilter: "blur(18px) saturate(140%)",
+        WebkitBackdropFilter: "blur(18px) saturate(140%)",
+        border: `1px solid ${t.border}`,
+        borderRadius: 20,
+        boxShadow: t.shadow,
+      }}
+    >
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            overflow: "hidden",
+          }}
+        >
+          <Image
+            src="/kate-avatar.png"
+            alt="Kate"
+            width={44}
+            height={44}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </div>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 15,
+            fontWeight: 600,
+            color: t.text,
+          }}
+        >
+          Kate is active
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              background: T.green,
+              boxShadow: `0 0 0 3px ${
+                mode === "light" ? "rgba(39,196,107,0.18)" : "rgba(39,196,107,0.25)"
+              }`,
+              display: "inline-block",
+            }}
+          />
+        </div>
+        <div style={{ fontSize: 12.5, color: t.muted, marginTop: 2 }}>
+          Monitoring and ready to help.
+        </div>
+      </div>
+      <span style={{ color: t.muted, fontSize: 18, fontWeight: 300 }}>›</span>
+    </button>
+  );
+}
+
+function Hero({ mode }: { mode: Mode }) {
+  const t = theme(mode);
+  return (
+    <div
+      style={{
+        position: "relative",
+        marginTop: 4,
+        padding: "0 4px",
+      }}
+    >
+      <h1
+        className={austin.className}
+        style={{
+          fontSize: 38,
+          fontWeight: 500,
+          color: t.text,
+          letterSpacing: -0.8,
+          lineHeight: 1.05,
+          margin: 0,
+        }}
+      >
+        Health,
+        <br />
+        organized.
+      </h1>
+      <p
+        style={{
+          fontSize: 14,
+          color: t.muted,
+          marginTop: 10,
+          lineHeight: 1.45,
+          maxWidth: "70%",
+        }}
+      >
+        Clear next steps.
+        <br />
+        Less to manage.
+      </p>
+      <Orbit mode={mode} />
+    </div>
+  );
+}
+
+function Orbit({ mode }: { mode: Mode }) {
+  const stroke = mode === "light" ? T.electric : T.glow;
+  // Small, subtle orbit — feels like a coordination motif, not a chart.
+  return (
+    <svg
+      width={64}
+      height={64}
+      viewBox="0 0 64 64"
+      style={{
+        position: "absolute",
+        top: 14,
+        right: 4,
+        opacity: mode === "light" ? 0.85 : 0.95,
+      }}
+    >
+      <circle
+        cx={32}
+        cy={32}
+        r={28}
+        fill="none"
+        stroke={stroke}
+        strokeOpacity={0.35}
+        strokeWidth={1.2}
+      />
+      <circle cx={60} cy={32} r={3} fill={stroke} />
+      {mode !== "light" && (
+        <circle
+          cx={60}
+          cy={32}
+          r={5.5}
+          fill={stroke}
+          fillOpacity={0.25}
+        />
+      )}
+    </svg>
+  );
+}
+
+function NextStepCard({ mode }: { mode: Mode }) {
+  const t = theme(mode);
+  return (
+    <div
+      style={{
+        background: t.glassBg,
+        backdropFilter: "blur(18px) saturate(140%)",
+        WebkitBackdropFilter: "blur(18px) saturate(140%)",
+        border: `1px solid ${t.border}`,
+        borderRadius: 22,
+        padding: 18,
+        boxShadow: t.shadow,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background:
+              mode === "light"
+                ? "rgba(22,119,255,0.10)"
+                : "rgba(46,140,255,0.18)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <CalendarPlusIcon color={T.electric} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              color: t.muted,
+            }}
+          >
+            Next Step
+          </div>
+          <div
+            className={austin.className}
+            style={{
+              fontSize: 22,
+              fontWeight: 500,
+              color: t.text,
+              marginTop: 2,
+              letterSpacing: -0.3,
+              lineHeight: 1.15,
+            }}
+          >
+            Annual physical
+          </div>
+          <div
+            style={{
+              fontSize: 13.5,
+              color: t.text,
+              marginTop: 6,
+              fontWeight: 500,
+            }}
+          >
+            Dr. Smith
+          </div>
+          <div
+            style={{
+              fontSize: 12.5,
+              color: t.muted,
+              marginTop: 4,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <CalendarSmallIcon color={t.muted} />
+            May 21 at 10:00 AM
+          </div>
+          <p
+            style={{
+              fontSize: 13,
+              color: t.muted,
+              marginTop: 10,
+              lineHeight: 1.45,
+            }}
+          >
+            Stay on track with preventive care.
+          </p>
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginTop: 14,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        <button
+          type="button"
+          style={{
+            border: "none",
+            background: T.electric,
+            color: T.white,
+            fontSize: 14.5,
+            fontWeight: 600,
+            padding: "13px 16px",
+            borderRadius: 14,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            boxShadow:
+              mode === "light"
+                ? "0 6px 18px rgba(22,119,255,0.28)"
+                : "0 6px 22px rgba(46,140,255,0.35)",
+          }}
+        >
+          Approve &amp; handle <span style={{ fontSize: 16 }}>→</span>
+        </button>
+        <button
+          type="button"
+          style={{
+            border: `1px solid ${t.inputBorder}`,
+            background: "transparent",
+            color: t.text,
+            fontSize: 14.5,
+            fontWeight: 600,
+            padding: "12px 16px",
+            borderRadius: 14,
+            cursor: "pointer",
+          }}
+        >
+          Review first
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function StatusOnTrackCard({ mode }: { mode: Mode }) {
+  const t = theme(mode);
+  return (
+    <button
+      type="button"
+      style={{
+        all: "unset",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "14px 16px",
+        background: t.glassBg,
+        backdropFilter: "blur(18px) saturate(140%)",
+        WebkitBackdropFilter: "blur(18px) saturate(140%)",
+        border: `1px solid ${t.border}`,
+        borderRadius: 18,
+        boxShadow: t.shadow,
+      }}
+    >
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 14,
+          background:
+            mode === "light"
+              ? "rgba(39,196,107,0.14)"
+              : "rgba(39,196,107,0.22)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <CheckIcon color={T.green} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>
+          Everything else is on track
+        </div>
+        <div style={{ fontSize: 12.5, color: t.muted, marginTop: 1 }}>
+          You&rsquo;re doing great.
+        </div>
+      </div>
+      <span style={{ color: t.muted, fontSize: 18, fontWeight: 300 }}>›</span>
+    </button>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────
-// Bottom tab bar
+// PROVIDER HUB (dark only)
 // ─────────────────────────────────────────────────────────────────
 
-function TabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
-  const tabs: { key: Tab; label: string; icon: string }[] = [
-    { key: "today", label: "Today", icon: "◐" },
-    { key: "timeline", label: "Timeline", icon: "▤" },
-    { key: "you", label: "You", icon: "◯" },
+function ProviderHubScreen() {
+  const t = theme("dark");
+  const [seg, setSeg] = useState<"team" | "refills">("team");
+
+  return (
+    <>
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "12px 22px 110px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 28,
+          }}
+        >
+          <Wordmark mode="dark" size={17} />
+        </div>
+
+        <h1
+          className={austin.className}
+          style={{
+            fontSize: 36,
+            fontWeight: 500,
+            color: t.text,
+            letterSpacing: -0.6,
+            lineHeight: 1.05,
+            margin: 0,
+          }}
+        >
+          Your care team.
+        </h1>
+        <p
+          style={{
+            fontSize: 14,
+            color: t.muted,
+            marginTop: 10,
+            marginBottom: 22,
+            lineHeight: 1.45,
+          }}
+        >
+          Expert support, coordinated for you.
+        </p>
+
+        <SegmentedControl seg={seg} setSeg={setSeg} />
+
+        <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+          <ProviderCard
+            initials="SS"
+            tint="#E8C5B0"
+            name="Dr. Sarah Smith"
+            role="Primary Care"
+            meta="May 21 at 10:00 AM"
+            metaIcon="calendar"
+            metaColor={T.green}
+          />
+          <ProviderCard
+            initials="JL"
+            tint="#C8B5E0"
+            name="Dr. Jessica Lee"
+            role="OB-GYN"
+            meta="Jun 12"
+            metaIcon="calendar"
+          />
+          <ProviderCard
+            initials="MC"
+            tint="#A6C8E8"
+            name="Dr. Michael Chen"
+            role="Therapist"
+            meta="No upcoming visits"
+            metaIcon="chat"
+          />
+          <ProviderCard
+            initials="PP"
+            tint="#E0B0BC"
+            name="Dr. Priya Patel"
+            role="Dermatologist"
+            meta="Apr 10"
+            metaIcon="calendar"
+          />
+        </div>
+      </div>
+      <BottomNav mode="dark" active="home" />
+    </>
+  );
+}
+
+function SegmentedControl({
+  seg,
+  setSeg,
+}: {
+  seg: "team" | "refills";
+  setSeg: (s: "team" | "refills") => void;
+}) {
+  return (
+    <div
+      style={{
+        background: "rgba(11,37,69,0.7)",
+        border: "1px solid rgba(46,140,255,0.15)",
+        borderRadius: 14,
+        padding: 4,
+        display: "flex",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+      }}
+    >
+      {(["team", "refills"] as const).map((s) => {
+        const active = seg === s;
+        const label = s === "team" ? "Care team" : "Refills";
+        return (
+          <button
+            key={s}
+            onClick={() => setSeg(s)}
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              border: "none",
+              background: active ? T.white : "transparent",
+              color: active ? T.lightText : T.darkMuted,
+              fontSize: 13,
+              fontWeight: 600,
+              borderRadius: 10,
+              cursor: "pointer",
+              transition: "all 200ms",
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProviderCard({
+  initials,
+  tint,
+  name,
+  role,
+  meta,
+  metaIcon,
+  metaColor,
+}: {
+  initials: string;
+  tint: string;
+  name: string;
+  role: string;
+  meta: string;
+  metaIcon: "calendar" | "chat";
+  metaColor?: string;
+}) {
+  return (
+    <button
+      type="button"
+      style={{
+        all: "unset",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "14px 16px",
+        background: "rgba(11,37,69,0.7)",
+        backdropFilter: "blur(18px) saturate(140%)",
+        WebkitBackdropFilter: "blur(18px) saturate(140%)",
+        border: "1px solid rgba(46,140,255,0.12)",
+        borderRadius: 20,
+        boxShadow:
+          "0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(46,140,255,0.08)",
+      }}
+    >
+      <div
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: 26,
+          background: `linear-gradient(135deg, ${tint}, ${tint}aa)`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: T.lightText,
+          fontSize: 17,
+          fontWeight: 600,
+          flexShrink: 0,
+          letterSpacing: 0.5,
+        }}
+      >
+        {initials}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          className={austin.className}
+          style={{
+            fontSize: 17,
+            fontWeight: 500,
+            color: T.darkText,
+            letterSpacing: -0.1,
+          }}
+        >
+          {name}
+        </div>
+        <div style={{ fontSize: 12.5, color: T.darkMuted, marginTop: 2 }}>
+          {role}
+        </div>
+        <div
+          style={{
+            fontSize: 12,
+            color: metaColor ?? T.darkMuted,
+            marginTop: 6,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontWeight: metaColor ? 600 : 400,
+          }}
+        >
+          {metaIcon === "calendar" ? (
+            <CalendarSmallIcon color={metaColor ?? T.darkMuted} />
+          ) : (
+            <ChatBubbleIcon color={T.darkMuted} />
+          )}
+          {meta}
+        </div>
+      </div>
+      <span
+        style={{
+          color: T.darkMuted,
+          fontSize: 18,
+          fontWeight: 300,
+          opacity: 0.7,
+        }}
+      >
+        ›
+      </span>
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Bottom navigation — Home / Timeline / Insights / Kate / You
+// ─────────────────────────────────────────────────────────────────
+
+type NavKey = "home" | "timeline" | "insights" | "kate" | "you";
+
+function BottomNav({ mode, active }: { mode: Mode; active: NavKey }) {
+  const t = theme(mode);
+  const items: { key: NavKey; label: string; icon: React.ReactNode }[] = [
+    { key: "home", label: "Home", icon: <HomeIcon /> },
+    { key: "timeline", label: "Timeline", icon: <TimelineIcon /> },
+    { key: "insights", label: "Insights", icon: <InsightsIcon /> },
+    { key: "kate", label: "Kate", icon: <SparkleIcon /> },
+    { key: "you", label: "You", icon: <PersonIcon /> },
   ];
   return (
     <nav
       style={{
-        flexShrink: 0,
-        background: C.white,
-        borderTop: `1px solid ${C.softGray}`,
-        padding: "8px 0 28px",
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background:
+          mode === "light"
+            ? "rgba(255,255,255,0.85)"
+            : "rgba(8,26,51,0.85)",
+        backdropFilter: "blur(24px) saturate(140%)",
+        WebkitBackdropFilter: "blur(24px) saturate(140%)",
+        borderTop: `1px solid ${t.border}`,
+        padding: "10px 4px 28px",
         display: "flex",
-        boxShadow: "0 -4px 24px rgba(15,23,33,0.04)",
       }}
     >
-      {tabs.map((t) => {
-        const active = tab === t.key;
+      {items.map((it) => {
+        const isActive = it.key === active;
+        const color = isActive
+          ? T.electric
+          : mode === "light"
+          ? T.lightMuted
+          : T.darkMuted;
         return (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={it.key}
+            type="button"
             style={{
               flex: 1,
               border: "none",
               background: "transparent",
-              padding: "8px 0",
+              padding: "6px 0",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               gap: 4,
               cursor: "pointer",
-              color: active ? C.deepBlue : C.textGray,
+              color,
             }}
           >
-            <span style={{ fontSize: 20, lineHeight: 1 }}>{t.icon}</span>
-            <span style={{ fontSize: 11, fontWeight: 600 }}>{t.label}</span>
+            <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {React.cloneElement(it.icon as React.ReactElement<{ color?: string }>, { color })}
+            </span>
+            <span style={{ fontSize: 10.5, fontWeight: 600 }}>{it.label}</span>
           </button>
         );
       })}
     </nav>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Icons
+// ─────────────────────────────────────────────────────────────────
+
+function HomeIcon({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2v-9z" />
+    </svg>
+  );
+}
+
+function TimelineIcon({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <rect x={3} y={4} width={18} height={18} rx={3} />
+      <line x1={3} y1={10} x2={21} y2={10} />
+      <line x1={8} y1={2} x2={8} y2={6} />
+      <line x1={16} y1={2} x2={16} y2={6} />
+      <path d="M8 14h2M14 14h2M8 18h2" />
+    </svg>
+  );
+}
+
+function InsightsIcon({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <line x1={4} y1={20} x2={4} y2={12} />
+      <line x1={10} y1={20} x2={10} y2={6} />
+      <line x1={16} y1={20} x2={16} y2={14} />
+      <line x1={22} y1={20} x2={22} y2={9} />
+    </svg>
+  );
+}
+
+function PersonIcon({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx={12} cy={8} r={4} />
+      <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
+    </svg>
+  );
+}
+
+function SparkleIcon({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill={color} stroke="none">
+      <path d="M12 2 L13.6 9.6 L21 11.5 L13.6 13.4 L12 21 L10.4 13.4 L3 11.5 L10.4 9.6 Z" />
+      <path d="M19 3 L19.7 5.4 L22 6 L19.7 6.6 L19 9 L18.3 6.6 L16 6 L18.3 5.4 Z" opacity={0.7} />
+    </svg>
+  );
+}
+
+function CalendarPlusIcon({ color }: { color: string }) {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x={3} y={5} width={18} height={16} rx={2.5} />
+      <line x1={3} y1={10} x2={21} y2={10} />
+      <line x1={8} y1={3} x2={8} y2={7} />
+      <line x1={16} y1={3} x2={16} y2={7} />
+      <line x1={12} y1={13} x2={12} y2={18} />
+      <line x1={9.5} y1={15.5} x2={14.5} y2={15.5} />
+    </svg>
+  );
+}
+
+function CalendarSmallIcon({ color }: { color: string }) {
+  return (
+    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x={3} y={5} width={18} height={16} rx={2.5} />
+      <line x1={3} y1={10} x2={21} y2={10} />
+      <line x1={8} y1={3} x2={8} y2={7} />
+      <line x1={16} y1={3} x2={16} y2={7} />
+    </svg>
+  );
+}
+
+function ChatBubbleIcon({ color }: { color: string }) {
+  return (
+    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </svg>
+  );
+}
+
+function CheckIcon({ color }: { color: string }) {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="4 12 10 18 20 6" />
+    </svg>
   );
 }
