@@ -82,11 +82,23 @@ type BubbleChip = {
   primary?: boolean;
 };
 
+type NextStep = {
+  eyebrow: string;       // "NEXT STEP"
+  title: string;         // "Annual physical"
+  provider?: string;     // "Dr. Smith"
+  when?: string;         // "May 21 at 10:00 AM"
+  subtitle?: string;     // "Stay on track with preventive care."
+};
+
 type Bubble = {
   id: string;
   sender: Sender;
   text: React.ReactNode;
   chips?: BubbleChip[];
+  // When set, the bubble renders as a structured Next Step card
+  // (calendar tile + eyebrow + Austin title + provider + date row +
+  // subtitle + stacked CTAs) instead of a plain text bubble.
+  nextStep?: NextStep;
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -293,10 +305,23 @@ function TodayChat({ mode }: { mode: Mode }) {
   }
 
   function bubbleFromState(state: ApiKateState): Bubble {
+    // If Kate has a "handle" CTA paired with a primary item, render as
+    // a structured Next Step card. Pull what we can from items[0].
+    const handleChip = state.chips.find((c) => c.intent === "handle");
+    const item = state.items[0];
+    const nextStep: NextStep | undefined =
+      handleChip && item
+        ? {
+            eyebrow: "NEXT STEP",
+            title: item.title,
+            subtitle: item.detail,
+          }
+        : undefined;
     return {
       id: bid(),
       sender: "kate",
       text: <KateMarkdown text={state.message} />,
+      nextStep,
       chips: state.chips.map((c) => ({
         label: c.label,
         intent: (c.intent as ChipIntent) || "custom",
@@ -394,20 +419,14 @@ function TodayChat({ mode }: { mode: Mode }) {
       {
         id: "b-1",
         sender: "kate",
-        text: (
-          <>
-            Hey — a couple of things on your plate today.
-            <ul style={{ margin: "8px 0 4px", paddingLeft: 18, lineHeight: 1.55 }}>
-              <li>
-                <strong>Annual physical with Dr. Smith</strong> — May 21 at 10:00 AM.
-              </li>
-              <li>
-                <strong>Levothyroxine refill</strong> — runs out Friday.
-              </li>
-            </ul>
-            Want me to handle it?
-          </>
-        ),
+        text: <>Hey — here&rsquo;s your next step.</>,
+        nextStep: {
+          eyebrow: "NEXT STEP",
+          title: "Annual physical",
+          provider: "Dr. Smith",
+          when: "May 21 at 10:00 AM",
+          subtitle: "Stay on track with preventive care.",
+        },
         chips: [
           { label: "Approve & handle", intent: "handle", primary: true, onClick: () => onChipDemo("Approve & handle") },
           { label: "Review first", intent: "elaborate", onClick: () => onChipDemo("Review first") },
@@ -507,12 +526,17 @@ function TodayChat({ mode }: { mode: Mode }) {
         {kateTyping && <TypingIndicator mode={mode} />}
       </div>
 
-      {!kateTyping && lastKateIdx >= 0 && (
-        <SuggestedReplies
-          mode={mode}
-          chips={(bubbles[lastKateIdx].chips ?? []).filter((c) => c.intent !== "handle")}
-        />
-      )}
+      {!kateTyping && lastKateIdx >= 0 && (() => {
+        const last = bubbles[lastKateIdx];
+        // If the last bubble rendered as a Next Step card, both
+        // handle + elaborate chips already live inside it. Keep
+        // only "defer"/"thanks"/"custom" chips above the keyboard.
+        const skip = last.nextStep
+          ? new Set<ChipIntent>(["handle", "elaborate"])
+          : new Set<ChipIntent>(["handle"]);
+        const chips = (last.chips ?? []).filter((c) => !skip.has(c.intent));
+        return <SuggestedReplies mode={mode} chips={chips} />;
+      })()}
 
       <ChatInput mode={mode} draft={draft} setDraft={setDraft} onSend={send} />
     </div>
@@ -704,6 +728,24 @@ function BubbleRow({
 }) {
   const isUser = bubble.sender === "user";
   const t = theme(mode);
+
+  // Structured Next Step card (replaces flat bubble for the opening
+  // recommendation). Stacks Approve & handle + Review first inside.
+  if (bubble.nextStep && showChips) {
+    const handleChip = (bubble.chips ?? []).find((c) => c.intent === "handle");
+    const reviewChip = (bubble.chips ?? []).find((c) => c.intent === "elaborate");
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginTop: 8 }}>
+        <NextStepBubble
+          mode={mode}
+          step={bubble.nextStep}
+          handleChip={handleChip}
+          reviewChip={reviewChip}
+        />
+      </div>
+    );
+  }
+
   const actionChips = showChips
     ? (bubble.chips ?? []).filter((c) => c.intent === "handle")
     : [];
@@ -746,6 +788,192 @@ function BubbleRow({
         )}
       </div>
     </div>
+  );
+}
+
+function NextStepBubble({
+  mode,
+  step,
+  handleChip,
+  reviewChip,
+}: {
+  mode: Mode;
+  step: NextStep;
+  handleChip?: BubbleChip;
+  reviewChip?: BubbleChip;
+}) {
+  const t = theme(mode);
+  return (
+    <div
+      style={{
+        width: "100%",
+        background: t.glassBg,
+        backdropFilter: "blur(18px) saturate(140%)",
+        WebkitBackdropFilter: "blur(18px) saturate(140%)",
+        border: `1px solid ${t.border}`,
+        borderRadius: 22,
+        padding: 18,
+        boxShadow: t.shadow,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background:
+              mode === "light"
+                ? "rgba(22,119,255,0.10)"
+                : "rgba(46,140,255,0.18)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <CalendarPlusIcon color={T.electric} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              color: t.muted,
+            }}
+          >
+            {step.eyebrow}
+          </div>
+          <div
+            className={austin.className}
+            style={{
+              fontSize: 22,
+              fontWeight: 500,
+              color: t.text,
+              marginTop: 2,
+              letterSpacing: -0.3,
+              lineHeight: 1.15,
+            }}
+          >
+            {step.title}
+          </div>
+          {step.provider && (
+            <div
+              style={{
+                fontSize: 13.5,
+                color: t.text,
+                marginTop: 6,
+                fontWeight: 500,
+              }}
+            >
+              {step.provider}
+            </div>
+          )}
+          {step.when && (
+            <div
+              style={{
+                fontSize: 12.5,
+                color: t.muted,
+                marginTop: 4,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <CalendarSmallIcon color={t.muted} />
+              {step.when}
+            </div>
+          )}
+          {step.subtitle && (
+            <p
+              style={{
+                fontSize: 13,
+                color: t.muted,
+                marginTop: 10,
+                lineHeight: 1.45,
+              }}
+            >
+              {step.subtitle}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {(handleChip || reviewChip) && (
+        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
+          {handleChip && (
+            <button
+              type="button"
+              onClick={handleChip.onClick}
+              style={{
+                border: "none",
+                background: T.electric,
+                color: T.white,
+                fontSize: 14.5,
+                fontWeight: 600,
+                padding: "13px 16px",
+                borderRadius: 14,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                boxShadow:
+                  mode === "light"
+                    ? "0 6px 18px rgba(22,119,255,0.28)"
+                    : "0 6px 22px rgba(46,140,255,0.35)",
+              }}
+            >
+              {handleChip.label} <span style={{ fontSize: 16 }}>→</span>
+            </button>
+          )}
+          {reviewChip && (
+            <button
+              type="button"
+              onClick={reviewChip.onClick}
+              style={{
+                border: `1px solid ${t.inputBorder}`,
+                background: "transparent",
+                color: t.text,
+                fontSize: 14.5,
+                fontWeight: 600,
+                padding: "12px 16px",
+                borderRadius: 14,
+                cursor: "pointer",
+              }}
+            >
+              {reviewChip.label}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CalendarPlusIcon({ color }: { color: string }) {
+  return (
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x={3} y={5} width={18} height={16} rx={2.5} />
+      <line x1={3} y1={10} x2={21} y2={10} />
+      <line x1={8} y1={3} x2={8} y2={7} />
+      <line x1={16} y1={3} x2={16} y2={7} />
+      <line x1={12} y1={13} x2={12} y2={18} />
+      <line x1={9.5} y1={15.5} x2={14.5} y2={15.5} />
+    </svg>
+  );
+}
+
+function CalendarSmallIcon({ color }: { color: string }) {
+  return (
+    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x={3} y={5} width={18} height={16} rx={2.5} />
+      <line x1={3} y1={10} x2={21} y2={10} />
+      <line x1={8} y1={3} x2={8} y2={7} />
+      <line x1={16} y1={3} x2={16} y2={7} />
+    </svg>
   );
 }
 
