@@ -374,7 +374,7 @@ function TodayChat({ mode }: { mode: Mode }) {
         if (cancelled) return;
         if (res.status === 401) {
           setApiError("Demo mode — sign in for live Kate.");
-          setBubbles(demoFallbackBubbles(handleDemoChip));
+          emitDemoOpening(() => cancelled);
           return;
         }
         if (data?.ok && data.state) {
@@ -383,12 +383,12 @@ function TodayChat({ mode }: { mode: Mode }) {
           setBubbles([bubbleFromState(data.state)]);
         } else {
           setApiError("Demo mode — couldn't reach Kate.");
-          setBubbles(demoFallbackBubbles(handleDemoChip));
+          emitDemoOpening(() => cancelled);
         }
       } catch {
         if (!cancelled) {
           setApiError("Demo mode — couldn't reach Kate.");
-          setBubbles(demoFallbackBubbles(handleDemoChip));
+          emitDemoOpening(() => cancelled);
         }
       }
     })();
@@ -407,34 +407,111 @@ function TodayChat({ mode }: { mode: Mode }) {
     }, 700);
   }
 
+  // Kate as narrator: send a sequence of bubbles that read out the
+  // dashboard, with realistic typing pauses between. Each bubble is
+  // a slice of state — score, next step (with action card), what's
+  // auto-handled, what's clear. The user can tap the embedded card
+  // to act, or type to interrupt.
+  async function emitDemoOpening(isCancelled: () => boolean) {
+    const wait = (ms: number) =>
+      new Promise<void>((r) => setTimeout(r, ms));
+    const push = (b: Bubble) => {
+      if (isCancelled()) return;
+      addBubble(b);
+    };
+    const typing = async (ms: number) => {
+      if (isCancelled()) return;
+      setKateTyping(true);
+      await wait(ms);
+      if (isCancelled()) return;
+      setKateTyping(false);
+    };
+
+    // Bubble 1 — greeting
+    push({
+      id: bid(),
+      sender: "kate",
+      text: <>Morning. Quick check-in.</>,
+    });
+
+    await wait(550);
+    await typing(700);
+
+    // Bubble 2 — score + trend
+    push({
+      id: bid(),
+      sender: "kate",
+      text: (
+        <>
+          Your <strong>health score is 86</strong>{" "}
+          <span style={{ color: T.green, fontWeight: 600 }}>+6</span> from
+          last month. Trending up.
+        </>
+      ),
+    });
+
+    await wait(700);
+    await typing(800);
+
+    // Bubble 3 — Next Step card (the only one with action buttons)
+    push({
+      id: bid(),
+      sender: "kate",
+      text: <>Here&rsquo;s what I&rsquo;d tackle next:</>,
+      nextStep: {
+        eyebrow: "NEXT STEP",
+        title: "Annual physical",
+        provider: "Dr. Smith",
+        when: "May 21 at 10:00 AM",
+        subtitle: "Stay on track with preventive care.",
+      },
+      chips: [
+        {
+          label: "Approve & handle",
+          intent: "handle",
+          primary: true,
+          onClick: () => handleDemoChip("Approve & handle"),
+        },
+        {
+          label: "Review first",
+          intent: "elaborate",
+          onClick: () => handleDemoChip("Review first"),
+        },
+      ],
+    });
+
+    await wait(800);
+    await typing(700);
+
+    // Bubble 4 — refills auto-handled
+    push({
+      id: bid(),
+      sender: "kate",
+      text: (
+        <>
+          Levothyroxine refill is auto-managed — arrives Thursday at CVS.
+          Nothing for you to do.
+        </>
+      ),
+    });
+
+    await wait(650);
+    await typing(600);
+
+    // Bubble 5 — closer
+    push({
+      id: bid(),
+      sender: "kate",
+      text: <>Everything else is on track. Anything you want me to dig into?</>,
+    });
+  }
+
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
   }, [bubbles, kateTyping]);
-
-  function demoFallbackBubbles(onChipDemo: (label: string) => void): Bubble[] {
-    return [
-      {
-        id: "b-1",
-        sender: "kate",
-        text: <>Hey — here&rsquo;s your next step.</>,
-        nextStep: {
-          eyebrow: "NEXT STEP",
-          title: "Annual physical",
-          provider: "Dr. Smith",
-          when: "May 21 at 10:00 AM",
-          subtitle: "Stay on track with preventive care.",
-        },
-        chips: [
-          { label: "Approve & handle", intent: "handle", primary: true, onClick: () => onChipDemo("Approve & handle") },
-          { label: "Review first", intent: "elaborate", onClick: () => onChipDemo("Review first") },
-          { label: "Not now", intent: "defer", onClick: () => onChipDemo("Not now") },
-        ],
-      },
-    ];
-  }
 
   async function send() {
     const txt = draft.trim();
@@ -528,12 +605,12 @@ function TodayChat({ mode }: { mode: Mode }) {
 
       {!kateTyping && lastKateIdx >= 0 && (() => {
         const last = bubbles[lastKateIdx];
-        // If the last bubble rendered as a Next Step card, both
-        // handle + elaborate chips already live inside it. Keep
-        // only "defer"/"thanks"/"custom" chips above the keyboard.
-        const skip = last.nextStep
-          ? new Set<ChipIntent>(["handle", "elaborate"])
-          : new Set<ChipIntent>(["handle"]);
+        // Suggested replies above the keyboard are for *conversational*
+        // continuations only. Card-level actions (handle, elaborate)
+        // live inside the Next Step card; defer ("Not now") is a
+        // tap-to-dismiss on the card itself, not a reply. Only show
+        // "thanks" / "custom" — typed-question style chips.
+        const skip = new Set<ChipIntent>(["handle", "elaborate", "defer"]);
         const chips = (last.chips ?? []).filter((c) => !skip.has(c.intent));
         return <SuggestedReplies mode={mode} chips={chips} />;
       })()}
@@ -729,9 +806,10 @@ function BubbleRow({
   const isUser = bubble.sender === "user";
   const t = theme(mode);
 
-  // Structured Next Step card (replaces flat bubble for the opening
-  // recommendation). Stacks Approve & handle + Review first inside.
-  if (bubble.nextStep && showChips) {
+  // Structured Next Step card. Renders even after newer Kate bubbles
+  // arrive — the embedded buttons are part of the card's identity, not
+  // suggested replies that should disappear with context shift.
+  if (bubble.nextStep) {
     const handleChip = (bubble.chips ?? []).find((c) => c.intent === "handle");
     const reviewChip = (bubble.chips ?? []).find((c) => c.intent === "elaborate");
     return (
