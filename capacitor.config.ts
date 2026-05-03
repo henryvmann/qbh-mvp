@@ -2,10 +2,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.getquarterback.app',
-  appName: 'Quarterback AI',
+  appName: 'Quarterback Health',
   webDir: 'out',
   server: {
-    // Allow Plaid Link iframes to load inside the WKWebView
+    // Point to live site for development/testing
+    url: 'https://www.getquarterback.com',
+    cleartext: true,
     allowNavigation: ['*.plaid.com'],
   },
 };
