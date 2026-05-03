@@ -966,13 +966,105 @@ function CalendarPlusIcon({ color }: { color: string }) {
   );
 }
 
-function CalendarSmallIcon({ color }: { color: string }) {
+function CalendarSmallIcon({ color, size = 13 }: { color: string; size?: number }) {
   return (
-    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <rect x={3} y={5} width={18} height={16} rx={2.5} />
       <line x1={3} y1={10} x2={21} y2={10} />
       <line x1={8} y1={3} x2={8} y2={7} />
       <line x1={16} y1={3} x2={16} y2={7} />
+    </svg>
+  );
+}
+
+// Tinted-tile icons (electric blue stroke, 1.8 weight, 18px) — used
+// in TimelineCard and SettingsRow. Same visual language as the
+// calendar icon in NextStepBubble.
+
+function StethoscopeIcon({ color }: { color: string }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 3v6a5 5 0 0 0 10 0V3" />
+      <path d="M5 3h2M13 3h2" />
+      <path d="M10 14v3a4 4 0 0 0 8 0v-2" />
+      <circle cx={18} cy={11} r={2} />
+    </svg>
+  );
+}
+
+function LabIcon({ color }: { color: string }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 3v6.5L4 18a2 2 0 0 0 1.7 3h12.6A2 2 0 0 0 20 18l-5-8.5V3" />
+      <line x1={7} y1={3} x2={17} y2={3} />
+      <line x1={6.5} y1={14} x2={17.5} y2={14} />
+    </svg>
+  );
+}
+
+function PillIcon({ color }: { color: string }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x={2.5} y={8} width={19} height={8} rx={4} transform="rotate(-30 12 12)" />
+      <line x1={8} y1={8} x2={14.5} y2={14.5} transform="rotate(-30 12 12)" />
+    </svg>
+  );
+}
+
+function PhoneIcon({ color }: { color: string }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  );
+}
+
+function UsersIcon({ color }: { color: string }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx={9} cy={7} r={4} />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function DocumentIcon({ color }: { color: string }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1={8} y1={13} x2={16} y2={13} />
+      <line x1={8} y1={17} x2={13} y2={17} />
+    </svg>
+  );
+}
+
+function CardIcon({ color }: { color: string }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x={2} y={5} width={20} height={14} rx={2.5} />
+      <line x1={2} y1={10} x2={22} y2={10} />
+      <line x1={6} y1={15} x2={10} y2={15} />
+    </svg>
+  );
+}
+
+function BellIcon({ color }: { color: string }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+function LockIcon({ color }: { color: string }) {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x={4} y={11} width={16} height={10} rx={2} />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     </svg>
   );
 }
@@ -1253,12 +1345,12 @@ function TimelineScreen({ mode }: { mode: Mode }) {
       </p>
 
       <SectionLabel mode={mode}>This week</SectionLabel>
-      <TimelineCard mode={mode} icon="🩺" title="Annual physical with Dr. Smith" sub="Wed, May 21 · 10:00 AM" badge="Scheduled" tone="good" />
-      <TimelineCard mode={mode} icon="🧪" title="Blood work" sub="Results came in this morning" badge="Looks normal" tone="good" />
+      <TimelineCard mode={mode} icon={<StethoscopeIcon color={T.electric} />} title="Annual physical with Dr. Smith" sub="Wed, May 21 · 10:00 AM" badge="Scheduled" tone="good" />
+      <TimelineCard mode={mode} icon={<LabIcon color={T.electric} />} title="Blood work" sub="Results came in this morning" badge="Looks normal" tone="good" />
 
       <SectionLabel mode={mode}>Handled this month</SectionLabel>
-      <TimelineCard mode={mode} icon="💊" title="Levothyroxine refill" sub="Auto-managed — arrives Thursday" badge="Done" tone="muted" />
-      <TimelineCard mode={mode} icon="📞" title="Insurance pre-auth" sub="Kate called Cigna for you" badge="Done" tone="muted" />
+      <TimelineCard mode={mode} icon={<PillIcon color={T.electric} />} title="Levothyroxine refill" sub="Auto-managed — arrives Thursday" badge="Done" tone="muted" />
+      <TimelineCard mode={mode} icon={<PhoneIcon color={T.electric} />} title="Insurance pre-auth" sub="Kate called Cigna for you" badge="Done" tone="muted" />
     </div>
   );
 }
@@ -1293,15 +1385,15 @@ function YouScreen({ mode }: { mode: Mode }) {
       </p>
 
       <SectionLabel mode={mode}>Care</SectionLabel>
-      <SettingsRow mode={mode} icon="👥" title="Care recipients" sub="You + 2 others" />
-      <SettingsRow mode={mode} icon="🩺" title="Providers" sub="6 on your team" />
-      <SettingsRow mode={mode} icon="🗓" title="Calendar" sub="Google · connected" />
-      <SettingsRow mode={mode} icon="📄" title="Documents & labs" sub="3 recent" />
+      <SettingsRow mode={mode} icon={<UsersIcon color={T.electric} />} title="Care recipients" sub="You + 2 others" />
+      <SettingsRow mode={mode} icon={<StethoscopeIcon color={T.electric} />} title="Providers" sub="6 on your team" />
+      <SettingsRow mode={mode} icon={<CalendarSmallIcon color={T.electric} size={18} />} title="Calendar" sub="Google · connected" />
+      <SettingsRow mode={mode} icon={<DocumentIcon color={T.electric} />} title="Documents & labs" sub="3 recent" />
 
       <SectionLabel mode={mode}>Account</SectionLabel>
-      <SettingsRow mode={mode} icon="💳" title="Plan & billing" sub="Family · $49/mo" />
-      <SettingsRow mode={mode} icon="🔔" title="Notifications" sub="Quiet 9pm – 7am" />
-      <SettingsRow mode={mode} icon="🔒" title="Privacy & data" sub="You control everything" />
+      <SettingsRow mode={mode} icon={<CardIcon color={T.electric} />} title="Plan & billing" sub="Family · $49/mo" />
+      <SettingsRow mode={mode} icon={<BellIcon color={T.electric} />} title="Notifications" sub="Quiet 9pm – 7am" />
+      <SettingsRow mode={mode} icon={<LockIcon color={T.electric} />} title="Privacy & data" sub="You control everything" />
     </div>
   );
 }
@@ -1334,7 +1426,7 @@ function TimelineCard({
   tone,
 }: {
   mode: Mode;
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   sub: string;
   badge: string;
@@ -1372,15 +1464,14 @@ function TimelineCard({
         style={{
           width: 40,
           height: 40,
-          borderRadius: 20,
+          borderRadius: 12,
           background:
             mode === "light"
-              ? "rgba(22,119,255,0.08)"
-              : "rgba(46,140,255,0.15)",
+              ? "rgba(22,119,255,0.10)"
+              : "rgba(46,140,255,0.18)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 18,
           flexShrink: 0,
         }}
       >
@@ -1414,7 +1505,7 @@ function SettingsRow({
   sub,
 }: {
   mode: Mode;
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   sub: string;
 }) {
@@ -1439,15 +1530,15 @@ function SettingsRow({
         style={{
           width: 36,
           height: 36,
-          borderRadius: 18,
+          borderRadius: 10,
           background:
             mode === "light"
-              ? "rgba(22,119,255,0.08)"
-              : "rgba(46,140,255,0.15)",
+              ? "rgba(22,119,255,0.10)"
+              : "rgba(46,140,255,0.18)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 16,
+          flexShrink: 0,
         }}
       >
         {icon}
