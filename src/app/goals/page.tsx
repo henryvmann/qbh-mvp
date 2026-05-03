@@ -21,32 +21,57 @@ const PROVIDER_TYPE_KEYWORDS = [
   "rheumatologist", "oncologist",
 ];
 
-function getGoalLink(goal: { title: string; category: string; providerId?: string }): { href: string; label: string } | null {
+/**
+ * Map a goal to either an inline action (HandleItButton, opens the
+ * pre-call form and dials Kate) or a navigation link (for setup tasks
+ * the user has to complete themselves). Goals tied to a specific
+ * provider with an actionable category get the inline action; setup
+ * goals and abstract booking goals fall back to navigation.
+ */
+type GoalAction =
+  | { kind: "handle_it"; providerId: string; providerName?: string; label: string }
+  | { kind: "navigate"; href: string; label: string }
+  | null;
+
+function getGoalAction(goal: {
+  title: string;
+  category: string;
+  providerId?: string;
+  providerName?: string;
+}): GoalAction {
   const t = goal.title.toLowerCase();
 
-  // Profile-related goals
+  // Profile-related goals → navigate to settings
   if (t.includes("profile") || t.includes("health profile") || t.includes("complete your") || t.includes("update your info")) {
-    return { href: "/settings", label: "Go to profile" };
+    return { kind: "navigate", href: "/settings", label: "Go to profile" };
   }
 
-  // Calendar-related goals
+  // Calendar-related goals → connect flow
   if (t.includes("calendar") || t.includes("connect your calendar")) {
-    return { href: "/calendar-connect", label: "Connect calendar" };
+    return { kind: "navigate", href: "/calendar-connect", label: "Connect calendar" };
   }
 
-  // If it has a providerId, link to providers page
+  // Provider-specific goals (overdue, refill, upcoming) → hand off to Kate.
+  // She knows which provider, dials the office, books or follows up.
   if (goal.providerId) {
-    return { href: "/providers", label: "View providers" };
+    const isRefill = t.includes("refill");
+    const isUpcoming = goal.category === "upcoming";
+    return {
+      kind: "handle_it",
+      providerId: goal.providerId,
+      providerName: goal.providerName,
+      label: isUpcoming ? "Reschedule" : isRefill ? "Handle refill" : "Have Kate book it",
+    };
   }
 
-  // If it mentions a provider type, link to provider search
+  // Provider-type goals without a specific provider → search flow
   if (PROVIDER_TYPE_KEYWORDS.some((kw) => t.includes(kw))) {
-    return { href: "/providers?add=true", label: "Find providers" };
+    return { kind: "navigate", href: "/providers?add=true", label: "Find a provider" };
   }
 
-  // Booking-related
+  // Generic booking goals → search flow
   if (t.includes("book") || t.includes("schedule") || t.includes("appointment")) {
-    return { href: "/providers?add=true", label: "Find providers" };
+    return { kind: "navigate", href: "/providers?add=true", label: "Find a provider" };
   }
 
   return null;
@@ -70,6 +95,7 @@ type Goal = {
   providerName?: string;
   providerId?: string;
   dismissKey?: string;
+  actionStatus?: "in_progress" | "scheduled" | null;
 };
 
 type UserGoal = {
@@ -475,7 +501,11 @@ export default function GoalsPage() {
                 {/* Outstanding goals first */}
                 <div className="space-y-3">
                   {outstanding.map((goal) => {
-                    const goalLink = getGoalLink(goal);
+                    const action = getGoalAction(goal);
+                    const inProgress = goal.actionStatus === "in_progress";
+                    const scheduled = goal.actionStatus === "scheduled";
+                    const showHandleIt =
+                      action?.kind === "handle_it" && !inProgress && !scheduled;
                     return (
                     <div
                       key={goal.id}
@@ -484,9 +514,9 @@ export default function GoalsPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            {goalLink ? (
+                            {action?.kind === "navigate" ? (
                               <Link
-                                href={goalLink.href}
+                                href={action.href}
                                 className="text-lg font-semibold text-[#1A1D2E] underline decoration-[#5C6B5C]/30 underline-offset-4 hover:decoration-[#5C6B5C]"
                               >
                                 {goal.title}
@@ -505,16 +535,42 @@ export default function GoalsPage() {
                             >
                               {section.config.label}
                             </span>
+                            {inProgress && (
+                              <span
+                                className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0 inline-flex items-center gap-1"
+                                style={{
+                                  backgroundColor: "#5C6B5C",
+                                  color: "white",
+                                }}
+                              >
+                                <span className="relative flex h-1.5 w-1.5">
+                                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+                                </span>
+                                Kate is on it
+                              </span>
+                            )}
+                            {scheduled && !inProgress && (
+                              <span
+                                className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0"
+                                style={{
+                                  backgroundColor: "#B8C84020",
+                                  color: "#5C6B5C",
+                                }}
+                              >
+                                Scheduled
+                              </span>
+                            )}
                           </div>
                           <p className="mt-1.5 text-sm text-[#7A7F8A]">
                             {goal.detail}
                           </p>
-                          {goalLink && (
+                          {action?.kind === "navigate" && (
                             <Link
-                              href={goalLink.href}
+                              href={action.href}
                               className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#5C6B5C] hover:underline underline-offset-4"
                             >
-                              {goalLink.label}
+                              {action.label}
                               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                               </svg>
@@ -556,16 +612,13 @@ export default function GoalsPage() {
                         )}
                       </div>
 
-                      {/* Handle It button for overdue goals with no progress */}
-                      {goal.category === "overdue" &&
-                        goal.progress === 0 &&
-                        goal.providerId && (
-                          <HandleItButton
-                            providerId={goal.providerId}
-                            providerName={goal.providerName}
-                            label="Let Kate handle it"
-                          />
-                        )}
+                      {showHandleIt && action.kind === "handle_it" && (
+                        <HandleItButton
+                          providerId={action.providerId}
+                          providerName={action.providerName}
+                          label={action.label}
+                        />
+                      )}
                     </div>
                     );
                   })}
@@ -608,10 +661,21 @@ export default function GoalsPage() {
               {userGoals.map((ug) => (
                 <div
                   key={ug.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]"
+                  className="rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]"
                 >
-                  <span className="text-[#1A1D2E] font-medium">{ug.title}</span>
-                  <MiniGauge value={ug.progress} color="#7A7F8A" />
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[#1A1D2E] font-medium">{ug.title}</span>
+                    <MiniGauge value={ug.progress} color="#7A7F8A" />
+                  </div>
+                  <Link
+                    href={`/kate?goal=${encodeURIComponent(ug.title)}`}
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#5C6B5C] hover:underline underline-offset-4"
+                  >
+                    Talk to Kate about this
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
                 </div>
               ))}
             </div>

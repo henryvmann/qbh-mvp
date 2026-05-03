@@ -13,6 +13,9 @@ type Goal = {
   detail: string;
   providerName?: string;
   providerId?: string;
+  /** Inferred from existing data — drives the UI's render (button vs.
+   *  "Kate is on it" badge vs. "Scheduled" badge). */
+  actionStatus?: "in_progress" | "scheduled" | null;
 };
 
 type UserGoal = {
@@ -163,6 +166,27 @@ export async function GET(req: Request) {
     const hasFutureEvent = futureConfirmedProviderIds.has(p.id);
     const attempt = latestAttemptByProvider.get(p.id);
 
+    // Infer goal action status from existing data — no separate
+    // status table. UI uses this to swap the action button for an
+    // "in flight" / "scheduled" pill so users don't double-tap.
+    function inferActionStatus(): "in_progress" | "scheduled" | null {
+      if (hasFutureEvent) return "scheduled";
+      if (!attempt) return null;
+      const s = attempt.status.toUpperCase();
+      if (s.includes("BOOKED") || s.includes("CONFIRMED")) return "scheduled";
+      if (
+        s.includes("CALLING") ||
+        s.includes("IN_PROGRESS") ||
+        s.includes("QUEUED") ||
+        s.includes("PROPOSED") ||
+        s.includes("CREATED")
+      ) {
+        return "in_progress";
+      }
+      return null;
+    }
+    const providerActionStatus = inferActionStatus();
+
     // Rule 2: Pharmacy refill check
     if (isPharmacy) {
       if (!lastVisitDate || lastVisitDate < threeMonthsAgo) {
@@ -176,6 +200,7 @@ export async function GET(req: Request) {
             : "No recent pharmacy visits on record",
           providerName: p.name,
           providerId: p.id,
+          actionStatus: providerActionStatus,
         });
       }
       continue; // Don't generate overdue goals for pharmacies
@@ -206,6 +231,7 @@ export async function GET(req: Request) {
           : "Appointment confirmed — just need to go",
         providerName: p.name,
         providerId: p.id,
+        actionStatus: "scheduled",
       });
       continue;
     }
@@ -234,6 +260,7 @@ export async function GET(req: Request) {
         detail: `Last visit: ${lastVisitDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}. Time to schedule a follow-up.`,
         providerName: p.name,
         providerId: p.id,
+        actionStatus: providerActionStatus,
       });
     }
   }
