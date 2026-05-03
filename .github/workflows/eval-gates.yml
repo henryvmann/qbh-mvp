@@ -1,0 +1,75 @@
+# Regression gates for the discovery classifier and Kate conversation
+# eval. Runs on every PR to main and on direct pushes to main, with
+# a manual-dispatch option so you can rerun without a code change.
+#
+# Cost per run: ~$0.50 (classifier:gate ~$0.30 of OpenAI usage,
+# kate:eval ~$0.30 of Anthropic usage). Both fail-fast on regression,
+# so a bad commit can't quietly land.
+#
+# REPO SECRETS REQUIRED (Settings → Secrets and variables → Actions):
+#   - OPENAI_API_KEY     — classifier eval calls gpt-4o-mini
+#   - ANTHROPIC_API_KEY  — kate-eval analyzer + Kate's LLM voice
+#
+# Both eval harnesses use synthetic fixtures only — no Supabase or
+# external DB access required from CI.
+
+name: Eval Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Cancel in-flight runs for the same PR when a new push lands —
+# saves API spend on rapid iteration.
+concurrency:
+  group: eval-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  classifier-gate:
+    name: Classifier (golden + embarrassment)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: classifier:gate
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Stub values so the lazy supabase-server import doesn't
+          # crash on module load. The gates don't actually hit the DB.
+          NEXT_PUBLIC_SUPABASE_URL: https://stub.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: stub
+          SUPABASE_URL: https://stub.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: stub
+        run: npm run classifier:gate
+
+  kate-eval:
+    name: Kate Conversation Eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+      - name: kate:eval
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: https://stub.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: stub
+          SUPABASE_URL: https://stub.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: stub
+        run: npm run kate:eval

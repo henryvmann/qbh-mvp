@@ -58,6 +58,15 @@ export async function POST(req: NextRequest) {
     // 2. kate_insights
     await deleteFrom("kate_insights", "app_user_id", appUserId);
 
+    // 2a. kate_messages + kate_conversations (Kate-state inference layer
+    //     persistence — added 2026-05-01). Sweep messages first since
+    //     they FK to conversations.
+    await deleteFrom("kate_messages", "app_user_id", appUserId);
+    await deleteFrom("kate_conversations", "app_user_id", appUserId);
+
+    // 2b. health_score_snapshots (status-band delta source)
+    await deleteFrom("health_score_snapshots", "app_user_id", appUserId);
+
     // 3-5. Get schedule_attempt IDs first for cascading deletes
     let attemptIds: number[] = [];
     try {

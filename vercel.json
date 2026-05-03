@@ -3,6 +3,10 @@
     {
       "path": "/api/retry/run",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/health-score-snapshots",
+      "schedule": "0 7 * * *"
     }
   ]
 }
