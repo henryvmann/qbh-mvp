@@ -82,11 +82,11 @@ export default function CallTestPage() {
         }
         .call-active {
           animation: callPulse 2s ease-in-out infinite;
-          border-color: #0FA5A5 !important;
+          border-color: #1677FF !important;
         }
       `}</style>
 
-      <h1 className="text-xl font-semibold text-[#1A2E1A]">Call Test</h1>
+      <h1 className="text-xl font-semibold text-[#071832]">Call Test</h1>
       <p className="mt-1 text-sm text-[#4F5F73]">Tap any provider to trigger a Kate call. Repeatable.</p>
 
       <div className="mt-6 space-y-4">
@@ -96,25 +96,25 @@ export default function CallTestPage() {
             <div
               key={p.id}
               className={`rounded-2xl bg-white/55 backdrop-blur-sm border p-5 shadow-sm transition-all ${
-                isActive ? "call-active border-[#0FA5A5]" : "border-white/70"
+                isActive ? "call-active border-[#1677FF]" : "border-white/70"
               }`}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-semibold text-[#1A2E1A]">{p.name}</div>
+                  <div className="text-sm font-semibold text-[#071832]">{p.name}</div>
                   {p.specialty && <div className="text-xs text-[#4F5F73]">{p.specialty}</div>}
                   {p.phone && <div className="text-xs text-[#4F5F73] mt-0.5">{p.phone}</div>}
                 </div>
                 {isActive && (
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-[#0FA5A5] animate-pulse" />
-                    <span className="text-xs font-medium text-[#0FA5A5]">Live</span>
+                    <span className="h-2 w-2 rounded-full bg-[#1677FF] animate-pulse" />
+                    <span className="text-xs font-medium text-[#1677FF]">Live</span>
                   </div>
                 )}
               </div>
 
               {isActive && callStatus && (
-                <div className="mt-3 rounded-xl bg-[#0FA5A5]/10 px-3 py-2 text-xs text-[#0FA5A5] font-medium">
+                <div className="mt-3 rounded-xl bg-[#1677FF]/10 px-3 py-2 text-xs text-[#1677FF] font-medium">
                   {callStatus}
                 </div>
               )}
@@ -124,7 +124,7 @@ export default function CallTestPage() {
                   onClick={() => handleCall(p)}
                   disabled={!!callingId}
                   className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
-                  style={{ background: isActive ? "linear-gradient(135deg, #0FA5A5, #0D7A7A)" : "linear-gradient(135deg, #4A6B4A, #5C7B5C)" }}
+                  style={{ background: isActive ? "linear-gradient(135deg, #1677FF, #0D7A7A)" : "linear-gradient(135deg, #1677FF, #5C7B5C)" }}
                 >
                   {isActive ? "On call..." : callingId ? "Waiting..." : "Call with Kate"}
                 </button>

@@ -79,7 +79,7 @@ function DashboardInner() {
       {/* Subtle greenhouse grid */}
       <div className="fixed inset-0 pointer-events-none" style={{
         opacity: 0.04,
-        backgroundImage: "linear-gradient(#0FA5A5 1px, transparent 1px), linear-gradient(90deg, #D4A44C80 1px, transparent 1px)",
+        backgroundImage: "linear-gradient(#1677FF 1px, transparent 1px), linear-gradient(90deg, #27C46B80 1px, transparent 1px)",
         backgroundSize: "80px 80px",
       }} />
 
@@ -109,7 +109,7 @@ function DashboardInner() {
               key={i}
               className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-2 transition-all"
               style={day.isToday ? {
-                background: "linear-gradient(135deg, #4A6B4A, #5C7B5C)",
+                background: "linear-gradient(135deg, #1677FF, #5C7B5C)",
                 color: "#fff",
                 boxShadow: "0 2px 12px rgba(74,107,74,0.3)",
               } : { color: "#4F5F73" }}
@@ -123,7 +123,7 @@ function DashboardInner() {
         {/* ── Quick Stats ── */}
         <div className="mt-6 flex justify-center gap-8">
           <Link href="/providers" className="text-center group">
-            <div className="text-2xl font-light text-[#4A6B4A] group-hover:scale-105 transition">{snapshots.length}</div>
+            <div className="text-2xl font-light text-[#1677FF] group-hover:scale-105 transition">{snapshots.length}</div>
             <div className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73]">Providers</div>
           </Link>
           {overdueCount > 0 && (
@@ -133,7 +133,7 @@ function DashboardInner() {
             </Link>
           )}
           <Link href="/visits" className="text-center group">
-            <div className="text-2xl font-light text-[#D4A44C] group-hover:scale-105 transition">{upcomingCount}</div>
+            <div className="text-2xl font-light text-[#27C46B] group-hover:scale-105 transition">{upcomingCount}</div>
             <div className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73]">Upcoming</div>
           </Link>
         </div>
@@ -149,7 +149,7 @@ function DashboardInner() {
               const booked = hasConfirmedBooking(s);
               const isLast = idx === snapshots.length - 1;
               const isPharmacy = s.provider.provider_type === "pharmacy";
-              const dotColor = isPharmacy ? "#4F5F73" : overdue ? "#E04030" : booked ? "#D4A44C" : "#4A6B4A";
+              const dotColor = isPharmacy ? "#4F5F73" : overdue ? "#E04030" : booked ? "#27C46B" : "#1677FF";
 
               return (
                 <div
@@ -163,7 +163,7 @@ function DashboardInner() {
                       style={{ backgroundColor: dotColor, boxShadow: `0 0 6px ${dotColor}30` }}
                     />
                     <div>
-                      <span className="text-sm font-medium text-[#1A2E1A]">
+                      <span className="text-sm font-medium text-[#071832]">
                         <ProviderLink providerId={s.provider.id} providerName={s.provider.name} />
                       </span>
                       {s.provider.specialty && (
@@ -176,9 +176,9 @@ function DashboardInner() {
                   ) : overdue ? (
                     <HandleItButton userId={appUserId} providerId={s.provider.id} providerName={s.provider.name} label="Book" />
                   ) : booked ? (
-                    <span className="text-[10px] font-semibold text-[#D4A44C]">Upcoming</span>
+                    <span className="text-[10px] font-semibold text-[#27C46B]">Upcoming</span>
                   ) : (
-                    <span className="text-[10px] font-semibold text-[#4A6B4A]">On track</span>
+                    <span className="text-[10px] font-semibold text-[#1677FF]">On track</span>
                   )}
                 </div>
               );
@@ -205,9 +205,9 @@ function DashboardInner() {
             ].map((item) => (
               <Link key={item.href} href={item.href}>
                 <div className="rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 p-4 transition hover:bg-white/70 hover:shadow-md group">
-                  <div className="text-sm font-semibold text-[#1A2E1A]">{item.title}</div>
+                  <div className="text-sm font-semibold text-[#071832]">{item.title}</div>
                   <div className="text-xs mt-0.5 text-[#4F5F73]">{item.desc}</div>
-                  <div className="mt-2 h-[2px] w-6 rounded-full bg-gradient-to-r from-[#0FA5A5] to-[#D4A44C] transition-all group-hover:w-10" />
+                  <div className="mt-2 h-[2px] w-6 rounded-full bg-gradient-to-r from-[#1677FF] to-[#27C46B] transition-all group-hover:w-10" />
                 </div>
               </Link>
             ))}

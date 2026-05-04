@@ -36,10 +36,10 @@ type Snapshot = {
 
 function getStatus(s: Snapshot): { label: string; color: string } {
   if (s.provider.confirmed_status === "recurring") return { label: "Recurring", color: "#7C3AED" };
-  if (s.booking_state?.status === "BOOKED") return { label: "Upcoming", color: "#D4A44C" };
+  if (s.booking_state?.status === "BOOKED") return { label: "Upcoming", color: "#27C46B" };
   if (s.followUpNeeded && s.booking_state?.status !== "BOOKED" && s.booking_state?.status !== "IN_PROGRESS")
     return { label: "Overdue", color: "#E04030" };
-  return { label: "On Track", color: "#4A6B4A" };
+  return { label: "On Track", color: "#1677FF" };
 }
 
 type Tab = "overview" | "history" | "documents" | "notes";
@@ -79,7 +79,7 @@ export default function ProvidersHubC() {
     return (
       <PageShell>
         {/* Back button */}
-        <button onClick={() => { setSelectedId(null); setActiveTab("overview"); }} className="flex items-center gap-1 text-sm text-[#4F5F73] hover:text-[#1A2E1A] mb-4">
+        <button onClick={() => { setSelectedId(null); setActiveTab("overview"); }} className="flex items-center gap-1 text-sm text-[#4F5F73] hover:text-[#071832] mb-4">
           <ChevronLeft size={16} /> All Providers
         </button>
 
@@ -88,7 +88,7 @@ export default function ProvidersHubC() {
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.accent }}>{colors.label}</span>
-              <h1 className="mt-1 text-2xl font-serif text-[#1A2E1A]">{selected.provider.name}</h1>
+              <h1 className="mt-1 text-2xl font-serif text-[#071832]">{selected.provider.name}</h1>
               {selected.provider.doctor_name && (
                 <div className="text-sm text-[#4F5F73] mt-0.5">Dr. {selected.provider.doctor_name}</div>
               )}
@@ -109,7 +109,7 @@ export default function ProvidersHubC() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
-                activeTab === tab.key ? "bg-white shadow-sm text-[#1A2E1A]" : "text-[#4F5F73] hover:text-[#1A2E1A]"
+                activeTab === tab.key ? "bg-white shadow-sm text-[#071832]" : "text-[#4F5F73] hover:text-[#071832]"
               }`}
             >
               <tab.icon size={14} />
@@ -125,7 +125,7 @@ export default function ProvidersHubC() {
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">Contact</div>
                 {selected.provider.phone ? (
-                  <div className="flex items-center gap-2 text-sm text-[#1A2E1A]">
+                  <div className="flex items-center gap-2 text-sm text-[#071832]">
                     <Phone size={14} className="text-[#4F5F73]" />
                     <a href={`tel:${selected.provider.phone}`} className="hover:underline">{selected.provider.phone}</a>
                   </div>
@@ -137,8 +137,8 @@ export default function ProvidersHubC() {
               {selected.booking_state?.status === "BOOKED" && selected.booking_state.appointmentStart && (
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">Next Appointment</div>
-                  <div className="flex items-center gap-2 text-sm text-[#1A2E1A]">
-                    <Calendar size={14} className="text-[#D4A44C]" />
+                  <div className="flex items-center gap-2 text-sm text-[#071832]">
+                    <Calendar size={14} className="text-[#27C46B]" />
                     {new Date(selected.booking_state.appointmentStart).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </div>
                 </div>
@@ -201,7 +201,7 @@ export default function ProvidersHubC() {
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-3">Notes</div>
               {selected.provider.notes ? (
-                <div className="text-sm text-[#1A2E1A] whitespace-pre-line">{selected.provider.notes}</div>
+                <div className="text-sm text-[#071832] whitespace-pre-line">{selected.provider.notes}</div>
               ) : (
                 <div className="text-sm text-[#4F5F73]">No notes yet. Add notes from the provider detail page.</div>
               )}
@@ -231,7 +231,7 @@ export default function ProvidersHubC() {
   // Provider list view
   return (
     <PageShell>
-      <h1 className="font-serif text-2xl text-[#1A2E1A]">Your Provider Hub</h1>
+      <h1 className="font-serif text-2xl text-[#071832]">Your Provider Hub</h1>
       <p className="mt-1 text-sm text-[#4F5F73]">{doctors.length} providers — tap any to see their full hub</p>
 
       <div className="mt-6 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4F5F73] mb-1">
@@ -255,7 +255,7 @@ export default function ProvidersHubC() {
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: status.color, boxShadow: `0 0 6px ${status.color}30` }} />
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.accent }}>{colors.label}</span>
-                    <div className="text-sm font-semibold text-[#1A2E1A]">{s.provider.name}</div>
+                    <div className="text-sm font-semibold text-[#071832]">{s.provider.name}</div>
                     {s.provider.specialty && s.provider.specialty !== colors.label && (
                       <div className="text-[10px] text-[#4F5F73]">{s.provider.specialty}</div>
                     )}

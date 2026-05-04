@@ -7,7 +7,7 @@ import PageShell from "../../components/qbh/PageShell";
 import ProviderLink from "../../components/qbh/ProviderLink";
 // Local palette for this variant
 const PALETTE: Record<string, { bg: string; border: string; accent: string; label: string }> = {
-  pcp:        { bg: "rgba(74,107,74,0.08)", border: "rgba(74,107,74,0.18)", accent: "#4A6B4A", label: "Primary Care" },
+  pcp:        { bg: "rgba(74,107,74,0.08)", border: "rgba(74,107,74,0.18)", accent: "#1677FF", label: "Primary Care" },
   dentist:    { bg: "rgba(15,165,165,0.06)", border: "rgba(15,165,165,0.15)", accent: "#0D7A7A", label: "Dentist" },
   therapist:  { bg: "rgba(124,58,237,0.06)", border: "rgba(124,58,237,0.14)", accent: "#5B2D9E", label: "Therapist" },
   eye:        { bg: "rgba(212,164,76,0.08)", border: "rgba(212,164,76,0.18)", accent: "#8A6A20", label: "Eye Care" },
@@ -15,7 +15,7 @@ const PALETTE: Record<string, { bg: string; border: string; accent: string; labe
   obgyn:      { bg: "rgba(180,60,100,0.06)", border: "rgba(180,60,100,0.14)", accent: "#8A2A4A", label: "OB/GYN" },
   specialist: { bg: "rgba(42,74,106,0.07)", border: "rgba(42,74,106,0.16)", accent: "#2A4A6A", label: "Specialist" },
   pharmacy:   { bg: "rgba(0,0,0,0.03)", border: "rgba(0,0,0,0.08)", accent: "#4F5F73", label: "Pharmacy" },
-  default:    { bg: "rgba(74,107,74,0.05)", border: "rgba(74,107,74,0.12)", accent: "#4A6B4A", label: "Provider" },
+  default:    { bg: "rgba(74,107,74,0.05)", border: "rgba(74,107,74,0.12)", accent: "#1677FF", label: "Provider" },
 };
 function getLocalColors(provider: { name?: string; specialty?: string | null; provider_type?: string | null }) {
   const specialty = (provider.specialty || '').toLowerCase();
@@ -68,10 +68,10 @@ type Snapshot = {
 
 function getStatus(s: Snapshot): { label: string; color: string } {
   if (s.provider.confirmed_status === "recurring") return { label: "Recurring", color: "#7C3AED" };
-  if (s.booking_state?.status === "BOOKED") return { label: "Upcoming", color: "#D4A44C" };
+  if (s.booking_state?.status === "BOOKED") return { label: "Upcoming", color: "#27C46B" };
   if (s.followUpNeeded && s.booking_state?.status !== "BOOKED" && s.booking_state?.status !== "IN_PROGRESS")
     return { label: "Overdue", color: "#E04030" };
-  return { label: "On Track", color: "#4A6B4A" };
+  return { label: "On Track", color: "#1677FF" };
 }
 
 type Tab = "overview" | "history" | "documents" | "notes";
@@ -111,7 +111,7 @@ export default function ProvidersHubC3() {
     return (
       <PageShell>
         {/* Back button */}
-        <button onClick={() => { setSelectedId(null); setActiveTab("overview"); }} className="flex items-center gap-1 text-sm text-[#4F5F73] hover:text-[#1A2E1A] mb-4">
+        <button onClick={() => { setSelectedId(null); setActiveTab("overview"); }} className="flex items-center gap-1 text-sm text-[#4F5F73] hover:text-[#071832] mb-4">
           <ChevronLeft size={16} /> All Providers
         </button>
 
@@ -120,7 +120,7 @@ export default function ProvidersHubC3() {
           <div className="flex items-start justify-between">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.accent }}>{colors.label}</span>
-              <h1 className="mt-1 text-2xl font-serif text-[#1A2E1A]">{selected.provider.name}</h1>
+              <h1 className="mt-1 text-2xl font-serif text-[#071832]">{selected.provider.name}</h1>
               {selected.provider.doctor_name && (
                 <div className="text-sm text-[#4F5F73] mt-0.5">Dr. {selected.provider.doctor_name}</div>
               )}
@@ -141,7 +141,7 @@ export default function ProvidersHubC3() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
-                activeTab === tab.key ? "bg-white shadow-sm text-[#1A2E1A]" : "text-[#4F5F73] hover:text-[#1A2E1A]"
+                activeTab === tab.key ? "bg-white shadow-sm text-[#071832]" : "text-[#4F5F73] hover:text-[#071832]"
               }`}
             >
               <tab.icon size={14} />
@@ -157,7 +157,7 @@ export default function ProvidersHubC3() {
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">Contact</div>
                 {selected.provider.phone ? (
-                  <div className="flex items-center gap-2 text-sm text-[#1A2E1A]">
+                  <div className="flex items-center gap-2 text-sm text-[#071832]">
                     <Phone size={14} className="text-[#4F5F73]" />
                     <a href={`tel:${selected.provider.phone}`} className="hover:underline">{selected.provider.phone}</a>
                   </div>
@@ -169,8 +169,8 @@ export default function ProvidersHubC3() {
               {selected.booking_state?.status === "BOOKED" && selected.booking_state.appointmentStart && (
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">Next Appointment</div>
-                  <div className="flex items-center gap-2 text-sm text-[#1A2E1A]">
-                    <Calendar size={14} className="text-[#D4A44C]" />
+                  <div className="flex items-center gap-2 text-sm text-[#071832]">
+                    <Calendar size={14} className="text-[#27C46B]" />
                     {new Date(selected.booking_state.appointmentStart).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </div>
                 </div>
@@ -233,7 +233,7 @@ export default function ProvidersHubC3() {
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-3">Notes</div>
               {selected.provider.notes ? (
-                <div className="text-sm text-[#1A2E1A] whitespace-pre-line">{selected.provider.notes}</div>
+                <div className="text-sm text-[#071832] whitespace-pre-line">{selected.provider.notes}</div>
               ) : (
                 <div className="text-sm text-[#4F5F73]">No notes yet. Add notes from the provider detail page.</div>
               )}
@@ -263,7 +263,7 @@ export default function ProvidersHubC3() {
   // Provider list view
   return (
     <PageShell>
-      <h1 className="font-serif text-2xl text-[#1A2E1A]">Your Provider Hub</h1>
+      <h1 className="font-serif text-2xl text-[#071832]">Your Provider Hub</h1>
       <p className="mt-1 text-sm text-[#4F5F73]">{doctors.length} providers — tap any to see their full hub</p>
 
       <div className="mt-6 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4F5F73] mb-1">
@@ -287,7 +287,7 @@ export default function ProvidersHubC3() {
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: status.color, boxShadow: `0 0 6px ${status.color}30` }} />
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.accent }}>{colors.label}</span>
-                    <div className="text-sm font-semibold text-[#1A2E1A]">{s.provider.name}</div>
+                    <div className="text-sm font-semibold text-[#071832]">{s.provider.name}</div>
                     {s.provider.specialty && s.provider.specialty !== colors.label && (
                       <div className="text-[10px] text-[#4F5F73]">{s.provider.specialty}</div>
                     )}

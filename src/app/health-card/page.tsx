@@ -73,8 +73,8 @@ export default function HealthCardPage() {
                   <circle cx={48} cy={48} r={42} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
                   <defs>
                     <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#0FA5A5" />
-                      <stop offset="100%" stopColor="#D4A44C" />
+                      <stop offset="0%" stopColor="#1677FF" />
+                      <stop offset="100%" stopColor="#27C46B" />
                     </linearGradient>
                   </defs>
                   <circle cx={48} cy={48} r={42} fill="none" stroke="url(#cardGrad)" strokeWidth={5} strokeLinecap="round"
@@ -88,11 +88,11 @@ export default function HealthCardPage() {
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/50">Providers</span>
-                  <span className="text-sm font-light text-[#0FA5A5]">{data.providerCount}</span>
+                  <span className="text-sm font-light text-[#1677FF]">{data.providerCount}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/50">Upcoming</span>
-                  <span className="text-sm font-light text-[#D4A44C]">{data.upcomingCount}</span>
+                  <span className="text-sm font-light text-[#27C46B]">{data.upcomingCount}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-white/50">Overdue</span>

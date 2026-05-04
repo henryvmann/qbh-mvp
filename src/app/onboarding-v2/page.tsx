@@ -84,8 +84,8 @@ function OptionButtons({ options, onSelect }: { options: Array<{ label: string; 
           onClick={() => onSelect(opt.value)}
           className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
           style={{
-            backgroundColor: "#D4A44C15",
-            border: "1px solid #D4A44C40",
+            backgroundColor: "#27C46B15",
+            border: "1px solid #27C46B40",
             color: "#8B6914",
           }}
         >
@@ -851,8 +851,8 @@ export default function OnboardingV2() {
                 <circle cx={70} cy={70} r={58} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={7} />
                 <defs>
                   <linearGradient id="revealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#0FA5A5" />
-                    <stop offset="100%" stopColor="#D4A44C" />
+                    <stop offset="0%" stopColor="#1677FF" />
+                    <stop offset="100%" stopColor="#27C46B" />
                   </linearGradient>
                 </defs>
                 <circle cx={70} cy={70} r={58} fill="none" stroke="url(#revealGrad)" strokeWidth={7} strokeLinecap="round"
@@ -860,7 +860,7 @@ export default function OnboardingV2() {
                   className="transition-all duration-1000" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-light text-[#0FA5A5]">{score}</span>
+                <span className="text-4xl font-light text-[#1677FF]">{score}</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73] mt-0.5">
                   {score >= 85 ? "Excellent" : score >= 60 ? "On Track" : score >= 30 ? "Building" : "Getting Started"}
                 </span>

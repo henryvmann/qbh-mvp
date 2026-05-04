@@ -445,7 +445,7 @@ function ProvidersInner() {
             <div className="flex items-start gap-3 rounded-2xl bg-white border border-[#E5EAF2] p-5 shadow-sm">
               <img src="/kate-avatar.png" alt="Kate" className="w-8 h-8 rounded-full shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm text-[#1A2E1A]">Let's get your team set up. Tell me who you've seen — primary care, dentist, anyone — and I'll handle the rest.</p>
+                <p className="text-sm text-[#071832]">Let's get your team set up. Tell me who you've seen — primary care, dentist, anyone — and I'll handle the rest.</p>
                 <a href="/providers?add=true" className="mt-2 inline-block text-xs font-semibold text-[#1677FF] underline underline-offset-2">Hand off a provider &rarr;</a>
               </div>
             </div>

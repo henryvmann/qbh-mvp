@@ -18,9 +18,9 @@ import ProviderLink from "../../components/qbh/ProviderLink";
    botanical green primary, soft teal tech accents,
    warm gold for actions. Light and airy but sharp.
 */
-const GREEN = "#4A6B4A";
+const GREEN = "#1677FF";
 const GREEN_LIGHT = "#5C7B5C";
-const TEAL_GLOW = "#0FA5A5";
+const TEAL_GLOW = "#1677FF";
 const GOLD = "#C89B3C";
 const SKY_TOP = "#CDDBD6";   // muted teal mist
 const SKY_MID = "#DDD8D0";   // warm gold-stone
@@ -28,7 +28,7 @@ const SKY_BOT = "#ECEAE6";   // soft warm grey
 const GLASS = "rgba(255,255,255,0.55)";
 const GLASS_BORDER = "rgba(255,255,255,0.7)";
 const GLASS_HOVER = "rgba(255,255,255,0.72)";
-const TEXT_DARK = "#1A2E1A";
+const TEXT_DARK = "#071832";
 const TEXT_MID = "#5A6B6A";
 const TEXT_LIGHT = "#8A9A98";
 

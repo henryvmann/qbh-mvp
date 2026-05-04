@@ -84,8 +84,8 @@ function OptionButtons({ options, onSelect }: { options: Array<{ label: string; 
           onClick={() => onSelect(opt.value)}
           className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
           style={{
-            backgroundColor: "#4A6B4A",
-            border: "1px solid #4A6B4A",
+            backgroundColor: "#1677FF",
+            border: "1px solid #1677FF",
             color: "#FFFFFF",
           }}
         >
@@ -902,7 +902,7 @@ export default function OnboardingPage() {
         {/* Discovery method */}
         {phase === "discovery-method" && !typing && (
           <div className="space-y-3 animate-fadeIn">
-            <p className="text-sm font-semibold text-[#1A2E1A] mb-2">Pick at least one to continue</p>
+            <p className="text-sm font-semibold text-[#071832] mb-2">Pick at least one to continue</p>
             <ToggleCard
               icon={Building2}
               title="Scan your bank"
@@ -1137,7 +1137,7 @@ export default function OnboardingPage() {
                     <span className="h-2 w-2 rounded-full bg-[#1677FF] animate-pulse" style={{ animationDelay: "0.2s" }} />
                     <span className="h-2 w-2 rounded-full bg-[#1677FF] animate-pulse" style={{ animationDelay: "0.4s" }} />
                   </div>
-                  <span className="text-sm font-medium text-[#1A2E1A]">Scanning your accounts…</span>
+                  <span className="text-sm font-medium text-[#071832]">Scanning your accounts…</span>
                 </div>
                 <button
                   type="button"
@@ -1240,7 +1240,7 @@ export default function OnboardingPage() {
         {phase === "manual-search" && !typing && (
           <div className="animate-fadeIn space-y-3">
             <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-4 space-y-3">
-              <label className="block text-xs font-semibold text-[#1A2E1A] mb-1">Search for a provider</label>
+              <label className="block text-xs font-semibold text-[#071832] mb-1">Search for a provider</label>
               <p className="text-[11px] text-[#4F5F73] mb-2">Type a name, specialty (e.g. "dermatologist"), or "doctor [city]". Tap Add on any match.</p>
               <input
                 type="text"
@@ -1335,8 +1335,8 @@ export default function OnboardingPage() {
                 <circle cx={70} cy={70} r={58} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={7} />
                 <defs>
                   <linearGradient id="revealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#0FA5A5" />
-                    <stop offset="100%" stopColor="#D4A44C" />
+                    <stop offset="0%" stopColor="#1677FF" />
+                    <stop offset="100%" stopColor="#27C46B" />
                   </linearGradient>
                 </defs>
                 <circle cx={70} cy={70} r={58} fill="none" stroke="url(#revealGrad)" strokeWidth={7} strokeLinecap="round"
@@ -1344,7 +1344,7 @@ export default function OnboardingPage() {
                   className="transition-all duration-1000" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-light text-[#0FA5A5]">{score}</span>
+                <span className="text-4xl font-light text-[#1677FF]">{score}</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73] mt-0.5">
                   {score >= 85 ? "Strong" : score >= 60 ? "On Track" : score >= 30 ? "Building" : "Starting"}
                 </span>

@@ -13,9 +13,9 @@ type ScoreData = {
 };
 
 const LEVEL_COLORS: Record<string, { start: string; end: string; text: string }> = {
-  "excellent":       { start: "#0FA5A5", end: "#D4A44C", text: "#0FA5A5" },
-  "on-track":        { start: "#0FA5A5", end: "#5C7B5C", text: "#5C7B5C" },
-  "building":        { start: "#D4A44C", end: "#C89B3C", text: "#D4A44C" },
+  "excellent":       { start: "#1677FF", end: "#27C46B", text: "#1677FF" },
+  "on-track":        { start: "#1677FF", end: "#5C7B5C", text: "#5C7B5C" },
+  "building":        { start: "#27C46B", end: "#C89B3C", text: "#27C46B" },
   "getting-started": { start: "#4F5F73", end: "#4F5F73", text: "#4F5F73" },
 };
 
@@ -120,7 +120,7 @@ export default function HealthScoreRing({ compact }: { compact?: boolean }) {
           <div className="space-y-1.5">
             {data.factors.map((f, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
-                <span className={f.earned ? "text-[#1A2E1A]" : "text-[#4F5F73]"}>
+                <span className={f.earned ? "text-[#071832]" : "text-[#4F5F73]"}>
                   {f.earned ? "✓" : "○"} {f.label}
                 </span>
                 <span

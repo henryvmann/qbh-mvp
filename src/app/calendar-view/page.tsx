@@ -224,7 +224,7 @@ export default function CalendarViewPage() {
           </div>
           <Link
             href="/dashboard"
-            className="text-xs font-semibold text-[#1677FF] hover:text-[#1A2E1A] underline underline-offset-2"
+            className="text-xs font-semibold text-[#1677FF] hover:text-[#071832] underline underline-offset-2"
           >
             Back to dashboard
           </Link>

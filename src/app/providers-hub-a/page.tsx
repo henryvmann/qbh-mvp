@@ -35,11 +35,11 @@ type Snapshot = {
 
 function getStatus(s: Snapshot): { label: string; color: string } {
   if (s.provider.confirmed_status === "recurring") return { label: "Recurring", color: "#7C3AED" };
-  if (s.booking_state?.status === "BOOKED") return { label: "Upcoming", color: "#D4A44C" };
+  if (s.booking_state?.status === "BOOKED") return { label: "Upcoming", color: "#27C46B" };
   if (s.followUpNeeded && s.booking_state?.status !== "BOOKED" && s.booking_state?.status !== "IN_PROGRESS")
     return { label: "Overdue", color: "#E04030" };
   if (s.booking_state?.status === "IN_PROGRESS") return { label: "In Progress", color: "#3B82F6" };
-  return { label: "On Track", color: "#4A6B4A" };
+  return { label: "On Track", color: "#1677FF" };
 }
 
 export default function ProvidersHubA() {
@@ -76,7 +76,7 @@ export default function ProvidersHubA() {
 
   return (
     <PageShell>
-      <h1 className="font-serif text-2xl text-[#1A2E1A]">Your Provider Hub</h1>
+      <h1 className="font-serif text-2xl text-[#071832]">Your Provider Hub</h1>
       <p className="mt-1 text-sm text-[#4F5F73]">{doctors.length} providers organized by specialty</p>
 
       <div className="mt-6 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4F5F73] mb-1">
@@ -122,7 +122,7 @@ export default function ProvidersHubA() {
                         <div className="flex items-center gap-3">
                           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: status.color, boxShadow: `0 0 6px ${status.color}30` }} />
                           <div>
-                            <div className="text-sm font-medium text-[#1A2E1A]">
+                            <div className="text-sm font-medium text-[#071832]">
                               <ProviderLink providerId={s.provider.id} providerName={s.provider.name} />
                             </div>
                             {subtitle && <div className="text-[10px] text-[#4F5F73]">{subtitle}</div>}
@@ -148,7 +148,7 @@ export default function ProvidersHubA() {
           <div className="rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 overflow-hidden">
             {pharmacies.map((s, idx) => (
               <div key={s.provider.id} className="flex items-center justify-between px-5 py-3" style={idx < pharmacies.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.5)" } : {}}>
-                <span className="text-sm font-medium text-[#1A2E1A]">{s.provider.name}</span>
+                <span className="text-sm font-medium text-[#071832]">{s.provider.name}</span>
                 <span className="text-[10px] text-[#4F5F73]">Pharmacy</span>
               </div>
             ))}
@@ -170,7 +170,7 @@ export default function ProvidersHubA() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-[#1A2E1A]">Your {missing}</div>
+                  <div className="text-xs font-semibold text-[#071832]">Your {missing}</div>
                   <div className="text-[10px] text-[#4F5F73]">Add one</div>
                 </div>
                 <Plus size={16} className="text-[#4F5F73]" />
