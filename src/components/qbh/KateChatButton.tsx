@@ -31,6 +31,16 @@ export default function KateChatButton() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // The Kate tab in BrandShell's bottom nav dispatches this event
+  // instead of navigating, so the chat opens over the current page.
+  useEffect(() => {
+    function handleOpen() {
+      setOpen(true);
+    }
+    window.addEventListener("qbh:open-kate-chat", handleOpen);
+    return () => window.removeEventListener("qbh:open-kate-chat", handleOpen);
+  }, []);
+
   useEffect(() => {
     if (open && inputRef.current) {
       inputRef.current.focus();

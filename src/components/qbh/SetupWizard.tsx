@@ -31,12 +31,6 @@ const WIZARD_STEPS: WizardStep[] = [
     position: "above",
   },
   {
-    title: "Chat With Kate",
-    body: "Tap the chat bubble in the bottom right anytime. Kate can search for new providers, help you prep for visits, and answer questions.",
-    target: "kate-chat",
-    position: "above",
-  },
-  {
     title: "What To Do Next",
     body: "Every page ends with suggestions for where to go next. No dead ends — you'll always know the next step.",
     target: "next-steps",
@@ -57,7 +51,10 @@ export default function SetupWizard() {
     if (pathname !== "/dashboard") return;
     const done = localStorage.getItem(STORAGE_KEY);
     if (done) return;
-    const timer = setTimeout(() => setVisible(true), 1500);
+    // Wait long enough for /api/dashboard/data to land + render the
+    // data-wizard targets. The previous 1500ms fired before content
+    // mounted, so every step fell back to a centered tooltip.
+    const timer = setTimeout(() => setVisible(true), 3000);
     return () => clearTimeout(timer);
   }, [pathname]);
 
@@ -68,30 +65,35 @@ export default function SetupWizard() {
       return;
     }
 
-    const el = document.querySelector(`[data-wizard="${step.target}"]`);
-    if (el) {
-      const rect = el.getBoundingClientRect();
-      setTargetRect(rect);
+    function tryFindTarget(attempts: number) {
+      const el = document.querySelector(`[data-wizard="${step.target}"]`);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setTargetRect(rect);
 
-      // Scroll element into view with padding
-      const scrollPadding = 120;
-      const elTop = rect.top + window.scrollY;
-      const viewportHeight = window.innerHeight;
-      const scrollTarget = elTop - viewportHeight / 3;
+        // Scroll element into view
+        const elTop = rect.top + window.scrollY;
+        const viewportHeight = window.innerHeight;
+        const scrollTarget = elTop - viewportHeight / 3;
+        window.scrollTo({
+          top: Math.max(0, scrollTarget),
+          behavior: "smooth",
+        });
 
-      window.scrollTo({
-        top: Math.max(0, scrollTarget),
-        behavior: "smooth",
-      });
-
-      // Update rect after scroll settles
-      setTimeout(() => {
-        const updatedRect = el.getBoundingClientRect();
-        setTargetRect(updatedRect);
-      }, 400);
-    } else {
-      setTargetRect(null);
+        // Update rect after scroll settles
+        setTimeout(() => {
+          const updatedRect = el.getBoundingClientRect();
+          setTargetRect(updatedRect);
+        }, 400);
+      } else if (attempts < 8) {
+        // Target hasn't mounted yet — retry every 250ms up to 2s.
+        setTimeout(() => tryFindTarget(attempts + 1), 250);
+      } else {
+        // Genuinely missing — fall back to centered.
+        setTargetRect(null);
+      }
     }
+    tryFindTarget(0);
   }, [currentStep]);
 
   useEffect(() => {

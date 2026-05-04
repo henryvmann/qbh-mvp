@@ -185,6 +185,37 @@ function BottomNav({
             : mode === "light"
             ? T.lightMuted
             : T.darkMuted;
+          // Kate tab is special — it dispatches an event the global
+          // KateChatButton listens for, opening the chat overlay over
+          // the current page rather than navigating away.
+          if (it.key === "kate") {
+            return (
+              <button
+                key={it.key}
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("qbh:open-kate-chat"));
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  border: "none",
+                  background: "transparent",
+                  padding: "6px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 4,
+                  color,
+                  cursor: "pointer",
+                }}
+              >
+                <Icon color={color} />
+                <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
+              </button>
+            );
+          }
           return (
             <Link
               key={it.key}
