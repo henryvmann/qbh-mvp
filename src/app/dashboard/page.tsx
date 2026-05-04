@@ -1,28 +1,69 @@
 "use client";
 
+/**
+ * Dashboard — Quarterback Health brand sweep (v5 design language).
+ *
+ * Replaces the legacy sage-green layout with BrandShell + glass cards
+ * in cream + electric blue. Pulls live data from /api/dashboard/data
+ * just like before; only the chrome and the rendering change.
+ *
+ * Layout:
+ *   - Top app bar (BrandShell): wordmark + user avatar
+ *   - Greeting + Health Coordination Score (HealthScoreRing reused)
+ *   - Kate's #1 suggestion (BestNextStep reused)
+ *   - Week strip → /calendar-view
+ *   - Quick stats row (Providers / Overdue / Upcoming)
+ *   - Care team list (provider rows in a single GlassCard)
+ *   - "What to do next" 2x2 grid
+ *   - Bottom nav (5 tabs)
+ */
+
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { apiFetch } from "../../lib/api";
 import HandleItButton from "../../components/qbh/HandleItButton";
-import TopNav from "../../components/qbh/TopNav";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import HealthScoreRing from "../../components/qbh/HealthScoreRing";
+import BrandShell from "../../components/brand/BrandShell";
+import {
+  GlassCard,
+  IconTile,
+  SectionLabel,
+  AustinHeading,
+} from "../../components/brand/cards";
+import {
+  StethoscopeIcon,
+  CalendarIcon,
+  PersonIcon,
+  SparkleIcon,
+} from "../../components/brand/icons";
+import { T } from "../../components/brand";
 
-/* ── Types ── */
+type Provider = { id: string; name: string; provider_type?: string; specialty?: string | null };
+type BookingState = { status?: string };
+type Snapshot = {
+  provider: Provider;
+  followUpNeeded?: boolean;
+  booking_state?: BookingState;
+};
 type DashboardData = {
   appUserId: string;
   userName: string | null;
-  snapshots: any[];
+  snapshots: Snapshot[];
   hasGoogleCalendarConnection: boolean;
 };
 
-/* ── Helpers ── */
-function isOverdue(s: any): boolean {
-  return s.followUpNeeded && s.booking_state?.status !== "BOOKED" && s.booking_state?.status !== "IN_PROGRESS";
+function isOverdue(s: Snapshot): boolean {
+  return (
+    !!s.followUpNeeded &&
+    s.booking_state?.status !== "BOOKED" &&
+    s.booking_state?.status !== "IN_PROGRESS"
+  );
 }
-function hasConfirmedBooking(s: any): boolean {
+function hasConfirmedBooking(s: Snapshot): boolean {
   return s.booking_state?.status === "BOOKED";
 }
 
@@ -37,7 +78,6 @@ function getWeekDays() {
   });
 }
 
-/* ── Main ── */
 function DashboardInner() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -45,10 +85,20 @@ function DashboardInner() {
 
   useEffect(() => {
     async function load() {
+      // Tolerate cold-start auth lag with two retries before bouncing.
       let res = await apiFetch("/api/dashboard/data");
-      if (res.status === 401) { await new Promise((r) => setTimeout(r, 1500)); res = await apiFetch("/api/dashboard/data"); }
-      if (res.status === 401) { await new Promise((r) => setTimeout(r, 3000)); res = await apiFetch("/api/dashboard/data"); }
-      if (res.status === 401) { router.push("/login"); return; }
+      if (res.status === 401) {
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await apiFetch("/api/dashboard/data");
+      }
+      if (res.status === 401) {
+        await new Promise((r) => setTimeout(r, 3000));
+        res = await apiFetch("/api/dashboard/data");
+      }
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
       const json = await res.json();
       if (json?.ok) setData(json);
       setLoading(false);
@@ -56,172 +106,377 @@ function DashboardInner() {
     load().catch(() => setLoading(false));
   }, [router]);
 
-  const BG = "linear-gradient(180deg, #CDDBD6 0%, #DDD8D0 35%, #ECEAE6 100%)";
+  if (loading) {
+    return (
+      <BrandShell topRight={<UserAvatar />}>
+        <div style={{ height: 200 }} />
+      </BrandShell>
+    );
+  }
 
-  if (loading) return <main className="min-h-screen" style={{ background: BG }} />;
   if (!data) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: BG }}>
-        <div className="text-center text-[#7A7F8A]">Setting up your dashboard...</div>
-      </main>
+      <BrandShell topRight={<UserAvatar />}>
+        <div
+          style={{
+            textAlign: "center",
+            color: T.lightMuted,
+            paddingTop: 80,
+          }}
+        >
+          Setting up your dashboard…
+        </div>
+      </BrandShell>
     );
   }
 
   const { appUserId, userName, snapshots } = data;
-  const nonPharmacy = snapshots.filter((s: any) => s.provider.provider_type !== "pharmacy");
-  const overdueSnaps = nonPharmacy.filter(isOverdue);
-  const overdueCount = overdueSnaps.length;
+  const nonPharmacy = snapshots.filter((s) => s.provider.provider_type !== "pharmacy");
+  const overdueCount = nonPharmacy.filter(isOverdue).length;
   const upcomingCount = nonPharmacy.filter(hasConfirmedBooking).length;
   const weekDays = getWeekDays();
 
   return (
-    <main className="min-h-screen pb-16" style={{ background: BG }}>
-      {/* Subtle greenhouse grid — softened gray-green for readability */}
-      <div className="fixed inset-0 pointer-events-none" style={{
-        opacity: 0.025,
-        backgroundImage: "linear-gradient(#9CA8A0 1px, transparent 1px), linear-gradient(90deg, #9CA8A0 1px, transparent 1px)",
-        backgroundSize: "100px 100px",
-      }} />
-
-      <TopNav />
-
-      <div className="relative mx-auto max-w-xl px-7">
-
-        {/* ── Greeting ── */}
-        <div className="pt-8 text-center">
-          <span className="text-sm" style={{ color: "#7A7F8A" }}>Hi, {userName || "there"}</span>
+    <BrandShell topRight={<UserAvatar />}>
+      {/* Greeting */}
+      <div style={{ paddingTop: 8, marginBottom: 16 }}>
+        <div style={{ fontSize: 13, color: T.lightMuted, marginBottom: 6 }}>
+          Hi, {userName || "there"}
         </div>
+        <AustinHeading size={32}>Today.</AustinHeading>
+      </div>
 
-        {/* ── Health Coordination Score ── */}
-        <div className="mt-4 flex flex-col items-center" data-wizard="hero">
-          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#7A7F8A] mb-2">Health Coordination Score</div>
+      {/* Health Coordination Score */}
+      <GlassCard padding={20} style={{ marginBottom: 18 }}>
+        <SectionLabel style={{ marginBottom: 8, textAlign: "center" }}>
+          Health Coordination Score
+        </SectionLabel>
+        <div style={{ display: "flex", justifyContent: "center" }}>
           <HealthScoreRing />
         </div>
+      </GlassCard>
 
-        {/* ── Kate's #1 Suggestion ── */}
-        <div className="mt-6" data-wizard="best-next-step">
-          <BestNextStep />
-        </div>
+      {/* Kate's #1 Suggestion */}
+      <div style={{ marginBottom: 18 }} data-wizard="best-next-step">
+        <BestNextStep />
+      </div>
 
-        {/* ── Week Strip ── */}
-        <Link href="/calendar-view" className="mt-6 flex items-center justify-center gap-1.5 group">
-          {weekDays.map((day, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-2 transition-all"
-              style={day.isToday ? {
-                background: "linear-gradient(135deg, #4A6B4A, #5C7B5C)",
-                color: "#fff",
-                boxShadow: "0 2px 12px rgba(74,107,74,0.3)",
-              } : { color: "#B0B4BC" }}
-            >
-              <span className="text-[10px] font-medium">{day.abbrev}</span>
-              <span className="text-sm font-semibold">{day.date}</span>
-            </div>
-          ))}
-        </Link>
-
-        {/* ── Quick Stats ── */}
-        <div className="mt-6 flex justify-center gap-8">
-          <Link href="/providers" className="text-center group">
-            <div className="text-2xl font-light text-[#4A6B4A] group-hover:scale-105 transition">{snapshots.length}</div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A]">Providers</div>
-          </Link>
-          {overdueCount > 0 && (
-            <Link href="/visits" className="text-center group">
-              <div className="text-2xl font-light text-[#E04030] group-hover:scale-105 transition">{overdueCount}</div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A]">Overdue</div>
-            </Link>
-          )}
-          <Link href="/visits" className="text-center group">
-            <div className="text-2xl font-light text-[#D4A44C] group-hover:scale-105 transition">{upcomingCount}</div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A]">Upcoming</div>
-          </Link>
-        </div>
-
-        {/* ── Provider List ── */}
-        <div className="mt-8" data-wizard="providers">
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7A7F8A]">
-            Your care team
+      {/* Week strip */}
+      <Link
+        href="/calendar-view"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 6,
+          textDecoration: "none",
+          marginBottom: 18,
+          padding: "8px 0",
+        }}
+      >
+        {weekDays.map((day, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: "8px 0",
+              borderRadius: 12,
+              background: day.isToday ? T.electric : "transparent",
+              color: day.isToday ? T.white : T.lightMuted,
+              boxShadow: day.isToday
+                ? "0 4px 14px rgba(22,119,255,0.28)"
+                : "none",
+            }}
+          >
+            <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.85 }}>
+              {day.abbrev}
+            </span>
+            <span style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>
+              {day.date}
+            </span>
           </div>
-          <div className="mt-3 rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 shadow-sm overflow-hidden">
-            {snapshots.map((s: any, idx: number) => {
+        ))}
+      </Link>
+
+      {/* Quick stats */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: overdueCount > 0 ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
+          gap: 10,
+          marginBottom: 22,
+        }}
+      >
+        <StatTile
+          href="/providers"
+          value={snapshots.length}
+          label="Providers"
+          color={T.electric}
+        />
+        {overdueCount > 0 && (
+          <StatTile
+            href="/visits"
+            value={overdueCount}
+            label="Overdue"
+            color={T.red}
+          />
+        )}
+        <StatTile
+          href="/visits"
+          value={upcomingCount}
+          label="Upcoming"
+          color={T.green}
+        />
+      </div>
+
+      {/* Care team */}
+      <div style={{ marginBottom: 22 }} data-wizard="providers">
+        <SectionLabel>Your care team</SectionLabel>
+        {snapshots.length === 0 ? (
+          <GlassCard padding={20}>
+            <Link
+              href="/providers?add=true"
+              style={{
+                display: "block",
+                textAlign: "center",
+                fontSize: 14,
+                fontWeight: 600,
+                color: T.electric,
+                textDecoration: "none",
+                padding: "12px 0",
+              }}
+            >
+              Hand off your first provider →
+            </Link>
+          </GlassCard>
+        ) : (
+          <GlassCard padding={0} radius={20}>
+            {snapshots.map((s, idx) => {
               const overdue = isOverdue(s);
               const booked = hasConfirmedBooking(s);
-              const isLast = idx === snapshots.length - 1;
               const isPharmacy = s.provider.provider_type === "pharmacy";
-              const dotColor = isPharmacy ? "#B0B4BC" : overdue ? "#E04030" : booked ? "#D4A44C" : "#4A6B4A";
+              const isLast = idx === snapshots.length - 1;
+              const dotColor = isPharmacy
+                ? T.lightMuted
+                : overdue
+                ? T.red
+                : booked
+                ? T.warn
+                : T.green;
 
               return (
                 <div
                   key={s.provider.id}
-                  className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-white/30"
-                  style={!isLast ? { borderBottom: "1px solid rgba(255,255,255,0.5)" } : {}}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    padding: "14px 16px",
+                    borderBottom: isLast
+                      ? "none"
+                      : `1px solid ${T.lightBorder}`,
+                  }}
                 >
-                  <div className="flex items-center gap-3">
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                     <span
-                      className="h-2 w-2 rounded-full"
-                      style={{ backgroundColor: dotColor, boxShadow: `0 0 6px ${dotColor}30` }}
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: dotColor,
+                        boxShadow: `0 0 8px ${dotColor}40`,
+                        flexShrink: 0,
+                      }}
                     />
-                    <div>
-                      <span className="text-sm font-medium text-[#1A2E1A]">
-                        <ProviderLink providerId={s.provider.id} providerName={s.provider.name} />
-                      </span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 14.5, fontWeight: 500, color: T.lightText }}>
+                        <ProviderLink
+                          providerId={s.provider.id}
+                          providerName={s.provider.name}
+                        />
+                      </div>
                       {s.provider.specialty && (
-                        <span className="ml-2 text-[10px] text-[#7A7F8A]">{s.provider.specialty}</span>
+                        <div style={{ fontSize: 11.5, color: T.lightMuted, marginTop: 2 }}>
+                          {s.provider.specialty}
+                        </div>
                       )}
                     </div>
                   </div>
                   {isPharmacy ? (
-                    <span className="text-[10px] font-medium text-[#B0B4BC]">Pharmacy</span>
+                    <span style={{ fontSize: 11, color: T.lightMuted, fontWeight: 600 }}>
+                      Pharmacy
+                    </span>
                   ) : overdue ? (
-                    <HandleItButton userId={appUserId} providerId={s.provider.id} providerName={s.provider.name} label="Book" />
+                    <HandleItButton
+                      userId={appUserId}
+                      providerId={s.provider.id}
+                      providerName={s.provider.name}
+                      label="Book"
+                    />
                   ) : booked ? (
-                    <span className="text-[10px] font-semibold text-[#D4A44C]">Upcoming</span>
+                    <Pill bg="rgba(224,138,31,0.14)" fg={T.warn}>
+                      Upcoming
+                    </Pill>
                   ) : (
-                    <span className="text-[10px] font-semibold text-[#4A6B4A]">On track</span>
+                    <Pill bg="rgba(39,196,107,0.14)" fg={T.green}>
+                      On track
+                    </Pill>
                   )}
                 </div>
               );
             })}
-            {snapshots.length === 0 && (
-              <a href="/providers?add=true" className="block px-5 py-8 text-center text-sm text-[#5C6B5C] font-medium hover:underline">
-                Hand off your first provider &rarr;
-              </a>
-            )}
-          </div>
-        </div>
+          </GlassCard>
+        )}
+      </div>
 
-        {/* ── What To Do Next ── */}
-        <div className="mt-10 pb-8" data-wizard="next-steps">
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7A7F8A] mb-3">
-            What To Do Next
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { href: "/providers", title: "Providers", desc: "Your care team hub" },
-              { href: "/visits", title: "Visits", desc: "Upcoming & past" },
-              { href: "/settings", title: "Profile", desc: "Health history & prefs" },
-              { href: "/goals", title: "Goals", desc: "Track your progress" },
-            ].map((item) => (
-              <Link key={item.href} href={item.href}>
-                <div className="rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 p-4 transition hover:bg-white/70 hover:shadow-md group">
-                  <div className="text-sm font-semibold text-[#1A2E1A]">{item.title}</div>
-                  <div className="text-xs mt-0.5 text-[#7A7F8A]">{item.desc}</div>
-                  <div className="mt-2 h-[2px] w-6 rounded-full bg-gradient-to-r from-[#0FA5A5] to-[#D4A44C] transition-all group-hover:w-10" />
+      {/* What to do next */}
+      <div data-wizard="next-steps">
+        <SectionLabel>What to do next</SectionLabel>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: 10,
+          }}
+        >
+          {[
+            { href: "/providers", title: "Providers", desc: "Your care team", icon: <StethoscopeIcon color={T.electric} /> },
+            { href: "/visits", title: "Visits", desc: "Upcoming & past", icon: <CalendarIcon color={T.electric} /> },
+            { href: "/account", title: "Profile", desc: "Health history", icon: <PersonIcon color={T.electric} size={18} /> },
+            { href: "/goals", title: "Goals", desc: "Track progress", icon: <SparkleIcon color={T.electric} size={18} /> },
+          ].map((item) => (
+            <GlassCard key={item.href} href={item.href} padding={14}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <IconTile size={36} radius={10}>
+                  {item.icon}
+                </IconTile>
+                <div>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, color: T.lightText }}>
+                    {item.title}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: T.lightMuted, marginTop: 2 }}>
+                    {item.desc}
+                  </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+              </div>
+            </GlassCard>
+          ))}
         </div>
       </div>
-    </main>
+    </BrandShell>
+  );
+}
+
+function StatTile({
+  href,
+  value,
+  label,
+  color,
+}: {
+  href: string;
+  value: number;
+  label: string;
+  color: string;
+}) {
+  return (
+    <Link href={href} style={{ textDecoration: "none" }}>
+      <GlassCard padding={14}>
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              fontSize: 28,
+              fontWeight: 500,
+              color,
+              lineHeight: 1,
+              fontFamily: "var(--font-fraunces, serif)",
+            }}
+          >
+            {value}
+          </div>
+          <div
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              color: T.lightMuted,
+              marginTop: 8,
+            }}
+          >
+            {label}
+          </div>
+        </div>
+      </GlassCard>
+    </Link>
+  );
+}
+
+function Pill({
+  bg,
+  fg,
+  children,
+}: {
+  bg: string;
+  fg: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      style={{
+        background: bg,
+        color: fg,
+        fontSize: 11,
+        fontWeight: 600,
+        padding: "5px 10px",
+        borderRadius: 999,
+        flexShrink: 0,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function UserAvatar() {
+  return (
+    <Link
+      href="/account"
+      style={{
+        display: "block",
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        overflow: "hidden",
+        border: `1.5px solid ${T.lightBorder}`,
+      }}
+    >
+      <Image
+        src="/kate-avatar.png"
+        alt="You"
+        width={36}
+        height={36}
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+      />
+    </Link>
   );
 }
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen" style={{ background: "linear-gradient(180deg, #CDDBD6 0%, #DDD8D0 35%, #ECEAE6 100%)" }} />}>
+    <Suspense
+      fallback={
+        <main
+          style={{
+            minHeight: "100vh",
+            background: T.lightBg,
+          }}
+        />
+      }
+    >
       <DashboardInner />
     </Suspense>
   );
