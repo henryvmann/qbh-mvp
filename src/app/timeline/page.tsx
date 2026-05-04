@@ -15,13 +15,15 @@ type TimelineYear = { year: string; providers: TimelineProvider[]; totalVisits: 
 type UpcomingEvent = { id: string; providerId: string; providerName: string; date: string; detail: string; needsProviderMatch?: boolean };
 
 type YearAheadItem = {
-  providerId: string;
+  providerId: string | null;
   providerName: string;
   providerType: string | null;
   title: string;
+  rationale?: string;
   status: "scheduled" | "in_progress" | "overdue" | "due";
   date: string;
   detail?: string;
+  isPhantom?: boolean;
 };
 type YearAheadMonth = { key: string; label: string; items: YearAheadItem[] };
 
@@ -169,25 +171,41 @@ export default function TimelinePage() {
                       )}
                     </div>
                     {!isEmpty && (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {m.items.map((item) => {
                           const pillBg = item.status === "scheduled"
                             ? "bg-[#27C46B]/10 text-[#27C46B]"
-                            : item.status === "in_progress"
-                            ? "bg-[#1677FF]/10 text-[#1677FF]"
                             : "bg-[#1677FF]/10 text-[#1677FF]";
                           const pillLabel = item.status === "scheduled"
                             ? "Scheduled"
                             : item.status === "in_progress"
                             ? "Kate is on it"
+                            : item.isPhantom
+                            ? "Recommended"
                             : "Due";
                           return (
-                            <div key={`${item.providerId}-${item.date}`} className="flex items-center justify-between gap-3">
-                              <div className="min-w-0">
+                            <div key={`${item.providerId ?? "phantom"}-${item.title}-${item.date}`} className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
                                 <div className="text-sm font-semibold text-[#071832]">{item.title}</div>
                                 <div className="text-xs text-[#4F5F73] mt-0.5">
                                   {item.providerName} · {formatDate(item.date)}
                                 </div>
+                                {item.rationale && (
+                                  <div className="text-xs text-[#4F5F73] mt-1.5 leading-snug">
+                                    {item.rationale}
+                                  </div>
+                                )}
+                                {item.isPhantom && (
+                                  <a
+                                    href="/providers?add=true"
+                                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#1677FF] hover:underline underline-offset-4"
+                                  >
+                                    Find a provider
+                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </a>
+                                )}
                               </div>
                               <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0 ${pillBg}`}>
                                 {pillLabel}

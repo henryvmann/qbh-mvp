@@ -183,6 +183,26 @@ function formatDobForSpeech(dob: string | null | undefined): string | null {
 }
 
 /** Format member ID with dashes for slower speech: "J-Q-U - 8-8-9 - A-P - 1-1-2-9-4-3" */
+/**
+ * Convert the user's saved appointment preferences into a one-line
+ * natural-language hint Kate can read aloud or reference when
+ * proposing times to the office. Returns "no preference" when the
+ * user hasn't set anything.
+ */
+function formatCarePreferencesForSpeech(prefs: unknown): string {
+  if (!prefs || typeof prefs !== "object") return "no preference";
+  const p = prefs as Record<string, unknown>;
+  const parts: string[] = [];
+  if (typeof p.time_of_day === "string") {
+    if (p.time_of_day === "morning") parts.push("prefers morning appointments");
+    else if (p.time_of_day === "afternoon") parts.push("prefers afternoon appointments");
+    else if (p.time_of_day === "evening") parts.push("prefers evening appointments");
+  }
+  if (p.group_appointments) parts.push("prefers visits grouped together when possible");
+  if (p.same_location) parts.push("prefers providers near existing care team");
+  return parts.length > 0 ? parts.join("; ") : "no specific time preference";
+}
+
 function formatMemberIdForSpeech(id: string | null | undefined): string | null {
   if (!id) return null;
   const chars = id.replace(/[\s-]/g, "").split("");
@@ -650,6 +670,7 @@ export async function POST(req: Request) {
           patient_insurance_member_id: formatMemberIdForSpeech(patientProfile.insurance_member_id) || "not available — the patient will provide when they arrive",
           patient_callback_phone: patientProfile.callback_phone || "not available",
           patient_reason_for_visit: patientProfile.reason_for_visit || "routine checkup",
+          patient_appointment_preferences: formatCarePreferencesForSpeech(patientProfile.care_preferences),
         },
       },
     }),
