@@ -93,7 +93,7 @@ export default function CareRecipientsPage() {
       <div className="mx-auto max-w-3xl px-6 pt-8 pb-20">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-2xl tracking-tight text-[#071832]">Care Recipients</h1>
+            <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832]">Care Recipients</h1>
             <p className="mt-1 text-sm text-[#4F5F73]">People you manage healthcare for</p>
           </div>
           <button

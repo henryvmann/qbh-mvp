@@ -143,7 +143,7 @@ export default function AccountPage() {
     <PageShell>
       
       <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
-        <h1 className="font-serif text-2xl tracking-tight text-[#071832] mb-8">
+        <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832] mb-8">
           Account
         </h1>
 

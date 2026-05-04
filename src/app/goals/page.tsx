@@ -128,12 +128,12 @@ const categoryConfig: Record<
   upcoming: {
     label: "Upcoming",
     sectionTitle: "Upcoming",
-    color: "#B8C840",
+    color: "#27C46B",
   },
   setup: {
     label: "Setup",
     sectionTitle: "Setup",
-    color: "#6A9DC0",
+    color: "#2E8CFF",
   },
 };
 
@@ -367,7 +367,7 @@ export default function GoalsPage() {
     <PageShell>
       
       <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
-        <h1 className="font-serif text-2xl tracking-tight text-[#071832] mb-4">
+        <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832] mb-4">
           Goals
         </h1>
 
@@ -554,7 +554,7 @@ export default function GoalsPage() {
                               <span
                                 className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0"
                                 style={{
-                                  backgroundColor: "#B8C84020",
+                                  backgroundColor: "#27C46B20",
                                   color: "#1677FF",
                                 }}
                               >

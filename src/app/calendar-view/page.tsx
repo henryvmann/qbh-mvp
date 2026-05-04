@@ -218,7 +218,7 @@ export default function CalendarViewPage() {
         <div className="mb-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Calendar size={22} strokeWidth={1.5} color="#1677FF" />
-            <h1 className="font-serif text-2xl tracking-tight text-[#071832]">
+            <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832]">
               Calendar
             </h1>
           </div>

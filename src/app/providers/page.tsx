@@ -378,7 +378,7 @@ function ProvidersInner() {
 
   return (
     <PageShell>
-        <h1 className="font-serif text-2xl tracking-tight text-[#071832]">
+        <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832]">
           {selectedPerson ? `${selectedPerson}\u2019s care team` : userName ? `${userName}\u2019s care team` : "Your care team"}
         </h1>
         <p className="mt-1 text-sm text-[#4F5F73]">

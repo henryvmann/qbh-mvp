@@ -71,7 +71,7 @@ export default function TimelinePage() {
     <PageShell>
       
       <div className="mx-auto max-w-3xl px-6 pt-8 pb-16">
-        <h1 className="font-serif text-2xl tracking-tight text-[#071832]">
+        <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832]">
           Health Timeline
         </h1>
         <p className="mt-1 text-sm text-[#4F5F73]">

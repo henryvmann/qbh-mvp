@@ -163,7 +163,7 @@ export default function AnalyticsPage() {
     <PageShell>
       
       <div className="mx-auto max-w-2xl px-6 pt-8 pb-20">
-        <h1 className="font-serif text-2xl tracking-tight text-[#071832]">
+        <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832]">
           Your Progress
         </h1>
         <p className="mt-1 text-sm text-[#4F5F73]">
