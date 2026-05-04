@@ -143,9 +143,25 @@ export default function AccountPage() {
     <PageShell>
       
       <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
-        <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832] mb-8">
-          Account
-        </h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832]">
+            Account
+          </h1>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const supabase = createClient();
+                await supabase.auth.signOut();
+              } finally {
+                window.location.href = "/";
+              }
+            }}
+            className="rounded-xl border border-[#E5EAF2] bg-white px-4 py-2 text-sm font-semibold text-[#071832] transition hover:border-[#1677FF] hover:text-[#1677FF]"
+          >
+            Log out
+          </button>
+        </div>
 
         {/* Personal Info */}
         <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-4">
