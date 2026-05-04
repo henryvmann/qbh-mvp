@@ -14,7 +14,7 @@ type ScoreData = {
 
 const LEVEL_COLORS: Record<string, { start: string; end: string; text: string }> = {
   "excellent":       { start: "#1677FF", end: "#27C46B", text: "#1677FF" },
-  "on-track":        { start: "#1677FF", end: "#5C7B5C", text: "#5C7B5C" },
+  "on-track":        { start: "#1677FF", end: "#27C46B", text: "#27C46B" },
   "building":        { start: "#27C46B", end: "#C89B3C", text: "#27C46B" },
   "getting-started": { start: "#4F5F73", end: "#4F5F73", text: "#4F5F73" },
 };
@@ -125,7 +125,7 @@ export default function HealthScoreRing({ compact }: { compact?: boolean }) {
                 </span>
                 <span
                   className="font-semibold"
-                  style={{ color: f.points > 0 ? "#5C7B5C" : f.points < 0 ? "#E04030" : "#4F5F73" }}
+                  style={{ color: f.points > 0 ? "#27C46B" : f.points < 0 ? "#E04030" : "#4F5F73" }}
                 >
                   {f.points > 0 ? `+${f.points}` : f.points}
                 </span>
