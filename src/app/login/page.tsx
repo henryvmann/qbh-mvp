@@ -28,6 +28,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
+  // MFA challenge state — populated when password sign-in lands AAL2
+  // requirement. The user has a TOTP factor enrolled and we need a
+  // 6-digit code before completing the session.
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaChallengeId, setMfaChallengeId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
@@ -45,14 +52,52 @@ export default function LoginPage() {
 
       if (error) throw error;
 
-      // Verify session is set before navigating, then small delay to
-      // let the browser client write cookies.
+      // If the user enrolled TOTP, Supabase elevates the assurance
+      // level requirement to AAL2. Issue a challenge and prompt the
+      // user before redirecting.
+      const aal = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal.data?.nextLevel === "aal2" && aal.data.currentLevel === "aal1") {
+        const { data: factorList } = await supabase.auth.mfa.listFactors();
+        const verified = factorList?.totp?.find((f) => f.status === "verified");
+        if (verified) {
+          const challenge = await supabase.auth.mfa.challenge({ factorId: verified.id });
+          if (challenge.error) throw challenge.error;
+          setMfaFactorId(verified.id);
+          setMfaChallengeId(challenge.data.id);
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // No MFA — finish sign-in.
       await supabase.auth.getSession();
       await new Promise((r) => setTimeout(r, 500));
-
       window.location.href = "/dashboard";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid email or password.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleMfaVerify(e: React.FormEvent) {
+    e.preventDefault();
+    if (!mfaFactorId || !mfaChallengeId || mfaCode.trim().length !== 6) return;
+    try {
+      setSubmitting(true);
+      setError(null);
+      const supabase = createClient();
+      const { error } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId,
+        challengeId: mfaChallengeId,
+        code: mfaCode.trim(),
+      });
+      if (error) throw error;
+      await supabase.auth.getSession();
+      await new Promise((r) => setTimeout(r, 300));
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid code. Try again.");
     } finally {
       setSubmitting(false);
     }
@@ -131,7 +176,7 @@ export default function LoginPage() {
               color: T.lightText,
             }}
           >
-            Welcome back.
+            {mfaChallengeId ? "Enter your code." : "Welcome back."}
           </h1>
           <p
             style={{
@@ -142,9 +187,77 @@ export default function LoginPage() {
               lineHeight: 1.5,
             }}
           >
-            Sign in to pick up where Kate left off.
+            {mfaChallengeId
+              ? "Open your authenticator app and enter the 6-digit code."
+              : "Sign in to pick up where Kate left off."}
           </p>
 
+          {mfaChallengeId ? (
+            <form onSubmit={handleMfaVerify} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <Field>
+                <Label htmlFor="mfa-code">6-digit code</Label>
+                <input
+                  id="mfa-code"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="123456"
+                  autoFocus
+                  required
+                  style={{ ...inputStyle, fontFamily: "ui-monospace, monospace", letterSpacing: 4 }}
+                />
+              </Field>
+              <button
+                type="submit"
+                disabled={submitting || mfaCode.trim().length !== 6}
+                style={{
+                  marginTop: 4,
+                  background: T.electric,
+                  color: T.white,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  border: "none",
+                  cursor: submitting || mfaCode.trim().length !== 6 ? "not-allowed" : "pointer",
+                  opacity: submitting || mfaCode.trim().length !== 6 ? 0.6 : 1,
+                  boxShadow: "0 6px 20px rgba(22,119,255,0.28)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                {submitting ? "Verifying…" : <>Verify <span style={{ fontSize: 16 }}>→</span></>}
+              </button>
+              {error && <Banner kind="error">{error}</Banner>}
+              <button
+                type="button"
+                onClick={() => {
+                  setMfaChallengeId(null);
+                  setMfaFactorId(null);
+                  setMfaCode("");
+                  setError(null);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: T.lightMuted,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  textUnderlineOffset: 4,
+                  marginTop: 4,
+                }}
+              >
+                Use a different account
+              </button>
+            </form>
+          ) : (
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <Field>
               <Label htmlFor="login-email">Email</Label>
@@ -224,7 +337,9 @@ export default function LoginPage() {
             {error && <Banner kind="error">{error}</Banner>}
             {info && <Banner kind="info">{info}</Banner>}
           </form>
+          )}
 
+          {!mfaChallengeId && (<>
           <div style={{ textAlign: "center", marginTop: 18 }}>
             <button
               type="button"
@@ -250,6 +365,22 @@ export default function LoginPage() {
               paddingTop: 18,
               borderTop: `1px solid ${T.lightBorder}`,
               textAlign: "center",
+              fontSize: 12,
+              color: T.lightMuted,
+            }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={T.lightMuted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <rect x={4} y={11} width={16} height={10} rx={2} />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+              Encrypted in transit and at rest. HIPAA-aligned. Two-factor available.
+            </span>
+          </div>
+          <div
+            style={{
+              marginTop: 18,
+              textAlign: "center",
               fontSize: 13.5,
               color: T.lightMuted,
             }}
@@ -266,6 +397,7 @@ export default function LoginPage() {
               Create your account
             </Link>
           </div>
+          </>)}
         </div>
       </div>
     </main>

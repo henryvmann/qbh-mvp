@@ -43,6 +43,110 @@ export default function AccountPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // 2FA / MFA. Supabase Auth ships TOTP support out of the box; this
+  // section enrolls a single TOTP factor per user. Once verified, the
+  // login flow elevates to AAL2 and prompts for the 6-digit code.
+  type MfaFactor = { id: string; status: string; friendly_name?: string | null };
+  const [mfaFactors, setMfaFactors] = useState<MfaFactor[] | null>(null);
+  const [mfaEnrolling, setMfaEnrolling] = useState(false);
+  const [mfaEnrollSecret, setMfaEnrollSecret] = useState<string | null>(null);
+  const [mfaEnrollUri, setMfaEnrollUri] = useState<string | null>(null);
+  const [mfaEnrollFactorId, setMfaEnrollFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaWorking, setMfaWorking] = useState(false);
+
+  async function refreshMfaFactors() {
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (error) {
+      setMfaError(error.message);
+      return;
+    }
+    setMfaFactors((data?.totp ?? []) as MfaFactor[]);
+  }
+
+  async function startMfaEnrollment() {
+    setMfaError(null);
+    setMfaWorking(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: "Quarterback Health",
+      });
+      if (error) throw error;
+      setMfaEnrollFactorId(data.id);
+      setMfaEnrollSecret(data.totp.secret);
+      setMfaEnrollUri(data.totp.uri);
+      setMfaEnrolling(true);
+    } catch (e) {
+      setMfaError(e instanceof Error ? e.message : "Couldn't start 2FA setup.");
+    } finally {
+      setMfaWorking(false);
+    }
+  }
+
+  async function verifyMfaEnrollment() {
+    if (!mfaEnrollFactorId || mfaCode.trim().length !== 6) return;
+    setMfaError(null);
+    setMfaWorking(true);
+    try {
+      const supabase = createClient();
+      const challenge = await supabase.auth.mfa.challenge({ factorId: mfaEnrollFactorId });
+      if (challenge.error) throw challenge.error;
+      const verify = await supabase.auth.mfa.verify({
+        factorId: mfaEnrollFactorId,
+        challengeId: challenge.data.id,
+        code: mfaCode.trim(),
+      });
+      if (verify.error) throw verify.error;
+      setMfaEnrolling(false);
+      setMfaEnrollSecret(null);
+      setMfaEnrollUri(null);
+      setMfaEnrollFactorId(null);
+      setMfaCode("");
+      await refreshMfaFactors();
+    } catch (e) {
+      setMfaError(e instanceof Error ? e.message : "Couldn't verify code.");
+    } finally {
+      setMfaWorking(false);
+    }
+  }
+
+  async function cancelMfaEnrollment() {
+    if (!mfaEnrollFactorId) {
+      setMfaEnrolling(false);
+      return;
+    }
+    try {
+      const supabase = createClient();
+      await supabase.auth.mfa.unenroll({ factorId: mfaEnrollFactorId });
+    } catch {}
+    setMfaEnrolling(false);
+    setMfaEnrollSecret(null);
+    setMfaEnrollUri(null);
+    setMfaEnrollFactorId(null);
+    setMfaCode("");
+    setMfaError(null);
+  }
+
+  async function disableMfaFactor(factorId: string) {
+    if (!window.confirm("Disable two-factor authentication?")) return;
+    setMfaWorking(true);
+    setMfaError(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.mfa.unenroll({ factorId });
+      if (error) throw error;
+      await refreshMfaFactors();
+    } catch (e) {
+      setMfaError(e instanceof Error ? e.message : "Couldn't disable 2FA.");
+    } finally {
+      setMfaWorking(false);
+    }
+  }
+
   useEffect(() => {
     async function load() {
       try {
@@ -78,6 +182,7 @@ export default function AccountPage() {
       }
     }
     load();
+    refreshMfaFactors().catch(() => {});
   }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -381,6 +486,119 @@ export default function AccountPage() {
           <div className="text-sm text-[#5A6675] leading-relaxed">
             QBH works for you. Nothing leaves without your say-so.
           </div>
+        </div>
+
+        {/* Two-factor authentication */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#1677FF]">
+              Two-factor authentication
+            </h2>
+            {mfaFactors && mfaFactors.some((f) => f.status === "verified") && (
+              <span className="text-xs font-semibold text-[#27C46B]">Enabled</span>
+            )}
+          </div>
+          <p className="text-xs text-[#4F5F73] mb-4 leading-relaxed">
+            Adds a 6-digit code from your phone&rsquo;s authenticator app on
+            top of your password. Recommended for healthcare data.
+          </p>
+
+          {!mfaFactors ? (
+            <div className="text-sm text-[#4F5F73]">Loading…</div>
+          ) : mfaFactors.some((f) => f.status === "verified") ? (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-[#071832]">Two-factor is on for this account.</span>
+              <button
+                type="button"
+                onClick={() =>
+                  disableMfaFactor(
+                    mfaFactors.find((f) => f.status === "verified")!.id
+                  )
+                }
+                disabled={mfaWorking}
+                className="text-xs font-semibold underline underline-offset-2 text-[#E04030] hover:opacity-80 disabled:opacity-50"
+              >
+                Disable
+              </button>
+            </div>
+          ) : !mfaEnrolling ? (
+            <button
+              type="button"
+              onClick={startMfaEnrollment}
+              disabled={mfaWorking}
+              className="rounded-xl bg-[#1677FF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-60"
+            >
+              {mfaWorking ? "Setting up…" : "Enable two-factor"}
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-[#071832]">
+                Open your authenticator app (1Password, Authy, Google
+                Authenticator, etc.) and add this account.
+              </p>
+              {mfaEnrollUri && (
+                <a
+                  href={mfaEnrollUri}
+                  className="block rounded-lg border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2 text-xs font-medium text-[#1677FF] underline break-all"
+                >
+                  Tap here on phone to add to authenticator
+                </a>
+              )}
+              {mfaEnrollSecret && (
+                <div className="rounded-lg border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-1">
+                    Or enter this secret manually
+                  </div>
+                  <div className="text-sm font-mono text-[#071832] break-all select-all">
+                    {mfaEnrollSecret}
+                  </div>
+                </div>
+              )}
+              <div>
+                <label
+                  htmlFor="mfa-code"
+                  className="block text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-1"
+                >
+                  6-digit code from your authenticator
+                </label>
+                <input
+                  id="mfa-code"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="123456"
+                  className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-2.5 text-base font-mono text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+                />
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={verifyMfaEnrollment}
+                  disabled={mfaWorking || mfaCode.trim().length !== 6}
+                  className="rounded-xl bg-[#1677FF] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-50"
+                >
+                  {mfaWorking ? "Verifying…" : "Verify and enable"}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelMfaEnrollment}
+                  disabled={mfaWorking}
+                  className="text-xs font-semibold text-[#4F5F73] hover:text-[#071832] underline underline-offset-2"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mfaError && (
+            <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+              {mfaError}
+            </div>
+          )}
         </div>
 
         {/* Password Section (collapsible) */}

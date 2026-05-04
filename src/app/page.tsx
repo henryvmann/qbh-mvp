@@ -80,6 +80,7 @@ export default function HomePage() {
       <Hero />
       <HowItWorks />
       <TrustBand />
+      <PrivacyStrip />
       <Pricing />
       <Footer />
     </main>
@@ -823,6 +824,118 @@ function TrustBand() {
       <style>{`
         @media (min-width: 800px) {
           .trust-grid { grid-template-columns: repeat(4, 1fr); gap: 32px; }
+        }
+      `}</style>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Privacy strip — concrete, plain-English trust statements
+// ─────────────────────────────────────────────────────────────────
+
+function PrivacyStrip() {
+  const points = [
+    {
+      title: "Your data is yours.",
+      body: "We never sell it. We never use it to train AI models. You can export or delete everything any time.",
+    },
+    {
+      title: "Encrypted end-to-end.",
+      body: "TLS in transit, AES-256 at rest. Health documents stored under pseudonymized identifiers, never linked to your name.",
+    },
+    {
+      title: "HIPAA-aligned infrastructure.",
+      body: "Business Associate Agreements with every vendor that touches your data — Supabase, OpenAI, Anthropic, VAPI, Twilio, AWS.",
+    },
+    {
+      title: "Two-factor authentication.",
+      body: "Optional but recommended. Adds an authenticator-app code on top of your password — turn it on in Account.",
+    },
+  ];
+  return (
+    <section
+      style={{
+        background: T.lightBg,
+        borderTop: `1px solid ${T.lightBorder}`,
+        padding: "72px 24px",
+      }}
+    >
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ maxWidth: 640, marginBottom: 36 }}>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 1.2,
+              textTransform: "uppercase",
+              color: T.electric,
+              marginBottom: 12,
+            }}
+          >
+            Privacy &amp; security
+          </div>
+          <h2
+            className={austin.className}
+            style={{
+              fontSize: "clamp(28px, 4vw, 40px)",
+              fontWeight: 500,
+              letterSpacing: -0.6,
+              lineHeight: 1.1,
+              margin: 0,
+              color: T.lightText,
+            }}
+          >
+            Healthcare data, treated like healthcare data.
+          </h2>
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: 18,
+          }}
+          className="privacy-grid"
+        >
+          {points.map((p) => (
+            <div
+              key={p.title}
+              style={{
+                background: T.white,
+                border: `1px solid ${T.lightBorder}`,
+                borderRadius: 18,
+                padding: 22,
+              }}
+            >
+              <div
+                className={austin.className}
+                style={{
+                  fontSize: 18,
+                  fontWeight: 500,
+                  letterSpacing: -0.2,
+                  color: T.lightText,
+                  marginBottom: 8,
+                }}
+              >
+                {p.title}
+              </div>
+              <p
+                style={{
+                  fontSize: 14,
+                  color: T.lightMuted,
+                  lineHeight: 1.55,
+                  margin: 0,
+                }}
+              >
+                {p.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <style>{`
+        @media (min-width: 800px) {
+          .privacy-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
         }
       `}</style>
     </section>
