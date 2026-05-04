@@ -136,6 +136,11 @@ export default function OnboardingPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [phase, setPhase] = useState<string>("intro");
   const [typing, setTyping] = useState(false);
+  // True from the moment the user taps an option button until the
+  // next phase mounts. Hides the option-block immediately so we
+  // never have a stale button visible at the same time as the
+  // user's blue reply bubble. Reset whenever phase changes.
+  const [responded, setResponded] = useState(false);
 
   // User data
   const [userId] = useState(() => typeof window !== "undefined" ? (localStorage.getItem("qbh_user_id") || crypto.randomUUID()) : crypto.randomUUID());
@@ -290,6 +295,13 @@ export default function OnboardingPage() {
     setMessages((prev) => [...prev, { id: `user-${Date.now()}`, sender: "user", content }]);
   }
 
+  // Reset the "user has tapped an option" flag whenever phase
+  // advances — the new phase's button block should appear (after
+  // its lead-in messages stream in).
+  useEffect(() => {
+    setResponded(false);
+  }, [phase]);
+
   // ── Phase: Intro ──
   useEffect(() => {
     if (phase !== "intro") return;
@@ -309,6 +321,7 @@ export default function OnboardingPage() {
 
   // ── Phase handlers ──
   function handleIntroResponse(value: string) {
+    setResponded(true);
     // Three Kate-voice "what you can look forward to" lines that
     // were previously rendered as a separate icon-card block. Now
     // streamed into the chat like every other message so there's no
@@ -344,6 +357,7 @@ export default function OnboardingPage() {
   }
 
   function handleValuePropsNext() {
+    setResponded(true);
     addUserMessage("Let's do it");
     setTimeout(() => {
       addKateMessage("Quick question \u2014 is this just for you, or are you managing care for your people too?");
@@ -352,6 +366,7 @@ export default function OnboardingPage() {
   }
 
   function handleWhoFor(value: string) {
+    setResponded(true);
     setCareFor(value);
     if (value === "just-me") {
       addUserMessage("Just me");
@@ -370,6 +385,7 @@ export default function OnboardingPage() {
   }
 
   function handleFamilyDone() {
+    setResponded(true);
     addUserMessage(`Me${familyMembers.length > 0 ? ", " + familyMembers.join(", ") : ""}`);
     setTimeout(() => {
       addKateMessages([
@@ -381,6 +397,7 @@ export default function OnboardingPage() {
   }
 
   function handleDiscoveryMethodDone() {
+    setResponded(true);
     const selected: string[] = [];
     if (connectBank) selected.push("bank scan");
     if (connectCalendar) selected.push("calendar");
@@ -833,7 +850,7 @@ export default function OnboardingPage() {
         {/* ── Phase-specific interactive content ── */}
 
         {/* Intro: response buttons */}
-        {phase === "intro" && !typing && messages.length >= 3 && (
+        {phase === "intro" && !typing && !responded && messages.length >= 3 && (
           <OptionButtons
             options={[
               { label: "Yeah, that's me", value: "relatable" },
@@ -846,12 +863,12 @@ export default function OnboardingPage() {
         {/* Value Props — bullets are now streamed as Kate chat
             messages in handleIntroResponse(). Only the proceed
             button remains here. */}
-        {phase === "value-props" && (
+        {phase === "value-props" && !responded && (
           <OptionButtons options={[{ label: "Let's do it", value: "go" }]} onSelect={handleValuePropsNext} />
         )}
 
         {/* Who for */}
-        {phase === "who-for" && (
+        {phase === "who-for" && !responded && (
           <OptionButtons
             options={[
               { label: "Just me", value: "just-me" },
@@ -862,7 +879,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Family select */}
-        {phase === "family-select" && (
+        {phase === "family-select" && !responded && (
           <div className="space-y-2 animate-fadeIn">
             <p className="text-xs text-[#4F5F73] mb-1">Select as many as you need</p>
             {[
@@ -892,7 +909,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Discovery method */}
-        {phase === "discovery-method" && (
+        {phase === "discovery-method" && !responded && (
           <div className="space-y-3 animate-fadeIn">
             <p className="text-sm font-semibold text-[#071832] mb-2">Pick at least one to continue</p>
             <ToggleCard
@@ -929,7 +946,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Account creation */}
-        {phase === "account-create" && (
+        {phase === "account-create" && !responded && (
           <div className="animate-fadeIn rounded-2xl backdrop-blur-sm p-5 space-y-3" style={{ background: theme.glass, border: `1px solid ${theme.glassBorder}`, boxShadow: theme.cardShadow }}>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -1050,7 +1067,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Plaid connect */}
-        {phase === "plaid-connect" && (
+        {phase === "plaid-connect" && !responded && (
           <div className="animate-fadeIn">
             <button
               onClick={openPlaidLink}
@@ -1066,7 +1083,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Calendar connect */}
-        {phase === "calendar-connect" && (
+        {phase === "calendar-connect" && !responded && (
           <div className="animate-fadeIn space-y-3">
             <button
               onClick={async () => {
@@ -1155,7 +1172,7 @@ export default function OnboardingPage() {
             is care for me" or dismiss "just shopping" before reaching the
             dashboard. Inserted automatically when bank/calendar discovery
             yields ambiguous rows; transitions to postReviewPhase on done. */}
-        {phase === "review-team" && (
+        {phase === "review-team" && !responded && (
           <div className="animate-fadeIn space-y-3">
             <KateBubble>I picked up a few I wasn't sure about — care for you, or just somewhere you shop?</KateBubble>
             <div className="space-y-2">
@@ -1229,7 +1246,7 @@ export default function OnboardingPage() {
         {/* Manual NPI search — third step in the discovery pipeline.
             Opted into via "Enter providers yourself" on discovery-method.
             Always renders after bank/calendar (if selected) and before score. */}
-        {phase === "manual-search" && (
+        {phase === "manual-search" && !responded && (
           <div className="animate-fadeIn space-y-3">
             <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-4 space-y-3">
               <label className="block text-xs font-semibold text-[#071832] mb-1">Search for a provider</label>
