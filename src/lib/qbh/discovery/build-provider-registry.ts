@@ -286,9 +286,13 @@ export async function buildProviderRegistry(
     "EUROPEAN WAX", "WAXING THE CITY", "DRYBAR",
     // Childcare / daycare / preschool. AI sometimes labels these
     // "other_healthcare" because they have child-related terms.
+    // Note: normalizeProviderName strips apostrophes ("Children's
+    // Academy" → "CHILDREN S ACADEMY"), so keyword form must be
+    // apostrophe-free.
     "KINDERCARE", "BRIGHT HORIZONS", "GODDARD SCHOOL", "PRIMROSE SCHOOL",
     "LA PETITE ACADEMY", "CHILDCARE NETWORK", "MONTESSORI", "DAYCARE",
-    "CHILDREN'S ACADEMY", "CHILDRENS ACADEMY", "PRESCHOOL",
+    "CHILDRENS ACADEMY", "CHILDREN S ACADEMY", "CHILDRENS LEARNING",
+    "CHILDREN S LEARNING", "PRESCHOOL", "KIDDIE ACADEMY",
     // K-12 schools. NPI registry has "Local Education Agency (LEA)"
     // entries — schools that employ nurses get registered, but they
     // aren't medical providers from the user's perspective.
@@ -371,6 +375,12 @@ export async function buildProviderRegistry(
     "PARKMOBILE", "PASSPORT PARKING",
     "CHEVRON",  // gas brand AI sometimes labels HC
     "AMAZON.COM*RX", "AMZN MKTP*RX",  // amazon pharmacy ambiguity
+    // Tax software / prep — variance v2 surfaced H&R Block. The "&"
+    // gets stripped by normalize so we need the apostrophe-free form
+    // ("H R BLOCK") plus the brand variants users actually see.
+    "H R BLOCK", "HR BLOCK", "H&R BLOCK", "HRBLOCK",
+    "TURBOTAX", "INTUIT QUICKBOOKS", "INTUIT TURBOTAX",
+    "TAXACT", "FREETAXUSA", "JACKSON HEWITT", "LIBERTY TAX",
     // Religious institutions (donations, not care)
     "TEMPLE BETH", "ST PETER", "ST MICHAEL", "ST MARY",
     " CHURCH ", "DIOCESE", "PARISH", "CHABAD",
