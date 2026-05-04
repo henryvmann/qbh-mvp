@@ -65,7 +65,7 @@ export default function CallTestResults() {
       ) : (
         <div className="mt-6 space-y-6">
           {logs.map((log) => (
-            <div key={log.id || log.call_id} className="rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 shadow-sm overflow-hidden">
+            <div key={log.id || log.call_id} className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm overflow-hidden">
               <div className="px-5 py-3 border-b border-white/50 flex items-center justify-between">
                 <span className="text-xs font-semibold text-[#071832]">{log.call_id}</span>
                 <span className="text-[10px] text-[#4F5F73]">

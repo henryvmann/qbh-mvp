@@ -174,7 +174,7 @@ export default function KateChatButton() {
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                 <text
                   x="7" y="11" textAnchor="middle" fontSize="12"
-                  fontWeight="700" fontFamily="system-ui, sans-serif" fill="#D8E8F5"
+                  fontWeight="700" fontFamily="system-ui, sans-serif" fill="#FFFFFF"
                 >K</text>
               </svg>
             </div>

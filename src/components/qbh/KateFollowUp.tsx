@@ -48,7 +48,7 @@ export default function KateFollowUp() {
           style={{ background: "#1677FF" }}
         >
           <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-            <text x="7" y="11" textAnchor="middle" fontSize="11" fontWeight="700" fontFamily="system-ui" fill="#D8E8F5">K</text>
+            <text x="7" y="11" textAnchor="middle" fontSize="11" fontWeight="700" fontFamily="system-ui" fill="#FFFFFF">K</text>
           </svg>
         </div>
         <span className="text-xs font-bold uppercase tracking-widest text-[#4F5F73]">

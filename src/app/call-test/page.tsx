@@ -95,7 +95,7 @@ export default function CallTestPage() {
           return (
             <div
               key={p.id}
-              className={`rounded-2xl bg-white/55 backdrop-blur-sm border p-5 shadow-sm transition-all ${
+              className={`rounded-2xl bg-white border-[#E5EAF2] border p-5 shadow-sm transition-all ${
                 isActive ? "call-active border-[#1677FF]" : "border-white/70"
               }`}
             >
@@ -124,7 +124,7 @@ export default function CallTestPage() {
                   onClick={() => handleCall(p)}
                   disabled={!!callingId}
                   className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
-                  style={{ background: isActive ? "linear-gradient(135deg, #1677FF, #0D7A7A)" : "linear-gradient(135deg, #1677FF, #5C7B5C)" }}
+                  style={{ background: isActive ? "#006BFF" : "#1677FF" }}
                 >
                   {isActive ? "On call..." : callingId ? "Waiting..." : "Call with Kate"}
                 </button>
