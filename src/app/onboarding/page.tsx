@@ -831,7 +831,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Value Props */}
-        {phase === "value-props" && !typing && (
+        {phase === "value-props" && (
           <div className="space-y-3 animate-fadeIn">
             <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
               <Search size={20} className="text-[#1677FF] shrink-0 mt-0.5" />
@@ -859,7 +859,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Who for */}
-        {phase === "who-for" && !typing && (
+        {phase === "who-for" && (
           <OptionButtons
             options={[
               { label: "Just me", value: "just-me" },
@@ -870,7 +870,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Family select */}
-        {phase === "family-select" && !typing && (
+        {phase === "family-select" && (
           <div className="space-y-2 animate-fadeIn">
             <p className="text-xs text-[#4F5F73] mb-1">Select as many as you need</p>
             {[
@@ -900,7 +900,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Discovery method */}
-        {phase === "discovery-method" && !typing && (
+        {phase === "discovery-method" && (
           <div className="space-y-3 animate-fadeIn">
             <p className="text-sm font-semibold text-[#071832] mb-2">Pick at least one to continue</p>
             <ToggleCard
@@ -937,7 +937,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Account creation */}
-        {phase === "account-create" && !typing && (
+        {phase === "account-create" && (
           <div className="animate-fadeIn rounded-2xl backdrop-blur-sm p-5 space-y-3" style={{ background: theme.glass, border: `1px solid ${theme.glassBorder}`, boxShadow: theme.cardShadow }}>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -1058,7 +1058,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Plaid connect */}
-        {phase === "plaid-connect" && !typing && (
+        {phase === "plaid-connect" && (
           <div className="animate-fadeIn">
             <button
               onClick={openPlaidLink}
@@ -1074,7 +1074,7 @@ export default function OnboardingPage() {
         )}
 
         {/* Calendar connect */}
-        {phase === "calendar-connect" && !typing && (
+        {phase === "calendar-connect" && (
           <div className="animate-fadeIn space-y-3">
             <button
               onClick={async () => {
@@ -1163,7 +1163,7 @@ export default function OnboardingPage() {
             is care for me" or dismiss "just shopping" before reaching the
             dashboard. Inserted automatically when bank/calendar discovery
             yields ambiguous rows; transitions to postReviewPhase on done. */}
-        {phase === "review-team" && !typing && (
+        {phase === "review-team" && (
           <div className="animate-fadeIn space-y-3">
             <KateBubble>I picked up a few I wasn't sure about — care for you, or just somewhere you shop?</KateBubble>
             <div className="space-y-2">
@@ -1237,7 +1237,7 @@ export default function OnboardingPage() {
         {/* Manual NPI search — third step in the discovery pipeline.
             Opted into via "Enter providers yourself" on discovery-method.
             Always renders after bank/calendar (if selected) and before score. */}
-        {phase === "manual-search" && !typing && (
+        {phase === "manual-search" && (
           <div className="animate-fadeIn space-y-3">
             <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-4 space-y-3">
               <label className="block text-xs font-semibold text-[#071832] mb-1">Search for a provider</label>
