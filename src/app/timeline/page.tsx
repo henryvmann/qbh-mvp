@@ -14,6 +14,17 @@ type TimelineProvider = { providerId: string; providerName: string; visits: Visi
 type TimelineYear = { year: string; providers: TimelineProvider[]; totalVisits: number };
 type UpcomingEvent = { id: string; providerId: string; providerName: string; date: string; detail: string; needsProviderMatch?: boolean };
 
+type YearAheadItem = {
+  providerId: string;
+  providerName: string;
+  providerType: string | null;
+  title: string;
+  status: "scheduled" | "in_progress" | "overdue" | "due";
+  date: string;
+  detail?: string;
+};
+type YearAheadMonth = { key: string; label: string; items: YearAheadItem[] };
+
 function formatDate(iso: string): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -34,6 +45,8 @@ export default function TimelinePage() {
   const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
   const [addingProvider, setAddingProvider] = useState<string | null>(null);
   const [addedProviders, setAddedProviders] = useState<Set<string>>(new Set());
+  const [yearAheadMonths, setYearAheadMonths] = useState<YearAheadMonth[]>([]);
+  const [yearAheadOverdue, setYearAheadOverdue] = useState<YearAheadItem[]>([]);
 
   useEffect(() => {
     apiFetch("/api/timeline/data")
@@ -49,6 +62,15 @@ export default function TimelinePage() {
         }
       })
       .finally(() => setLoading(false));
+    apiFetch("/api/year-ahead")
+      .then((res) => res.ok ? res.json() : null)
+      .then((json) => {
+        if (json?.ok) {
+          setYearAheadMonths(json.months ?? []);
+          setYearAheadOverdue(json.overdue ?? []);
+        }
+      })
+      .catch(() => {});
   }, [router]);
 
   function toggleProvider(key: string) {
@@ -92,6 +114,95 @@ export default function TimelinePage() {
             </span>
           )}
         </div>
+
+        {/* Year Ahead — preventive-care calendar inferred from
+            provider history + cadence. Empty months are still shown
+            so the timeline reads as a calendar, not just a list. */}
+        {(yearAheadMonths.length > 0 || yearAheadOverdue.length > 0) && (
+          <div className="mt-10">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="text-sm font-bold text-[#1677FF]">Year ahead</span>
+              <div className="flex-1 h-px bg-[#E5EAF2]" />
+            </div>
+            <p className="text-xs text-[#4F5F73] mb-4">
+              What&rsquo;s coming up over the next 12 months — annual physicals,
+              cleanings, follow-ups. Inferred from your provider history.
+            </p>
+
+            {yearAheadOverdue.length > 0 && (
+              <div className="mb-5 rounded-2xl bg-white border border-[#E04030]/30 shadow-sm p-4">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#E04030] mb-2">
+                  Overdue
+                </div>
+                <div className="space-y-2">
+                  {yearAheadOverdue.map((item) => (
+                    <div key={item.providerId} className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-[#071832]">{item.title}</div>
+                        <div className="text-xs text-[#4F5F73] mt-0.5">
+                          {item.providerName} · was due {formatDate(item.date)}
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-[#E04030]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#E04030] shrink-0">
+                        Overdue
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {yearAheadMonths.map((m) => {
+                const isEmpty = m.items.length === 0;
+                return (
+                  <div
+                    key={m.key}
+                    className={`rounded-2xl bg-white border border-[#E5EAF2] shadow-sm px-5 py-4 ${isEmpty ? "opacity-50" : ""}`}
+                  >
+                    <div className="flex items-baseline justify-between mb-2">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#4F5F73]">
+                        {m.label}
+                      </div>
+                      {isEmpty && (
+                        <div className="text-[11px] text-[#4F5F73]">Nothing planned</div>
+                      )}
+                    </div>
+                    {!isEmpty && (
+                      <div className="space-y-2">
+                        {m.items.map((item) => {
+                          const pillBg = item.status === "scheduled"
+                            ? "bg-[#27C46B]/10 text-[#27C46B]"
+                            : item.status === "in_progress"
+                            ? "bg-[#1677FF]/10 text-[#1677FF]"
+                            : "bg-[#1677FF]/10 text-[#1677FF]";
+                          const pillLabel = item.status === "scheduled"
+                            ? "Scheduled"
+                            : item.status === "in_progress"
+                            ? "Kate is on it"
+                            : "Due";
+                          return (
+                            <div key={`${item.providerId}-${item.date}`} className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-[#071832]">{item.title}</div>
+                                <div className="text-xs text-[#4F5F73] mt-0.5">
+                                  {item.providerName} · {formatDate(item.date)}
+                                </div>
+                              </div>
+                              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0 ${pillBg}`}>
+                                {pillLabel}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Upcoming appointments */}
         {upcoming.length > 0 && (

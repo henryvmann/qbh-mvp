@@ -43,6 +43,46 @@ export default function AccountPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Care preferences — how the user likes appointments scheduled.
+  // Stored under patient_profile.care_preferences. Kate consults
+  // these when proposing times (hookup is a separate task).
+  type CarePrefs = {
+    time_of_day: "morning" | "afternoon" | "evening" | "no_preference";
+    group_appointments: boolean;
+    same_location: boolean;
+    reminders: { week: boolean; threeDay: boolean; day: boolean; morningOf: boolean };
+    ask_before_booking: boolean;
+  };
+  const DEFAULT_PREFS: CarePrefs = {
+    time_of_day: "no_preference",
+    group_appointments: false,
+    same_location: false,
+    reminders: { week: false, threeDay: false, day: true, morningOf: false },
+    ask_before_booking: true,
+  };
+  const [carePrefs, setCarePrefs] = useState<CarePrefs>(DEFAULT_PREFS);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [prefsSaved, setPrefsSaved] = useState(false);
+
+  async function saveCarePrefs(next: CarePrefs) {
+    setCarePrefs(next);
+    setSavingPrefs(true);
+    setPrefsSaved(false);
+    try {
+      await apiFetch("/api/patient-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile: { care_preferences: next } }),
+      });
+      setPrefsSaved(true);
+      setTimeout(() => setPrefsSaved(false), 2000);
+    } catch {
+      // Non-critical — value stays in local state
+    } finally {
+      setSavingPrefs(false);
+    }
+  }
+
   // 2FA / MFA. Supabase Auth ships TOTP support out of the box; this
   // section enrolls a single TOTP factor per user. Once verified, the
   // login flow elevates to AAL2 and prompts for the 6-digit code.
@@ -173,6 +213,9 @@ export default function AccountPage() {
             const p = profJson.profile;
             setInsuranceProvider(p.insurance_provider || p.insuranceProvider || null);
             setMemberId(p.member_id || p.memberId || null);
+            if (p.care_preferences && typeof p.care_preferences === "object") {
+              setCarePrefs({ ...DEFAULT_PREFS, ...(p.care_preferences as Partial<CarePrefs>) });
+            }
           }
         }
       } catch {
@@ -485,6 +528,124 @@ export default function AccountPage() {
           </div>
           <div className="text-sm text-[#5A6675] leading-relaxed">
             QBH works for you. Nothing leaves without your say-so.
+          </div>
+        </div>
+
+        {/* Care preferences — Kate consults these when proposing
+            appointment times. (Hookup is a separate task; for now
+            we just persist them.) */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#1677FF]">
+              Care preferences
+            </h2>
+            {savingPrefs && <span className="text-xs text-[#4F5F73]">Saving…</span>}
+            {!savingPrefs && prefsSaved && <span className="text-xs text-[#27C46B] font-semibold">Saved</span>}
+          </div>
+          <p className="text-xs text-[#4F5F73] mb-5 leading-relaxed">
+            Tell Kate how you like appointments handled. She&rsquo;ll honor
+            these whenever she proposes times.
+          </p>
+
+          {/* Time of day */}
+          <div className="mb-5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">
+              Preferred time of day
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { v: "morning", l: "Morning" },
+                { v: "afternoon", l: "Afternoon" },
+                { v: "evening", l: "Evening" },
+                { v: "no_preference", l: "No preference" },
+              ] as { v: CarePrefs["time_of_day"]; l: string }[]).map((opt) => {
+                const active = carePrefs.time_of_day === opt.v;
+                return (
+                  <button
+                    key={opt.v}
+                    type="button"
+                    onClick={() => saveCarePrefs({ ...carePrefs, time_of_day: opt.v })}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium border transition ${
+                      active
+                        ? "bg-[#1677FF] text-white border-[#1677FF]"
+                        : "bg-white text-[#071832] border-[#E5EAF2] hover:border-[#1677FF]"
+                    }`}
+                  >
+                    {opt.l}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Toggles */}
+          <div className="mb-5 space-y-3">
+            {([
+              { k: "group_appointments", l: "Group appointments together when possible", h: "Kate will try to schedule back-to-back visits to save trips." },
+              { k: "same_location", l: "Prefer providers in the same area", h: "When adding new providers, Kate suggests ones near your existing care team." },
+              { k: "ask_before_booking", l: "Always ask before booking anything", h: "Kate proposes times; you confirm before she calls the office." },
+            ] as { k: keyof Pick<CarePrefs, "group_appointments" | "same_location" | "ask_before_booking">; l: string; h: string }[]).map((opt) => {
+              const checked = carePrefs[opt.k];
+              return (
+                <label key={opt.k} className="flex items-start gap-3 cursor-pointer">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={checked}
+                    onClick={() => saveCarePrefs({ ...carePrefs, [opt.k]: !checked })}
+                    className={`relative h-6 w-10 rounded-full border transition flex-shrink-0 mt-0.5 ${
+                      checked ? "bg-[#1677FF] border-[#1677FF]" : "bg-white border-[#E5EAF2]"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                        checked ? "left-[18px]" : "left-0.5"
+                      }`}
+                    />
+                  </button>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-[#071832]">{opt.l}</div>
+                    <div className="text-xs text-[#4F5F73] mt-0.5">{opt.h}</div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+
+          {/* Reminder cadence */}
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">
+              Send me reminders
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { k: "week", l: "1 week before" },
+                { k: "threeDay", l: "3 days before" },
+                { k: "day", l: "1 day before" },
+                { k: "morningOf", l: "Morning of" },
+              ] as { k: keyof CarePrefs["reminders"]; l: string }[]).map((opt) => {
+                const active = carePrefs.reminders[opt.k];
+                return (
+                  <button
+                    key={opt.k}
+                    type="button"
+                    onClick={() =>
+                      saveCarePrefs({
+                        ...carePrefs,
+                        reminders: { ...carePrefs.reminders, [opt.k]: !active },
+                      })
+                    }
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium border transition ${
+                      active
+                        ? "bg-[#1677FF] text-white border-[#1677FF]"
+                        : "bg-white text-[#071832] border-[#E5EAF2] hover:border-[#1677FF]"
+                    }`}
+                  >
+                    {opt.l}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

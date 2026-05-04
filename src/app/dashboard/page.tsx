@@ -134,16 +134,29 @@ function DashboardInner() {
   const nonPharmacy = snapshots.filter((s) => s.provider.provider_type !== "pharmacy");
   const overdueCount = nonPharmacy.filter(isOverdue).length;
   const upcomingCount = nonPharmacy.filter(hasConfirmedBooking).length;
+  const actionCount = overdueCount;
   const weekDays = getWeekDays();
+
+  // Weekly check-in framing: lead with what Kate's surfaced rather
+  // than a static "Today." Matches the typeform signal — users want
+  // relief, not a wall of tiles.
+  const checkIn =
+    actionCount === 0 && upcomingCount === 0
+      ? "All clear this week."
+      : actionCount === 0
+      ? `${upcomingCount} appointment${upcomingCount === 1 ? "" : "s"} coming up. Nothing else needs you.`
+      : actionCount === 1
+      ? "Found 1 thing for you this week."
+      : `Found ${actionCount} things for you this week.`;
 
   return (
     <BrandShell topRight={<UserAvatar />}>
-      {/* Greeting */}
+      {/* Greeting + Kate's weekly check-in */}
       <div style={{ paddingTop: 8, marginBottom: 16 }}>
         <div style={{ fontSize: 13, color: T.lightMuted, marginBottom: 6 }}>
           Hi, {userName || "there"}
         </div>
-        <AustinHeading size={32}>Today.</AustinHeading>
+        <AustinHeading size={32}>{checkIn}</AustinHeading>
       </div>
 
       {/* Health Coordination Score */}
