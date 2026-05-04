@@ -3,6 +3,27 @@
 import { classifyTransactionsWithAI } from "../../openai/classify-transactions";
 import { batchNpiLookup } from "../../npi/lookup";
 import { lookupPlacePhone } from "../../google/places-lookup";
+import { supabaseAdmin } from "../../supabase-server";
+
+/**
+ * HEALTHCARE_ALLOWLIST — merchants that ALWAYS classify as healthcare,
+ * regardless of any user feedback. The feedback loop (per-user
+ * dismissals → filter on next scan) lets users tell us "this isn't
+ * healthcare for me," but real chains shouldn't be poisonable. If a
+ * user dismisses CVS because they only buy snacks there, that signal
+ * stays on their account; another user's CVS pickups still classify
+ * as pharmacy.
+ *
+ * Uppercase normalized form. Match is exact-equality on
+ * normalized_name AFTER normalizeProviderName runs.
+ */
+const HEALTHCARE_ALLOWLIST = new Set([
+  "CVS", "CVS PHARMACY", "WALGREENS", "RITE AID", "DUANE READE",
+  "MOUNT SINAI", "MOUNT SINAI HOSP", "NORTHWELL HEALTH", "KAISER PERMANENTE",
+  "ONE MEDICAL", "QUEST DIAGNOSTICS", "LABCORP",
+  "WARBY PARKER", "PEARLE VISION", "LENSCRAFTERS", "VISIONWORKS",
+  "CITYMD URGENT CARE", "CITYMD",
+]);
 
 type DiscoveryBucket = "HEALTHCARE" | "REVIEW_NEEDED" | "IGNORE";
 
@@ -161,7 +182,10 @@ function median(values: number[]): number | null {
  * as healthcare or not. Falls back to keyword matching if AI fails.
  */
 export async function buildProviderRegistry(
-  transactions: PlaidDiscoveryTransaction[]
+  transactions: PlaidDiscoveryTransaction[],
+  /** When set, applies per-user feedback filter — drops merchants this
+   *  user has previously dismissed (unless on the immune allowlist). */
+  appUserId?: string
 ): Promise<DiscoveredProvider[]> {
   // Step 1: Group transactions by normalized merchant name
   const grouped = new Map<
@@ -690,7 +714,40 @@ export async function buildProviderRegistry(
     return bTime - aTime;
   });
 
-  console.log(`[buildProviderRegistry] Result: ${providers.filter(p => p.bucket === "HEALTHCARE").length} healthcare, ${providers.filter(p => p.bucket === "REVIEW_NEEDED").length} review_needed`);
+  // Per-user dismissal filter: drop merchants this user has previously
+  // told us aren't healthcare. Allowlisted chains (CVS, Walgreens,
+  // etc.) are immune — one user's feedback can't suppress them.
+  let filtered = providers;
+  if (appUserId) {
+    try {
+      const { data: dismissed } = await supabaseAdmin
+        .from("classifier_dismissals")
+        .select("normalized_name")
+        .eq("app_user_id", appUserId);
+      const dismissSet = new Set(
+        (dismissed ?? []).map((d) => String(d.normalized_name).toUpperCase().trim())
+      );
+      if (dismissSet.size > 0) {
+        const before = filtered.length;
+        filtered = filtered.filter((p) => {
+          const norm = (p.normalized_name ?? "").toUpperCase().trim();
+          if (HEALTHCARE_ALLOWLIST.has(norm)) return true; // immune
+          return !dismissSet.has(norm);
+        });
+        if (before !== filtered.length) {
+          console.log(
+            `[buildProviderRegistry] Per-user dismissal filter: dropped ${before - filtered.length} of ${before} (allowlist immune)`
+          );
+        }
+      }
+    } catch (err) {
+      // Feedback filter is non-blocking — if the table query fails for
+      // any reason, classification still proceeds normally.
+      console.error("[buildProviderRegistry] dismissal filter error (continuing):", err);
+    }
+  }
 
-  return providers;
+  console.log(`[buildProviderRegistry] Result: ${filtered.filter(p => p.bucket === "HEALTHCARE").length} healthcare, ${filtered.filter(p => p.bucket === "REVIEW_NEEDED").length} review_needed`);
+
+  return filtered;
 }

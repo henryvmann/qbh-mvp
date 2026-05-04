@@ -572,6 +572,235 @@ const HEALTHCARE: Seed[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────
+// 25. DTC TELEHEALTH / DIRECT-TO-CONSUMER WELLNESS
+// Mostly real healthcare (prescriptions, telehealth) but the
+// classifier needs to treat them as REVIEW_NEEDED at minimum since
+// a user might use Hims for hair-loss meds (clinical) or skincare
+// (not). We label them is_healthcare:true since the underlying
+// service IS clinical care.
+// ─────────────────────────────────────────────────────────────────
+
+const DTC_TELEHEALTH: Seed[] = [
+  hc({ template: "HIMS HAIR INC", bucket: "doctor", amount_range: [20, 80], visit_pattern: "recurring", tag: "dtc-telehealth" }),
+  hc({ template: "HERS HEALTH INC", bucket: "doctor", amount_range: [20, 80], visit_pattern: "recurring", tag: "dtc-telehealth" }),
+  hc({ template: "RO HIMS", bucket: "doctor", amount_range: [20, 100], visit_pattern: "recurring", tag: "dtc-telehealth" }),
+  hc({ template: "ROMAN HEALTH PHARMACY", bucket: "pharmacy", amount_range: [20, 200], visit_pattern: "recurring", tag: "dtc-pharmacy" }),
+  hc({ template: "CEREBRAL INC", bucket: "mental_health", amount_range: [50, 350], visit_pattern: "recurring", tag: "dtc-telehealth" }),
+  hc({ template: "BRIGHTSIDE HEALTH", bucket: "mental_health", amount_range: [50, 300], visit_pattern: "recurring", tag: "dtc-telehealth" }),
+  hc({ template: "DONE GLOBAL", bucket: "mental_health", amount_range: [80, 250], visit_pattern: "recurring", tag: "dtc-telehealth" }),
+  hc({ template: "FOLX HEALTH", bucket: "doctor", amount_range: [50, 300], visit_pattern: "recurring", tag: "dtc-telehealth" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 26. AT-HOME TESTING / LABS
+// ─────────────────────────────────────────────────────────────────
+
+const AT_HOME_TESTING: Seed[] = [
+  hc({ template: "EVERLYWELL", bucket: "lab", amount_range: [40, 250], visit_pattern: "occasional", tag: "at-home-lab" }),
+  hc({ template: "LETSGETCHECKED", bucket: "lab", amount_range: [40, 300], visit_pattern: "occasional", tag: "at-home-lab" }),
+  hc({ template: "23ANDME INC", bucket: "lab", amount_range: [99, 199], visit_pattern: "one-off", tag: "at-home-lab" }),
+  hc({ template: "ANCESTRY *DNA TEST", bucket: "lab", amount_range: [50, 150], visit_pattern: "one-off", tag: "at-home-lab" }),
+  hc({ template: "FUNCTION HEALTH", bucket: "lab", amount_range: [400, 600], visit_pattern: "recurring", tag: "at-home-lab" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 27. HOME MEDICAL EQUIPMENT
+// ─────────────────────────────────────────────────────────────────
+
+const MEDICAL_EQUIPMENT: Seed[] = [
+  hc({ template: "APRIA HEALTHCARE", bucket: "specialist", amount_range: [50, 600], visit_pattern: "recurring", tag: "dme" }),
+  hc({ template: "LINCARE INC", bucket: "specialist", amount_range: [50, 600], visit_pattern: "recurring", tag: "dme" }),
+  hc({ template: "RESMED CORP", bucket: "specialist", amount_range: [80, 1500], visit_pattern: "occasional", tag: "dme" }),
+  hc({ template: "MEDLINE INDUSTRIES", bucket: "specialist", amount_range: [40, 400], visit_pattern: "occasional", tag: "dme" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 28. TAX SOFTWARE / ACCOUNTING / FINANCIAL ADVISORS
+// ─────────────────────────────────────────────────────────────────
+
+const TAX_FINANCE: Seed[] = [
+  nh({ template: "TURBOTAX *INTUIT", amount_range: [20, 300], visit_pattern: "occasional", tag: "tax-software" }),
+  nh({ template: "H&R BLOCK", amount_range: [50, 500], visit_pattern: "occasional", tag: "tax-prep" }),
+  nh({ template: "INTUIT *QUICKBOOKS", amount_range: [25, 250], visit_pattern: "recurring", tag: "accounting-software" }),
+  nh({ template: "{{LASTNAME_UPPER}} CPA", amount_range: [200, 2000], visit_pattern: "occasional", tag: "accountant" }),
+  nh({ template: "WEALTHFRONT ADVISERS", amount_range: [10, 200], visit_pattern: "recurring", tag: "advisor" }),
+  nh({ template: "BETTERMENT MGMT FEE", amount_range: [3, 100], visit_pattern: "recurring", tag: "advisor" }),
+  nh({ template: "ACORNS *MGMT FEE", amount_range: [3, 50], visit_pattern: "recurring", tag: "advisor" }),
+  nh({ template: "M1 FINANCE", amount_range: [3, 50], visit_pattern: "recurring", tag: "advisor" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 29. MEAL KITS / FOOD SUBSCRIPTIONS
+// ─────────────────────────────────────────────────────────────────
+
+const MEAL_KITS: Seed[] = [
+  nh({ template: "HELLOFRESH", amount_range: [60, 250], visit_pattern: "recurring", tag: "meal-kit" }),
+  nh({ template: "BLUE APRON", amount_range: [60, 250], visit_pattern: "recurring", tag: "meal-kit" }),
+  nh({ template: "DAILY HARVEST", amount_range: [50, 200], visit_pattern: "recurring", tag: "meal-kit" }),
+  nh({ template: "FACTOR75", amount_range: [80, 250], visit_pattern: "recurring", tag: "meal-kit" }),
+  nh({ template: "ATHLETIC GREENS AG1", amount_range: [60, 100], visit_pattern: "recurring", tag: "supplement-sub" }),
+  nh({ template: "GREEN CHEF", amount_range: [60, 250], visit_pattern: "recurring", tag: "meal-kit" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 30. WEARABLES / HEALTH TECH (ambiguous — hardware not care)
+// ─────────────────────────────────────────────────────────────────
+
+const HEALTH_TECH: Seed[] = [
+  nh({ template: "WHOOP MEMBERSHIP", amount_range: [10, 350], visit_pattern: "recurring", tag: "wearable" }),
+  nh({ template: "OURA *RING", amount_range: [10, 400], visit_pattern: "recurring", tag: "wearable" }),
+  nh({ template: "EIGHT SLEEP", amount_range: [20, 3000], visit_pattern: "recurring", tag: "wearable" }),
+  nh({ template: "LEVELS HEALTH", amount_range: [50, 200], visit_pattern: "recurring", tag: "wearable-cgm" }),
+  nh({ template: "FITBIT *PREMIUM", amount_range: [10, 80], visit_pattern: "recurring", tag: "wearable" }),
+  nh({ template: "GARMIN.COM", amount_range: [50, 800], visit_pattern: "occasional", tag: "wearable" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 31. WEDDING / EVENT / FUNERAL VENDORS
+// ─────────────────────────────────────────────────────────────────
+
+const EVENT_VENDORS: Seed[] = [
+  nh({ template: "{{TOWN_UPPER}} FLORIST", amount_range: [80, 500], visit_pattern: "occasional", tag: "event-vendor" }),
+  nh({ template: "{{LASTNAME_UPPER}} PHOTOGRAPHY", amount_range: [200, 5000], visit_pattern: "one-off", tag: "event-vendor" }),
+  nh({ template: "THE KNOT WEDDINGS", amount_range: [40, 1000], visit_pattern: "occasional", tag: "event-vendor" }),
+  nh({ template: "{{TOWN_UPPER}} CATERING", amount_range: [200, 5000], visit_pattern: "one-off", tag: "event-vendor" }),
+  nh({ template: "{{LASTNAME_UPPER}} FUNERAL HOME", amount_range: [500, 12000], visit_pattern: "one-off", tag: "funeral" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 32. LEGAL / PROFESSIONAL SERVICES
+// ─────────────────────────────────────────────────────────────────
+
+const LEGAL: Seed[] = [
+  nh({ template: "{{LASTNAME_UPPER}} LAW FIRM", amount_range: [200, 5000], visit_pattern: "occasional", tag: "legal" }),
+  nh({ template: "LEGALZOOM.COM", amount_range: [50, 500], visit_pattern: "occasional", tag: "legal" }),
+  nh({ template: "ROCKET LAWYER", amount_range: [10, 100], visit_pattern: "recurring", tag: "legal" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 33. CANNABIS / DISPENSARIES
+// ─────────────────────────────────────────────────────────────────
+
+const CANNABIS: Seed[] = [
+  nh({ template: "{{TOWN_UPPER}} DISPENSARY", amount_range: [40, 250], visit_pattern: "recurring", tag: "cannabis" }),
+  nh({ template: "CURALEAF", amount_range: [40, 200], visit_pattern: "recurring", tag: "cannabis" }),
+  nh({ template: "TRULIEVE", amount_range: [40, 200], visit_pattern: "recurring", tag: "cannabis" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 34. NIGHTLIFE / BARS / VENUES
+// ─────────────────────────────────────────────────────────────────
+
+const NIGHTLIFE: Seed[] = [
+  nh({ template: "{{TOWN_UPPER}} TAVERN", amount_range: [25, 200], visit_pattern: "occasional", tag: "bar" }),
+  nh({ template: "{{LASTNAME_UPPER}}'S PUB", amount_range: [20, 150], visit_pattern: "occasional", tag: "bar" }),
+  nh({ template: "{{TOWN_UPPER}} BREWERY", amount_range: [20, 100], visit_pattern: "occasional", tag: "bar" }),
+  nh({ template: "TST*{{TOWN_UPPER}} TAP HOUSE", amount_range: [20, 150], visit_pattern: "occasional", tag: "bar" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 35. TUTORING / EXTRACURRICULAR EDUCATION
+// ─────────────────────────────────────────────────────────────────
+
+const TUTORING: Seed[] = [
+  nh({ template: "OUTSCHOOL", amount_range: [20, 200], visit_pattern: "occasional", tag: "tutoring" }),
+  nh({ template: "VARSITY TUTORS", amount_range: [50, 1000], visit_pattern: "recurring", tag: "tutoring" }),
+  nh({ template: "WYZANT TUTORING", amount_range: [40, 200], visit_pattern: "occasional", tag: "tutoring" }),
+  nh({ template: "TAKELESSONS *", amount_range: [25, 200], visit_pattern: "recurring", tag: "tutoring" }),
+  nh({ template: "MATHNASIUM", amount_range: [200, 500], visit_pattern: "recurring", tag: "tutoring" }),
+  nh({ template: "KUMON {{TOWN_UPPER}}", amount_range: [150, 350], visit_pattern: "recurring", tag: "tutoring" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 36. HOME SERVICES (extended)
+// ─────────────────────────────────────────────────────────────────
+
+const HOME_SERVICES: Seed[] = [
+  nh({ template: "ANGI *HOME SERVICE", amount_range: [50, 500], visit_pattern: "occasional", tag: "home-service" }),
+  nh({ template: "TASKRABBIT *", amount_range: [40, 300], visit_pattern: "occasional", tag: "home-service" }),
+  nh({ template: "{{TOWN_UPPER}} PEST CONTROL", amount_range: [80, 400], visit_pattern: "recurring", tag: "home-service" }),
+  nh({ template: "{{LASTNAME_UPPER}} ELECTRIC", amount_range: [100, 1500], visit_pattern: "occasional", tag: "home-service" }),
+  nh({ template: "{{TOWN_UPPER}} POOL SERVICE", amount_range: [80, 500], visit_pattern: "recurring", tag: "home-service" }),
+  nh({ template: "TERMINIX", amount_range: [80, 350], visit_pattern: "recurring", tag: "home-service" }),
+  nh({ template: "ORKIN", amount_range: [80, 350], visit_pattern: "recurring", tag: "home-service" }),
+  nh({ template: "MOLLY MAID", amount_range: [120, 350], visit_pattern: "recurring", tag: "home-service" }),
+  nh({ template: "MERRY MAIDS", amount_range: [120, 350], visit_pattern: "recurring", tag: "home-service" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 37. KIDS' ACTIVITIES (sports, music, camps)
+// ─────────────────────────────────────────────────────────────────
+
+const KIDS_ACTIVITIES: Seed[] = [
+  nh({ template: "{{TOWN_UPPER}} SOCCER CLUB", amount_range: [100, 600], visit_pattern: "recurring", tag: "kids-sports" }),
+  nh({ template: "LITTLE LEAGUE *", amount_range: [50, 250], visit_pattern: "recurring", tag: "kids-sports" }),
+  nh({ template: "GYMBOREE PLAY", amount_range: [40, 200], visit_pattern: "recurring", tag: "kids-activity" }),
+  nh({ template: "THE LITTLE GYM", amount_range: [80, 300], visit_pattern: "recurring", tag: "kids-activity" }),
+  nh({ template: "SCHOOL OF ROCK", amount_range: [200, 400], visit_pattern: "recurring", tag: "kids-music" }),
+  nh({ template: "GOLDFISH SWIM SCHOOL", amount_range: [80, 250], visit_pattern: "recurring", tag: "kids-sports" }),
+  nh({ template: "KIDDIE ACADEMY", amount_range: [600, 2500], visit_pattern: "recurring", tag: "preschool" }),
+  nh({ template: "{{TOWN_UPPER}} DAY CAMP", amount_range: [200, 2500], visit_pattern: "occasional", tag: "summer-camp" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 38. EXPANDED VISION / OPTICAL
+// ─────────────────────────────────────────────────────────────────
+
+const VISION_RETAIL: Seed[] = [
+  hc({ template: "LENSCRAFTERS #{{NUM3}}", bucket: "vision", amount_range: [80, 600], visit_pattern: "occasional", tag: "vision" }),
+  hc({ template: "VISIONWORKS", bucket: "vision", amount_range: [80, 500], visit_pattern: "occasional", tag: "vision" }),
+  hc({ template: "EYEBUYDIRECT", bucket: "vision", amount_range: [40, 300], visit_pattern: "occasional", tag: "vision" }),
+  hc({ template: "GLASSESUSA.COM", bucket: "vision", amount_range: [40, 300], visit_pattern: "occasional", tag: "vision" }),
+  hc({ template: "1-800 CONTACTS", bucket: "vision", amount_range: [50, 350], visit_pattern: "recurring", tag: "vision" }),
+  hc({ template: "FOR EYES *", bucket: "vision", amount_range: [80, 500], visit_pattern: "occasional", tag: "vision" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 39. HEARING AIDS / AUDIOLOGY
+// ─────────────────────────────────────────────────────────────────
+
+const HEARING: Seed[] = [
+  hc({ template: "MIRACLE-EAR", bucket: "specialist", amount_range: [200, 5000], visit_pattern: "occasional", tag: "audiology" }),
+  hc({ template: "BELTONE", bucket: "specialist", amount_range: [200, 5000], visit_pattern: "occasional", tag: "audiology" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 40. EXPANDED SPECIALTY MEDICAL
+// ─────────────────────────────────────────────────────────────────
+
+const SPECIALTY_EXPANDED: Seed[] = [
+  hc({ template: "{{LASTNAME_UPPER}} ORTHOPEDIC", bucket: "specialist", amount_range: [80, 800], visit_pattern: "occasional", tag: "ortho" }),
+  hc({ template: "{{TOWN_UPPER}} ORTHO ASSOC", bucket: "specialist", amount_range: [80, 800], visit_pattern: "occasional", tag: "ortho" }),
+  hc({ template: "{{LASTNAME_UPPER}} GASTRO ASSOC", bucket: "specialist", amount_range: [80, 600], visit_pattern: "occasional", tag: "gastro" }),
+  hc({ template: "{{LASTNAME_UPPER}} ENDOCRINOLOGY", bucket: "specialist", amount_range: [80, 600], visit_pattern: "occasional", tag: "endo" }),
+  hc({ template: "{{LASTNAME_UPPER}} UROLOGY", bucket: "specialist", amount_range: [80, 600], visit_pattern: "occasional", tag: "urology" }),
+  hc({ template: "{{TOWN_UPPER}} ALLERGY ASSOC", bucket: "specialist", amount_range: [80, 500], visit_pattern: "recurring", tag: "allergy" }),
+  hc({ template: "{{LASTNAME_UPPER}} ENT", bucket: "specialist", amount_range: [80, 500], visit_pattern: "occasional", tag: "ent" }),
+  hc({ template: "{{TOWN_UPPER}} IMAGING CTR", bucket: "imaging", amount_range: [80, 1500], visit_pattern: "occasional", tag: "imaging" }),
+  hc({ template: "{{TOWN_UPPER}} RADIOLOGY", bucket: "imaging", amount_range: [80, 1500], visit_pattern: "occasional", tag: "imaging" }),
+  hc({ template: "{{TOWN_UPPER}} OB GYN", bucket: "specialist", amount_range: [80, 600], visit_pattern: "occasional", tag: "obgyn" }),
+  hc({ template: "{{LASTNAME_UPPER}} PSYCHIATRY", bucket: "mental_health", amount_range: [150, 500], visit_pattern: "recurring", tag: "psychiatry" }),
+  hc({ template: "{{TOWN_UPPER}} ACUPUNCTURE", bucket: "specialist", amount_range: [60, 200], visit_pattern: "recurring", tag: "acupuncture" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
+// 41. STREAMING / GAMING / DIGITAL EXPANDED
+// ─────────────────────────────────────────────────────────────────
+
+const DIGITAL: Seed[] = [
+  nh({ template: "TWITCH INTERACTIVE", amount_range: [5, 100], visit_pattern: "recurring", tag: "streaming" }),
+  nh({ template: "DISCORD NITRO", amount_range: [5, 12], visit_pattern: "recurring", tag: "subscription" }),
+  nh({ template: "STEAM PURCHASE", amount_range: [5, 80], visit_pattern: "occasional", tag: "gaming" }),
+  nh({ template: "PLAYSTATION NETWORK", amount_range: [5, 80], visit_pattern: "occasional", tag: "gaming" }),
+  nh({ template: "XBOX *LIVE", amount_range: [5, 80], visit_pattern: "recurring", tag: "gaming" }),
+  nh({ template: "NINTENDO *ESHOP", amount_range: [5, 80], visit_pattern: "occasional", tag: "gaming" }),
+  nh({ template: "OPENAI *CHATGPT", amount_range: [10, 250], visit_pattern: "recurring", tag: "ai-sub" }),
+  nh({ template: "ANTHROPIC *CLAUDE", amount_range: [10, 250], visit_pattern: "recurring", tag: "ai-sub" }),
+  nh({ template: "NOTION LABS", amount_range: [5, 25], visit_pattern: "recurring", tag: "software" }),
+  nh({ template: "SLACK TECHNOLOGIES", amount_range: [5, 80], visit_pattern: "recurring", tag: "software" }),
+];
+
+// ─────────────────────────────────────────────────────────────────
 // Combined export — flat list with tags so the harness can roll up
 // per-category accuracy.
 // ─────────────────────────────────────────────────────────────────
@@ -601,31 +830,32 @@ export const UNIVERSE: Seed[] = [
   ...DR_PREFIX_TRAPS,
   ...HEALTHCARE_PLATFORMS_NON_PROVIDER,
   ...HEALTHCARE,
+  ...DTC_TELEHEALTH,
+  ...AT_HOME_TESTING,
+  ...MEDICAL_EQUIPMENT,
+  ...TAX_FINANCE,
+  ...MEAL_KITS,
+  ...HEALTH_TECH,
+  ...EVENT_VENDORS,
+  ...LEGAL,
+  ...CANNABIS,
+  ...NIGHTLIFE,
+  ...TUTORING,
+  ...HOME_SERVICES,
+  ...KIDS_ACTIVITIES,
+  ...VISION_RETAIL,
+  ...HEARING,
+  ...SPECIALTY_EXPANDED,
+  ...DIGITAL,
 ];
 
 export const UNIVERSE_CATEGORIES = {
-  GROCERY,
-  BIG_BOX,
-  FOOD,
-  GAS,
-  SUBSCRIPTIONS,
-  UTILITIES,
-  TRAVEL,
-  AUTO,
-  ENTERTAINMENT,
-  PERSONAL_CARE,
-  FITNESS,
-  PETS,
-  INSURANCE,
-  FINANCIAL,
-  HOUSING,
-  CHILDCARE_EDU,
-  CLOTHING,
-  MARKETPLACES,
-  GOVERNMENT,
-  CHARITY,
-  WELLNESS_NON_CLINICAL,
-  DR_PREFIX_TRAPS,
-  HEALTHCARE_PLATFORMS_NON_PROVIDER,
-  HEALTHCARE,
+  GROCERY, BIG_BOX, FOOD, GAS, SUBSCRIPTIONS, UTILITIES, TRAVEL, AUTO,
+  ENTERTAINMENT, PERSONAL_CARE, FITNESS, PETS, INSURANCE, FINANCIAL,
+  HOUSING, CHILDCARE_EDU, CLOTHING, MARKETPLACES, GOVERNMENT, CHARITY,
+  WELLNESS_NON_CLINICAL, DR_PREFIX_TRAPS, HEALTHCARE_PLATFORMS_NON_PROVIDER,
+  HEALTHCARE, DTC_TELEHEALTH, AT_HOME_TESTING, MEDICAL_EQUIPMENT, TAX_FINANCE,
+  MEAL_KITS, HEALTH_TECH, EVENT_VENDORS, LEGAL, CANNABIS, NIGHTLIFE,
+  TUTORING, HOME_SERVICES, KIDS_ACTIVITIES, VISION_RETAIL, HEARING,
+  SPECIALTY_EXPANDED, DIGITAL,
 };

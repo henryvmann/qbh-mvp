@@ -399,6 +399,61 @@ async function main() {
     if (!has("all")) return;
   }
 
+  // ── Universe variance mode ─────────────────────────────────────
+  // Runs N batches with different seeds, aggregates unique false
+  // positives across all runs. The point: the long tail surfaces
+  // differently each random sample. After 20 seeds you've seen most
+  // of the merchant universe at least once — anything that leaks in
+  // any seed needs to be fixed.
+  if (has("universe-variance")) {
+    const { makeUniverseFixtureBatch, truthProvidersFromBatch } = await import("./generate");
+    const N = Number(get("universe-variance") ?? 20);
+    const universeSize = Number(get("universe-size") ?? 3000);
+    console.log(`\n[eval] running UNIVERSE VARIANCE — ${N} batches × ${universeSize} txs each\n`);
+    const allFps = new Map<string, { name: string; bucket: string; classifier_type: string | null; tag: string; seeds: number[] }>();
+    let totalFpEvents = 0;
+    for (let i = 0; i < N; i++) {
+      const seedI = i;
+      const batch = makeUniverseFixtureBatch({ size: universeSize, seed: seedI });
+      const r = await runFixed(`universe seed=${seedI}`, batch.txs);
+      console.log(`  seed=${seedI}  ${r.false_positives.length} fps  precision=${fmtPct(r.precision)}  recall=${fmtPct(r.recall)}`);
+      const truthByName = new Map(
+        truthProvidersFromBatch(batch).map((p) => [p.canonical_name.toUpperCase().trim(), p])
+      );
+      for (const fp of r.false_positives) {
+        totalFpEvents++;
+        const key = fp.name.toUpperCase().trim();
+        const truth = truthByName.get(key);
+        const tag = truth?.tag ?? "(unknown)";
+        const existing = allFps.get(key);
+        if (existing) {
+          existing.seeds.push(seedI);
+        } else {
+          allFps.set(key, { ...fp, tag, seeds: [seedI] });
+        }
+      }
+    }
+    console.log("\n" + "=".repeat(64));
+    console.log(`UNIVERSE VARIANCE — ${N} batches, ${totalFpEvents} total FP events, ${allFps.size} unique FPs`);
+    console.log("=".repeat(64));
+    if (allFps.size === 0) {
+      console.log("\n✅ Zero false positives across all batches.\n");
+    } else {
+      // Sort by seed-recurrence (most-frequent first — those are the
+      // bugs we should fix first; one-shot FPs may be flukes).
+      const sorted = [...allFps.values()].sort((a, b) => b.seeds.length - a.seeds.length);
+      console.log(`\nUnique false positives (ranked by # of seeds they appeared in):`);
+      for (const fp of sorted) {
+        console.log(
+          `  [${String(fp.seeds.length).padStart(2)}/${N}]  ${fp.name.padEnd(45)} → ${fp.classifier_type ?? "no-type"}  (${fp.tag})`
+        );
+      }
+      console.log(`\n❌ ${allFps.size} unique merchants leaked across ${N} random batches.\n`);
+      process.exit(1);
+    }
+    return;
+  }
+
   // ── Universe mode ──────────────────────────────────────────────
   // Randomized stress test against the broad merchant universe (~30
   // categories of US consumer spending). Asserts ZERO false positives

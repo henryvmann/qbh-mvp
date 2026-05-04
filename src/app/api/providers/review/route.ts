@@ -52,6 +52,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Feedback signal: when a user dismisses a provider, record the
+    // normalized merchant so future scans skip it FOR THIS USER. Also
+    // feeds the candidate denylist Henry reviews when promoting to
+    // the universe eval. The hardcoded HEALTHCARE_ALLOWLIST in the
+    // classifier ensures real pharmacies/hospitals can't be poisoned
+    // by dismissal noise.
+    if (action === "dismiss") {
+      const { data: providerRow } = await supabaseAdmin
+        .from("providers")
+        .select("name")
+        .eq("id", providerId)
+        .maybeSingle();
+      const rawName = providerRow?.name ?? "";
+      const normalized = rawName
+        .toUpperCase()
+        .replace(/[^A-Z0-9 ]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (normalized) {
+        await supabaseAdmin
+          .from("classifier_dismissals")
+          .upsert(
+            {
+              app_user_id: appUserId,
+              normalized_name: normalized,
+              merchant_name: rawName,
+              provider_id: providerId,
+            },
+            { onConflict: "app_user_id,normalized_name" }
+          );
+      }
+    }
+
     return NextResponse.json({ ok: true, status: newStatus });
   } catch (error) {
     console.error("provider review error:", error);
