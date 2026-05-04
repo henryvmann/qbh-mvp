@@ -30,6 +30,93 @@ export type EmbarrassmentEntry = {
 };
 
 export const EMBARRASSMENT_LIST: EmbarrassmentEntry[] = [
+  // Big-box / chain grocery — credit-card feeds often arrive with no
+  // Plaid category attached, so the category-based pre-filter doesn't
+  // catch them. Combined with mid-range amounts and a person-name-shape
+  // (Trader "Joe's"), the therapist heuristic could fire. These hit
+  // production with a real user before we caught them.
+  {
+    name: "TRADER JOE'S",
+    merchant_name: "Trader Joe's",
+    avg_amount: 183,
+    visits: 4,
+    why_not: "Grocery chain. Person-name-shape false positive.",
+    tag: "grocery-chain",
+  },
+  {
+    name: "WHOLE FOODS MARKET",
+    merchant_name: "Whole Foods Market",
+    avg_amount: 220,
+    visits: 8,
+    why_not: "Grocery chain — 'Health' adjacency, not healthcare.",
+    tag: "grocery-chain",
+  },
+  {
+    name: "COSTCO WHOLESALE",
+    merchant_name: "Costco",
+    avg_amount: 280,
+    visits: 6,
+    why_not: "Wholesale retailer. Pharmacy might be inside but txn ≠ provider.",
+    tag: "grocery-chain",
+  },
+  {
+    name: "TARGET",
+    merchant_name: "Target",
+    avg_amount: 110,
+    visits: 14,
+    why_not: "General retail. Has pharmacy but transaction is not a clinical visit.",
+    tag: "retail-chain",
+  },
+  {
+    name: "WALMART",
+    merchant_name: "Walmart",
+    avg_amount: 95,
+    visits: 9,
+    why_not: "General retail. Pharmacy presence ≠ provider visit.",
+    tag: "retail-chain",
+  },
+  {
+    name: "STOP & SHOP",
+    avg_amount: 165,
+    visits: 5,
+    why_not: "Grocery chain.",
+    tag: "grocery-chain",
+  },
+  {
+    name: "PUBLIX",
+    avg_amount: 140,
+    visits: 7,
+    why_not: "Grocery chain.",
+    tag: "grocery-chain",
+  },
+  {
+    name: "WEGMANS",
+    avg_amount: 200,
+    visits: 6,
+    why_not: "Grocery chain.",
+    tag: "grocery-chain",
+  },
+  {
+    name: "HARRIS TEETER",
+    avg_amount: 130,
+    visits: 5,
+    why_not: "Grocery chain.",
+    tag: "grocery-chain",
+  },
+  {
+    name: "FAIRWAY MARKET",
+    avg_amount: 175,
+    visits: 4,
+    why_not: "Grocery chain — 'Market' kept it from category filter.",
+    tag: "grocery-chain",
+  },
+  {
+    name: "FOOD LION",
+    avg_amount: 120,
+    visits: 6,
+    why_not: "Grocery chain.",
+    tag: "grocery-chain",
+  },
   // HOA / building / housing fees
   {
     name: "WESTPORT HOA QTR FEE",

@@ -213,6 +213,15 @@ export async function buildProviderRegistry(
     "PET ", "VET ", "VETERINA", "LANDSCAP", "CLEANING", "LAUNDRY", "DRY CLEAN",
     // Pet pharmacies (have "pharmacy" in name but aren't human healthcare)
     "CHEWY", "PETCO", "PETSMART",
+    // Big-box / chain grocery — credit card feeds often arrive with no
+    // Plaid category attached, so the category-based pre-filter doesn't
+    // catch them. Match by name to short-circuit before heuristics.
+    "TRADER JOE", "TARGET", "COSTCO", "WALMART", "WAL-MART", "WAL MART",
+    "WHOLE FOODS", "PUBLIX", "ALDI", "KROGER", "SAFEWAY", "STOP & SHOP",
+    "STOP AND SHOP", "WEGMANS", "SHOPRITE", "FOOD LION", "GIANT EAGLE",
+    "HARRIS TEETER", "HEB", "MEIJER", "WINCO", "SPROUTS",
+    "SAMS CLUB", "SAM'S CLUB", "BJS WHOLESALE", "BJ'S WHOLESALE",
+    "WESTERN BEEF", "ACME MARKETS", "FAIRWAY MARKET", "MORTON WILLIAMS",
     // "Dr.-named" non-medical brands. The "DR" / "DR." prefix is a strong
     // doctor signal, so without explicit denylist these brands get
     // classified as physicians.
@@ -473,7 +482,38 @@ export async function buildProviderRegistry(
     const _words = entry.normalized_name.split(" ").filter(Boolean);
     const _looksLikePersonName = _words.length >= 2 && _words.length <= 4 && _words.every((w) => /^[A-Z]+$/.test(w));
     const _avgAmount = entry.amounts.length > 0 ? entry.amounts.reduce((s, v) => s + v, 0) / entry.amounts.length : 0;
-    const _therapistFrequencyHit = _looksLikePersonName && entry.transaction_ids.length >= 3 && _avgAmount >= 100 && _avgAmount <= 500;
+    // Real therapist visits cluster tightly around the same per-session
+    // rate ($150, $200, $250). Grocery / retail / random merchants in
+    // the same dollar range vary widely (Trader Joe's: $34 / $217 / $254
+    // / $226). Reject anything with > 35% coefficient of variation.
+    let _amountConsistent = true;
+    if (entry.amounts.length > 1 && _avgAmount > 0) {
+      const variance =
+        entry.amounts.reduce((s, v) => s + (v - _avgAmount) ** 2, 0) /
+        entry.amounts.length;
+      const stddev = Math.sqrt(variance);
+      _amountConsistent = stddev / _avgAmount < 0.35;
+    }
+    // First-word tokens that strongly indicate retail / chain rather
+    // than a person — disqualify the therapist heuristic regardless of
+    // shape match. Belt-and-suspenders against the chain denylist; cheap
+    // safety net for new chains we haven't fixtured yet.
+    const _firstWord = _words[0] ?? "";
+    const _retailFirstWord = new Set([
+      "TRADER", "TARGET", "COSTCO", "WHOLE", "PUBLIX", "ALDI", "KROGER",
+      "SAFEWAY", "WEGMANS", "STOP", "FOOD", "GIANT", "HARRIS", "MORTON",
+      "FAIRWAY", "WESTERN", "ACME", "SHOPRITE", "MEIJER", "WINCO",
+      "SPROUTS", "BJS", "SAMS", "MARKET", "DELI", "GROCER", "STORE",
+      "SHOP", "MART",
+    ]);
+    const _looksLikeRetail = _retailFirstWord.has(_firstWord);
+    const _therapistFrequencyHit =
+      _looksLikePersonName &&
+      !_looksLikeRetail &&
+      _amountConsistent &&
+      entry.transaction_ids.length >= 3 &&
+      _avgAmount >= 100 &&
+      _avgAmount <= 500;
 
     // Priority: pre-filter → NPI → AI → therapist heuristic → ignore
     if (preResult?.bucket === "IGNORE") {
