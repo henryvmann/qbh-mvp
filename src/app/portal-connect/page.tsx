@@ -101,7 +101,7 @@ function PortalConnectPageInner() {
   return (
     <main
       className="min-h-screen text-[#071832]"
-      style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
+      style={{ background: "#FAF8F4" }}
     >
       <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
         <header className="flex items-center justify-between">
@@ -201,7 +201,7 @@ function PortalConnectPageInner() {
 
 export default function PortalConnectPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />}>
+    <Suspense fallback={<div className="min-h-screen" style={{ background: "#FAF8F4" }} />}>
       <PortalConnectPageInner />
     </Suspense>
   );

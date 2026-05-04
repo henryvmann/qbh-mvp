@@ -111,7 +111,7 @@ export default function ProviderDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
+      <main className="min-h-screen" style={{ background: "#FAF8F4" }}>
         <TopNav />
       </main>
     );
@@ -119,7 +119,7 @@ export default function ProviderDetailPage() {
 
   if (!provider) {
     return (
-      <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
+      <main className="min-h-screen" style={{ background: "#FAF8F4" }}>
         <TopNav />
         <div className="mx-auto max-w-2xl px-6 pt-8">
           <p className="text-[#4F5F73]">Provider not found.</p>
@@ -135,7 +135,7 @@ export default function ProviderDetailPage() {
     : provider.specialty || null;
 
   return (
-    <main className="min-h-screen pb-20 text-[#071832]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
+    <main className="min-h-screen pb-20 text-[#071832]" style={{ background: "#FAF8F4" }}>
       <TopNav />
       <div className="mx-auto max-w-2xl px-6 pt-6">
 

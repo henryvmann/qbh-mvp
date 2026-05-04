@@ -150,7 +150,7 @@ export default function PlaidOAuthRedirectPage() {
   }, [ready, linkToken, receivedRedirectUri, open, submitting]);
 
   return (
-    <main className="min-h-screen text-[#071832]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
+    <main className="min-h-screen text-[#071832]" style={{ background: "#FAF8F4" }}>
       <div className="mx-auto max-w-3xl px-6 pt-16 pb-16">
         <h1 className="text-4xl tracking-tight sm:text-5xl">
           Returning to Quarterback

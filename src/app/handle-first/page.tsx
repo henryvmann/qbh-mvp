@@ -320,7 +320,7 @@ export default function HandleFirstPage() {
 
   /* ---- Loading state ---- */
   if (loading || !data) {
-    return <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />;
+    return <div className="min-h-screen" style={{ background: "#FAF8F4" }} />;
   }
 
   const { appUserId, userName, snapshots, hasGoogleCalendarConnection } = data;
@@ -926,7 +926,7 @@ export default function HandleFirstPage() {
   }
 
   return (
-    <div className="relative min-h-screen text-[#071832] overflow-hidden" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
+    <div className="relative min-h-screen text-[#071832] overflow-hidden" style={{ background: "#FAF8F4" }}>
       {/* Decorative circle */}
       <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#1677FF]/10 blur-3xl" />
 

@@ -243,7 +243,7 @@ export default function AdminPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)",
+        background: "#FAF8F4",
         color: "#071832",
         padding: "24px 16px",
       }}

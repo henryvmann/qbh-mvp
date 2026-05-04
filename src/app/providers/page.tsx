@@ -882,7 +882,7 @@ function ProvidersInner() {
 
 export default function ProvidersPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />}>
+    <Suspense fallback={<main className="min-h-screen" style={{ background: "#FAF8F4" }} />}>
       <ProvidersInner />
     </Suspense>
   );

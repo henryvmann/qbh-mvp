@@ -37,14 +37,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   if (checking) {
-    return <div className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }} />;
+    return <div className="min-h-screen" style={{ background: "#FAF8F4" }} />;
   }
 
   if (!authed) {
     return (
       <div
         className="flex min-h-screen items-center justify-center"
-        style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
+        style={{ background: "#FAF8F4" }}
       >
         <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-8">
           <h1 className="text-xl font-semibold text-[#071832]">Admin Access</h1>

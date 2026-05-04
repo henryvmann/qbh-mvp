@@ -71,7 +71,7 @@ const features = [
 
 export default function CaregiversPage() {
   return (
-    <main className="min-h-screen text-[#071832]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
+    <main className="min-h-screen text-[#071832]" style={{ background: "#FAF8F4" }}>
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
