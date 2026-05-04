@@ -1,0 +1,170 @@
+# Weekly classifier stress test + user-feedback aggregation.
+#
+# Runs Sundays at 03:00 ET (08:00 UTC). Two jobs:
+#
+#   1. variance-universe — 20 random batches × 3000 transactions each
+#      against the merchant universe. Asserts zero false positives
+#      across the long tail. Cost: ~$1.50 in OpenAI usage. Runtime:
+#      ~40-60 min.
+#
+#   2. feedback-candidates — aggregates user dismissals from the live
+#      Supabase DB to surface merchants ≥10 distinct users have flagged
+#      with ≥80% dismissal rate. These are candidates to promote into
+#      the universe. Free. Runtime: <30s.
+#
+# Both reports are dropped into a GitHub issue (created on first run,
+# updated weekly with comments) so you get GitHub-email notification
+# without needing a separate mail integration.
+#
+# REPO SECRETS REQUIRED (Settings → Secrets and variables → Actions):
+#   - OPENAI_API_KEY            (already set for eval-gates)
+#   - SUPABASE_URL              (live project URL — add this)
+#   - SUPABASE_SERVICE_ROLE_KEY (live service role key — add this)
+#
+# Both secrets only used by the feedback-candidates job; variance still
+# uses synthetic fixtures only.
+
+name: Eval Weekly
+
+on:
+  schedule:
+    # 03:00 America/New_York = 08:00 UTC (DST-aware-ish; cron runs UTC).
+    - cron: "0 8 * * 0"
+  workflow_dispatch: {}
+
+concurrency:
+  group: eval-weekly
+  cancel-in-progress: false
+
+jobs:
+  variance:
+    name: Variance — 20 random batches
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      report: ${{ steps.run.outputs.report }}
+      passed: ${{ steps.run.outputs.passed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+
+      - name: classifier:variance-universe
+        id: run
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: https://stub.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: stub
+          SUPABASE_URL: https://stub.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: stub
+        run: |
+          set +e
+          npm run classifier:variance-universe 2>&1 | tee /tmp/variance.log
+          status=${PIPESTATUS[0]}
+          # Capture the summary block (everything from "UNIVERSE
+          # VARIANCE — 20 batches" to end of file).
+          awk '/UNIVERSE VARIANCE — 20 batches,/,EOF' /tmp/variance.log > /tmp/variance-summary.txt
+          # Also include the per-seed line summary above the block
+          {
+            echo '## Per-seed summary'
+            grep -E "^\s+seed=" /tmp/variance.log || true
+            echo ''
+            echo '## Final ranked summary'
+            cat /tmp/variance-summary.txt
+          } > /tmp/report.md
+          # GitHub multiline output
+          {
+            echo "report<<__END__"
+            cat /tmp/report.md
+            echo "__END__"
+          } >> "$GITHUB_OUTPUT"
+          if [ $status -eq 0 ]; then
+            echo "passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+          fi
+          exit $status
+        continue-on-error: true
+
+  feedback-candidates:
+    name: Feedback Candidates
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      report: ${{ steps.run.outputs.report }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+      - name: Install
+        run: npm ci
+
+      - name: feedback-candidates
+        id: run
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node scripts/classifier-eval/feedback-candidates.mjs > /tmp/candidates.txt 2>&1 || true
+          {
+            echo 'report<<__END__'
+            cat /tmp/candidates.txt
+            echo '__END__'
+          } >> "$GITHUB_OUTPUT"
+
+  report:
+    name: Post weekly report
+    needs: [variance, feedback-candidates]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          VARIANCE_PASSED: ${{ needs.variance.outputs.passed }}
+          VARIANCE_REPORT: ${{ needs.variance.outputs.report }}
+          FEEDBACK_REPORT: ${{ needs.feedback-candidates.outputs.report }}
+        with:
+          script: |
+            const {
+              VARIANCE_PASSED, VARIANCE_REPORT, FEEDBACK_REPORT
+            } = process.env;
+            const date = new Date().toISOString().slice(0, 10);
+            const passed = VARIANCE_PASSED === 'true';
+            const title = `Eval Weekly — ${date}${passed ? '' : ' ⚠ FAILED'}`;
+            const body = [
+              `# Weekly classifier eval — ${date}`,
+              '',
+              `**Variance gate:** ${passed ? '✅ clean' : '❌ failed (review the unique FP list below)'}`,
+              '',
+              '<details><summary>Variance report</summary>',
+              '',
+              '```',
+              VARIANCE_REPORT || '(no report)',
+              '```',
+              '',
+              '</details>',
+              '',
+              '## Feedback candidates',
+              '',
+              '```',
+              FEEDBACK_REPORT || '(no report)',
+              '```',
+              '',
+              '_Auto-generated by `.github/workflows/eval-weekly.yml`._'
+            ].join('\n');
+            // Always post a fresh issue per week — easy to scroll
+            // through history. If the gate failed, label as bug.
+            const labels = passed ? ['eval-weekly'] : ['eval-weekly', 'bug'];
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels,
+            });
