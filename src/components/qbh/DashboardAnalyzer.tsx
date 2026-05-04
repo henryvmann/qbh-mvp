@@ -135,7 +135,7 @@ export default function DashboardAnalyzer({
                 setError(null);
               }}
               className="mt-4 rounded-xl px-5 py-2.5 text-sm font-medium text-white hover:brightness-95"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               Try again
             </button>

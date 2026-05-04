@@ -45,7 +45,7 @@ export default function KateFollowUp() {
       <div className="flex items-center gap-2 mb-3">
         <div
           className="flex h-6 w-6 items-center justify-center rounded-md"
-          style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+          style={{ background: "#1677FF" }}
         >
           <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
             <text x="7" y="11" textAnchor="middle" fontSize="11" fontWeight="700" fontFamily="system-ui" fill="#D8E8F5">K</text>
@@ -95,7 +95,7 @@ export default function KateFollowUp() {
                     if (answers[q.id]?.trim()) saveAnswer(q.id, answers[q.id].trim());
                   }}
                   className="rounded-lg px-3 py-1.5 text-xs font-medium text-white"
-                  style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+                  style={{ background: "#1677FF" }}
                 >
                   Save
                 </button>

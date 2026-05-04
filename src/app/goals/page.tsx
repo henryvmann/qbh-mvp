@@ -413,7 +413,7 @@ export default function GoalsPage() {
               onClick={handleGetSuggestions}
               disabled={loadingSuggestions || !newGoalText.trim()}
               className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.95] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               {loadingSuggestions ? "Thinking..." : "Get Suggestions"}
             </button>

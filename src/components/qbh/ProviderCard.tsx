@@ -558,7 +558,7 @@ export default function ProviderCard({
               onClick={saveDetails}
               disabled={savingDetails}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               {savingDetails ? "Saving..." : detailsSaved ? "Saved!" : "Save"}
             </button>
@@ -821,7 +821,7 @@ export default function ProviderCard({
               onClick={handleIt}
               disabled={isSubmitting}
               className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               {isSubmitting ? "Starting..." : "Book with Kate"}
             </button>
@@ -880,7 +880,7 @@ export default function ProviderCard({
               onClick={handleAdjust}
               disabled={isSubmitting}
               className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               {isSubmitting ? "Starting..." : "Adjust"}
             </button>
@@ -957,7 +957,7 @@ export default function ProviderCard({
               }
               disabled={isSubmitting}
               className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               {isSubmitting
                 ? "Starting..."

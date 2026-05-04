@@ -44,9 +44,9 @@ function Badge({ yes, label }: { yes: boolean; label: string }) {
         borderRadius: 4,
         fontSize: 12,
         fontWeight: 600,
-        backgroundColor: yes ? "rgba(92,107,92,0.1)" : "#F0F2F5",
+        backgroundColor: yes ? "rgba(22,119,255,0.1)" : "#F0F2F5",
         color: yes ? "#1677FF" : "#4F5F73",
-        border: `1px solid ${yes ? "rgba(92,107,92,0.2)" : "#E5EAF2"}`,
+        border: `1px solid ${yes ? "rgba(22,119,255,0.18)" : "#E5EAF2"}`,
       }}
     >
       {label}: {yes ? "Yes" : "No"}

@@ -169,7 +169,7 @@ function PortalConnectPageInner() {
                       onClick={startPortalConnect}
                       disabled={!canConnect}
                       className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
-                      style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                      style={{ background: "#1677FF", boxShadow: "0 8px 24px rgba(22,119,255,0.28)" }}
                     >
                       {submitting
                         ? "Redirecting to MyChart..."

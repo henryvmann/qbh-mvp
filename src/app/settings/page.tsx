@@ -621,8 +621,8 @@ export default function SettingsPage() {
           disabled={saving}
           className="w-full rounded-2xl px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:brightness-95 disabled:opacity-50"
           style={{
-            background: "linear-gradient(135deg, #1677FF, #006BFF)",
-            boxShadow: "0 8px 24px rgba(92,107,92,0.35)",
+            background: "#1677FF",
+            boxShadow: "0 8px 24px rgba(22,119,255,0.28)",
           }}
         >
           {saving ? "Saving..." : saved ? "Saved!" : "Save settings"}

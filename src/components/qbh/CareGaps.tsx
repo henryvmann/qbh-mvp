@@ -225,7 +225,7 @@ export default function CareGaps() {
                   window.location.href = '/providers?add=true&search=' + encodeURIComponent(gap.label.toLowerCase());
                 }}
                 className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+                style={{ background: "#1677FF" }}
               >
                 Find One
               </button>

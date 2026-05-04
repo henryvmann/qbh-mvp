@@ -158,7 +158,7 @@ export default function KateChatButton() {
             <div
               className="flex h-8 w-8 items-center justify-center rounded-lg"
               style={{
-                background: "linear-gradient(135deg, #1677FF, #006BFF)",
+                background: "#1677FF",
               }}
             >
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
@@ -260,7 +260,7 @@ export default function KateChatButton() {
               onClick={sendMessage}
               disabled={!input.trim() || streaming}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               <Send size={16} strokeWidth={1.5} />
             </button>
@@ -283,7 +283,7 @@ export default function KateChatButton() {
           }}
         >
           {open ? (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}>
+            <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "#1677FF" }}>
               <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
                 <path d="M4 4l8 8M12 4l-8 8" />
               </svg>

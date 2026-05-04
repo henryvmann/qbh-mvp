@@ -387,7 +387,7 @@ export default function CalendarViewPage() {
                   className={`relative h-16 border-b border-r border-[#F0F2F5] flex flex-col items-center pt-1.5 transition-colors ${
                     isSelected ? "bg-[#1677FF]/10" : isToday ? "bg-[#1677FF]/8" : "hover:bg-[#F8F9FA]"
                   }`}
-                  style={isToday && !isSelected ? { backgroundColor: "rgba(92,107,92,0.08)" } : undefined}
+                  style={isToday && !isSelected ? { backgroundColor: "rgba(22,119,255,0.08)" } : undefined}
                 >
                   <span
                     className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
@@ -592,7 +592,7 @@ export default function CalendarViewPage() {
               }}
               disabled={availSaving}
               className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               {availSaving ? "Saving..." : availSaved ? "Saved!" : "Save Availability"}
             </button>

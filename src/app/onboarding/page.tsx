@@ -107,7 +107,7 @@ function ToggleCard({ icon: Icon, title, description, selected, onToggle }: {
     <button
       onClick={onToggle}
       className={`w-full rounded-2xl border p-4 text-left transition ${
-        selected ? "border-[#1677FF] bg-[#1677FF]/5 ring-1 ring-[#1677FF]" : "border-white/70 bg-white/55 backdrop-blur-sm hover:border-[#4F5F73]"
+        selected ? "border-[#1677FF] bg-[#1677FF]/5 ring-1 ring-[#1677FF]" : "border-[#E5EAF2] bg-white hover:border-[#4F5F73]"
       }`}
     >
       <div className="flex items-start gap-3">

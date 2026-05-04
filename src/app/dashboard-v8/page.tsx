@@ -170,8 +170,8 @@ const globalStyles = `
   50% { box-shadow: 0 4px 32px rgba(224,64,48,0.16); }
 }
 @keyframes pulse-glow-lime {
-  0%, 100% { box-shadow: 0 4px 24px rgba(92,107,92,0.06); }
-  50% { box-shadow: 0 4px 32px rgba(92,107,92,0.12); }
+  0%, 100% { box-shadow: 0 4px 24px rgba(22,119,255,0.06); }
+  50% { box-shadow: 0 4px 32px rgba(22,119,255,0.12); }
 }
 @keyframes pulse-glow-lavender {
   0%, 100% { box-shadow: 0 4px 24px rgba(144,120,200,0.08); }
@@ -1043,7 +1043,7 @@ function LoadingSkeleton() {
           #C5DFF5 25%,
           #E0ECF5 50%,
           #F0EDE8 75%,
-          rgba(92,107,92,0.10) 100%)`,
+          rgba(22,119,255,0.10) 100%)`,
       }}
     >
       <div className="space-y-6 px-4 pt-32">
@@ -1181,7 +1181,7 @@ function DashboardV8Inner() {
           #C5DFF5 25%,
           #E0ECF5 50%,
           #F0EDE8 75%,
-          rgba(92,107,92,0.10) 100%)`,
+          rgba(22,119,255,0.10) 100%)`,
       }}
     >
       <style dangerouslySetInnerHTML={{ __html: globalStyles }} />

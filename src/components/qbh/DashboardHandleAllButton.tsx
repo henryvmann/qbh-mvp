@@ -93,7 +93,7 @@ export default function DashboardHandleAllButton({
         onClick={handleAll}
         disabled={disabled}
         className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-        style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+        style={{ background: "#1677FF" }}
       >
         {isSubmitting
           ? "Starting booking..."
@@ -126,7 +126,7 @@ export default function DashboardHandleAllButton({
               onClick={startHandleAll}
               disabled={isSubmitting}
               className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               {isSubmitting
                 ? "Starting booking..."

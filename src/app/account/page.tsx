@@ -431,7 +431,7 @@ export default function AccountPage() {
                     type="submit"
                     disabled={submitting || !currentPassword.trim() || !password.trim() || !confirm.trim()}
                     className="w-full rounded-xl px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                    style={{ background: "#1677FF", boxShadow: "0 8px 24px rgba(22,119,255,0.28)" }}
                   >
                     {submitting ? "Saving..." : "Set password"}
                   </button>

@@ -335,7 +335,7 @@ export default function HandleItButton({
               disabled={saving || (!dob.trim() && !insuranceProvider.trim())}
               className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
               style={{
-                background: "linear-gradient(135deg, #1677FF, #006BFF)",
+                background: "#1677FF",
               }}
             >
               {saving ? "Saving..." : "Save & call"}
@@ -362,7 +362,7 @@ export default function HandleItButton({
             <a
               href="/billing"
               className="flex-1 rounded-xl py-2.5 text-center text-sm font-semibold text-white"
-              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+              style={{ background: "#1677FF" }}
             >
               View Plans
             </a>
@@ -383,7 +383,7 @@ export default function HandleItButton({
           onClick={checkSubscriptionAndProceed}
           disabled={loading}
           className="group relative w-full overflow-hidden rounded-2xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.98] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
-          style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+          style={{ background: "#1677FF" }}
         >
           <span className="relative z-10">
             {loading ? "One moment…" : label}

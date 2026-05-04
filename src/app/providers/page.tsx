@@ -442,7 +442,7 @@ function ProvidersInner() {
         {doctors.length === 0 && pharmacies.length === 0 ? (
           <div className="mt-6 space-y-4">
             {/* Kate prompt at top */}
-            <div className="flex items-start gap-3 rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 p-5 shadow-sm">
+            <div className="flex items-start gap-3 rounded-2xl bg-white border border-[#E5EAF2] p-5 shadow-sm">
               <img src="/kate-avatar.png" alt="Kate" className="w-8 h-8 rounded-full shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-[#1A2E1A]">Let's get your team set up. Tell me who you've seen — primary care, dentist, anyone — and I'll handle the rest.</p>

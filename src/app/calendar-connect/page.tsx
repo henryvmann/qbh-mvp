@@ -227,7 +227,7 @@ function CalendarConnectPageInner() {
                   onClick={startGoogleCalendarConnect}
                   disabled={!userId || submitting || submittingOutlook}
                   className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                  style={{ background: "#1677FF", boxShadow: "0 8px 24px rgba(22,119,255,0.28)" }}
                 >
                   {submitting ? "Redirecting..." : "Connect Google Calendar"}
                 </button>
@@ -245,7 +245,7 @@ function CalendarConnectPageInner() {
                   onClick={startOutlookCalendarConnect}
                   disabled={!userId || submitting || submittingOutlook}
                   className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                  style={{ background: "#1677FF", boxShadow: "0 8px 24px rgba(22,119,255,0.28)" }}
                 >
                   {submittingOutlook ? "Redirecting..." : "Connect Outlook Calendar"}
                 </button>

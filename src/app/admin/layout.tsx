@@ -66,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button
             type="submit"
             className="mt-4 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+            style={{ background: "#1677FF" }}
           >
             Enter
           </button>

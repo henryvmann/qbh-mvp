@@ -140,8 +140,8 @@ function GoldButton({
         secondary
           ? undefined
           : {
-              background: "linear-gradient(135deg, #1677FF, #006BFF)",
-              boxShadow: "0 8px 24px rgba(92,107,92,0.35)",
+              background: "#1677FF",
+              boxShadow: "0 8px 24px rgba(22,119,255,0.28)",
             }
       }
     >

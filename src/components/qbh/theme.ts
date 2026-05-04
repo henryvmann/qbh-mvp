@@ -1,83 +1,54 @@
 /**
- * Greenhouse 3026 — shared design tokens
+ * Legacy theme tokens — now mapped to the v5 brand palette so any
+ * remaining importers (onboarding, internal pages) automatically pick
+ * up the brand without per-file edits. The shape of the export is
+ * preserved for back-compat; values are realigned to brand tokens.
  *
- * All pages import from here. Changing these values
- * updates the entire app's visual language.
+ * For new code, prefer importing from `src/components/brand/` directly.
  */
 
 export const theme = {
-  // Background gradient
-  bgGradient: "linear-gradient(180deg, #CDDBD6 0%, #DDD8D0 35%, #ECEAE6 100%)",
-  bgSolid: "#ECEAE6",
+  // Background — solid cream (brand light bg).
+  bgGradient: "#FAF8F4",
+  bgSolid: "#FAF8F4",
 
-  // Card surfaces
-  glass: "rgba(255,255,255,0.55)",
-  glassBorder: "rgba(255,255,255,0.7)",
-  glassHover: "rgba(255,255,255,0.72)",
-  cardShadow: "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)",
+  // Card surfaces — solid white over cream reads cleaner than the
+  // legacy 55% glass-on-greenhouse pattern.
+  glass: "#FFFFFF",
+  glassBorder: "#E5EAF2",
+  glassHover: "#FFFFFF",
+  cardShadow: "0 4px 18px rgba(7,24,50,0.06)",
 
-  // Primary colors
-  green: "#4A6B4A",
-  greenLight: "#5C7B5C",
-  teal: "#0FA5A5",
-  gold: "#D4A44C",
+  // Primary colors — electric blue family.
+  green: "#1677FF",       // legacy "primary" — now electric
+  greenLight: "#2E8CFF",  // legacy "primary-light" — now glow
+  teal: "#1677FF",
+  gold: "#27C46B",        // legacy "secondary" — now brand green
 
   // Text
-  textPrimary: "#1A2E1A",
+  textPrimary: "#071832",
   textSecondary: "#4F5F73",
   textMuted: "#4F5F73",
 
   // Status
   statusOverdue: "#E04030",
-  statusOnTrack: "#4A6B4A",
-  statusUpcoming: "#D4A44C",
+  statusOnTrack: "#27C46B",
+  statusUpcoming: "#2E8CFF",
   statusRecurring: "#7C3AED",
 
-  // Grid overlay — softened for readability (Jenny called the original
-  // teal/gold grid hard to read against the glass cards). Use a single
-  // muted gray-green for both axes at low opacity so it reads as texture,
-  // not pattern.
-  gridOpacity: 0.025,
-  gridTeal: "#9CA8A0",
-  gridGold: "#9CA8A0",
+  // Grid overlay — kept as no-op tokens so the legacy code path
+  // doesn't crash. Old greenhouse grid is intentionally invisible.
+  gridOpacity: 0,
+  gridTeal: "transparent",
+  gridGold: "transparent",
   gridSize: "100px",
 } as const;
 
-/** CSS string for the greenhouse grid overlay */
-export const gridOverlayCSS = `
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: ${theme.gridOpacity};
-  background-image:
-    linear-gradient(${theme.gridTeal} 1px, transparent 1px),
-    linear-gradient(90deg, ${theme.gridGold} 1px, transparent 1px);
-  background-size: ${theme.gridSize} ${theme.gridSize};
-`;
+/** Legacy CSS string — retained for back-compat, returns no-op CSS. */
+export const gridOverlayCSS = `position: fixed; inset: 0; pointer-events: none;`;
 
-/** Global CSS overrides for child components that use old-style classes */
-export const globalCardOverrides = `
-  .greenhouse .rounded-2xl.bg-white,
-  .greenhouse .bg-white.shadow-sm,
-  .greenhouse .bg-white.border,
-  .greenhouse section.bg-white {
-    background: ${theme.glass} !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border-color: ${theme.glassBorder} !important;
-    box-shadow: ${theme.cardShadow} !important;
-  }
-  .greenhouse .bg-white {
-    background: rgba(255,255,255,0.45) !important;
-  }
-  .greenhouse .bg-\\[\\#F4F5F7\\],
-  .greenhouse .bg-\\[\\#F0F2F5\\] {
-    background: rgba(255,255,255,0.3) !important;
-  }
-  .greenhouse .border-\\[\\#E5EAF2\\] {
-    border-color: rgba(255,255,255,0.5) !important;
-  }
-  .greenhouse .shadow-sm {
-    box-shadow: ${theme.cardShadow} !important;
-  }
-`;
+/** Legacy card-override CSS — retained as a near-empty string so
+ *  PageShell's old `<style>{globalCardOverrides}</style>` injection
+ *  doesn't break if any code path still references it. The current
+ *  PageShell delegates to BrandShell and doesn't use this. */
+export const globalCardOverrides = ``;

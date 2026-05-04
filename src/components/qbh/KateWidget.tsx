@@ -261,7 +261,7 @@ export default function KateWidget({ userId }: KateWidgetProps) {
         <button
           onClick={() => setOpen((prev) => !prev)}
           className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#1677FF]/50 focus:ring-offset-2"
-          style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
+          style={{ background: "#1677FF" }}
           aria-label="Open Kate insights"
         >
           <span className="text-xl font-bold text-white leading-none">K</span>
