@@ -39,7 +39,7 @@ function getStatusLabel(snapshot: ProviderDashboardSnapshot): { label: string; c
   if (actions.current?.status === "IN_PROGRESS") {
     return { label: "In progress", className: "bg-sky-500/15 text-sky-600 ring-1 ring-sky-500/30" };
   }
-  return { label: "Tracked", className: "bg-[#F0F2F5] text-[#7A7F8A] ring-1 ring-[#EBEDF0]" };
+  return { label: "Tracked", className: "bg-[#F0F2F5] text-[#4F5F73] ring-1 ring-[#E5EAF2]" };
 }
 
 /** Color palette for provider specialty types */
@@ -170,36 +170,36 @@ function AddProviderForm({
   }
 
   return (
-    <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[#EBEDF0]">
-        <span className="text-sm font-semibold text-[#1A1D2E]">Hand off a provider</span>
-        <button type="button" onClick={onClose} className="p-1 text-[#B0B4BC] hover:text-[#7A7F8A]">
+    <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-[#E5EAF2]">
+        <span className="text-sm font-semibold text-[#071832]">Hand off a provider</span>
+        <button type="button" onClick={onClose} className="p-1 text-[#4F5F73] hover:text-[#4F5F73]">
           <X size={16} />
         </button>
       </div>
       <div className="px-5 py-3">
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B0B4BC]" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4F5F73]" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name, specialty, or location..."
-            className="w-full rounded-xl border border-[#EBEDF0] py-2.5 pl-9 pr-4 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+            className="w-full rounded-xl border border-[#E5EAF2] py-2.5 pl-9 pr-4 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
           />
           {searching && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#7A7F8A]">Searching...</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#4F5F73]">Searching...</span>
           )}
         </div>
         {userLocation && !query && (
-          <p className="mt-1.5 text-[10px] text-[#B0B4BC]">
+          <p className="mt-1.5 text-[10px] text-[#4F5F73]">
             Searching near {userLocation}. Include a city or state for other areas.
           </p>
         )}
 
         {results.length > 0 && (
-          <div className="mt-2 max-h-72 overflow-y-auto divide-y divide-[#EBEDF0]">
+          <div className="mt-2 max-h-72 overflow-y-auto divide-y divide-[#E5EAF2]">
             {results.map((result) => {
               const isAdded = added.has(result.name);
               const isAdding = adding === result.name;
@@ -209,13 +209,13 @@ function AddProviderForm({
                   className="flex items-center justify-between gap-3 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-[#1A1D2E] truncate">{result.name}</div>
-                    <div className="text-xs text-[#7A7F8A] truncate">
+                    <div className="text-sm font-medium text-[#071832] truncate">{result.name}</div>
+                    <div className="text-xs text-[#4F5F73] truncate">
                       {[result.specialty, result.city, result.state].filter(Boolean).join(" · ")}
                     </div>
                   </div>
                   {isAdded ? (
-                    <span className="flex items-center gap-1 text-xs font-medium text-[#5C6B5C]">
+                    <span className="flex items-center gap-1 text-xs font-medium text-[#1677FF]">
                       <Check size={12} /> Added
                     </span>
                   ) : (
@@ -224,7 +224,7 @@ function AddProviderForm({
                       onClick={() => handleAdd(result)}
                       disabled={!!adding}
                       className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
-                      style={{ backgroundColor: "#5C6B5C" }}
+                      style={{ backgroundColor: "#1677FF" }}
                     >
                       {isAdding ? "Adding..." : "Add"}
                     </button>
@@ -236,7 +236,7 @@ function AddProviderForm({
         )}
 
         {query.length >= 2 && !searching && results.length === 0 && (
-          <div className="py-4 text-center text-xs text-[#7A7F8A]">
+          <div className="py-4 text-center text-xs text-[#4F5F73]">
             No results found. Try a different search term.
           </div>
         )}
@@ -378,22 +378,22 @@ function ProvidersInner() {
 
   return (
     <PageShell>
-        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
+        <h1 className="font-serif text-2xl tracking-tight text-[#071832]">
           {selectedPerson ? `${selectedPerson}\u2019s care team` : userName ? `${userName}\u2019s care team` : "Your care team"}
         </h1>
-        <p className="mt-1 text-sm text-[#7A7F8A]">
+        <p className="mt-1 text-sm text-[#4F5F73]">
           {allDoctors.length} provider{allDoctors.length !== 1 ? "s" : ""}{selectedPerson ? "" : " on file"}
         </p>
 
         {/* Care Recipients — clickable filters */}
         {careRecipients.length > 0 && (
           <div className="mt-4 mb-2">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-[#B0B4BC] mb-2">Managing Care For</div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-2">Managing Care For</div>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedPerson(null)}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
-                  selectedPerson === null ? "bg-[#5C6B5C] text-white border-[#5C6B5C]" : "bg-white text-[#1A1D2E] border-[#EBEDF0] hover:border-[#5C6B5C]"
+                  selectedPerson === null ? "bg-[#1677FF] text-white border-[#1677FF]" : "bg-white text-[#071832] border-[#E5EAF2] hover:border-[#1677FF]"
                 }`}
               >
                 All
@@ -403,11 +403,11 @@ function ProvidersInner() {
                   key={r.id}
                   onClick={() => setSelectedPerson(selectedPerson === r.name ? null : r.name)}
                   className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
-                    selectedPerson === r.name ? "bg-[#5C6B5C] text-white border-[#5C6B5C]" : "bg-white text-[#1A1D2E] border-[#EBEDF0] shadow-sm hover:border-[#5C6B5C]"
+                    selectedPerson === r.name ? "bg-[#1677FF] text-white border-[#1677FF]" : "bg-white text-[#071832] border-[#E5EAF2] shadow-sm hover:border-[#1677FF]"
                   }`}
                 >
                   {r.name}
-                  <span className={`text-[10px] ${selectedPerson === r.name ? "text-white/70" : "text-[#B0B4BC]"}`}>{r.relationship}</span>
+                  <span className={`text-[10px] ${selectedPerson === r.name ? "text-white/70" : "text-[#4F5F73]"}`}>{r.relationship}</span>
                 </button>
               ))}
             </div>
@@ -431,7 +431,7 @@ function ProvidersInner() {
             <button
               type="button"
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 rounded-xl border border-dashed border-[#C0C8D0] px-4 py-2.5 text-sm font-medium text-[#5C6B5C] transition hover:bg-white hover:border-[#5C6B5C]"
+              className="flex items-center gap-2 rounded-xl border border-dashed border-[#C0C8D0] px-4 py-2.5 text-sm font-medium text-[#1677FF] transition hover:bg-white hover:border-[#1677FF]"
             >
               <Plus size={16} />
               Hand off a provider
@@ -446,12 +446,12 @@ function ProvidersInner() {
               <img src="/kate-avatar.png" alt="Kate" className="w-8 h-8 rounded-full shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-[#1A2E1A]">Let's get your team set up. Tell me who you've seen — primary care, dentist, anyone — and I'll handle the rest.</p>
-                <a href="/providers?add=true" className="mt-2 inline-block text-xs font-semibold text-[#5C6B5C] underline underline-offset-2">Hand off a provider &rarr;</a>
+                <a href="/providers?add=true" className="mt-2 inline-block text-xs font-semibold text-[#1677FF] underline underline-offset-2">Hand off a provider &rarr;</a>
               </div>
             </div>
-            <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
-              <div className="font-semibold text-[#1A1D2E]">Your team starts here</div>
-              <p className="mt-2 text-sm text-[#7A7F8A]">
+            <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
+              <div className="font-semibold text-[#071832]">Your team starts here</div>
+              <p className="mt-2 text-sm text-[#4F5F73]">
                 I'll pull them in from your bank, your calendar, or you can hand me a name. Either way — handled.
               </p>
             </div>
@@ -545,7 +545,7 @@ function ProvidersInner() {
                                   {recipients.map((r) => (
                                     <span
                                       key={r}
-                                      className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#5C6B5C]/15 text-[9px] font-bold text-[#5C6B5C]"
+                                      className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#1677FF]/15 text-[9px] font-bold text-[#1677FF]"
                                       title={(() => {
                                         const lr = r.toLowerCase();
                                         return careRecipients.find((cr) =>
@@ -587,16 +587,16 @@ function ProvidersInner() {
                           <div className="px-5 pb-4 border-t" style={{ borderColor: colors.border }}>
                             {confirmMode === "choose" && (
                               <div className="mt-3 space-y-2">
-                                <p className="text-xs font-semibold text-[#1A1D2E]">What is this provider?</p>
+                                <p className="text-xs font-semibold text-[#071832]">What is this provider?</p>
                                 <button
                                   onClick={() => setConfirmMode("link")}
-                                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
+                                  className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-2.5 text-left text-sm text-[#071832] hover:bg-[#F4F5F7]"
                                 >
                                   Link to a provider on your profile
                                 </button>
                                 <button
                                   onClick={() => setConfirmMode("search")}
-                                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
+                                  className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-2.5 text-left text-sm text-[#071832] hover:bg-[#F4F5F7]"
                                 >
                                   Search for your provider
                                 </button>
@@ -610,18 +610,18 @@ function ProvidersInner() {
                                     setConfirmingId(null);
                                     window.location.reload();
                                   }}
-                                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#7A7F8A] hover:bg-[#F4F5F7]"
+                                  className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-2.5 text-left text-sm text-[#4F5F73] hover:bg-[#F4F5F7]"
                                 >
                                   Already recurring — no booking needed
                                 </button>
-                                <button onClick={() => { setConfirmingId(null); setConfirmMode("choose"); }} className="text-xs text-[#B0B4BC] mt-1">
+                                <button onClick={() => { setConfirmingId(null); setConfirmMode("choose"); }} className="text-xs text-[#4F5F73] mt-1">
                                   Cancel
                                 </button>
                               </div>
                             )}
                             {confirmMode === "link" && (
                               <div className="mt-3 space-y-2">
-                                <p className="text-xs font-semibold text-[#1A1D2E]">Select an existing provider:</p>
+                                <p className="text-xs font-semibold text-[#071832]">Select an existing provider:</p>
                                 {allDoctors.filter((s) => s.provider.id !== snapshot.provider.id && s.provider.source !== "calendar").map((s) => (
                                   <button
                                     key={s.provider.id}
@@ -635,19 +635,19 @@ function ProvidersInner() {
                                       setConfirmMode("choose");
                                       window.location.reload();
                                     }}
-                                    className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
+                                    className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-2.5 text-left text-sm text-[#071832] hover:bg-[#F4F5F7]"
                                   >
                                     {s.provider.name}{s.provider.specialty ? ` · ${s.provider.specialty}` : ""}
                                   </button>
                                 ))}
-                                <button onClick={() => setConfirmMode("choose")} className="text-xs text-[#B0B4BC] mt-1">
+                                <button onClick={() => setConfirmMode("choose")} className="text-xs text-[#4F5F73] mt-1">
                                   ← Back
                                 </button>
                               </div>
                             )}
                             {confirmMode === "search" && (
                               <div className="mt-3 space-y-2">
-                                <p className="text-xs font-semibold text-[#1A1D2E]">Search for this provider:</p>
+                                <p className="text-xs font-semibold text-[#071832]">Search for this provider:</p>
                                 <input
                                   type="text"
                                   value={confirmSearchQuery}
@@ -663,9 +663,9 @@ function ProvidersInner() {
                                     }
                                   }}
                                   placeholder="Provider name, then press Enter"
-                                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                                  className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                                 />
-                                {confirmSearching && <p className="text-xs text-[#7A7F8A]">Searching...</p>}
+                                {confirmSearching && <p className="text-xs text-[#4F5F73]">Searching...</p>}
                                 {confirmSearchResults.map((r, i) => (
                                   <button
                                     key={i}
@@ -687,13 +687,13 @@ function ProvidersInner() {
                                       setConfirmSearchResults([]);
                                       window.location.reload();
                                     }}
-                                    className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-2.5 text-left text-sm text-[#1A1D2E] hover:bg-[#F4F5F7]"
+                                    className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-2.5 text-left text-sm text-[#071832] hover:bg-[#F4F5F7]"
                                   >
                                     <div className="font-medium">{r.name}</div>
-                                    {r.specialty && <div className="text-xs text-[#7A7F8A]">{r.specialty}</div>}
+                                    {r.specialty && <div className="text-xs text-[#4F5F73]">{r.specialty}</div>}
                                   </button>
                                 ))}
-                                <button onClick={() => { setConfirmMode("choose"); setConfirmSearchResults([]); setConfirmSearchQuery(""); }} className="text-xs text-[#B0B4BC] mt-1">
+                                <button onClick={() => { setConfirmMode("choose"); setConfirmSearchResults([]); setConfirmSearchQuery(""); }} className="text-xs text-[#4F5F73] mt-1">
                                   ← Back
                                 </button>
                               </div>
@@ -704,7 +704,7 @@ function ProvidersInner() {
                             <button
                               onClick={(e) => { e.stopPropagation(); setConfirmingId(snapshot.provider.id); setConfirmMode("choose"); }}
                               className="rounded-xl px-4 py-2 text-xs font-semibold text-white"
-                              style={{ backgroundColor: "#5C6B5C" }}
+                              style={{ backgroundColor: "#1677FF" }}
                             >
                               Confirm Provider
                             </button>
@@ -745,22 +745,22 @@ function ProvidersInner() {
             {/* Pharmacies */}
             {pharmacies.length > 0 && (
               <div className="mt-8">
-                <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">
+                <div className="text-xs font-bold uppercase tracking-widest text-[#4F5F73] mb-3">
                   Pharmacies
                 </div>
-                <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm overflow-hidden divide-y divide-[#EBEDF0]">
+                <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm overflow-hidden divide-y divide-[#E5EAF2]">
                   {pharmacies.map((snapshot) => (
                     <div
                       key={snapshot.provider.id}
                       className="flex items-center justify-between px-5 py-4"
                     >
                       <div>
-                        <div className="text-sm font-semibold text-[#1A1D2E]">
+                        <div className="text-sm font-semibold text-[#071832]">
                           {snapshot.provider.name}
                         </div>
-                        <div className="text-xs text-[#7A7F8A]">Pharmacy</div>
+                        <div className="text-xs text-[#4F5F73]">Pharmacy</div>
                       </div>
-                      <span className="inline-flex rounded-full bg-[#F0F2F5] px-2.5 py-0.5 text-xs font-medium text-[#7A7F8A] ring-1 ring-[#EBEDF0]">Tracked</span>
+                      <span className="inline-flex rounded-full bg-[#F0F2F5] px-2.5 py-0.5 text-xs font-medium text-[#4F5F73] ring-1 ring-[#E5EAF2]">Tracked</span>
                     </div>
                   ))}
                 </div>
@@ -796,7 +796,7 @@ function ProvidersInner() {
               if (missing.length === 0) return null;
               return (
                 <div className="mt-8">
-                  <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">
+                  <div className="text-xs font-bold uppercase tracking-widest text-[#4F5F73] mb-3">
                     Build Your Care Team
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -812,14 +812,14 @@ function ProvidersInner() {
                       >
                         <div className="flex w-full items-center justify-between text-left">
                           <div>
-                            <div className="text-sm font-semibold text-[#1A1D2E]">Your {m.label}</div>
-                            <div className="text-xs text-[#7A7F8A]">Add one to your care team</div>
+                            <div className="text-sm font-semibold text-[#071832]">Your {m.label}</div>
+                            <div className="text-xs text-[#4F5F73]">Add one to your care team</div>
                           </div>
-                          <Plus size={18} className="text-[#B0B4BC]" />
+                          <Plus size={18} className="text-[#4F5F73]" />
                         </div>
                         {expandedDismiss === m.dismissId ? (
-                          <div className="mt-3 rounded-xl bg-white border border-[#EBEDF0] p-3">
-                            <p className="text-xs text-[#1A1D2E]">Would you like Kate to help you find a {m.label.toLowerCase()} nearby?</p>
+                          <div className="mt-3 rounded-xl bg-white border border-[#E5EAF2] p-3">
+                            <p className="text-xs text-[#071832]">Would you like Kate to help you find a {m.label.toLowerCase()} nearby?</p>
                             <div className="mt-2 flex gap-2">
                               <button
                                 type="button"
@@ -830,7 +830,7 @@ function ProvidersInner() {
                                   }));
                                 }}
                                 className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                                style={{ backgroundColor: "#5C6B5C" }}
+                                style={{ backgroundColor: "#1677FF" }}
                               >
                                 Yes, Help Me Find One
                               </button>
@@ -852,7 +852,7 @@ function ProvidersInner() {
                                     window.location.reload();
                                   } catch {}
                                 }}
-                                className="rounded-lg px-3 py-1.5 text-xs text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                                className="rounded-lg px-3 py-1.5 text-xs text-[#4F5F73] hover:bg-[#F0F2F5]"
                               >
                                 No Thanks
                               </button>
@@ -862,7 +862,7 @@ function ProvidersInner() {
                           <button
                             type="button"
                             onClick={() => setExpandedDismiss(m.dismissId)}
-                            className="mt-2 text-[10px] text-[#B0B4BC] hover:text-[#7A7F8A] underline underline-offset-2"
+                            className="mt-2 text-[10px] text-[#4F5F73] hover:text-[#4F5F73] underline underline-offset-2"
                           >
                             Help me find one
                           </button>

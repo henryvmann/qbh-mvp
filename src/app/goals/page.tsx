@@ -118,7 +118,7 @@ const categoryConfig: Record<
   preventive: {
     label: "Preventive",
     sectionTitle: "Preventive Care",
-    color: "#5C6B5C",
+    color: "#1677FF",
   },
   medications: {
     label: "Medications",
@@ -173,7 +173,7 @@ function MiniGauge({ value, color }: { value: number; color: string }) {
         x={40}
         y={35}
         textAnchor="middle"
-        fill="#1A1D2E"
+        fill="#071832"
         fontSize={14}
         fontWeight="300"
       >
@@ -190,7 +190,7 @@ function HeroGauge({ score }: { score: number }) {
   const circ = Math.PI * r;
   const filled = (Math.min(Math.max(score, 0), 100) / 100) * circ;
 
-  let color = "#5C6B5C"; // sage (high)
+  let color = "#1677FF"; // sage (high)
   if (score < 40) color = "#E04030"; // coral (low)
   else if (score < 70) color = "#C8D84A"; // lime-ish (medium)
 
@@ -217,7 +217,7 @@ function HeroGauge({ score }: { score: number }) {
           x={100}
           y={85}
           textAnchor="middle"
-          fill="#1A1D2E"
+          fill="#071832"
           fontSize={40}
           fontWeight="300"
         >
@@ -227,7 +227,7 @@ function HeroGauge({ score }: { score: number }) {
           x={100}
           y={108}
           textAnchor="middle"
-          fill="#7A7F8A"
+          fill="#4F5F73"
           fontSize={13}
           fontWeight="400"
         >
@@ -367,25 +367,25 @@ export default function GoalsPage() {
     <PageShell>
       
       <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
-        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-4">
+        <h1 className="font-serif text-2xl tracking-tight text-[#071832] mb-4">
           Goals
         </h1>
 
         <div className="mt-4" />
 
         {goals.length === 0 && (
-          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6 text-center">
-            <p className="text-lg font-light text-[#1A1D2E]">No goals set yet</p>
-            <p className="mt-1 text-sm text-[#7A7F8A]">Tell Kate what you want to work on below and she&apos;ll help you get organized.</p>
+          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-6 text-center">
+            <p className="text-lg font-light text-[#071832]">No goals set yet</p>
+            <p className="mt-1 text-sm text-[#4F5F73]">Tell Kate what you want to work on below and she&apos;ll help you get organized.</p>
           </div>
         )}
 
         {/* What's important to you */}
-        <div data-tour="goals-input" className="mb-6 rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]">
-          <h3 className="text-base font-semibold text-[#1A1D2E] mb-1">
+        <div data-tour="goals-input" className="mb-6 rounded-2xl bg-white shadow-sm p-5 border border-[#E5EAF2]">
+          <h3 className="text-base font-semibold text-[#071832] mb-1">
             What&apos;s important to you?
           </h3>
-          <p className="text-sm text-[#7A7F8A] mb-4">
+          <p className="text-sm text-[#4F5F73] mb-4">
             Enter a goal and Kate will help you track it, or describe a health area and she&apos;ll suggest specific goals.
           </p>
           <div className="flex gap-2">
@@ -398,13 +398,13 @@ export default function GoalsPage() {
                 else if (e.key === "Enter") { handleGetSuggestions(); }
               }}
               placeholder="e.g., Find a cardiologist, or: I want to focus on heart health"
-              className="flex-1 rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#7A7F8A]/50 outline-none focus:border-[#5C6B5C]/50 focus:ring-1 focus:ring-[#5C6B5C]/30 transition"
+              className="flex-1 rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73]/50 outline-none focus:border-[#1677FF]/50 focus:ring-1 focus:ring-[#1677FF]/30 transition"
             />
             <button
               type="button"
               onClick={handleAddGoal}
               disabled={addingGoal || !newGoalText.trim()}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold border border-[#5C6B5C] text-[#5C6B5C] transition hover:bg-[#5C6B5C]/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold border border-[#1677FF] text-[#1677FF] transition hover:bg-[#1677FF]/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {addingGoal ? "Adding..." : "Add Goal"}
             </button>
@@ -413,7 +413,7 @@ export default function GoalsPage() {
               onClick={handleGetSuggestions}
               disabled={loadingSuggestions || !newGoalText.trim()}
               className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.95] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               {loadingSuggestions ? "Thinking..." : "Get Suggestions"}
             </button>
@@ -421,31 +421,31 @@ export default function GoalsPage() {
 
           {/* Kate's response */}
           {kateResponse && (
-            <div className="mt-4 rounded-xl bg-[#5C6B5C]/10 border border-[#5C6B5C]/20 p-4">
-              <p className="text-sm text-[#1A1D2E]">{kateResponse}</p>
+            <div className="mt-4 rounded-xl bg-[#1677FF]/10 border border-[#1677FF]/20 p-4">
+              <p className="text-sm text-[#071832]">{kateResponse}</p>
             </div>
           )}
 
           {/* AI Suggestions */}
           {aiSuggestions.length > 0 && (
             <div className="mt-4 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C]">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#1677FF]">
                 Kate Suggests
               </p>
               {aiSuggestions.map((s, i) => (
                 <div
                   key={i}
-                  className="flex items-start justify-between gap-3 rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0]"
+                  className="flex items-start justify-between gap-3 rounded-xl bg-[#F0F2F5] p-4 border border-[#E5EAF2]"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#1A1D2E]">{s.title}</p>
-                    <p className="mt-1 text-xs text-[#7A7F8A]">{s.detail}</p>
+                    <p className="text-sm font-medium text-[#071832]">{s.title}</p>
+                    <p className="mt-1 text-xs text-[#4F5F73]">{s.detail}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleAddSuggestion(s.title)}
                     disabled={addingGoal}
-                    className="shrink-0 rounded-lg bg-[#5C6B5C]/15 px-3 py-1.5 text-xs font-semibold text-[#5C6B5C] transition hover:bg-[#5C6B5C]/25 disabled:opacity-50"
+                    className="shrink-0 rounded-lg bg-[#1677FF]/15 px-3 py-1.5 text-xs font-semibold text-[#1677FF] transition hover:bg-[#1677FF]/25 disabled:opacity-50"
                   >
                     + Add
                   </button>
@@ -460,7 +460,7 @@ export default function GoalsPage() {
               type="button"
               onClick={handleAddGoal}
               disabled={addingGoal}
-              className="mt-3 text-xs text-[#7A7F8A] underline underline-offset-4 hover:text-[#1A1D2E]"
+              className="mt-3 text-xs text-[#4F5F73] underline underline-offset-4 hover:text-[#071832]"
             >
               Or just add &ldquo;{newGoalText.trim()}&rdquo; as a goal directly
             </button>
@@ -469,11 +469,11 @@ export default function GoalsPage() {
 
         {/* Goal sections */}
         {goals.length === 0 && userGoals.length === 0 ? (
-          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
-            <div className="font-semibold text-[#1A1D2E]">
+          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
+            <div className="font-semibold text-[#071832]">
               No goals right now
             </div>
-            <p className="mt-2 text-sm text-[#7A7F8A]">
+            <p className="mt-2 text-sm text-[#4F5F73]">
               As QBH discovers providers and tracks visits, goals will appear
               here automatically.
             </p>
@@ -492,7 +492,7 @@ export default function GoalsPage() {
                 >
                   {section.config.sectionTitle}
                   {completed.length > 0 && (
-                    <span className="ml-2 text-xs font-normal text-[#B0B4BC]">
+                    <span className="ml-2 text-xs font-normal text-[#4F5F73]">
                       {completed.length} completed
                     </span>
                   )}
@@ -509,7 +509,7 @@ export default function GoalsPage() {
                     return (
                     <div
                       key={goal.id}
-                      className="rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]"
+                      className="rounded-2xl bg-white shadow-sm p-5 border border-[#E5EAF2]"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
@@ -517,12 +517,12 @@ export default function GoalsPage() {
                             {action?.kind === "navigate" ? (
                               <Link
                                 href={action.href}
-                                className="text-lg font-semibold text-[#1A1D2E] underline decoration-[#5C6B5C]/30 underline-offset-4 hover:decoration-[#5C6B5C]"
+                                className="text-lg font-semibold text-[#071832] underline decoration-[#1677FF]/30 underline-offset-4 hover:decoration-[#1677FF]"
                               >
                                 {goal.title}
                               </Link>
                             ) : (
-                              <span className="text-lg font-semibold text-[#1A1D2E]">
+                              <span className="text-lg font-semibold text-[#071832]">
                                 {goal.title}
                               </span>
                             )}
@@ -539,7 +539,7 @@ export default function GoalsPage() {
                               <span
                                 className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0 inline-flex items-center gap-1"
                                 style={{
-                                  backgroundColor: "#5C6B5C",
+                                  backgroundColor: "#1677FF",
                                   color: "white",
                                 }}
                               >
@@ -555,20 +555,20 @@ export default function GoalsPage() {
                                 className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold shrink-0"
                                 style={{
                                   backgroundColor: "#B8C84020",
-                                  color: "#5C6B5C",
+                                  color: "#1677FF",
                                 }}
                               >
                                 Scheduled
                               </span>
                             )}
                           </div>
-                          <p className="mt-1.5 text-sm text-[#7A7F8A]">
+                          <p className="mt-1.5 text-sm text-[#4F5F73]">
                             {goal.detail}
                           </p>
                           {action?.kind === "navigate" && (
                             <Link
                               href={action.href}
-                              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#5C6B5C] hover:underline underline-offset-4"
+                              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#1677FF] hover:underline underline-offset-4"
                             >
                               {action.label}
                               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -596,7 +596,7 @@ export default function GoalsPage() {
                                   fetchGoals();
                                 } catch {}
                               }}
-                              className="mt-2 text-xs text-[#B0B4BC] hover:text-[#7A7F8A] underline underline-offset-2"
+                              className="mt-2 text-xs text-[#4F5F73] hover:text-[#4F5F73] underline underline-offset-2"
                             >
                               I don&apos;t have one
                             </button>
@@ -627,19 +627,19 @@ export default function GoalsPage() {
                 {/* Completed goals — collapsed */}
                 {completed.length > 0 && (
                   <div className="mt-3">
-                    <div className="text-xs text-[#B0B4BC] font-medium mb-2">Completed</div>
+                    <div className="text-xs text-[#4F5F73] font-medium mb-2">Completed</div>
                     <div className="space-y-2">
                       {completed.map((goal) => (
                         <div
                           key={goal.id}
-                          className="flex items-center gap-3 rounded-xl bg-[#F0F2F5] px-4 py-2.5 border border-[#EBEDF0]"
+                          className="flex items-center gap-3 rounded-xl bg-[#F0F2F5] px-4 py-2.5 border border-[#E5EAF2]"
                         >
-                          <div className="h-5 w-5 rounded-full bg-[#5C6B5C] flex items-center justify-center shrink-0">
+                          <div className="h-5 w-5 rounded-full bg-[#1677FF] flex items-center justify-center shrink-0">
                             <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M3 8.5L6.5 12L13 4" />
                             </svg>
                           </div>
-                          <span className="text-sm text-[#7A7F8A] line-through">{goal.title}</span>
+                          <span className="text-sm text-[#4F5F73] line-through">{goal.title}</span>
                         </div>
                       ))}
                     </div>
@@ -654,22 +654,22 @@ export default function GoalsPage() {
         {/* User goals */}
         {userGoals.length > 0 && (
           <section className="mt-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#7A7F8A]">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#4F5F73]">
               Your Goals
             </h2>
             <div className="space-y-3">
               {userGoals.map((ug) => (
                 <div
                   key={ug.id}
-                  className="rounded-2xl bg-white shadow-sm p-5 border border-[#EBEDF0]"
+                  className="rounded-2xl bg-white shadow-sm p-5 border border-[#E5EAF2]"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[#1A1D2E] font-medium">{ug.title}</span>
-                    <MiniGauge value={ug.progress} color="#7A7F8A" />
+                    <span className="text-[#071832] font-medium">{ug.title}</span>
+                    <MiniGauge value={ug.progress} color="#4F5F73" />
                   </div>
                   <Link
                     href={`/kate?goal=${encodeURIComponent(ug.title)}`}
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#5C6B5C] hover:underline underline-offset-4"
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#1677FF] hover:underline underline-offset-4"
                   >
                     Talk to Kate about this
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

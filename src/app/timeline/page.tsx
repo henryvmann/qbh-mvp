@@ -71,19 +71,19 @@ export default function TimelinePage() {
     <PageShell>
       
       <div className="mx-auto max-w-3xl px-6 pt-8 pb-16">
-        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
+        <h1 className="font-serif text-2xl tracking-tight text-[#071832]">
           Health Timeline
         </h1>
-        <p className="mt-1 text-sm text-[#7A7F8A]">
+        <p className="mt-1 text-sm text-[#4F5F73]">
           Your providers and visits — past, present, and future
         </p>
 
         {/* Summary strip */}
         <div className="mt-4 flex flex-wrap gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EBEDF0] px-3 py-1 text-xs font-medium text-[#1A1D2E] shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#E5EAF2] px-3 py-1 text-xs font-medium text-[#071832] shadow-sm">
             {providerCount} provider{providerCount !== 1 ? "s" : ""}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#EBEDF0] px-3 py-1 text-xs font-medium text-[#1A1D2E] shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#E5EAF2] px-3 py-1 text-xs font-medium text-[#071832] shadow-sm">
             {totalVisits} visit{totalVisits !== 1 ? "s" : ""} tracked
           </span>
           {upcoming.length > 0 && (
@@ -98,7 +98,7 @@ export default function TimelinePage() {
           <div data-tour="timeline-upcoming" className="mt-8">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-sm font-bold text-emerald-600">Upcoming</span>
-              <div className="flex-1 h-px bg-[#EBEDF0]" />
+              <div className="flex-1 h-px bg-[#E5EAF2]" />
             </div>
             <div className="space-y-3">
               {upcoming.map((evt) => (
@@ -110,7 +110,7 @@ export default function TimelinePage() {
                           <ProviderLink providerId={evt.providerId} providerName={evt.providerName} />
                         ) : evt.providerName}
                       </div>
-                      <div className="text-xs text-[#7A7F8A] mt-0.5">{formatDateTime(evt.date)}</div>
+                      <div className="text-xs text-[#4F5F73] mt-0.5">{formatDateTime(evt.date)}</div>
                     </div>
                     <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-600">
                       Upcoming
@@ -152,16 +152,16 @@ export default function TimelinePage() {
             {years.map((yearData) => (
               <div key={yearData.year}>
                 <div className="mb-3 flex items-center gap-2">
-                  <span className="text-sm font-bold text-[#5C6B5C]">{yearData.year}</span>
-                  <span className="text-xs text-[#B0B4BC]">
+                  <span className="text-sm font-bold text-[#1677FF]">{yearData.year}</span>
+                  <span className="text-xs text-[#4F5F73]">
                     {yearData.providers.length} provider{yearData.providers.length !== 1 ? "s" : ""} &middot; {yearData.totalVisits} visit{yearData.totalVisits !== 1 ? "s" : ""}
                   </span>
-                  <div className="flex-1 h-px bg-[#EBEDF0]" />
+                  <div className="flex-1 h-px bg-[#E5EAF2]" />
                 </div>
 
                 <div className="relative space-y-3 pl-6">
                   {/* Timeline line */}
-                  <div className="absolute left-2 top-2 bottom-2 w-px bg-[#EBEDF0]" />
+                  <div className="absolute left-2 top-2 bottom-2 w-px bg-[#E5EAF2]" />
 
                   {yearData.providers.map((prov) => {
                     const key = `${yearData.year}-${prov.providerId}`;
@@ -170,26 +170,26 @@ export default function TimelinePage() {
                     return (
                       <div key={key} className="relative">
                         {/* Timeline dot */}
-                        <div className="absolute -left-[17px] top-4 h-2.5 w-2.5 rounded-full bg-[#5C6B5C] ring-2 ring-white" />
+                        <div className="absolute -left-[17px] top-4 h-2.5 w-2.5 rounded-full bg-[#1677FF] ring-2 ring-white" />
 
-                        <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] overflow-hidden">
+                        <div className="rounded-2xl bg-white shadow-sm border border-[#E5EAF2] overflow-hidden">
                           <button
                             type="button"
                             onClick={() => toggleProvider(key)}
                             className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-[#F8F9FA] transition"
                           >
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-semibold text-[#1A1D2E]">
+                              <div className="text-sm font-semibold text-[#071832]">
                                 {prov.providerId.startsWith("gcal-") ? (
                                   <span>{prov.providerName}</span>
                                 ) : (
                                   <ProviderLink providerId={prov.providerId} providerName={prov.providerName} />
                                 )}
                               </div>
-                              <div className="text-xs text-[#7A7F8A] mt-0.5">
+                              <div className="text-xs text-[#4F5F73] mt-0.5">
                                 {prov.visits.length} visit{prov.visits.length !== 1 ? "s" : ""} in {yearData.year}
                                 {prov.visits.some((v) => v.source === "calendar") && (
-                                  <span className="ml-1 text-[#B0B4BC]">&middot; From calendar</span>
+                                  <span className="ml-1 text-[#4F5F73]">&middot; From calendar</span>
                                 )}
                               </div>
                               {prov.providerId.startsWith("gcal-") && !addedProviders.has(prov.providerId) && (
@@ -226,18 +226,18 @@ export default function TimelinePage() {
                               <span className="rounded-full bg-[#B0D0E8]/30 px-2.5 py-0.5 text-[10px] font-semibold text-[#2A6090]">
                                 {prov.visits.length}
                               </span>
-                              {isExpanded ? <ChevronDown size={16} className="text-[#B0B4BC]" /> : <ChevronRight size={16} className="text-[#B0B4BC]" />}
+                              {isExpanded ? <ChevronDown size={16} className="text-[#4F5F73]" /> : <ChevronRight size={16} className="text-[#4F5F73]" />}
                             </div>
                           </button>
 
                           {isExpanded && (
-                            <div className="border-t border-[#EBEDF0] px-5 py-3 bg-[#F8F9FA]">
+                            <div className="border-t border-[#E5EAF2] px-5 py-3 bg-[#F8F9FA]">
                               <div className="space-y-2">
                                 {prov.visits.map((v) => (
                                   <div key={v.id} className="flex items-center justify-between text-xs">
-                                    <span className="text-[#7A7F8A]">{formatDate(v.date)}</span>
+                                    <span className="text-[#4F5F73]">{formatDate(v.date)}</span>
                                     {v.amount != null && (
-                                      <span className="text-[#7A7F8A]">${v.amount.toFixed(2)}</span>
+                                      <span className="text-[#4F5F73]">${v.amount.toFixed(2)}</span>
                                     )}
                                   </div>
                                 ))}
@@ -253,9 +253,9 @@ export default function TimelinePage() {
             ))}
           </div>
         ) : upcoming.length === 0 ? (
-          <div className="mt-10 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
-            <div className="font-semibold text-[#1A1D2E]">Your health story starts here</div>
-            <p className="mt-2 text-sm text-[#7A7F8A]">
+          <div className="mt-10 rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
+            <div className="font-semibold text-[#071832]">Your health story starts here</div>
+            <p className="mt-2 text-sm text-[#4F5F73]">
               As you add providers and Kate books appointments, your timeline will show who you&apos;ve seen, when, and how it all connects.
             </p>
           </div>

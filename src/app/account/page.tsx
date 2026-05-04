@@ -143,26 +143,26 @@ export default function AccountPage() {
     <PageShell>
       
       <div className="mx-auto max-w-2xl px-5 pt-8 pb-20">
-        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-8">
+        <h1 className="font-serif text-2xl tracking-tight text-[#071832] mb-8">
           Account
         </h1>
 
         {/* Personal Info */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C] mb-4">
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#1677FF] mb-4">
             Personal Information
           </h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-[#7A7F8A]">Name</span>
-              <span className="text-sm font-medium text-[#1A1D2E]">
+              <span className="text-sm text-[#4F5F73]">Name</span>
+              <span className="text-sm font-medium text-[#071832]">
                 {fullName || userName || "Not set"}
               </span>
             </div>
-            <div className="h-px bg-[#EBEDF0]" />
+            <div className="h-px bg-[#E5EAF2]" />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-[#7A7F8A]">Email</span>
-              <span className="text-sm font-medium text-[#1A1D2E]">
+              <span className="text-sm text-[#4F5F73]">Email</span>
+              <span className="text-sm font-medium text-[#071832]">
                 {email || "Not set"}
               </span>
             </div>
@@ -170,13 +170,13 @@ export default function AccountPage() {
         </div>
 
         {/* Connected Services */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C] mb-4">
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#1677FF] mb-4">
             Connected Services
           </h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-[#1A1D2E]">Google Calendar</span>
+              <span className="text-sm text-[#071832]">Google Calendar</span>
               {hasGoogleCalendar ? (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-200">
                   Connected
@@ -184,18 +184,18 @@ export default function AccountPage() {
               ) : (
                 <Link
                   href="/calendar-connect"
-                  className="text-xs font-medium text-[#5C6B5C] underline underline-offset-4"
+                  className="text-xs font-medium text-[#1677FF] underline underline-offset-4"
                 >
                   Connect
                 </Link>
               )}
             </div>
-            <div className="h-px bg-[#EBEDF0]" />
+            <div className="h-px bg-[#E5EAF2]" />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-[#1A1D2E]">Outlook Calendar</span>
+              <span className="text-sm text-[#071832]">Outlook Calendar</span>
               <Link
                 href="/calendar-connect"
-                className="text-xs font-medium text-[#5C6B5C] underline underline-offset-4"
+                className="text-xs font-medium text-[#1677FF] underline underline-offset-4"
               >
                 Connect
               </Link>
@@ -204,9 +204,9 @@ export default function AccountPage() {
         </div>
 
         {/* Insurance Info — editable */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-4">
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C]">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#1677FF]">
               Insurance
             </h2>
             {!editingInsurance && (
@@ -216,7 +216,7 @@ export default function AccountPage() {
                   setEditMemberId(memberId || "");
                   setEditingInsurance(true);
                 }}
-                className="text-xs text-[#5C6B5C] underline underline-offset-2"
+                className="text-xs text-[#1677FF] underline underline-offset-2"
               >
                 Edit
               </button>
@@ -225,23 +225,23 @@ export default function AccountPage() {
           {editingInsurance ? (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-[#7A7F8A] mb-1">Insurance Provider</label>
+                <label className="block text-xs text-[#4F5F73] mb-1">Insurance Provider</label>
                 <input
                   type="text"
                   value={editInsProvider}
                   onChange={(e) => setEditInsProvider(e.target.value)}
                   placeholder="Start typing your insurance..."
                   autoComplete="off"
-                  className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
                 {editInsProvider.trim().length >= 2 && (() => {
                   const matches = ["Aetna","Anthem","Blue Cross Blue Shield","Cigna","Humana","Kaiser Permanente","Medicare","Medicaid","Molina Healthcare","Oscar Health","Oxford","United Healthcare","WellCare","Ambetter","Centene","CareFirst","EmblemHealth","Florida Blue","Highmark","Horizon BCBS","Independence Blue Cross","TRICARE"]
                     .filter((ins) => ins.toLowerCase().includes(editInsProvider.trim().toLowerCase()));
                   if (matches.length === 0 || matches.some((m) => m.toLowerCase() === editInsProvider.trim().toLowerCase())) return null;
                   return (
-                    <div className="mt-1 max-h-36 overflow-y-auto rounded-lg border border-[#EBEDF0] bg-white divide-y divide-[#EBEDF0]">
+                    <div className="mt-1 max-h-36 overflow-y-auto rounded-lg border border-[#E5EAF2] bg-white divide-y divide-[#E5EAF2]">
                       {matches.slice(0, 5).map((ins) => (
-                        <button key={ins} type="button" onClick={() => setEditInsProvider(ins)} className="w-full px-3 py-2 text-left text-sm text-[#1A1D2E] hover:bg-[#F8F9FA] transition">
+                        <button key={ins} type="button" onClick={() => setEditInsProvider(ins)} className="w-full px-3 py-2 text-left text-sm text-[#071832] hover:bg-[#F8F9FA] transition">
                           {ins}
                         </button>
                       ))}
@@ -250,13 +250,13 @@ export default function AccountPage() {
                 })()}
               </div>
               <div>
-                <label className="block text-xs text-[#7A7F8A] mb-1">Member / Policy ID</label>
+                <label className="block text-xs text-[#4F5F73] mb-1">Member / Policy ID</label>
                 <input
                   type="text"
                   value={editMemberId}
                   onChange={(e) => setEditMemberId(e.target.value)}
                   placeholder="Found on your insurance card"
-                  className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
               </div>
               <div className="flex gap-2">
@@ -283,13 +283,13 @@ export default function AccountPage() {
                   }}
                   disabled={savingInsurance}
                   className="rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                  style={{ backgroundColor: "#5C6B5C" }}
+                  style={{ backgroundColor: "#1677FF" }}
                 >
                   {savingInsurance ? "Saving..." : "Save"}
                 </button>
                 <button
                   onClick={() => setEditingInsurance(false)}
-                  className="rounded-xl px-4 py-2 text-xs text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                  className="rounded-xl px-4 py-2 text-xs text-[#4F5F73] hover:bg-[#F0F2F5]"
                 >
                   Cancel
                 </button>
@@ -298,25 +298,25 @@ export default function AccountPage() {
           ) : insuranceProvider || memberId ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[#7A7F8A]">Provider</span>
-                <span className="text-sm font-medium text-[#1A1D2E]">
+                <span className="text-sm text-[#4F5F73]">Provider</span>
+                <span className="text-sm font-medium text-[#071832]">
                   {insuranceProvider || "Not set"}
                 </span>
               </div>
-              <div className="h-px bg-[#EBEDF0]" />
+              <div className="h-px bg-[#E5EAF2]" />
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[#7A7F8A]">Member ID</span>
-                <span className="text-sm font-medium text-[#1A1D2E]">
+                <span className="text-sm text-[#4F5F73]">Member ID</span>
+                <span className="text-sm font-medium text-[#071832]">
                   {memberId || "Not set"}
                 </span>
               </div>
             </div>
           ) : (
             <div>
-              <p className="text-sm text-[#7A7F8A]">No insurance on file.</p>
+              <p className="text-sm text-[#4F5F73]">No insurance on file.</p>
               <button
                 onClick={() => setEditingInsurance(true)}
-                className="mt-2 text-xs font-semibold text-[#5C6B5C] underline underline-offset-2"
+                className="mt-2 text-xs font-semibold text-[#1677FF] underline underline-offset-2"
               >
                 Add Insurance
               </button>
@@ -327,11 +327,11 @@ export default function AccountPage() {
         {/* Care & Settings — links to the existing dedicated pages.
             Surfacing them here makes /account a real "You" hub instead
             of just a profile-edit page. */}
-        <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C] mb-4">
+        <div className="rounded-2xl bg-white shadow-sm border border-[#E5EAF2] p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#1677FF] mb-4">
             Care & Settings
           </h2>
-          <div className="divide-y divide-[#EBEDF0]">
+          <div className="divide-y divide-[#E5EAF2]">
             {[
               { href: "/care-recipients", label: "Care recipients", sub: "Who you're managing care for" },
               { href: "/providers", label: "Care team", sub: "Doctors, dentists, specialists" },
@@ -345,10 +345,10 @@ export default function AccountPage() {
                 className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0 hover:bg-[#FAFBFC] -mx-6 px-6 transition"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-[#1A1D2E]">{row.label}</div>
-                  <div className="text-xs text-[#7A7F8A] mt-0.5">{row.sub}</div>
+                  <div className="text-sm font-semibold text-[#071832]">{row.label}</div>
+                  <div className="text-xs text-[#4F5F73] mt-0.5">{row.sub}</div>
                 </div>
-                <span className="text-[#B0B4BC] text-lg leading-none">›</span>
+                <span className="text-[#4F5F73] text-lg leading-none">›</span>
               </Link>
             ))}
           </div>
@@ -368,17 +368,17 @@ export default function AccountPage() {
         </div>
 
         {/* Password Section (collapsible) */}
-        <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0]">
+        <div className="rounded-2xl bg-white shadow-sm border border-[#E5EAF2]">
           <button
             type="button"
             onClick={() => setPasswordOpen(!passwordOpen)}
             className="flex w-full items-center justify-between p-6 text-left"
           >
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#5C6B5C]">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#1677FF]">
               Password
             </h2>
             <svg
-              className={`h-4 w-4 text-[#7A7F8A] transition-transform ${passwordOpen ? "rotate-180" : ""}`}
+              className={`h-4 w-4 text-[#4F5F73] transition-transform ${passwordOpen ? "rotate-180" : ""}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -390,7 +390,7 @@ export default function AccountPage() {
 
           {passwordOpen && (
             <div className="px-6 pb-6">
-              <p className="text-sm text-[#7A7F8A] mb-4">
+              <p className="text-sm text-[#4F5F73] mb-4">
                 Set a password to sign in with your email and password instead of a magic link.
               </p>
 
@@ -406,7 +406,7 @@ export default function AccountPage() {
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Current password"
                     required
-                    className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:border-[#1677FF] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                   />
 
                   <input
@@ -415,7 +415,7 @@ export default function AccountPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="New password"
                     required
-                    className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:border-[#1677FF] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                   />
 
                   <input
@@ -424,14 +424,14 @@ export default function AccountPage() {
                     onChange={(e) => setConfirm(e.target.value)}
                     placeholder="Confirm password"
                     required
-                    className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:border-[#1677FF] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                   />
 
                   <button
                     type="submit"
                     disabled={submitting || !currentPassword.trim() || !password.trim() || !confirm.trim()}
                     className="w-full rounded-xl px-6 py-3 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                    style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
                   >
                     {submitting ? "Saving..." : "Set password"}
                   </button>
@@ -452,7 +452,7 @@ export default function AccountPage() {
           <button
             type="button"
             onClick={() => setShowDeleteModal(true)}
-            className="text-xs text-[#B0B4BC] underline underline-offset-4 hover:text-red-500 transition"
+            className="text-xs text-[#4F5F73] underline underline-offset-4 hover:text-red-500 transition"
           >
             Delete my account
           </button>
@@ -465,12 +465,12 @@ export default function AccountPage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle className="h-6 w-6 text-red-500" />
-              <h3 className="text-lg font-semibold text-[#1A1D2E]">Are you sure?</h3>
+              <h3 className="text-lg font-semibold text-[#071832]">Are you sure?</h3>
             </div>
-            <p className="text-sm text-[#7A7F8A] mb-4">
+            <p className="text-sm text-[#4F5F73] mb-4">
               This action is irreversible. All your data, providers, call history, and profile information will be permanently deleted.
             </p>
-            <p className="text-sm font-medium text-[#1A1D2E] mb-2">
+            <p className="text-sm font-medium text-[#071832] mb-2">
               Type <span className="font-mono font-bold text-red-600">DELETE</span> to confirm:
             </p>
             <input
@@ -478,7 +478,7 @@ export default function AccountPage() {
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder="Type DELETE"
-              className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-red-400 focus:outline-none focus:ring-1 focus:ring-red-400"
+              className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:border-red-400 focus:outline-none focus:ring-1 focus:ring-red-400"
             />
 
             {deleteError && (
@@ -495,7 +495,7 @@ export default function AccountPage() {
                   setDeleteConfirmText("");
                   setDeleteError(null);
                 }}
-                className="flex-1 rounded-xl border border-[#EBEDF0] px-4 py-2.5 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5] transition-colors"
+                className="flex-1 rounded-xl border border-[#E5EAF2] px-4 py-2.5 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5] transition-colors"
               >
                 Cancel
               </button>

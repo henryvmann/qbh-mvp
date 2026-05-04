@@ -109,10 +109,10 @@ function VisitsInner() {
       
       <div className="mx-auto max-w-5xl px-6 pb-16 pt-10">
         <div className="mb-2">
-          <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
+          <h1 className="font-serif text-2xl tracking-tight text-[#071832]">
             Visits
           </h1>
-          <p className="mt-1 text-sm text-[#7A7F8A]">
+          <p className="mt-1 text-sm text-[#4F5F73]">
             Upcoming appointments and past visits
           </p>
         </div>
@@ -120,17 +120,17 @@ function VisitsInner() {
         <BestNextStep context="visits" />
 
         {/* Upcoming visits */}
-        <section data-tour="upcoming-visits" className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+        <section data-tour="upcoming-visits" className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-xl text-[#1A1D2E]">
+              <h2 className="font-serif text-xl text-[#071832]">
                 Upcoming visits
               </h2>
-              <p className="mt-2 text-sm text-[#7A7F8A]">
+              <p className="mt-2 text-sm text-[#4F5F73]">
                 Confirmed appointments from the QBH booking system.
               </p>
             </div>
-            <span className="text-sm font-medium text-[#7A7F8A]">
+            <span className="text-sm font-medium text-[#4F5F73]">
               {upcoming.length} upcoming
             </span>
           </div>
@@ -140,7 +140,7 @@ function VisitsInner() {
               {upcoming.map((visit) => (
                 <div
                   key={visit.eventId}
-                  className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]"
+                  className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#E5EAF2]"
                 >
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div>
@@ -149,11 +149,11 @@ function VisitsInner() {
                           <ProviderLink providerId={visit.providerId} providerName={visit.providerName} />
                         ) : visit.providerName}
                       </div>
-                      <div className="mt-1 text-sm text-[#7A7F8A]">
+                      <div className="mt-1 text-sm text-[#4F5F73]">
                         {formatVisitDateTime(visit.startAt, visit.providerName)}
                       </div>
                     </div>
-                    <span className="inline-flex items-center rounded-full bg-[#5C6B5C]/15 px-3 py-1 text-xs font-semibold text-[#5C6B5C] ring-1 ring-[#5C6B5C]/30">
+                    <span className="inline-flex items-center rounded-full bg-[#1677FF]/15 px-3 py-1 text-xs font-semibold text-[#1677FF] ring-1 ring-[#1677FF]/30">
                       {visit.providerId ? "Confirmed" : "From Calendar"}
                     </span>
                   </div>
@@ -165,7 +165,7 @@ function VisitsInner() {
                       <a
                         href="/providers?add=true"
                         className="rounded-lg px-3 py-1 text-xs font-semibold text-white"
-                        style={{ backgroundColor: "#5C6B5C" }}
+                        style={{ backgroundColor: "#1677FF" }}
                       >
                         Assign Provider
                       </a>
@@ -179,7 +179,7 @@ function VisitsInner() {
                       <a
                         href={`/providers`}
                         className="rounded-lg px-3 py-1 text-xs font-semibold text-white shrink-0"
-                        style={{ backgroundColor: "#5C6B5C" }}
+                        style={{ backgroundColor: "#1677FF" }}
                       >
                         Confirm
                       </a>
@@ -189,24 +189,24 @@ function VisitsInner() {
               ))}
             </div>
           ) : (
-            <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
-              <div className="font-semibold text-[#1A1D2E]">
+            <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#E5EAF2]">
+              <div className="font-semibold text-[#071832]">
                 No upcoming appointments yet
               </div>
-              <p className="mt-2 text-sm text-[#7A7F8A]">
+              <p className="mt-2 text-sm text-[#4F5F73]">
                 Confirmed appointments will appear here when Kate books them.
               </p>
               <div className="mt-3 flex gap-2">
                 <a
                   href="/calendar-view"
                   className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                  style={{ backgroundColor: "#5C6B5C" }}
+                  style={{ backgroundColor: "#1677FF" }}
                 >
                   View calendar
                 </a>
                 <a
                   href="/providers"
-                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#EBEDF0] text-[#1A1D2E] hover:bg-white"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#E5EAF2] text-[#071832] hover:bg-white"
                 >
                   Book with Kate
                 </a>
@@ -218,17 +218,17 @@ function VisitsInner() {
         {/* Follow-ups and Past visits side by side */}
         <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Follow-ups */}
-          <div data-tour="follow-ups" className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+          <div data-tour="follow-ups" className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-xl text-[#1A1D2E]">
+                <h2 className="font-serif text-xl text-[#071832]">
                   Follow-ups to schedule
                 </h2>
-                <p className="mt-2 text-sm text-[#7A7F8A]">
+                <p className="mt-2 text-sm text-[#4F5F73]">
                   Providers that are overdue or don&apos;t have a future appointment.
                 </p>
               </div>
-              <span className="text-sm font-medium text-[#7A7F8A]">
+              <span className="text-sm font-medium text-[#4F5F73]">
                 {followUps.length} open
               </span>
             </div>
@@ -238,7 +238,7 @@ function VisitsInner() {
                 {followUps.map((fu) => (
                   <div
                     key={fu.providerId}
-                    className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]"
+                    className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#E5EAF2]"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="font-semibold">
@@ -248,7 +248,7 @@ function VisitsInner() {
                         Needs booking
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-[#7A7F8A]">
+                    <p className="mt-2 text-sm text-[#4F5F73]">
                       Kate can call and schedule this for you.
                     </p>
                     <HandleItButton
@@ -260,11 +260,11 @@ function VisitsInner() {
                 ))}
               </div>
             ) : (
-              <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
-                <div className="font-semibold text-[#1A1D2E]">
+              <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#E5EAF2]">
+                <div className="font-semibold text-[#071832]">
                   No open follow-ups right now
                 </div>
-                <p className="mt-2 text-sm text-[#7A7F8A]">
+                <p className="mt-2 text-sm text-[#4F5F73]">
                   Current providers are either booked already or not yet marked
                   for another scheduling attempt.
                 </p>
@@ -273,17 +273,17 @@ function VisitsInner() {
           </div>
 
           {/* Past visits */}
-          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+          <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-xl text-[#1A1D2E]">
+                <h2 className="font-serif text-xl text-[#071832]">
                   Past visits
                 </h2>
-                <p className="mt-2 text-sm text-[#7A7F8A]">
+                <p className="mt-2 text-sm text-[#4F5F73]">
                   Visits found from your financial data analysis.
                 </p>
               </div>
-              <span className="text-sm font-medium text-[#7A7F8A]">
+              <span className="text-sm font-medium text-[#4F5F73]">
                 {past.length} visits
               </span>
             </div>
@@ -293,7 +293,7 @@ function VisitsInner() {
                 {past.map((visit) => (
                   <div
                     key={visit.id}
-                    className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]"
+                    className="rounded-2xl bg-[#F0F2F5] p-5 border border-[#E5EAF2]"
                   >
                     <div className="flex items-center justify-between gap-4">
                       {editingId === visit.id ? (
@@ -301,10 +301,10 @@ function VisitsInner() {
                           type="date"
                           value={editDate}
                           onChange={(e) => setEditDate(e.target.value)}
-                          className="rounded-lg border border-[#EBEDF0] bg-white px-2 py-1 text-sm text-[#1A1D2E]"
+                          className="rounded-lg border border-[#E5EAF2] bg-white px-2 py-1 text-sm text-[#071832]"
                         />
                       ) : (
-                        <div className="text-sm font-semibold text-[#B0B4BC]">
+                        <div className="text-sm font-semibold text-[#4F5F73]">
                           {formatDate(visit.visitDate)}
                         </div>
                       )}
@@ -327,13 +327,13 @@ function VisitsInner() {
                               }}
                               disabled={saving}
                               className="rounded-lg px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
-                              style={{ backgroundColor: "#5C6B5C" }}
+                              style={{ backgroundColor: "#1677FF" }}
                             >
                               {saving ? "..." : "Save"}
                             </button>
                             <button
                               onClick={() => setEditingId(null)}
-                              className="rounded-lg p-1 text-[#7A7F8A] hover:bg-white"
+                              className="rounded-lg p-1 text-[#4F5F73] hover:bg-white"
                             >
                               <XIcon size={14} />
                             </button>
@@ -342,7 +342,7 @@ function VisitsInner() {
                           <>
                             <button
                               onClick={() => { setEditingId(visit.id); setEditDate(visit.visitDate || ""); }}
-                              className="rounded-lg p-1.5 text-[#B0B4BC] hover:text-[#7A7F8A] hover:bg-white transition"
+                              className="rounded-lg p-1.5 text-[#4F5F73] hover:text-[#4F5F73] hover:bg-white transition"
                               title="Edit date"
                             >
                               <Pencil size={13} />
@@ -357,7 +357,7 @@ function VisitsInner() {
                                 });
                                 setPast((prev) => prev.filter((v) => v.id !== visit.id));
                               }}
-                              className="rounded-lg p-1.5 text-[#B0B4BC] hover:text-red-500 hover:bg-red-50 transition"
+                              className="rounded-lg p-1.5 text-[#4F5F73] hover:text-red-500 hover:bg-red-50 transition"
                               title="Remove visit"
                             >
                               <Trash2 size={13} />
@@ -372,7 +372,7 @@ function VisitsInner() {
                       ) : visit.providerName}
                     </div>
                     {visit.amount != null && (
-                      <p className="mt-1 text-sm text-[#7A7F8A]">
+                      <p className="mt-1 text-sm text-[#4F5F73]">
                         {formatAmount(visit.amount)}
                       </p>
                     )}
@@ -380,11 +380,11 @@ function VisitsInner() {
                 ))}
               </div>
             ) : (
-              <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
-                <div className="font-semibold text-[#1A1D2E]">
+              <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#E5EAF2]">
+                <div className="font-semibold text-[#071832]">
                   No past visits found yet
                 </div>
-                <p className="mt-2 text-sm text-[#7A7F8A]">
+                <p className="mt-2 text-sm text-[#4F5F73]">
                   Past visits will appear once QBH analyzes your financial data.
                 </p>
               </div>
