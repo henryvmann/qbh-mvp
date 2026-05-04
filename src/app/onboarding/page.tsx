@@ -795,7 +795,7 @@ export default function OnboardingPage() {
       `}</style>
 
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-md border-b px-6 py-3" style={{ background: "rgba(205,219,214,0.8)", borderColor: theme.glassBorder }}>
+      <div className="sticky top-0 z-10 backdrop-blur-md border-b px-6 py-3" style={{ background: "rgba(250,248,244,0.85)", borderColor: "#E5EAF2" }}>
         <div className="mx-auto max-w-lg flex items-center gap-2">
           <Image src="/kate-avatar.png" alt="Kate" width={28} height={28} className="rounded-full" />
           <span className="text-sm font-semibold text-[#071832]">Kate</span>
