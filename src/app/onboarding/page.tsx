@@ -309,23 +309,36 @@ export default function OnboardingPage() {
 
   // ── Phase handlers ──
   function handleIntroResponse(value: string) {
+    // Three Kate-voice "what you can look forward to" lines that
+    // were previously rendered as a separate icon-card block. Now
+    // streamed into the chat like every other message so there's no
+    // out-of-flow component to flicker on transition.
+    const valueProps: React.ReactNode[] = [
+      <><strong>I&rsquo;ll find every doctor you&rsquo;ve seen.</strong> I scan your co-pays and pull your complete provider history. No typing, no remembering.</>,
+      <><strong>I&rsquo;ll book appointments for you.</strong> I call the office, navigate the phone tree, and schedule. You don&rsquo;t pick up the phone.</>,
+      <><strong>I&rsquo;ll connect the dots.</strong> I track what&rsquo;s overdue, prep you before visits, and follow up after. Your health &mdash; organized.</>,
+    ];
     if (value === "relatable") {
       addUserMessage("Yeah, that's me");
       setTimeout(() => {
         addKateMessages([
           "No judgment \u2014 that's literally everyone. The system isn't built for you to keep track.",
-          "But I am. Here's what you can look forward to:"
+          "But I am. Here's what you can look forward to:",
+          ...valueProps,
         ]);
-        setTimeout(() => setPhase("value-props"), 2400);
+        // 5 messages \u00d7 600ms gap + 800ms base = 3200ms total reveal,
+        // give a short beat after the last line before the button.
+        setTimeout(() => setPhase("value-props"), 3600);
       }, 400);
     } else {
       addUserMessage("I'm actually pretty on top of it");
       setTimeout(() => {
         addKateMessages([
           "Love that. But I bet even you have a provider or two that's slipped through the cracks.",
-          "Either way \u2014 I'm about to make your life easier. Here's what you can look forward to:"
+          "Either way \u2014 I'm about to make your life easier. Here's what you can look forward to:",
+          ...valueProps,
         ]);
-        setTimeout(() => setPhase("value-props"), 2400);
+        setTimeout(() => setPhase("value-props"), 3600);
       }, 400);
     }
   }
@@ -830,32 +843,11 @@ export default function OnboardingPage() {
           />
         )}
 
-        {/* Value Props */}
+        {/* Value Props — bullets are now streamed as Kate chat
+            messages in handleIntroResponse(). Only the proceed
+            button remains here. */}
         {phase === "value-props" && (
-          <div className="space-y-3 animate-fadeIn">
-            <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
-              <Search size={20} className="text-[#1677FF] shrink-0 mt-0.5" />
-              <div>
-                <div className="text-sm font-semibold text-[#071832]">I'll find every doctor you've seen</div>
-                <p className="mt-1 text-xs text-[#4F5F73]">I scan your co-pays and pull your complete provider history. No typing, no remembering.</p>
-              </div>
-            </div>
-            <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
-              <Phone size={20} className="text-[#1677FF] shrink-0 mt-0.5" />
-              <div>
-                <div className="text-sm font-semibold text-[#071832]">Book appointments for you</div>
-                <p className="mt-1 text-xs text-[#4F5F73]">I call the office, navigate the phone tree, and schedule. You don't pick up the phone.</p>
-              </div>
-            </div>
-            <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
-              <Brain size={20} className="text-[#1677FF] shrink-0 mt-0.5" />
-              <div>
-                <div className="text-sm font-semibold text-[#071832]">Connect the dots</div>
-                <p className="mt-1 text-xs text-[#4F5F73]">I track what's overdue, prep you before visits, and follow up after. Your health — organized.</p>
-              </div>
-            </div>
-            <OptionButtons options={[{ label: "Let's do it", value: "go" }]} onSelect={handleValuePropsNext} />
-          </div>
+          <OptionButtons options={[{ label: "Let's do it", value: "go" }]} onSelect={handleValuePropsNext} />
         )}
 
         {/* Who for */}
