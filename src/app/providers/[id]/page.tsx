@@ -86,6 +86,29 @@ export default function ProviderDetailPage() {
       .finally(() => setLoading(false));
   }, [providerId, router]);
 
+  async function handleRemoveProvider() {
+    if (!provider) return;
+    const ok = window.confirm(
+      `Remove ${provider.display_name || provider.name} from your care team?\n\nThis will delete all visits, notes, and call history for this provider, and Kate won't bring it back on future scans.`
+    );
+    if (!ok) return;
+    try {
+      const res = await apiFetch("/api/providers/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider_id: providerId, action: "delete" }),
+      });
+      const json = await res.json();
+      if (json?.ok) {
+        router.push("/providers");
+      } else {
+        window.alert(`Couldn't remove provider: ${json?.error ?? "unknown error"}`);
+      }
+    } catch (err) {
+      window.alert(`Couldn't remove provider: ${err instanceof Error ? err.message : "network error"}`);
+    }
+  }
+
   async function handleAddNote() {
     if (!newNote.trim() || savingNote) return;
     setSavingNote(true);
@@ -195,20 +218,29 @@ export default function ProviderDetailPage() {
 
             {/* Edit toggle */}
             {!editing ? (
-              <button
-                onClick={() => {
-                  setEditPhone(provider.phone_number || "");
-                  setEditSpecialty(provider.specialty || "");
-                  setEditDoctorName(provider.doctor_name || "");
-                  setEditCareTeam(provider.care_team || "");
-                  setEditNotes(provider.notes || "");
-                  setEditing(true);
-                }}
-                className="mt-3 text-xs font-medium underline underline-offset-2 transition"
-                style={{ color: colors.accent }}
-              >
-                Edit details
-              </button>
+              <div className="mt-3 flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    setEditPhone(provider.phone_number || "");
+                    setEditSpecialty(provider.specialty || "");
+                    setEditDoctorName(provider.doctor_name || "");
+                    setEditCareTeam(provider.care_team || "");
+                    setEditNotes(provider.notes || "");
+                    setEditing(true);
+                  }}
+                  className="text-xs font-medium underline underline-offset-2 transition"
+                  style={{ color: colors.accent }}
+                >
+                  Edit details
+                </button>
+                <button
+                  onClick={handleRemoveProvider}
+                  className="text-xs font-medium underline underline-offset-2 transition hover:opacity-80"
+                  style={{ color: "#E04030" }}
+                >
+                  Remove from care team
+                </button>
+              </div>
             ) : (
               <div className="mt-4 space-y-2.5">
                 <input

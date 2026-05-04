@@ -876,14 +876,20 @@ export async function buildProviderRegistry(
       );
       if (dismissSet.size > 0) {
         const before = filtered.length;
+        // Per-user dismissal beats the global HEALTHCARE_ALLOWLIST.
+        // The allowlist's job is preventing one user's dismissal from
+        // poisoning OTHER users' classifications (and protecting against
+        // mass-dismissal feedback-candidate promotion). When THIS user
+        // explicitly tells us they don't want CVS in their care team,
+        // their choice wins — even though CVS-the-pharmacy stays
+        // healthcare globally for everyone else.
         filtered = filtered.filter((p) => {
           const norm = (p.normalized_name ?? "").toUpperCase().trim();
-          if (HEALTHCARE_ALLOWLIST.has(norm)) return true; // immune
           return !dismissSet.has(norm);
         });
         if (before !== filtered.length) {
           console.log(
-            `[buildProviderRegistry] Per-user dismissal filter: dropped ${before - filtered.length} of ${before} (allowlist immune)`
+            `[buildProviderRegistry] Per-user dismissal filter: dropped ${before - filtered.length} of ${before}`
           );
         }
       }
