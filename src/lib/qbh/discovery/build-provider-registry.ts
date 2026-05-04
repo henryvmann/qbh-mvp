@@ -30,6 +30,37 @@ export type DiscoveredProvider = {
   phone_number: string | null;
 };
 
+/**
+ * NPI's taxonomy includes plenty of entries that are *registered*
+ * providers but not what a user thinks of as a clinical care visit:
+ *   - "Local Education Agency (LEA)" — public schools that employ
+ *     nurses; will match "Westport Public Schools" by name.
+ *   - "Massage Therapist", "Massage Therapy" — chains like Massage
+ *     Envy match cleanly; not part of QBH's care-team mental model.
+ *   - "Aide" / "Assistant" / "Technician" categories with no LICENSE
+ *     to deliver primary care.
+ * A clean NPI hit on a non-clinical taxonomy should NOT auto-promote
+ * the merchant to HEALTHCARE. This filter keeps the override conservative.
+ */
+function _isClinicalNpiType(npiType: string | null | undefined): boolean {
+  // Null taxonomy = NPI matched a registered entity but didn't return
+  // a type. Without taxonomy we can't be confident it's a clinical
+  // provider — refuse to auto-promote.
+  if (!npiType) return false;
+  const t = npiType.toLowerCase();
+  const NON_CLINICAL = [
+    "local education agency",
+    "school",
+    "massage therapist",
+    "massage therapy",
+    "aide",
+    "assistant",
+    "technician",
+    "support staff",
+  ];
+  return !NON_CLINICAL.some((nc) => t.includes(nc));
+}
+
 function normalizeProviderName(input: string): string {
   return input
     .toUpperCase()
@@ -211,6 +242,26 @@ export async function buildProviderRegistry(
     "SPRING HEALTH", "LYRA HEALTH", "MODERN HEALTH",
     // Misc
     "PET ", "VET ", "VETERINA", "LANDSCAP", "CLEANING", "LAUNDRY", "DRY CLEAN",
+    // Pet hospitals/clinics — the word "Hospital"/"Clinic" tripped the
+    // classifier into thinking these are human healthcare. Use prefix
+    // patterns ("ANIMAL HOSPITAL", "PET HOSPITAL", "ANIMAL CLINIC") so
+    // we catch any-town variants ("Dallas Animal Hospital").
+    "ANIMAL HOSPITAL", "ANIMAL CLINIC", "PET HOSPITAL", "PET CLINIC",
+    "BANFIELD", "VCA ANIMAL", "BLUEPEARL", "VETSMART",
+    // Massage / spa chains. NPI's "Massage Therapist" profession code
+    // matches these by name; not clinical care from a user perspective.
+    "MASSAGE ENVY", "MASSAGE HEIGHTS", "HAND & STONE",
+    "EUROPEAN WAX", "WAXING THE CITY", "DRYBAR",
+    // Childcare / daycare / preschool. AI sometimes labels these
+    // "other_healthcare" because they have child-related terms.
+    "KINDERCARE", "BRIGHT HORIZONS", "GODDARD SCHOOL", "PRIMROSE SCHOOL",
+    "LA PETITE ACADEMY", "CHILDCARE NETWORK", "MONTESSORI", "DAYCARE",
+    "CHILDREN'S ACADEMY", "CHILDRENS ACADEMY", "PRESCHOOL",
+    // K-12 schools. NPI registry has "Local Education Agency (LEA)"
+    // entries — schools that employ nurses get registered, but they
+    // aren't medical providers from the user's perspective.
+    "PUBLIC SCHOOLS", "ELEMENTARY SCHOOL", "MIDDLE SCHOOL", "HIGH SCHOOL",
+    "SCHOOL DISTRICT", " ISD", "PTA ",
     // Pet pharmacies (have "pharmacy" in name but aren't human healthcare)
     "CHEWY", "PETCO", "PETSMART",
     // Big-box / chain grocery — credit card feeds often arrive with no
@@ -480,7 +531,12 @@ export async function buildProviderRegistry(
     // team step. We don't claim confidence; we just refuse to silently
     // drop it like we did before.
     const _words = entry.normalized_name.split(" ").filter(Boolean);
-    const _looksLikePersonName = _words.length >= 2 && _words.length <= 4 && _words.every((w) => /^[A-Z]+$/.test(w));
+    // Real person names are 2-4 multi-letter words. Single letters
+    // (H E B → "H-E-B") aren't names — they're chain initialisms.
+    const _looksLikePersonName =
+      _words.length >= 2 &&
+      _words.length <= 4 &&
+      _words.every((w) => /^[A-Z]+$/.test(w) && w.length >= 2);
     const _avgAmount = entry.amounts.length > 0 ? entry.amounts.reduce((s, v) => s + v, 0) / entry.amounts.length : 0;
     // Real therapist visits cluster tightly around the same per-session
     // rate ($150, $200, $250). Grocery / retail / random merchants in
@@ -494,22 +550,51 @@ export async function buildProviderRegistry(
       const stddev = Math.sqrt(variance);
       _amountConsistent = stddev / _avgAmount < 0.35;
     }
-    // First-word tokens that strongly indicate retail / chain rather
-    // than a person — disqualify the therapist heuristic regardless of
-    // shape match. Belt-and-suspenders against the chain denylist; cheap
-    // safety net for new chains we haven't fixtured yet.
+    // First-word tokens that strongly indicate retail / chain / utility /
+    // government / payment-processor rather than a person. Disqualify
+    // the therapist heuristic regardless of shape match.
     const _firstWord = _words[0] ?? "";
-    const _retailFirstWord = new Set([
+    const _disqualifyingFirstWord = new Set([
+      // Grocery / retail chains
       "TRADER", "TARGET", "COSTCO", "WHOLE", "PUBLIX", "ALDI", "KROGER",
       "SAFEWAY", "WEGMANS", "STOP", "FOOD", "GIANT", "HARRIS", "MORTON",
       "FAIRWAY", "WESTERN", "ACME", "SHOPRITE", "MEIJER", "WINCO",
       "SPROUTS", "BJS", "SAMS", "MARKET", "DELI", "GROCER", "STORE",
-      "SHOP", "MART",
+      "SHOP", "MART", "HEB", "WINN",
+      // Apparel / fashion chains (single brand names trip person-shape)
+      "ADIDAS", "NIKE", "PUMA", "REEBOK", "UNIQLO", "ZARA", "GAP", "BANANA",
+      "MADEWELL", "JCREW", "ATHLETA", "LULULEMON", "COACH", "MICHAEL",
+      "SHEIN", "TEMU", "POSHMARK",
+      // Utilities / energy / telecom
+      "EVERSOURCE", "DOMINION", "DUKE", "CON", "PG&E", "PG", "PSEG",
+      "NATIONAL", "SOUTHERN", "VERIZON", "ATT", "AT&T", "TMOBILE", "T-MOBILE",
+      "XFINITY", "COMCAST", "OPTIMUM", "SPECTRUM", "CHARTER",
+      "CITY", "TOWN", "STATE", "COUNTY",
+      // Payment processors / banks
+      "ZELLE", "VENMO", "PAYPAL", "CASH", "CASHAPP",
+      "FIDELITY", "SCHWAB", "VANGUARD", "ROBINHOOD", "COINBASE",
+      // Government
+      "DMV", "IRS", "USATAXPYMT", "USPS", "NJ", "NY", "CA", "TX", "FL",
+      "MA", "PA", "VA", "GA", "NC", "OH", "IL", "MI", "AZ",
+      // Government / municipal indicators that show up mid-string
+      "WATER", "POLLUTION", "DEPT", "DEPARTMENT", "MUNICIPAL",
+      "POLICE", "FIRE", "COURT", "LICENSE", "REGISTRATION",
+      // Religious / charitable
+      "ST", "TEMPLE", "CHURCH", "DIOCESE", "PARISH",
     ]);
-    const _looksLikeRetail = _retailFirstWord.has(_firstWord);
+    // Special characters get stripped by normalize, so we check the
+    // raw provider_name for payment-processor / tag separators that
+    // signal "not a person." Catches "Cash App*Laura", "AT&T*",
+    // "Six Flags *" etc.
+    const _hasNonNameToken = /[*&./@#]/.test(entry.provider_name);
+    // Match the disqualifier against ANY word, not just the first.
+    // "Raleigh Temple", "Oakland Water Pollution Ctl" both have the
+    // discriminating token mid-string.
+    const _looksLikeRetail = _words.some((w) => _disqualifyingFirstWord.has(w));
     const _therapistFrequencyHit =
       _looksLikePersonName &&
       !_looksLikeRetail &&
+      !_hasNonNameToken &&
       _amountConsistent &&
       entry.transaction_ids.length >= 3 &&
       _avgAmount >= 100 &&
@@ -523,12 +608,15 @@ export async function buildProviderRegistry(
       bucket = "HEALTHCARE";
       care_action_type = "CHECK_APPOINTMENT_STATUS";
       provider_type = preResult.provider_type;
-    } else if (npiResult?.found) {
+    } else if (npiResult?.found && _isClinicalNpiType(npiResult.provider_type)) {
       // NPI lookup by name has a non-trivial false-positive rate — common
       // first/last name combos collide with real registered providers.
-      // Treat it as authoritative only when the spending pattern also
-      // suggests a real provider relationship (2+ recurring visits).
-      // Otherwise route to REVIEW_NEEDED so the user makes the call.
+      // Treat it as authoritative only when (a) the NPI taxonomy is a
+      // real clinical provider type (not Local Education Agency, not
+      // Massage Therapist alone, not Acupuncturist Aide etc.) AND (b)
+      // the spending pattern suggests a real provider relationship
+      // (2+ recurring visits). Otherwise route to REVIEW_NEEDED so the
+      // user makes the call.
       const isRecurring = entry.transaction_ids.length >= 2;
       if (isRecurring) {
         bucket = "HEALTHCARE";

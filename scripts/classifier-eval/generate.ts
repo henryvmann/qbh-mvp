@@ -77,34 +77,65 @@ function txId(rng: () => number): string {
   return id;
 }
 
+// Common US town names — used to fill {{TOWN_UPPER}} so generated
+// merchants look like real geographically-diverse Plaid output rather
+// than collapsing to "westport" everything.
+const TOWN_POOL = [
+  "Westport", "Stamford", "Norwalk", "Greenwich", "Wilton", "Ridgefield",
+  "Fairfield", "Bridgeport", "New Canaan", "Darien", "Trumbull",
+  "Brooklyn", "Manhattan", "Queens", "Bronx", "Astoria", "Hoboken",
+  "Boston", "Cambridge", "Newton", "Brookline", "Somerville",
+  "Chicago", "Evanston", "Oak Park", "Naperville",
+  "Austin", "Houston", "Dallas", "San Antonio", "Plano",
+  "Denver", "Boulder", "Aurora",
+  "Seattle", "Portland", "Bellevue",
+  "San Francisco", "Oakland", "Berkeley", "Palo Alto", "San Jose",
+  "Los Angeles", "Pasadena", "Santa Monica", "Long Beach",
+  "Atlanta", "Decatur", "Marietta",
+  "Miami", "Tampa", "Orlando",
+  "Philadelphia", "Pittsburgh",
+  "Charlotte", "Raleigh", "Durham",
+  "Nashville", "Memphis", "Knoxville",
+  "Phoenix", "Scottsdale", "Tempe",
+];
+
+const STATE_POOL = [
+  "CT", "NY", "NJ", "MA", "PA", "VA", "MD", "DC", "FL", "GA", "NC",
+  "SC", "TX", "CO", "WA", "OR", "CA", "IL", "OH", "MI", "TN", "AZ",
+];
+
 function fillPlaceholders(template: string, rng: () => number): string {
   const first = pick(FIRST_NAMES, rng);
   const last = pick(LAST_NAMES, rng);
   const upper = (s: string) => s.toUpperCase();
+  const alphanum = (n: number) => {
+    const c = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let r = "";
+    for (let i = 0; i < n; i++) r += c[Math.floor(rng() * c.length)];
+    return r;
+  };
 
   const replacements: Array<[RegExp, () => string]> = [
     [/\{\{FIRST_LAST_UPPER\}\}/g, () => upper(`${pick(FIRST_NAMES, rng)} ${pick(LAST_NAMES, rng)}`)],
     [/\{\{FIRST_UPPER\}\}/g, () => upper(pick(FIRST_NAMES, rng))],
     [/\{\{LAST_UPPER\}\}/g, () => upper(pick(LAST_NAMES, rng))],
+    [/\{\{FIRSTNAME_UPPER\}\}/g, () => upper(pick(FIRST_NAMES, rng))],
+    [/\{\{LASTNAME_UPPER\}\}/g, () => upper(pick(LAST_NAMES, rng))],
     [/\{\{FIRST\}\}/g, () => pick(FIRST_NAMES, rng)],
+    [/\{\{TOWN_UPPER\}\}/g, () => upper(pick(TOWN_POOL, rng))],
+    [/\{\{STATE\}\}/g, () => pick(STATE_POOL, rng)],
     [/\{\{RESTAURANT\}\}/g, () => pick(RESTAURANT_POOL, rng)],
+    [/\{\{RETAILER\}\}/g, () => pick(["TARGET", "WALMART", "WHOLE FOODS", "WEGMANS", "TRADER JOES"], rng)],
     [/\{\{NUM2\}\}/g, () => String(randInt(rng, 10, 99))],
     [/\{\{NUM3\}\}/g, () => String(randInt(rng, 100, 999))],
     [/\{\{NUM4\}\}/g, () => String(randInt(rng, 1000, 9999))],
+    [/\{\{NUM5\}\}/g, () => String(randInt(rng, 10_000, 99_999))],
+    [/\{\{NUM6\}\}/g, () => String(randInt(rng, 100_000, 999_999))],
     [/\{\{NUM7\}\}/g, () => String(randInt(rng, 1_000_000, 9_999_999))],
     [/\{\{NUM10\}\}/g, () => String(randInt(rng, 1_000_000_000, 9_999_999_999))],
-    [/\{\{ALPHA8\}\}/g, () => {
-      const c = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let r = "";
-      for (let i = 0; i < 8; i++) r += c[Math.floor(rng() * c.length)];
-      return r;
-    }],
-    [/\{\{ALPHANUM10\}\}/g, () => {
-      const c = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let r = "";
-      for (let i = 0; i < 10; i++) r += c[Math.floor(rng() * c.length)];
-      return r;
-    }],
+    [/\{\{ALPHA8\}\}/g, () => alphanum(8)],
+    [/\{\{ALPHANUM6\}\}/g, () => alphanum(6)],
+    [/\{\{ALPHANUM10\}\}/g, () => alphanum(10)],
     [/\{\{NANNY_LABEL\}\}/g, () => pick(["NANNY", "BABYSITTER", "TUTOR", "HOUSEKEEPER"], rng)],
   ];
   let out = template;
@@ -225,6 +256,72 @@ export function makeFixtureBatch(opts: {
       healthcare_tx: healthcareCount,
       non_healthcare_tx: nonHealthcareCount,
       ambiguous_tx: ambiguousCount,
+    },
+  };
+}
+
+/**
+ * Universe-based fixture batch — samples from the broad merchant
+ * universe (every category of US consumer spending). Use this to
+ * stress the classifier against the long tail; the canonical
+ * makeFixtureBatch above samples from the smaller hand-curated seed
+ * pool and is better for fast regression checks.
+ */
+export function makeUniverseFixtureBatch(opts: {
+  size?: number;
+  seed?: number;
+} = {}): FixtureBatch {
+  const size = opts.size ?? 3000;
+  const seed = opts.seed ?? Math.floor(Math.random() * 2 ** 31);
+  const rng = makeRng(seed);
+
+  // Lazy-import to avoid circular dep at top of file.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { UNIVERSE } = require("./universe") as { UNIVERSE: Seed[] };
+
+  const txs: LabeledTx[] = [];
+  let healthcareCount = 0;
+  let nonHealthcareCount = 0;
+
+  while (txs.length < size) {
+    const remaining = size - txs.length;
+    const seedToUse = pick(UNIVERSE, rng);
+    const resolved = fillPlaceholders(seedToUse.template, rng);
+    const visitCount = Math.min(
+      visitsForPattern(rng, seedToUse.visit_pattern),
+      remaining
+    );
+    for (let i = 0; i < visitCount; i++) {
+      const amount = randAmount(rng, seedToUse.amount_range);
+      const date = randDateInLast12mo(rng);
+      txs.push({
+        tx: {
+          transaction_id: txId(rng),
+          name: resolved,
+          merchant_name: rng() < 0.4 ? resolved.replace(/\s{2,}/g, " ").trim() : null,
+          amount,
+          date,
+          category: seedToUse.category ?? null,
+        },
+        truth: {
+          ...seedToUse.truth,
+          canonical_name: resolved,
+          tag: seedToUse.tag,
+        },
+      });
+      if (seedToUse.truth.is_healthcare) healthcareCount++;
+      else nonHealthcareCount++;
+    }
+  }
+
+  return {
+    seed,
+    txs: txs.slice(0, size),
+    stats: {
+      total: txs.length,
+      healthcare_tx: healthcareCount,
+      non_healthcare_tx: nonHealthcareCount,
+      ambiguous_tx: 0,
     },
   };
 }

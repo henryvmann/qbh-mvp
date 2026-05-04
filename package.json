@@ -13,7 +13,8 @@
     "classifier:variance": "tsx scripts/classifier-eval/run.ts --size 2000 --variance 10",
     "classifier:golden": "tsx scripts/classifier-eval/run.ts --golden",
     "classifier:embarrass": "tsx scripts/classifier-eval/run.ts --embarrassment",
-    "classifier:gate": "tsx scripts/classifier-eval/run.ts --all",
+    "classifier:universe": "tsx scripts/classifier-eval/run.ts --universe --universe-size 3000",
+    "classifier:gate": "tsx scripts/classifier-eval/run.ts --all --universe",
     "kate:eval": "tsx scripts/kate-eval/run.ts"
   },
   "dependencies": {

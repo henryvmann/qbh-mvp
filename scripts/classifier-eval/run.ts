@@ -399,6 +399,57 @@ async function main() {
     if (!has("all")) return;
   }
 
+  // ── Universe mode ──────────────────────────────────────────────
+  // Randomized stress test against the broad merchant universe (~30
+  // categories of US consumer spending). Asserts ZERO false positives
+  // — any non-healthcare merchant that buckets as HEALTHCARE or
+  // REVIEW_NEEDED is a hard fail. Per-tag breakdown helps you see
+  // which category is leaking. Default size 3000.
+  if (has("universe") || has("all")) {
+    const { makeUniverseFixtureBatch, truthProvidersFromBatch } = await import("./generate");
+    const universeSize = Number(get("universe-size") ?? 3000);
+    const universeSeed = get("universe-seed") ? Number(get("universe-seed")) : 42;
+    console.log(
+      `\n[eval] running UNIVERSE STRESS — ${universeSize} txs, seed=${universeSeed}`
+    );
+    const batch = makeUniverseFixtureBatch({ size: universeSize, seed: universeSeed });
+    console.log(
+      `[eval] universe batch: ${batch.txs.length} txs (${batch.stats.healthcare_tx} healthcare, ${batch.stats.non_healthcare_tx} non)`
+    );
+    const r = await runFixed(`universe (${universeSize} txs)`, batch.txs);
+    printResult(r);
+    saveRun(r);
+
+    // Per-tag false-positive roll-up
+    const truthByName = new Map(
+      truthProvidersFromBatch(batch).map((p) => [
+        p.canonical_name.toUpperCase().trim(),
+        p,
+      ])
+    );
+    const fpByTag = new Map<string, number>();
+    for (const fp of r.false_positives) {
+      const truth = truthByName.get(fp.name.toUpperCase().trim());
+      const tag = truth?.tag ?? "(unknown)";
+      fpByTag.set(tag, (fpByTag.get(tag) ?? 0) + 1);
+    }
+    if (fpByTag.size > 0) {
+      console.log("\nFalse positives by tag:");
+      for (const [tag, n] of [...fpByTag.entries()].sort((a, b) => b[1] - a[1])) {
+        console.log(`  ${tag.padEnd(28)} ${n}`);
+      }
+    }
+    if (r.false_positives.length > 0) {
+      console.error(
+        `\n❌ UNIVERSE GATE FAILED — ${r.false_positives.length} non-healthcare merchants slipped through. See per-tag breakdown above.\n`
+      );
+      if (!has("all")) process.exit(1);
+    } else {
+      console.log("\n✅ Universe gate clean — zero false positives across the merchant landscape.\n");
+    }
+    if (!has("all")) return;
+  }
+
   // After --all, both gates above ran. Report combined status.
   if (has("all")) return;
 
