@@ -78,6 +78,14 @@ function _isClinicalNpiType(npiType: string | null | undefined): boolean {
     "assistant",
     "technician",
     "support staff",
+    // NPI taxonomy "In Home Supportive Care" matched cleaning chains
+    // (Merry Maids → HEALTHCARE) in the variance test. The IHSS code
+    // applies to actual home health aides but the name match is too
+    // permissive — refuse to auto-promote.
+    "in home supportive care",
+    "supportive care",
+    "homemaker",
+    "personal care attendant",
   ];
   return !NON_CLINICAL.some((nc) => t.includes(nc));
 }
@@ -297,6 +305,78 @@ export async function buildProviderRegistry(
     "HARRIS TEETER", "HEB", "MEIJER", "WINCO", "SPROUTS",
     "SAMS CLUB", "SAM'S CLUB", "BJS WHOLESALE", "BJ'S WHOLESALE",
     "WESTERN BEEF", "ACME MARKETS", "FAIRWAY MARKET", "MORTON WILLIAMS",
+    // Home services — variance test surfaced these as NPI/heuristic
+    // false positives (Merry Maids → "In Home Supportive Care").
+    "MOLLY MAID", "MERRY MAIDS", "MAID SERVICE", "MAID BRIGADE",
+    "POOL SERVICE", "POOL SUPPLY", "POOL CARE",
+    "PEST CONTROL", "TERMINIX", "ORKIN", "ARROW EXTERMINATORS",
+    "LAWN CARE", "LAWN SERVICE", "LANDSCAPING SERVICE",
+    "ANGI ", "ANGIE", "TASKRABBIT", "THUMBTACK",
+    // Kids' activities — sports clubs, music schools, swim schools.
+    // "SCHOOL OF ROCK" is a chain, not a school district. Goldfish
+    // Swim, Soccer Club + town variants all matched person-name shape.
+    "SCHOOL OF ROCK", "GOLDFISH SWIM", "LITTLE GYM", "GYMBOREE",
+    "SOCCER CLUB", "BASEBALL CLUB", "BASKETBALL CLUB", "FOOTBALL CLUB",
+    "HOCKEY CLUB", "LACROSSE CLUB", "TENNIS CLUB", "SWIM CLUB",
+    "LITTLE LEAGUE", "PEEWEE", "POP WARNER", "AYSO ",
+    // Tutoring chains
+    "KUMON", "MATHNASIUM", "OUTSCHOOL", "VARSITY TUTORS", "WYZANT",
+    "TAKELESSONS", "BRAINFUSE", "SYLVAN LEARNING",
+    // Meal-kit subscriptions — recurring ~$150-300, person-name-shaped.
+    "HELLOFRESH", "BLUE APRON", "DAILY HARVEST", "GREEN CHEF",
+    "FACTOR75", "FACTOR 75", "HOME CHEF", "EVERY PLATE", "EVERY-PLATE",
+    "PURPLE CARROT", "DINNERLY", "MARLEY SPOON", "SUNBASKET",
+    "ATHLETIC GREENS", "AG1 ",
+    // Wearables / health-tech HARDWARE (not clinical care)
+    "WHOOP MEMBERSHIP", "OURA RING", "OURA *", "FITBIT", "GARMIN",
+    "EIGHT SLEEP", "LEVELS HEALTH", "PELOTON", "STRAVA", "HYDROW",
+    "TONAL", "MIRROR", "TEMPO STUDIO",
+    // Hotels / car rentals — town-suffix patterns ("Hilton Evanston",
+    // "Hertz Durham") tripped the heuristic.
+    "HILTON ", "MARRIOTT", "HYATT", "WESTIN", "SHERATON", "FOUR SEASONS",
+    "RITZ-CARLTON", "FAIRMONT", "HOLIDAY INN", "HAMPTON INN",
+    "COURTYARD MARRIOTT", "RESIDENCE INN",
+    "HERTZ ", "AVIS", "BUDGET RENT", "ENTERPRISE RENT", "ALAMO RENT",
+    "NATIONAL CAR", "DOLLAR RENT",
+    // Wellness / lifestyle retail
+    "GOOP ", "MOON JUICE", "RITUAL VITAMINS", "CARE/OF", "GREATIST",
+    // Tickets / events
+    "STUBHUB", "TICKETMASTER", "SEATGEEK", "EVENTBRITE", "VIVID SEATS",
+    "SIX FLAGS", "DISNEY PARKS", "UNIVERSAL STUDIOS",
+    // Charity platforms
+    "DONORS CHOOSE", "GOFUNDME", "FACEBOOK FUNDRAISE", "GIVELIFY",
+    // Cannabis dispensaries (gray-area but not classified as clinical)
+    "DISPENSARY", "CURALEAF", "TRULIEVE", "GREEN THUMB", "VERANO",
+    "MEDMEN", "AYR WELLNESS", "RISE DISPENSARIES",
+    // Funeral homes — variance test surfaced many "[Lastname] Funeral
+    // Home" patterns that AI labeled as healthcare. Funeral services
+    // aren't clinical care from the user's perspective.
+    "FUNERAL HOME", "FUNERAL SERVICES", "FUNERAL DIRECTORS",
+    "MEMORIAL CHAPEL", "MORTUARY", "CREMATION", "CEMETERY",
+    // Wearables / health-data hardware — these all have "health" in
+    // the brand, AI mislabels.
+    "LEVELS HEALTH", "WHOOP", "OURA", "EIGHT SLEEP", "FITBIT",
+    "GARMIN", "PELOTON", "STRAVA", "TONAL", "HYDROW", "MIRROR",
+    "TEMPO STUDIO", "ATHLETIC GREENS", "AG1 ",
+    // Beauty / wellness retail (have skincare/wellness language)
+    "BLUEMERCURY", "ULTA", "SEPHORA", "MAC COSMETICS", "MORPHE",
+    "GLOSSIER", "DRUNK ELEPHANT", "FENTY",
+    "CARE OF VITAMINS", "CARE/OF", "RITUAL", "MOON JUICE",
+    "GOOP WELLNESS", "GOOP ", "GREATIST",
+    // Camps / kids' programs
+    "DAY CAMP", "SUMMER CAMP", "SLEEPAWAY CAMP", "CAMP ",
+    // Museums (AI labels as healthcare for "Boulder Museum Of Art")
+    "MUSEUM", "ART GALLERY", "ZOO", "AQUARIUM",
+    // Misc one-off FPs from variance
+    "PARKMOBILE", "PASSPORT PARKING",
+    "CHEVRON",  // gas brand AI sometimes labels HC
+    "AMAZON.COM*RX", "AMZN MKTP*RX",  // amazon pharmacy ambiguity
+    // Religious institutions (donations, not care)
+    "TEMPLE BETH", "ST PETER", "ST MICHAEL", "ST MARY",
+    " CHURCH ", "DIOCESE", "PARISH", "CHABAD",
+    // Brokerages / financial-advisor chains
+    "NORTHWESTERN MUTUAL", "EDWARD JONES", "MERRILL EDGE",
+    "MORGAN STANLEY", "RAYMOND JAMES",
     // "Dr.-named" non-medical brands. The "DR" / "DR." prefix is a strong
     // doctor signal, so without explicit denylist these brands get
     // classified as physicians.
@@ -324,6 +404,21 @@ export async function buildProviderRegistry(
     "RADIOLOGY", "IMAGING", "LABCORP", "QUEST DIAG", "URGENT CARE",
     "CHIROPRACTIC", "PHYSICAL THERAPY", "MENTAL HEALTH", "PSYCHIATR", "PSYCHOLOG",
     "WARBY PARKER", "ONE MEDICAL", "MOUNT SINAI", "KAISER PERMANENTE", "NORTHWELL",
+    // DTC telehealth — these ARE healthcare (real prescriptions, real
+    // visits) but their brand names ("Hims Hair", "Done Global") look
+    // like person-names to the heuristic. Mark them obvious to keep
+    // them out of REVIEW_NEEDED purgatory.
+    "BETTERHELP", "TALKSPACE", "CEREBRAL", "BRIGHTSIDE", "DONE GLOBAL",
+    "FOLX HEALTH", "HIMS HAIR", "HERS HEALTH", "RO HIMS", "ROMAN HEALTH",
+    // At-home labs
+    "EVERLYWELL", "LETSGETCHECKED", "23ANDME", "FUNCTION HEALTH",
+    // DME / equipment
+    "APRIA", "LINCARE", "RESMED",
+    // Audiology
+    "MIRACLE-EAR", "BELTONE",
+    // Vision retail
+    "LENSCRAFTERS", "VISIONWORKS", "EYEBUYDIRECT", "GLASSESUSA",
+    "1-800 CONTACTS", "FOR EYES",
   ];
 
   const NON_HEALTHCARE_PLAID_CATEGORIES = [
@@ -574,9 +669,10 @@ export async function buildProviderRegistry(
       const stddev = Math.sqrt(variance);
       _amountConsistent = stddev / _avgAmount < 0.35;
     }
-    // First-word tokens that strongly indicate retail / chain / utility /
-    // government / payment-processor rather than a person. Disqualify
-    // the therapist heuristic regardless of shape match.
+    // Words that indicate retail / chain / utility / government /
+    // payment-processor / service / kids-activity rather than a real
+    // person. If ANY word in the merchant name matches, the therapist
+    // heuristic is disqualified.
     const _firstWord = _words[0] ?? "";
     const _disqualifyingFirstWord = new Set([
       // Grocery / retail chains
@@ -603,6 +699,47 @@ export async function buildProviderRegistry(
       // Government / municipal indicators that show up mid-string
       "WATER", "POLLUTION", "DEPT", "DEPARTMENT", "MUNICIPAL",
       "POLICE", "FIRE", "COURT", "LICENSE", "REGISTRATION",
+      // Home / yard services
+      "MAID", "MAIDS", "POOL", "PEST", "LAWN", "LANDSCAPE",
+      "LANDSCAPING", "PLUMBING", "ELECTRIC", "ROOFING",
+      "JANITORIAL", "EXTERMINATOR", "EXTERMINATORS",
+      // Kids activities / sports / academies — variance test surfaced
+      // every "Soccer Club", "Swim School", "School Of Rock", etc.
+      "SOCCER", "BASEBALL", "BASKETBALL", "FOOTBALL", "HOCKEY",
+      "LACROSSE", "TENNIS", "GYMNASTICS", "SWIM", "SCHOOL", "ACADEMY",
+      "LEAGUE", "DOJO", "MARTIAL",
+      // Tutoring chains
+      "KUMON", "MATHNASIUM", "OUTSCHOOL", "WYZANT", "TAKELESSONS",
+      "VARSITY", "TUTOR", "TUTORING",
+      // Meal-kit subscriptions — recurring 100-300 / month, person-name shape
+      "HARVEST", "CHEF", "APRON", "FRESH", "PURPLE", "PLATE",
+      "DINNERLY", "MARLEY", "SUNBASKET", "FACTOR75", "FACTOR",
+      "HELLOFRESH",
+      // Wearable / fitness hardware brands
+      "WHOOP", "OURA", "FITBIT", "GARMIN", "PELOTON", "STRAVA",
+      "HYDROW", "TONAL", "MIRROR", "EIGHT", "LEVELS",
+      // Hotels / car rentals
+      "HILTON", "MARRIOTT", "HYATT", "WESTIN", "SHERATON", "RITZ",
+      "FAIRMONT", "HOLIDAY", "HAMPTON", "COURTYARD", "RESIDENCE",
+      "HERTZ", "AVIS", "BUDGET", "ENTERPRISE", "NATIONAL",
+      // Wellness retail
+      "GOOP", "MOON", "RITUAL",
+      // Tickets / entertainment
+      "STUBHUB", "TICKETMASTER", "SEATGEEK", "EVENTBRITE", "VIVID",
+      "DISNEY", "UNIVERSAL", "AMC", "REGAL",
+      // Charity platforms
+      "DONORS", "GOFUNDME", "GIVELIFY", "CHABAD",
+      // Cannabis
+      "DISPENSARY", "CURALEAF", "TRULIEVE", "VERANO",
+      // Bars / nightlife
+      "TAVERN", "PUB", "BREWERY", "DISTILLERY",
+      // Car rental / hotel suffix patterns
+      "INN", "SUITES", "RESORT", "LODGE",
+      // Generic service-business indicators that ride alongside a town
+      // or person name — "Norwalk Florist", "Stamford Catering" —
+      // these are obviously not therapy practices.
+      "FLORIST", "CATERING", "PHOTOGRAPHY", "PHOTOGRAPHER",
+      "BAKERY", "WINERY", "VINEYARD",
       // Religious / charitable
       "ST", "TEMPLE", "CHURCH", "DIOCESE", "PARISH",
     ]);
