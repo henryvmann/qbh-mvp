@@ -19,7 +19,7 @@ type Insight = {
 
 const priorityColor: Record<string, string> = {
   high: "#C03020",
-  medium: "#5C6B5C",
+  medium: "#1677FF",
   low: "#2A6090",
 };
 
@@ -34,7 +34,7 @@ const insightIconMap: Record<string, React.ComponentType<any>> = {
 
 const priorityBorder: Record<string, string> = {
   high: "border-l-[#C03020]",
-  medium: "border-l-[#5C6B5C]",
+  medium: "border-l-[#1677FF]",
   low: "border-l-[#B0D0E8]",
 };
 
@@ -130,9 +130,9 @@ export default function KateInsights() {
       <div className="mt-4 px-7">
         <button
           onClick={() => setMinimized(false)}
-          className="flex items-center gap-2 rounded-full bg-white border border-[#EBEDF0] px-4 py-2 text-xs font-medium text-[#5C6B5C] shadow-sm hover:shadow transition"
+          className="flex items-center gap-2 rounded-full bg-white border border-[#E5EAF2] px-4 py-2 text-xs font-medium text-[#1677FF] shadow-sm hover:shadow transition"
         >
-          <Lightbulb size={14} strokeWidth={1.5} color="#5C6B5C" />
+          <Lightbulb size={14} strokeWidth={1.5} color="#1677FF" />
           Kate has a suggestion
         </button>
       </div>
@@ -140,7 +140,7 @@ export default function KateInsights() {
   }
 
   const IconComp = insightIconMap[currentInsight.type] || Lightbulb;
-  const iconColor = priorityColor[currentInsight.priority] || "#5C6B5C";
+  const iconColor = priorityColor[currentInsight.priority] || "#1677FF";
 
   function handleNext() {
     dismissInsight(currentInsight.id);
@@ -161,7 +161,7 @@ export default function KateInsights() {
       `}</style>
 
       <div
-        className="rounded-2xl bg-white border border-[#EBEDF0] shadow-md overflow-hidden cursor-pointer transition hover:shadow-lg"
+        className="rounded-2xl bg-white border border-[#E5EAF2] shadow-md overflow-hidden cursor-pointer transition hover:shadow-lg"
         style={{ animation: "floatIn 0.5s ease-out both" }}
         onClick={() => handleInsightAction(currentInsight)}
       >
@@ -174,8 +174,8 @@ export default function KateInsights() {
               <IconComp size={16} strokeWidth={1.5} color={iconColor} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-[#1A1D2E]">{currentInsight.title}</div>
-              <div className="mt-1 text-xs text-[#7A7F8A] leading-relaxed">{currentInsight.body}</div>
+              <div className="text-sm font-semibold text-[#071832]">{currentInsight.title}</div>
+              <div className="mt-1 text-xs text-[#4F5F73] leading-relaxed">{currentInsight.body}</div>
             </div>
           </div>
 
@@ -185,14 +185,14 @@ export default function KateInsights() {
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleInsightAction(currentInsight); }}
                 className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95"
-                style={{ backgroundColor: "#5C6B5C" }}
+                style={{ backgroundColor: "#1677FF" }}
               >
                 {currentInsight.action_label || "Handle"}
               </button>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#4F5F73] hover:bg-[#F0F2F5] transition"
               >
                 Dismiss
               </button>

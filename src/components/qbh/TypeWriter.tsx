@@ -36,7 +36,7 @@ export default function TypeWriter({
     <>
       {displayed}
       {displayed.length < text.length && (
-        <span className="inline-block w-0.5 h-4 bg-[#5C6B5C] animate-pulse ml-0.5 align-text-bottom" />
+        <span className="inline-block w-0.5 h-4 bg-[#1677FF] animate-pulse ml-0.5 align-text-bottom" />
       )}
     </>
   );

@@ -24,8 +24,8 @@ export const theme = {
 
   // Text
   textPrimary: "#1A2E1A",
-  textSecondary: "#7A7F8A",
-  textMuted: "#B0B4BC",
+  textSecondary: "#4F5F73",
+  textMuted: "#4F5F73",
 
   // Status
   statusOverdue: "#E04030",
@@ -74,7 +74,7 @@ export const globalCardOverrides = `
   .greenhouse .bg-\\[\\#F0F2F5\\] {
     background: rgba(255,255,255,0.3) !important;
   }
-  .greenhouse .border-\\[\\#EBEDF0\\] {
+  .greenhouse .border-\\[\\#E5EAF2\\] {
     border-color: rgba(255,255,255,0.5) !important;
   }
   .greenhouse .shadow-sm {

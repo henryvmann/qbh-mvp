@@ -103,10 +103,10 @@ function ProgressDots({
           key={i}
           className={`w-2.5 h-2.5 rounded-full transition-colors duration-300 ${
             i + 1 === active
-              ? "bg-[#5C6B5C]"
+              ? "bg-[#1677FF]"
               : i + 1 < active
-              ? "bg-[#5C6B5C]/50"
-              : "border border-[#EBEDF0] bg-transparent"
+              ? "bg-[#1677FF]/50"
+              : "border border-[#E5EAF2] bg-transparent"
           }`}
         />
       ))}
@@ -133,14 +133,14 @@ function GoldButton({
       onClick={onClick}
       className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-semibold transition ${
         secondary
-          ? "border border-[#EBEDF0] bg-transparent text-[#7A7F8A] hover:bg-[#F0F2F5]"
+          ? "border border-[#E5EAF2] bg-transparent text-[#4F5F73] hover:bg-[#F0F2F5]"
           : "text-white shadow-lg"
       }`}
       style={
         secondary
           ? undefined
           : {
-              background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
+              background: "linear-gradient(135deg, #1677FF, #006BFF)",
               boxShadow: "0 8px 24px rgba(92,107,92,0.35)",
             }
       }
@@ -166,7 +166,7 @@ function TogglePill({
       type="button"
       onClick={onToggle}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-        active ? "bg-[#5C6B5C]" : "bg-[#EBEDF0]"
+        active ? "bg-[#1677FF]" : "bg-[#E5EAF2]"
       }`}
     >
       <span
@@ -413,7 +413,7 @@ export default function HandleFirstPage() {
 
             {doctors.length > 0 && (
               <div className="mt-6">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#5C6B5C]">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#1677FF]">
                   Providers
                 </div>
                 <div className="space-y-3">
@@ -427,21 +427,21 @@ export default function HandleFirstPage() {
                     return (
                       <div
                         key={s.provider.id}
-                        className="rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
+                        className="rounded-xl border border-[#E5EAF2] bg-white shadow-sm px-4 py-3"
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-[#1A1D2E]">
+                            <p className="text-sm font-medium text-[#071832]">
                               {s.provider.name}
                             </p>
-                            <p className="text-xs text-[#7A7F8A]">
+                            <p className="text-xs text-[#4F5F73]">
                               {formatDate(s.lastVisitDate)} &middot; {s.visitCount} visit{s.visitCount === 1 ? "" : "s"}
                             </p>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleDismissProvider(s.provider.id)}
-                            className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[#B0B4BC] hover:text-red-500 hover:bg-red-50 transition"
+                            className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[#4F5F73] hover:text-red-500 hover:bg-red-50 transition"
                           >
                             {isChainStore ? "I just shop here" : "Not a provider"}
                           </button>
@@ -455,28 +455,28 @@ export default function HandleFirstPage() {
 
             {pharmacies.length > 0 && (
               <div className="mt-6">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#7A7F8A]">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#4F5F73]">
                   Pharmacies
                 </div>
                 <div className="space-y-3">
                   {pharmacies.map((s) => (
                     <div
                       key={s.provider.id}
-                      className="rounded-xl border border-[#EBEDF0] bg-[#F8F9FA] shadow-sm px-4 py-3"
+                      className="rounded-xl border border-[#E5EAF2] bg-[#F8F9FA] shadow-sm px-4 py-3"
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-[#1A1D2E]">
+                          <p className="text-sm font-medium text-[#071832]">
                             {s.provider.name}
                           </p>
-                          <p className="text-xs text-[#7A7F8A]">
+                          <p className="text-xs text-[#4F5F73]">
                             {s.visitCount} visit{s.visitCount === 1 ? "" : "s"} &middot; Pharmacy
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleDismissProvider(s.provider.id)}
-                          className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[#B0B4BC] hover:text-red-500 hover:bg-red-50 transition"
+                          className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[#4F5F73] hover:text-red-500 hover:bg-red-50 transition"
                         >
                           I just shop here
                         </button>
@@ -522,7 +522,7 @@ export default function HandleFirstPage() {
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-[#1A1D2E]">{s.provider.name}</p>
+                            <p className="text-sm font-medium text-[#071832]">{s.provider.name}</p>
                             <p className="text-xs text-[#6A4A8A]">
                               {s.visitCount} visits &middot; Looks like a regular schedule
                             </p>
@@ -531,7 +531,7 @@ export default function HandleFirstPage() {
                             Tracking
                           </span>
                         </div>
-                        <p className="mt-2 text-xs text-[#7A7F8A]">
+                        <p className="mt-2 text-xs text-[#4F5F73]">
                           Kate won&apos;t try to schedule these &mdash; she&apos;ll track your visits and offer to take notes after each one.
                         </p>
                       </div>
@@ -543,16 +543,16 @@ export default function HandleFirstPage() {
               {/* Overdue providers */}
               {hasOverdue && (
                 <div>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#5C6B5C]">
+                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#1677FF]">
                     Might be overdue
                   </h3>
                   <div className="space-y-2">
                     {overdueProviders.map((s) => (
                       <div
                         key={s.provider.id}
-                        className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
+                        className="flex items-center justify-between rounded-xl border border-[#E5EAF2] bg-white shadow-sm px-4 py-3"
                       >
-                        <span className="text-sm font-medium text-[#1A1D2E]">
+                        <span className="text-sm font-medium text-[#071832]">
                           {s.provider.name}
                         </span>
                         <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-600">
@@ -578,8 +578,8 @@ export default function HandleFirstPage() {
                         key={s.provider.id}
                         className="rounded-xl border border-[#B0C8E8] bg-[#F0F5FF] shadow-sm px-4 py-3"
                       >
-                        <p className="text-sm font-medium text-[#1A1D2E]">{s.provider.name}</p>
-                        <p className="mt-1 text-xs text-[#7A7F8A]">
+                        <p className="text-sm font-medium text-[#071832]">{s.provider.name}</p>
+                        <p className="mt-1 text-xs text-[#4F5F73]">
                           You visited once ({formatDate(s.lastVisitDate)}). Do you need to see them again?
                         </p>
                         <div className="mt-2 flex gap-2">
@@ -622,9 +622,9 @@ export default function HandleFirstPage() {
                     {currentProviders.map((s) => (
                       <div
                         key={s.provider.id}
-                        className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
+                        className="flex items-center justify-between rounded-xl border border-[#E5EAF2] bg-white shadow-sm px-4 py-3"
                       >
-                        <span className="text-sm font-medium text-[#1A1D2E]">
+                        <span className="text-sm font-medium text-[#071832]">
                           {s.provider.name}
                         </span>
                         <span className="text-emerald-500">
@@ -657,9 +657,9 @@ export default function HandleFirstPage() {
               {overdueProviders.map((s) => (
                 <div
                   key={s.provider.id}
-                  className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-[#E5EAF2] bg-white shadow-sm px-4 py-3"
                 >
-                  <span className="text-sm font-medium text-[#1A1D2E]">
+                  <span className="text-sm font-medium text-[#071832]">
                     {s.provider.name}
                   </span>
                   <TogglePill
@@ -676,7 +676,7 @@ export default function HandleFirstPage() {
             <button
               type="button"
               onClick={() => goToStep(5)}
-              className="mt-3 w-full rounded-2xl border border-[#EBEDF0] px-4 py-3 text-sm font-medium text-[#7A7F8A] transition hover:bg-[#F0F2F5]"
+              className="mt-3 w-full rounded-2xl border border-[#E5EAF2] px-4 py-3 text-sm font-medium text-[#4F5F73] transition hover:bg-[#F0F2F5]"
             >
               Continue Setup First
             </button>
@@ -696,7 +696,7 @@ export default function HandleFirstPage() {
               <div>
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="mb-1 block text-xs text-[#7A7F8A]">First name</label>
+                    <label className="mb-1 block text-xs text-[#4F5F73]">First name</label>
                     <input
                       type="text"
                       value={patientFullName.split(" ")[0] || ""}
@@ -705,11 +705,11 @@ export default function HandleFirstPage() {
                         setPatientFullName(`${e.target.value} ${last}`.trim());
                       }}
                       placeholder="First name"
-                      className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                      className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:border-[#1677FF] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="mb-1 block text-xs text-[#7A7F8A]">Last name</label>
+                    <label className="mb-1 block text-xs text-[#4F5F73]">Last name</label>
                     <input
                       type="text"
                       value={patientFullName.split(" ").slice(1).join(" ") || ""}
@@ -718,41 +718,41 @@ export default function HandleFirstPage() {
                         setPatientFullName(`${first} ${e.target.value}`.trim());
                       }}
                       placeholder="Last name"
-                      className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                      className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:border-[#1677FF] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                     />
                   </div>
                 </div>
                 <WhyWeAsk text="Kate uses your full name when calling offices on your behalf" />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-[#7A7F8A]">Date of birth</label>
+                <label className="mb-1 block text-xs text-[#4F5F73]">Date of birth</label>
                 <input
                   type="date"
                   value={patientDob}
                   onChange={(e) => setPatientDob(e.target.value)}
-                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:border-[#1677FF] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
                 <WhyWeAsk text="Offices verify your identity with this before scheduling" />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-[#7A7F8A]">Insurance provider</label>
+                <label className="mb-1 block text-xs text-[#4F5F73]">Insurance provider</label>
                 <input
                   type="text"
                   value={patientInsurance}
                   onChange={(e) => setPatientInsurance(e.target.value)}
                   placeholder="e.g., Aetna, Blue Cross, United"
-                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:border-[#1677FF] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
                 <WhyWeAsk text="Kate will share this when booking so they can check coverage" />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-[#7A7F8A]">Member ID</label>
+                <label className="mb-1 block text-xs text-[#4F5F73]">Member ID</label>
                 <input
                   type="text"
                   value={patientMemberId}
                   onChange={(e) => setPatientMemberId(e.target.value)}
                   placeholder="Found on your insurance card"
-                  className="w-full rounded-xl border border-[#EBEDF0] bg-white px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:border-[#5C6B5C] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:border-[#1677FF] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
                 <WhyWeAsk text="Some offices need this upfront — others will ask at check-in" />
               </div>
@@ -798,8 +798,8 @@ export default function HandleFirstPage() {
               times.
             </CharacterWithBubble>
 
-            <div className="mt-6 rounded-xl border border-[#EBEDF0] bg-white shadow-sm p-5">
-              <p className="text-sm text-[#7A7F8A]">
+            <div className="mt-6 rounded-xl border border-[#E5EAF2] bg-white shadow-sm p-5">
+              <p className="text-sm text-[#4F5F73]">
                 We&apos;ll check your Google Calendar for conflicts before
                 suggesting appointment times. Your calendar data stays private
                 and is only used for scheduling.
@@ -839,18 +839,18 @@ export default function HandleFirstPage() {
                 {currentProviders.map((s) => (
                   <div
                     key={s.provider.id}
-                    className="flex items-center justify-between rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
+                    className="flex items-center justify-between rounded-xl border border-[#E5EAF2] bg-white shadow-sm px-4 py-3"
                   >
-                    <span className="text-sm font-medium text-[#1A1D2E]">
+                    <span className="text-sm font-medium text-[#071832]">
                       {s.provider.name}
                     </span>
                     {selectedProviders.has(s.provider.id) ? (
-                      <span className="text-xs text-[#5C6B5C]">Added</span>
+                      <span className="text-xs text-[#1677FF]">Added</span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => toggleProvider(s.provider.id)}
-                        className="rounded-full border border-[#5C6B5C] px-3 py-1 text-xs font-medium text-[#5C6B5C] transition hover:bg-[#5C6B5C]/10"
+                        className="rounded-full border border-[#1677FF] px-3 py-1 text-xs font-medium text-[#1677FF] transition hover:bg-[#1677FF]/10"
                       >
                         Schedule this one too
                       </button>
@@ -882,9 +882,9 @@ export default function HandleFirstPage() {
                 {selectedSnaps.map((s) => (
                   <div
                     key={s.provider.id}
-                    className="flex items-center gap-3 rounded-xl border border-[#EBEDF0] bg-white shadow-sm px-4 py-3"
+                    className="flex items-center gap-3 rounded-xl border border-[#E5EAF2] bg-white shadow-sm px-4 py-3"
                   >
-                    <span className="text-[#5C6B5C]">
+                    <span className="text-[#1677FF]">
                       <svg
                         width="16"
                         height="16"
@@ -900,7 +900,7 @@ export default function HandleFirstPage() {
                         />
                       </svg>
                     </span>
-                    <span className="text-sm font-medium text-[#1A1D2E]">
+                    <span className="text-sm font-medium text-[#071832]">
                       {s.provider.name}
                     </span>
                   </div>
@@ -908,7 +908,7 @@ export default function HandleFirstPage() {
               </div>
             )}
 
-            <p className="mt-4 text-sm text-[#7A7F8A]">
+            <p className="mt-4 text-sm text-[#4F5F73]">
               After these appointments are booked, we&apos;ll help you customize
               QB further.
             </p>
@@ -926,16 +926,16 @@ export default function HandleFirstPage() {
   }
 
   return (
-    <div className="relative min-h-screen text-[#1A1D2E] overflow-hidden" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
+    <div className="relative min-h-screen text-[#071832] overflow-hidden" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
       {/* Decorative circle */}
-      <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#5C6B5C]/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#1677FF]/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-lg px-5 py-10">
         {/* Progress dots */}
         <ProgressDots total={visibleSteps.length} active={activeIndex} />
 
         {/* Branding */}
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#5C6B5C] mb-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#1677FF] mb-6">
           Quarterback AI
         </p>
 

@@ -165,10 +165,10 @@ function DashboardInner() {
         #greenhouse .bg-\\[\\#F0F2F5\\] {
           background: rgba(255,255,255,0.3) !important;
         }
-        #greenhouse .border-\\[\\#EBEDF0\\] {
+        #greenhouse .border-\\[\\#E5EAF2\\] {
           border-color: rgba(255,255,255,0.5) !important;
         }
-        #greenhouse .text-\\[\\#5C6B5C\\] {
+        #greenhouse .text-\\[\\#1677FF\\] {
           color: ${GREEN} !important;
         }
         #greenhouse button[style*="5C6B5C"],

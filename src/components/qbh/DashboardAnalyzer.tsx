@@ -96,29 +96,29 @@ export default function DashboardAnalyzer({
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="w-full max-w-lg">
-        <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#5C6B5C]">
+        <div className="text-sm font-medium uppercase tracking-[0.2em] text-[#1677FF]">
           Quarterback AI
         </div>
 
-        <h2 className="mt-4 text-3xl tracking-tight text-[#1A1D2E]">
+        <h2 className="mt-4 text-3xl tracking-tight text-[#071832]">
           {status === "error" ? "Something went wrong" : "Building your care picture"}
         </h2>
 
         {status !== "error" ? (
           <>
-            <p className="mt-3 text-base text-[#7A7F8A]">
+            <p className="mt-3 text-base text-[#4F5F73]">
               Reviewing your transactions and identifying healthcare providers.
             </p>
 
-            <div className="mt-8 h-1.5 w-full overflow-hidden rounded-full bg-[#EBEDF0]">
-              <div className="h-full w-2/3 animate-pulse rounded-full bg-[#5C6B5C]" />
+            <div className="mt-8 h-1.5 w-full overflow-hidden rounded-full bg-[#E5EAF2]">
+              <div className="h-full w-2/3 animate-pulse rounded-full bg-[#1677FF]" />
             </div>
 
-            <div className="mt-8 rounded-2xl bg-white p-6 border border-[#EBEDF0] shadow-sm">
-              <div className="text-xs font-semibold uppercase tracking-widest text-[#5C6B5C]">
+            <div className="mt-8 rounded-2xl bg-white p-6 border border-[#E5EAF2] shadow-sm">
+              <div className="text-xs font-semibold uppercase tracking-widest text-[#1677FF]">
                 Did you know
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-[#7A7F8A] transition-all">
+              <p className="mt-3 text-sm leading-relaxed text-[#4F5F73] transition-all">
                 {FACTS[factIndex]}
               </p>
             </div>
@@ -135,7 +135,7 @@ export default function DashboardAnalyzer({
                 setError(null);
               }}
               className="mt-4 rounded-xl px-5 py-2.5 text-sm font-medium text-white hover:brightness-95"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               Try again
             </button>

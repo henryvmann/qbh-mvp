@@ -155,40 +155,40 @@ export default function SettingsPage() {
     <PageShell>
       
       <div className="mx-auto max-w-2xl px-6 pt-8 pb-20">
-        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E] mb-8">
+        <h1 className="font-serif text-2xl tracking-tight text-[#071832] mb-8">
           Settings
         </h1>
 
         {/* Your Info */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
-          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-6">
+          <h2 className="text-sm font-semibold text-[#071832] mb-1">
             Your Info
           </h2>
-          <p className="text-xs text-[#7A7F8A] mb-4">
+          <p className="text-xs text-[#4F5F73] mb-4">
             Kate needs these to book appointments on your behalf.
           </p>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Full Name</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-1">Full Name</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="First and last name"
-                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Date of Birth</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-1">Date of Birth</label>
               <input
                 type="date"
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
-                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Sex</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-1">Sex</label>
               <div className="flex gap-2">
                 {[
                   { value: "male", label: "Male" },
@@ -203,8 +203,8 @@ export default function SettingsPage() {
                     onClick={() => setGender(opt.value)}
                     className={`flex-1 rounded-xl py-2.5 text-sm font-medium transition ${
                       gender === opt.value
-                        ? "bg-[#5C6B5C] text-white"
-                        : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                        ? "bg-[#1677FF] text-white"
+                        : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2]"
                     }`}
                   >
                     {opt.label}
@@ -213,14 +213,14 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="relative">
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Insurance Provider</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-1">Insurance Provider</label>
               <input
                 type="text"
                 value={insuranceProvider}
                 onChange={(e) => setInsuranceProvider(e.target.value)}
                 placeholder="Start typing your insurance..."
                 autoComplete="off"
-                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               />
               {insuranceProvider.trim().length >= 2 && (() => {
                 const KNOWN_INSURERS = [
@@ -238,13 +238,13 @@ export default function SettingsPage() {
                 );
                 if (matches.length === 0 || matches.some((m) => m.toLowerCase() === insuranceProvider.trim().toLowerCase())) return null;
                 return (
-                  <div className="mt-1 max-h-36 overflow-y-auto rounded-lg border border-[#EBEDF0] bg-white divide-y divide-[#EBEDF0]">
+                  <div className="mt-1 max-h-36 overflow-y-auto rounded-lg border border-[#E5EAF2] bg-white divide-y divide-[#E5EAF2]">
                     {matches.slice(0, 5).map((ins) => (
                       <button
                         key={ins}
                         type="button"
                         onClick={() => setInsuranceProvider(ins)}
-                        className="w-full px-3 py-2 text-left text-sm text-[#1A1D2E] hover:bg-[#F8F9FA] transition"
+                        className="w-full px-3 py-2 text-left text-sm text-[#071832] hover:bg-[#F8F9FA] transition"
                       >
                         {ins}
                       </button>
@@ -254,37 +254,37 @@ export default function SettingsPage() {
               })()}
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Member / Policy Number</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-1">Member / Policy Number</label>
               <input
                 type="text"
                 value={insuranceMemberId}
                 onChange={(e) => setInsuranceMemberId(e.target.value)}
                 placeholder="Found on your insurance card"
-                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Phone Number</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-1">Phone Number</label>
               <input
                 type="tel"
                 value={callbackPhone}
                 onChange={(e) => setCallbackPhone(e.target.value)}
                 placeholder="Number the office can reach you at"
-                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               />
             </div>
           </div>
         </div>
 
         {/* Health History */}
-        <div data-tour="health-history" className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
-          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
+        <div data-tour="health-history" className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-6">
+          <h2 className="text-sm font-semibold text-[#071832] mb-1">
             Your Health History
           </h2>
-          <p className="text-xs text-[#7A7F8A] mb-2">
+          <p className="text-xs text-[#4F5F73] mb-2">
             Tell Kate about your health background — conditions, surgeries, ongoing concerns, anything relevant. She&apos;ll use this to give you better, more personalized suggestions.
           </p>
-          <p className="text-[10px] text-[#B0B4BC] mb-4">
+          <p className="text-[10px] text-[#4F5F73] mb-4">
             Kate won&apos;t provide medical advice — she&apos;ll summarize your history in your own words and use it to help organize your care and suggest relevant providers.
           </p>
           <textarea
@@ -292,20 +292,20 @@ export default function SettingsPage() {
             onChange={(e) => setHealthHistory(e.target.value)}
             placeholder="e.g. I've had issues with my stomach for years, had knee surgery in 2023, currently managing high blood pressure..."
             rows={4}
-            className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] resize-none"
+            className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF] resize-none"
           />
 
           {/* Document upload */}
           <div className="mt-4 rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F8F9FA] p-4">
-            <p className="text-xs font-medium text-[#7A7F8A] mb-2">Or upload a health document</p>
-            <p className="text-[10px] text-[#B0B4BC] mb-3">PDF, text, or image of medical records — Kate will summarize it</p>
+            <p className="text-xs font-medium text-[#4F5F73] mb-2">Or upload a health document</p>
+            <p className="text-[10px] text-[#4F5F73] mb-3">PDF, text, or image of medical records — Kate will summarize it</p>
             {docProviders.length > 0 && (
               <div className="mb-3">
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Which provider is this from? (optional)</label>
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Which provider is this from? (optional)</label>
                 <select
                   value={docProviderName}
                   onChange={(e) => setDocProviderName(e.target.value)}
-                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-xs text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-xs text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 >
                   <option value="">General (no specific provider)</option>
                   {docProviders.map((p) => (
@@ -314,7 +314,7 @@ export default function SettingsPage() {
                 </select>
               </div>
             )}
-            <label className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white cursor-pointer transition hover:brightness-95" style={{ backgroundColor: "#5C6B5C" }}>
+            <label className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold text-white cursor-pointer transition hover:brightness-95" style={{ backgroundColor: "#1677FF" }}>
               Upload Document
               <input
                 type="file"
@@ -351,41 +351,41 @@ export default function SettingsPage() {
         </div>
 
         {/* Care Recipients */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-6">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-sm font-semibold text-[#1A1D2E]">
+            <h2 className="text-sm font-semibold text-[#071832]">
               Care Recipients
             </h2>
             <button
               type="button"
               onClick={() => setShowAddPerson(!showAddPerson)}
-              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-[#5C6B5C] hover:bg-[#5C6B5C]/10 transition"
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-[#1677FF] hover:bg-[#1677FF]/10 transition"
             >
               <Plus size={14} />
               Add person
             </button>
           </div>
-          <p className="text-xs text-[#7A7F8A] mb-4">
+          <p className="text-xs text-[#4F5F73] mb-4">
             People you manage care for. Kate can help book and track appointments for everyone here.
           </p>
 
           {showAddPerson && (
-            <div className="mb-4 rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0]">
+            <div className="mb-4 rounded-xl bg-[#F0F2F5] p-4 border border-[#E5EAF2]">
               <div className="flex flex-col gap-2.5">
                 <input
                   type="text"
                   value={newPersonName}
                   onChange={(e) => setNewPersonName(e.target.value)}
                   placeholder="Name"
-                  className="w-full rounded-lg bg-white px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-lg bg-white px-3 py-2 text-sm text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
                 <div className="flex gap-2.5">
                   <div className="flex-1">
-                    <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Relationship to you</label>
+                    <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Relationship to you</label>
                     <select
                       value={newPersonRelationship}
                       onChange={(e) => setNewPersonRelationship(e.target.value)}
-                      className="w-full rounded-lg bg-white px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                      className="w-full rounded-lg bg-white px-3 py-2 text-sm text-[#071832] border border-[#E5EAF2] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                     >
                       <option value="Parent">Parent</option>
                       <option value="Child">Child</option>
@@ -398,7 +398,7 @@ export default function SettingsPage() {
                     value={newPersonDob}
                     onChange={(e) => setNewPersonDob(e.target.value)}
                     placeholder="DOB (optional)"
-                    className="flex-1 rounded-lg bg-white px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    className="flex-1 rounded-lg bg-white px-3 py-2 text-sm text-[#071832] border border-[#E5EAF2] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -420,14 +420,14 @@ export default function SettingsPage() {
                     }}
                     disabled={!newPersonName.trim()}
                     className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition hover:brightness-95"
-                    style={{ backgroundColor: "#5C6B5C" }}
+                    style={{ backgroundColor: "#1677FF" }}
                   >
                     Add
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAddPerson(false)}
-                    className="rounded-lg px-3 py-1.5 text-xs text-[#7A7F8A] hover:bg-white transition"
+                    className="rounded-lg px-3 py-1.5 text-xs text-[#4F5F73] hover:bg-white transition"
                   >
                     Cancel
                   </button>
@@ -437,9 +437,9 @@ export default function SettingsPage() {
           )}
 
           {careRecipients.length === 0 && !showAddPerson ? (
-            <div className="rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0] text-center">
-              <Users size={24} className="mx-auto text-[#B0B4BC]" />
-              <p className="mt-2 text-xs text-[#7A7F8A]">
+            <div className="rounded-xl bg-[#F0F2F5] p-4 border border-[#E5EAF2] text-center">
+              <Users size={24} className="mx-auto text-[#4F5F73]" />
+              <p className="mt-2 text-xs text-[#4F5F73]">
                 No care recipients added yet. Add people you manage care for.
               </p>
             </div>
@@ -448,15 +448,15 @@ export default function SettingsPage() {
               {careRecipients.map((person) => (
                 <div
                   key={person.id}
-                  className="group flex items-center justify-between rounded-xl bg-[#F0F2F5] px-4 py-3 border border-[#EBEDF0]"
+                  className="group flex items-center justify-between rounded-xl bg-[#F0F2F5] px-4 py-3 border border-[#E5EAF2]"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/15">
-                      <Users size={14} className="text-[#5C6B5C]" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1677FF]/15">
+                      <Users size={14} className="text-[#1677FF]" />
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-[#1A1D2E]">{person.name}</div>
-                      <div className="text-xs text-[#7A7F8A]">
+                      <div className="text-sm font-medium text-[#071832]">{person.name}</div>
+                      <div className="text-xs text-[#4F5F73]">
                         {person.relationship}
                         {person.dob && ` — Born ${new Date(person.dob).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
                       </div>
@@ -465,7 +465,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setCareRecipients((prev) => prev.filter((r) => r.id !== person.id))}
-                    className="shrink-0 p-1.5 text-[#B0B4BC] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
+                    className="shrink-0 p-1.5 text-[#4F5F73] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
                     aria-label="Remove person"
                   >
                     <Trash2 size={14} />
@@ -477,29 +477,29 @@ export default function SettingsPage() {
         </div>
 
         {/* Kate Preferences — all in one card */}
-        <div data-tour="kate-preferences" className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
-          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
+        <div data-tour="kate-preferences" className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-6">
+          <h2 className="text-sm font-semibold text-[#071832] mb-1">
             Kate Preferences
           </h2>
-          <p className="text-xs text-[#7A7F8A] mb-5">
+          <p className="text-xs text-[#4F5F73] mb-5">
             Customize how Kate works for you.
           </p>
 
           {/* Nickname */}
           <div className="mb-5">
-            <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">What Should Kate Call You?</label>
+            <label className="block text-xs font-medium text-[#4F5F73] mb-1.5">What Should Kate Call You?</label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="e.g. Jenny, Hank, Dr. J"
-              className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+              className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
             />
           </div>
 
           {/* Communication style */}
-          <div className="border-t border-[#EBEDF0] pt-5 mb-5">
-            <label className="block text-xs font-medium text-[#7A7F8A] mb-2">How Should Kate Talk To You?</label>
+          <div className="border-t border-[#E5EAF2] pt-5 mb-5">
+            <label className="block text-xs font-medium text-[#4F5F73] mb-2">How Should Kate Talk To You?</label>
             <div className="flex gap-2">
               {COMM_STYLES.map((style) => (
                 <button
@@ -507,20 +507,20 @@ export default function SettingsPage() {
                   onClick={() => setCommStyle(style.value)}
                   className={`flex-1 rounded-xl p-3 text-left transition ${
                     commStyle === style.value
-                      ? "bg-[#5C6B5C]/10 border border-[#5C6B5C]"
-                      : "bg-[#F0F2F5] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
+                      ? "bg-[#1677FF]/10 border border-[#1677FF]"
+                      : "bg-[#F0F2F5] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
                   }`}
                 >
-                  <div className="text-sm font-medium text-[#1A1D2E]">{style.label}</div>
-                  <div className="text-xs text-[#7A7F8A]">{style.desc}</div>
+                  <div className="text-sm font-medium text-[#071832]">{style.label}</div>
+                  <div className="text-xs text-[#4F5F73]">{style.desc}</div>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Proactivity */}
-          <div className="border-t border-[#EBEDF0] pt-5 mb-5">
-            <label className="block text-xs font-medium text-[#7A7F8A] mb-2">How Involved Should Kate Be?</label>
+          <div className="border-t border-[#E5EAF2] pt-5 mb-5">
+            <label className="block text-xs font-medium text-[#4F5F73] mb-2">How Involved Should Kate Be?</label>
             <div className="space-y-2">
               {PROACTIVITY_LEVELS.map((level) => (
                 <button
@@ -528,22 +528,22 @@ export default function SettingsPage() {
                   onClick={() => setProactivity(level.value)}
                   className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition ${
                     proactivity === level.value
-                      ? "bg-[#5C6B5C]/10 border border-[#5C6B5C]"
-                      : "bg-[#F0F2F5] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
+                      ? "bg-[#1677FF]/10 border border-[#1677FF]"
+                      : "bg-[#F0F2F5] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
                   }`}
                 >
                   <div
                     className={`h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center ${
-                      proactivity === level.value ? "border-[#5C6B5C]" : "border-[#B0B4BC]"
+                      proactivity === level.value ? "border-[#1677FF]" : "border-[#4F5F73]"
                     }`}
                   >
                     {proactivity === level.value && (
-                      <div className="h-2 w-2 rounded-full bg-[#5C6B5C]" />
+                      <div className="h-2 w-2 rounded-full bg-[#1677FF]" />
                     )}
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-[#1A1D2E]">{level.label}</div>
-                    <div className="text-xs text-[#7A7F8A]">{level.desc}</div>
+                    <div className="text-sm font-medium text-[#071832]">{level.label}</div>
+                    <div className="text-xs text-[#4F5F73]">{level.desc}</div>
                   </div>
                 </button>
               ))}
@@ -551,8 +551,8 @@ export default function SettingsPage() {
           </div>
 
           {/* Focus areas */}
-          <div className="border-t border-[#EBEDF0] pt-5">
-            <label className="block text-xs font-medium text-[#7A7F8A] mb-2">What Should Kate Focus On?</label>
+          <div className="border-t border-[#E5EAF2] pt-5">
+            <label className="block text-xs font-medium text-[#4F5F73] mb-2">What Should Kate Focus On?</label>
             <div className="flex flex-wrap gap-2">
               {FOCUS_AREAS.map((area) => {
                 const selected = focusAreas.includes(area.value);
@@ -562,8 +562,8 @@ export default function SettingsPage() {
                     onClick={() => toggleFocus(area.value)}
                     className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${
                       selected
-                        ? "bg-[#5C6B5C] text-white"
-                        : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
+                        ? "bg-[#1677FF] text-white"
+                        : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
                     }`}
                   >
                     {area.label}
@@ -575,11 +575,11 @@ export default function SettingsPage() {
         </div>
 
         {/* Calendar Flexibility */}
-        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] mb-6">
-          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-6">
+          <h2 className="text-sm font-semibold text-[#071832] mb-1">
             Calendar Flexibility
           </h2>
-          <p className="text-xs text-[#7A7F8A] mb-4">
+          <p className="text-xs text-[#4F5F73] mb-4">
             How should Kate handle scheduling around your existing calendar events?
           </p>
           <div className="space-y-2">
@@ -593,22 +593,22 @@ export default function SettingsPage() {
                 onClick={() => setCalendarFlexibility(option.value)}
                 className={`w-full flex items-center gap-3 rounded-xl p-4 text-left transition ${
                   calendarFlexibility === option.value
-                    ? "bg-[#5C6B5C]/10 border border-[#5C6B5C]"
-                    : "bg-[#F0F2F5] border border-[#EBEDF0] hover:bg-[#E8EBF0]"
+                    ? "bg-[#1677FF]/10 border border-[#1677FF]"
+                    : "bg-[#F0F2F5] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
                 }`}
               >
                 <div
                   className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
-                    calendarFlexibility === option.value ? "border-[#5C6B5C]" : "border-[#B0B4BC]"
+                    calendarFlexibility === option.value ? "border-[#1677FF]" : "border-[#4F5F73]"
                   }`}
                 >
                   {calendarFlexibility === option.value && (
-                    <div className="h-2 w-2 rounded-full bg-[#5C6B5C]" />
+                    <div className="h-2 w-2 rounded-full bg-[#1677FF]" />
                   )}
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-[#1A1D2E]">{option.label}</div>
-                  <div className="text-xs text-[#7A7F8A]">{option.desc}</div>
+                  <div className="text-sm font-medium text-[#071832]">{option.label}</div>
+                  <div className="text-xs text-[#4F5F73]">{option.desc}</div>
                 </div>
               </button>
             ))}
@@ -621,7 +621,7 @@ export default function SettingsPage() {
           disabled={saving}
           className="w-full rounded-2xl px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:brightness-95 disabled:opacity-50"
           style={{
-            background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
+            background: "linear-gradient(135deg, #1677FF, #006BFF)",
             boxShadow: "0 8px 24px rgba(92,107,92,0.35)",
           }}
         >

@@ -46,9 +46,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         className="flex min-h-screen items-center justify-center"
         style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
       >
-        <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-8">
-          <h1 className="text-xl font-semibold text-[#1A1D2E]">Admin Access</h1>
-          <p className="mt-1 text-sm text-[#7A7F8A]">Enter the admin password to continue.</p>
+        <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-8">
+          <h1 className="text-xl font-semibold text-[#071832]">Admin Access</h1>
+          <p className="mt-1 text-sm text-[#4F5F73]">Enter the admin password to continue.</p>
 
           <input
             type="password"
@@ -56,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
             autoFocus
-            className="mt-6 w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-3 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+            className="mt-6 w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
           />
 
           {error && (
@@ -66,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button
             type="submit"
             className="mt-4 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+            style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
           >
             Enter
           </button>

@@ -126,8 +126,8 @@ function BillingContent() {
 
   return (
     <PageShell maxWidth="max-w-3xl">
-        <h1 className="text-2xl font-bold text-[#1A1D2E]">Choose Your Plan</h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">
+        <h1 className="text-2xl font-bold text-[#071832]">Choose Your Plan</h1>
+        <p className="mt-2 text-sm text-[#4F5F73]">
           Start managing your healthcare with Kate by your side.
         </p>
 
@@ -147,17 +147,17 @@ function BillingContent() {
           <div className="mt-4 rounded-xl bg-[#F0F4F0] border border-[#D0D8D0] px-4 py-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm font-semibold text-[#1A1D2E]">
+                <span className="text-sm font-semibold text-[#071832]">
                   Current plan: {currentPlan === "family" ? "QB Family" : "QB Solo"}
                 </span>
-                <span className="ml-2 inline-block rounded-full bg-[#5C6B5C] px-2 py-0.5 text-[10px] font-bold text-white uppercase">
+                <span className="ml-2 inline-block rounded-full bg-[#1677FF] px-2 py-0.5 text-[10px] font-bold text-white uppercase">
                   Active
                 </span>
               </div>
               <button
                 onClick={handleManageSubscription}
                 disabled={portalLoading}
-                className="text-sm text-[#5C6B5C] font-medium hover:underline"
+                className="text-sm text-[#1677FF] font-medium hover:underline"
               >
                 {portalLoading ? "Loading..." : "Manage Subscription"}
               </button>
@@ -175,30 +175,30 @@ function BillingContent() {
               <div
                 key={plan.id}
                 className={`rounded-2xl bg-white border p-6 shadow-sm ${
-                  plan.id === "family" ? "border-[#5C6B5C] ring-1 ring-[#5C6B5C]" : "border-[#EBEDF0]"
+                  plan.id === "family" ? "border-[#1677FF] ring-1 ring-[#1677FF]" : "border-[#E5EAF2]"
                 }`}
               >
                 {plan.id === "family" && (
-                  <div className="mb-3 inline-block rounded-full bg-[#5C6B5C] px-3 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                  <div className="mb-3 inline-block rounded-full bg-[#1677FF] px-3 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
                     Most Popular
                   </div>
                 )}
-                <h2 className="text-lg font-bold text-[#1A1D2E]">{plan.name}</h2>
+                <h2 className="text-lg font-bold text-[#071832]">{plan.name}</h2>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-[#1A1D2E]">{plan.price}</span>
-                  {plan.period && <span className="text-sm text-[#7A7F8A]">{plan.period}</span>}
+                  <span className="text-3xl font-bold text-[#071832]">{plan.price}</span>
+                  {plan.period && <span className="text-sm text-[#4F5F73]">{plan.period}</span>}
                 </div>
-                <p className="mt-2 text-xs text-[#7A7F8A]">{plan.description}</p>
+                <p className="mt-2 text-xs text-[#4F5F73]">{plan.description}</p>
 
                 <ul className="mt-5 space-y-2">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm text-[#3A3F4B]">
-                      <span className="mt-0.5 text-[#5C6B5C]">&#10003;</span>
+                      <span className="mt-0.5 text-[#1677FF]">&#10003;</span>
                       {f}
                     </li>
                   ))}
                   {excluded.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-[#B0B4BC]">
+                    <li key={f} className="flex items-start gap-2 text-sm text-[#4F5F73]">
                       <span className="mt-0.5">&#10005;</span>
                       {f}
                     </li>
@@ -210,10 +210,10 @@ function BillingContent() {
                   disabled={!!loading || isCurrent || isCurrentFree}
                   className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold transition ${
                     isCurrent || isCurrentFree
-                      ? "bg-[#EBEDF0] text-[#7A7F8A] cursor-default"
+                      ? "bg-[#E5EAF2] text-[#4F5F73] cursor-default"
                       : isFree
-                      ? "bg-white border border-[#EBEDF0] text-[#1A1D2E] hover:bg-[#F4F5F7]"
-                      : "bg-[#5C6B5C] text-white hover:bg-[#4A5A4A]"
+                      ? "bg-white border border-[#E5EAF2] text-[#071832] hover:bg-[#F4F5F7]"
+                      : "bg-[#1677FF] text-white hover:bg-[#006BFF]"
                   }`}
                 >
                   {isCurrent || isCurrentFree
@@ -229,7 +229,7 @@ function BillingContent() {
           })}
         </div>
 
-        <p className="mt-8 text-center text-xs text-[#B0B4BC]">
+        <p className="mt-8 text-center text-xs text-[#4F5F73]">
           Cancel anytime. No long-term contracts. Prices shown in USD.
         </p>
     </PageShell>

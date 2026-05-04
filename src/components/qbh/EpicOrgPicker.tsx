@@ -75,7 +75,7 @@ export default function EpicOrgPicker({ onSelect, selected }: EpicOrgPickerProps
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <label className="mb-2 block text-sm font-medium text-[#7A7F8A]">
+      <label className="mb-2 block text-sm font-medium text-[#4F5F73]">
         Search for your health system
       </label>
 
@@ -93,14 +93,14 @@ export default function EpicOrgPicker({ onSelect, selected }: EpicOrgPickerProps
             if (results.length > 0) setOpen(true);
           }}
           placeholder="e.g. Yale New Haven, Stamford Health, Mayo Clinic..."
-          className="w-full rounded-xl bg-white px-4 py-3 text-[#1A1D2E] placeholder-[#7A7F8A]/50 border border-[#EBEDF0] shadow-sm transition-colors focus:outline-none focus:ring-[#5C6B5C]/60"
+          className="w-full rounded-xl bg-white px-4 py-3 text-[#071832] placeholder-[#4F5F73]/50 border border-[#E5EAF2] shadow-sm transition-colors focus:outline-none focus:ring-[#1677FF]/60"
         />
 
         {query && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A7F8A] hover:text-[#1A1D2E]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4F5F73] hover:text-[#071832]"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
@@ -115,17 +115,17 @@ export default function EpicOrgPicker({ onSelect, selected }: EpicOrgPickerProps
       </div>
 
       {loading && (
-        <div className="mt-2 text-xs text-[#7A7F8A]">Searching...</div>
+        <div className="mt-2 text-xs text-[#4F5F73]">Searching...</div>
       )}
 
       {open && results.length > 0 && (
-        <ul className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl bg-white border border-[#EBEDF0] shadow-lg">
+        <ul className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl bg-white border border-[#E5EAF2] shadow-lg">
           {results.map((org) => (
             <li key={org.fhirBaseUrl}>
               <button
                 type="button"
                 onClick={() => handleSelect(org)}
-                className="w-full px-4 py-3 text-left text-sm text-[#1A1D2E] transition-colors hover:bg-[#F0F2F5] first:rounded-t-xl last:rounded-b-xl"
+                className="w-full px-4 py-3 text-left text-sm text-[#071832] transition-colors hover:bg-[#F0F2F5] first:rounded-t-xl last:rounded-b-xl"
               >
                 {org.name}
               </button>
@@ -135,13 +135,13 @@ export default function EpicOrgPicker({ onSelect, selected }: EpicOrgPickerProps
       )}
 
       {open && !loading && query.length >= 2 && results.length === 0 && (
-        <div className="mt-2 text-xs text-[#7A7F8A]">
+        <div className="mt-2 text-xs text-[#4F5F73]">
           No Epic organizations found for &ldquo;{query}&rdquo;
         </div>
       )}
 
       {selected?.name && selected?.fhirBaseUrl && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg bg-[#5C6B5C]/10 px-3 py-2 text-sm text-[#5C6B5C]">
+        <div className="mt-3 flex items-center gap-2 rounded-lg bg-[#1677FF]/10 px-3 py-2 text-sm text-[#1677FF]">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path
               d="M3 8.5l3 3 7-7"

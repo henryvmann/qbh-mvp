@@ -146,19 +146,19 @@ export default function KateChatButton() {
 
       {/* Chat panel */}
       <div
-        className={`fixed bottom-20 right-5 z-50 w-[380px] max-h-[520px] flex flex-col rounded-2xl border border-[#EBEDF0] bg-white shadow-2xl transition-all duration-300 ${
+        className={`fixed bottom-20 right-5 z-50 w-[380px] max-h-[520px] flex flex-col rounded-2xl border border-[#E5EAF2] bg-white shadow-2xl transition-all duration-300 ${
           open
             ? "translate-y-0 opacity-100 pointer-events-auto"
             : "translate-y-4 opacity-0 pointer-events-none"
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#EBEDF0]">
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#E5EAF2]">
           <div className="flex items-center gap-2.5">
             <div
               className="flex h-8 w-8 items-center justify-center rounded-lg"
               style={{
-                background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
+                background: "linear-gradient(135deg, #1677FF, #006BFF)",
               }}
             >
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
@@ -169,13 +169,13 @@ export default function KateChatButton() {
               </svg>
             </div>
             <div>
-              <div className="text-sm font-semibold text-[#1A1D2E]">Kate</div>
-              <div className="text-[10px] text-[#B0B4BC]">Your health assistant</div>
+              <div className="text-sm font-semibold text-[#071832]">Kate</div>
+              <div className="text-[10px] text-[#4F5F73]">Your health assistant</div>
             </div>
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="rounded-lg p-1.5 text-[#7A7F8A] hover:bg-[#F0F2F5]"
+            className="rounded-lg p-1.5 text-[#4F5F73] hover:bg-[#F0F2F5]"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M4 4l8 8M12 4l-8 8" />
@@ -187,10 +187,10 @@ export default function KateChatButton() {
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ maxHeight: 360 }}>
           {messages.length === 0 && (
             <div className="py-4">
-              <div className="text-sm text-[#1A1D2E] font-medium">
+              <div className="text-sm text-[#071832] font-medium">
                 Anything I can help you with today?
               </div>
-              <div className="mt-1 text-xs text-[#7A7F8A]">
+              <div className="mt-1 text-xs text-[#4F5F73]">
                 Ask me anything, or try one of these:
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -199,9 +199,9 @@ export default function KateChatButton() {
                     key={action.label}
                     onClick={() => sendQuickAction(action.prompt)}
                     disabled={streaming}
-                    className="flex items-center gap-1.5 rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#1A1D2E] hover:bg-[#E8EBF0] transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#071832] hover:bg-[#E8EBF0] transition disabled:opacity-50"
                   >
-                    <action.icon size={13} strokeWidth={1.5} color="#5C6B5C" />
+                    <action.icon size={13} strokeWidth={1.5} color="#1677FF" />
                     {action.label}
                   </button>
                 ))}
@@ -216,8 +216,8 @@ export default function KateChatButton() {
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
                   msg.role === "user"
-                    ? "bg-[#5C6B5C] text-white rounded-br-md"
-                    : "bg-[#F0F2F5] text-[#1A1D2E] rounded-bl-md"
+                    ? "bg-[#1677FF] text-white rounded-br-md"
+                    : "bg-[#F0F2F5] text-[#071832] rounded-bl-md"
                 }`}
               >
                 {msg.content ? (
@@ -230,7 +230,7 @@ export default function KateChatButton() {
                     }}
                   />
                 ) : (
-                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#1677FF] border-t-transparent" />
                 )}
               </div>
             </div>
@@ -239,7 +239,7 @@ export default function KateChatButton() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-[#EBEDF0] px-4 py-3">
+        <div className="border-t border-[#E5EAF2] px-4 py-3">
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -254,13 +254,13 @@ export default function KateChatButton() {
               }}
               placeholder="Ask Kate anything..."
               disabled={streaming}
-              className="flex-1 rounded-xl bg-[#F0F2F5] px-3.5 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] disabled:opacity-50"
+              className="flex-1 rounded-xl bg-[#F0F2F5] px-3.5 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF] disabled:opacity-50"
             />
             <button
               onClick={sendMessage}
               disabled={!input.trim() || streaming}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               <Send size={16} strokeWidth={1.5} />
             </button>
@@ -271,7 +271,7 @@ export default function KateChatButton() {
       {/* Floating K button + label */}
       <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2" data-wizard="kate-chat">
         {!open && (
-          <div className="rounded-xl bg-white px-3 py-1.5 text-xs font-medium text-[#1A1D2E] shadow-md border border-[#EBEDF0]">
+          <div className="rounded-xl bg-white px-3 py-1.5 text-xs font-medium text-[#071832] shadow-md border border-[#E5EAF2]">
             Let&apos;s chat
           </div>
         )}
@@ -283,7 +283,7 @@ export default function KateChatButton() {
           }}
         >
           {open ? (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}>
+            <div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}>
               <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
                 <path d="M4 4l8 8M12 4l-8 8" />
               </svg>

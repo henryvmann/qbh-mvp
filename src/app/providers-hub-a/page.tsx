@@ -77,9 +77,9 @@ export default function ProvidersHubA() {
   return (
     <PageShell>
       <h1 className="font-serif text-2xl text-[#1A2E1A]">Your Provider Hub</h1>
-      <p className="mt-1 text-sm text-[#7A7F8A]">{doctors.length} providers organized by specialty</p>
+      <p className="mt-1 text-sm text-[#4F5F73]">{doctors.length} providers organized by specialty</p>
 
-      <div className="mt-6 text-[10px] font-bold uppercase tracking-[0.15em] text-[#7A7F8A] mb-1">
+      <div className="mt-6 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4F5F73] mb-1">
         Option A: Grouped by Specialty
       </div>
 
@@ -98,7 +98,7 @@ export default function ProvidersHubA() {
               >
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-bold uppercase tracking-wider" style={{ color: accent }}>{label}</span>
-                  <span className="text-xs text-[#7A7F8A]">{group.providers.length} provider{group.providers.length !== 1 ? "s" : ""}</span>
+                  <span className="text-xs text-[#4F5F73]">{group.providers.length} provider{group.providers.length !== 1 ? "s" : ""}</span>
                 </div>
                 {expandedGroup === label ? <ChevronDown size={16} style={{ color: accent }} /> : <ChevronRight size={16} style={{ color: accent }} />}
               </button>
@@ -125,7 +125,7 @@ export default function ProvidersHubA() {
                             <div className="text-sm font-medium text-[#1A2E1A]">
                               <ProviderLink providerId={s.provider.id} providerName={s.provider.name} />
                             </div>
-                            {subtitle && <div className="text-[10px] text-[#7A7F8A]">{subtitle}</div>}
+                            {subtitle && <div className="text-[10px] text-[#4F5F73]">{subtitle}</div>}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -144,12 +144,12 @@ export default function ProvidersHubA() {
       {/* Pharmacies */}
       {pharmacies.length > 0 && (
         <div className="mt-6">
-          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#7A7F8A] mb-2">Pharmacies</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#4F5F73] mb-2">Pharmacies</div>
           <div className="rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 overflow-hidden">
             {pharmacies.map((s, idx) => (
               <div key={s.provider.id} className="flex items-center justify-between px-5 py-3" style={idx < pharmacies.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.5)" } : {}}>
                 <span className="text-sm font-medium text-[#1A2E1A]">{s.provider.name}</span>
-                <span className="text-[10px] text-[#B0B4BC]">Pharmacy</span>
+                <span className="text-[10px] text-[#4F5F73]">Pharmacy</span>
               </div>
             ))}
           </div>
@@ -157,7 +157,7 @@ export default function ProvidersHubA() {
       )}
 
       {/* Missing specialties */}
-      <div className="mt-8 text-[10px] font-bold uppercase tracking-[0.15em] text-[#7A7F8A] mb-2">Build Your Team</div>
+      <div className="mt-8 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4F5F73] mb-2">Build Your Team</div>
       <div className="grid grid-cols-2 gap-3">
         {["Primary Care", "Dentist", "Therapist", "Eye Care", "Dermatology"].filter((s) => !groups.has(s)).map((missing) => {
           const colors = SPECIALTY_COLORS[missing.toLowerCase().replace(" care", "").replace("ologist", "ology")] || SPECIALTY_COLORS.default;
@@ -171,9 +171,9 @@ export default function ProvidersHubA() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xs font-semibold text-[#1A2E1A]">Your {missing}</div>
-                  <div className="text-[10px] text-[#7A7F8A]">Add one</div>
+                  <div className="text-[10px] text-[#4F5F73]">Add one</div>
                 </div>
-                <Plus size={16} className="text-[#B0B4BC]" />
+                <Plus size={16} className="text-[#4F5F73]" />
               </div>
             </button>
           );
@@ -181,7 +181,7 @@ export default function ProvidersHubA() {
       </div>
 
       <div className="mt-6 text-center">
-        <a href="/providers" className="text-xs text-[#7A7F8A] underline">Back to current providers page</a>
+        <a href="/providers" className="text-xs text-[#4F5F73] underline">Back to current providers page</a>
       </div>
     </PageShell>
   );

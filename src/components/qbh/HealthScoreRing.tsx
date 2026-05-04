@@ -16,7 +16,7 @@ const LEVEL_COLORS: Record<string, { start: string; end: string; text: string }>
   "excellent":       { start: "#0FA5A5", end: "#D4A44C", text: "#0FA5A5" },
   "on-track":        { start: "#0FA5A5", end: "#5C7B5C", text: "#5C7B5C" },
   "building":        { start: "#D4A44C", end: "#C89B3C", text: "#D4A44C" },
-  "getting-started": { start: "#B0B4BC", end: "#7A7F8A", text: "#7A7F8A" },
+  "getting-started": { start: "#4F5F73", end: "#4F5F73", text: "#4F5F73" },
 };
 
 export default function HealthScoreRing({ compact }: { compact?: boolean }) {
@@ -104,7 +104,7 @@ export default function HealthScoreRing({ compact }: { compact?: boolean }) {
             {animatedScore}
           </span>
           {!compact && (
-            <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5" style={{ color: "#7A7F8A" }}>
+            <span className="text-[10px] font-semibold uppercase tracking-wider mt-0.5" style={{ color: "#4F5F73" }}>
               {data.levelLabel}
             </span>
           )}
@@ -114,18 +114,18 @@ export default function HealthScoreRing({ compact }: { compact?: boolean }) {
       {/* Breakdown (non-compact only) */}
       {!compact && showBreakdown && (
         <div className="mt-4 w-full max-w-xs rounded-2xl bg-white/60 backdrop-blur-sm border border-white/70 p-4 shadow-sm">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-[#7A7F8A] mb-2">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">
             Score Breakdown
           </div>
           <div className="space-y-1.5">
             {data.factors.map((f, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
-                <span className={f.earned ? "text-[#1A2E1A]" : "text-[#B0B4BC]"}>
+                <span className={f.earned ? "text-[#1A2E1A]" : "text-[#4F5F73]"}>
                   {f.earned ? "✓" : "○"} {f.label}
                 </span>
                 <span
                   className="font-semibold"
-                  style={{ color: f.points > 0 ? "#5C7B5C" : f.points < 0 ? "#E04030" : "#B0B4BC" }}
+                  style={{ color: f.points > 0 ? "#5C7B5C" : f.points < 0 ? "#E04030" : "#4F5F73" }}
                 >
                   {f.points > 0 ? `+${f.points}` : f.points}
                 </span>

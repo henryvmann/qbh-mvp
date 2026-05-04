@@ -149,17 +149,17 @@ export default function MedicationsPage() {
 
   return (
     <main
-      className="min-h-screen text-[#1A1D2E]"
+      className="min-h-screen text-[#071832]"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
       <TopNav />
       <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
+            <h1 className="font-serif text-3xl tracking-tight text-[#071832]">
               Medications
             </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
+            <p className="mt-2 max-w-2xl text-base text-[#4F5F73]">
               Track your medications and request refills through Kate.
             </p>
           </div>
@@ -167,7 +167,7 @@ export default function MedicationsPage() {
             type="button"
             onClick={() => setShowForm(!showForm)}
             className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
-            style={{ backgroundColor: "#5C6B5C" }}
+            style={{ backgroundColor: "#1677FF" }}
           >
             <Plus size={16} />
             Add medication
@@ -176,22 +176,22 @@ export default function MedicationsPage() {
 
         {/* Refill toast */}
         {refillMessage && (
-          <div className="mt-4 rounded-xl bg-[#5C6B5C]/10 border border-[#5C6B5C]/30 px-4 py-3 text-sm text-[#5C6B5C] font-medium">
+          <div className="mt-4 rounded-xl bg-[#1677FF]/10 border border-[#1677FF]/30 px-4 py-3 text-sm text-[#1677FF] font-medium">
             {refillMessage}
           </div>
         )}
 
         {/* Add Medication Form */}
         {showForm && (
-          <div className="mt-6 rounded-2xl bg-white p-5 border border-[#EBEDF0] shadow-sm">
-            <h3 className="text-sm font-semibold text-[#1A1D2E] mb-3">New medication</h3>
+          <div className="mt-6 rounded-2xl bg-white p-5 border border-[#E5EAF2] shadow-sm">
+            <h3 className="text-sm font-semibold text-[#071832] mb-3">New medication</h3>
             <div className="flex flex-col gap-3">
               <input
                 type="text"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="Medication name (e.g. Lisinopril)"
-                className="w-full rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               />
               <div className="flex gap-3">
                 <input
@@ -199,21 +199,21 @@ export default function MedicationsPage() {
                   value={formDosage}
                   onChange={(e) => setFormDosage(e.target.value)}
                   placeholder="Dosage (e.g. 10mg)"
-                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
                 <input
                   type="text"
                   value={formFrequency}
                   onChange={(e) => setFormFrequency(e.target.value)}
                   placeholder="Frequency (e.g. Once daily)"
-                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
               </div>
               <div className="flex gap-3">
                 <select
                   value={formProviderId}
                   onChange={(e) => setFormProviderId(e.target.value)}
-                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] border border-[#E5EAF2] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 >
                   <option value="">Prescribing provider (optional)</option>
                   {nonPharmacyProviders.map((p) => (
@@ -223,7 +223,7 @@ export default function MedicationsPage() {
                 <select
                   value={formPharmacyId}
                   onChange={(e) => setFormPharmacyId(e.target.value)}
-                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] border border-[#E5EAF2] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 >
                   <option value="">Pharmacy (optional)</option>
                   {pharmacies.map((p) => (
@@ -237,14 +237,14 @@ export default function MedicationsPage() {
                   onClick={handleAddMedication}
                   disabled={saving || !formName.trim()}
                   className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition hover:brightness-95"
-                  style={{ backgroundColor: "#5C6B5C" }}
+                  style={{ backgroundColor: "#1677FF" }}
                 >
                   {saving ? "Saving..." : "Save medication"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="rounded-lg px-4 py-2 text-sm text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
+                  className="rounded-lg px-4 py-2 text-sm text-[#4F5F73] hover:bg-[#F0F2F5] transition"
                 >
                   Cancel
                 </button>
@@ -254,20 +254,20 @@ export default function MedicationsPage() {
         )}
 
         {/* Your Medications */}
-        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
-          <h2 className="font-serif text-xl text-[#1A1D2E]">
+        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
+          <h2 className="font-serif text-xl text-[#071832]">
             Your medications
           </h2>
 
           {loading ? (
-            <div className="mt-4 flex items-center gap-2 text-sm text-[#7A7F8A]">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+            <div className="mt-4 flex items-center gap-2 text-sm text-[#4F5F73]">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1677FF] border-t-transparent" />
               Loading...
             </div>
           ) : medications.length === 0 ? (
-            <div className="mt-4 rounded-xl bg-[#F0F2F5] p-5 border border-[#EBEDF0] text-center">
-              <Pill size={32} className="mx-auto text-[#B0B4BC]" />
-              <p className="mt-2 text-sm text-[#7A7F8A]">
+            <div className="mt-4 rounded-xl bg-[#F0F2F5] p-5 border border-[#E5EAF2] text-center">
+              <Pill size={32} className="mx-auto text-[#4F5F73]" />
+              <p className="mt-2 text-sm text-[#4F5F73]">
                 No medications added yet. Use the button above to add your first medication.
               </p>
             </div>
@@ -279,20 +279,20 @@ export default function MedicationsPage() {
                 return (
                   <div
                     key={med.id}
-                    className="group flex items-start justify-between rounded-xl bg-[#F0F2F5] px-5 py-4 border border-[#EBEDF0]"
+                    className="group flex items-start justify-between rounded-xl bg-[#F0F2F5] px-5 py-4 border border-[#E5EAF2]"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/15 mt-0.5">
-                        <Pill size={16} className="text-[#5C6B5C]" />
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1677FF]/15 mt-0.5">
+                        <Pill size={16} className="text-[#1677FF]" />
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-[#1A1D2E]">
+                        <div className="text-sm font-semibold text-[#071832]">
                           {med.name}
                           {med.dosage && (
-                            <span className="ml-2 font-normal text-[#7A7F8A]">{med.dosage}</span>
+                            <span className="ml-2 font-normal text-[#4F5F73]">{med.dosage}</span>
                           )}
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#7A7F8A]">
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#4F5F73]">
                           {med.frequency && <span>{med.frequency}</span>}
                           {providerName && <span>Prescribed by {providerName}</span>}
                           {pharmacyName && <span>Pharmacy: {pharmacyName}</span>}
@@ -304,7 +304,7 @@ export default function MedicationsPage() {
                         <button
                           type="button"
                           onClick={() => handleRefill(med)}
-                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-[#5C6B5C] bg-[#5C6B5C]/10 hover:bg-[#5C6B5C]/20 transition"
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-[#1677FF] bg-[#1677FF]/10 hover:bg-[#1677FF]/20 transition"
                         >
                           <RefreshCw size={12} />
                           Refill with Kate
@@ -313,7 +313,7 @@ export default function MedicationsPage() {
                       <button
                         type="button"
                         onClick={() => handleDelete(med.id)}
-                        className="shrink-0 p-1.5 text-[#B0B4BC] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
+                        className="shrink-0 p-1.5 text-[#4F5F73] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
                         aria-label="Delete medication"
                       >
                         <Trash2 size={14} />
@@ -327,27 +327,27 @@ export default function MedicationsPage() {
         </section>
 
         {/* Pharmacy Visits Section */}
-        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0]">
+        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
           <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl text-[#1A1D2E]">
+            <h2 className="font-serif text-xl text-[#071832]">
               Pharmacy visits
             </h2>
-            <span className="rounded-full bg-[#5C6B5C]/15 px-3 py-1 text-xs font-semibold text-[#5C6B5C] ring-1 ring-[#5C6B5C]/30">
+            <span className="rounded-full bg-[#1677FF]/15 px-3 py-1 text-xs font-semibold text-[#1677FF] ring-1 ring-[#1677FF]/30">
               From bank data
             </span>
           </div>
-          <p className="mt-2 text-sm text-[#7A7F8A]">
+          <p className="mt-2 text-sm text-[#4F5F73]">
             Pharmacy transactions detected from your connected financial accounts.
           </p>
 
           {loading ? (
-            <div className="mt-6 flex items-center gap-2 text-sm text-[#7A7F8A]">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+            <div className="mt-6 flex items-center gap-2 text-sm text-[#4F5F73]">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1677FF] border-t-transparent" />
               Loading pharmacy visits...
             </div>
           ) : pharmacyVisits.length === 0 ? (
-            <div className="mt-6 rounded-xl bg-[#F0F2F5] p-5 border border-[#EBEDF0]">
-              <p className="text-sm text-[#7A7F8A]">
+            <div className="mt-6 rounded-xl bg-[#F0F2F5] p-5 border border-[#E5EAF2]">
+              <p className="text-sm text-[#4F5F73]">
                 No pharmacy visits detected yet. Once you connect a financial
                 account, transactions at pharmacies like CVS, Walgreens, and
                 Rite Aid will appear here automatically.
@@ -358,23 +358,23 @@ export default function MedicationsPage() {
               {pharmacyVisits.map((visit, i) => (
                 <div
                   key={`${visit.provider_name}-${visit.visit_date}-${i}`}
-                  className="flex items-center justify-between rounded-xl bg-[#F0F2F5] px-5 py-4 border border-[#EBEDF0]"
+                  className="flex items-center justify-between rounded-xl bg-[#F0F2F5] px-5 py-4 border border-[#E5EAF2]"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#5C6B5C]/15">
-                      <Phone size={14} className="text-[#5C6B5C]" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1677FF]/15">
+                      <Phone size={14} className="text-[#1677FF]" />
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-[#1A1D2E]">
+                      <div className="text-sm font-semibold text-[#071832]">
                         {visit.provider_name}
                       </div>
-                      <div className="text-xs text-[#7A7F8A]">
+                      <div className="text-xs text-[#4F5F73]">
                         {formatDate(visit.visit_date)}
                       </div>
                     </div>
                   </div>
                   {visit.amount_cents != null && (
-                    <div className="text-sm font-medium text-[#1A1D2E]">
+                    <div className="text-sm font-medium text-[#071832]">
                       {formatAmount(visit.amount_cents)}
                     </div>
                   )}

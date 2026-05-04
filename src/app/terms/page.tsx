@@ -7,12 +7,12 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-[#F4F5F7]">
       <div className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="text-3xl font-bold text-[#1A1D2E] mb-2">Terms of Service</h1>
-        <p className="text-sm text-[#7A7F8A] mb-10">Last updated: April 25, 2026</p>
+        <h1 className="text-3xl font-bold text-[#071832] mb-2">Terms of Service</h1>
+        <p className="text-sm text-[#4F5F73] mb-10">Last updated: April 25, 2026</p>
 
         <div className="space-y-8 text-[#3A3F4B] text-sm leading-relaxed">
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">1. Acceptance of Terms</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">1. Acceptance of Terms</h2>
             <p>
               By creating an account or using Quarterback Health (&quot;QBH,&quot; &quot;the Service&quot;), you agree to
               these Terms of Service. If you do not agree, do not use the Service. You must be at least
@@ -21,7 +21,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">2. Description of Service</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">2. Description of Service</h2>
             <p>
               Quarterback Health is a healthcare coordination platform that helps you organize your
               providers, manage appointments, and handle health administration tasks. Our AI assistant,
@@ -31,7 +31,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">3. Not Medical Advice</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">3. Not Medical Advice</h2>
             <p>
               <strong>Quarterback Health is not a healthcare provider and does not provide medical advice,
               diagnosis, or treatment.</strong> Kate is a care coordination assistant, not a medical
@@ -43,7 +43,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">4. AI Phone Calls</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">4. AI Phone Calls</h2>
             <p className="mb-3">
               By authorizing AI phone calls, you understand and agree that:
             </p>
@@ -58,7 +58,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">5. Your Account</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">5. Your Account</h2>
             <p>
               You are responsible for maintaining the security of your account credentials and for all
               activity under your account. You agree to provide accurate, current information during
@@ -68,7 +68,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">6. Connected Services</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">6. Connected Services</h2>
             <p>
               You may connect third-party services (bank accounts via Plaid, Google Calendar, Outlook
               Calendar) to enhance your experience. When you connect these services, you authorize us
@@ -79,7 +79,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">7. Acceptable Use</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">7. Acceptable Use</h2>
             <p className="mb-3">You agree not to:</p>
             <ul className="list-disc pl-6 space-y-1.5">
               <li>Use the Service for any unlawful purpose</li>
@@ -92,7 +92,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">8. Care Recipients</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">8. Care Recipients</h2>
             <p>
               If you add care recipients (family members or others you manage care for), you represent
               that you have their consent to manage their healthcare information through this Service,
@@ -101,7 +101,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">9. Health Documents</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">9. Health Documents</h2>
             <p>
               When you upload health documents, they are processed by AI to generate summaries and are
               stored in encrypted storage. You retain ownership of all documents you upload. Summaries
@@ -111,7 +111,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">10. Intellectual Property</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">10. Intellectual Property</h2>
             <p>
               The Service, including its design, features, and content (excluding your personal data),
               is owned by Quarterback Health and protected by intellectual property laws. You are granted
@@ -121,7 +121,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">11. Limitation of Liability</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">11. Limitation of Liability</h2>
             <p>
               To the maximum extent permitted by law, Quarterback Health shall not be liable for any
               indirect, incidental, special, consequential, or punitive damages arising from your use
@@ -133,7 +133,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">12. Disclaimers</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">12. Disclaimers</h2>
             <p>
               The Service is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind, either
               express or implied. We do not warrant that the Service will be uninterrupted, error-free,
@@ -143,7 +143,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">13. Termination</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">13. Termination</h2>
             <p>
               We may suspend or terminate your access to the Service at any time for violation of these
               Terms or for any other reason with reasonable notice. You may terminate your account at
@@ -153,7 +153,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">14. Changes to Terms</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">14. Changes to Terms</h2>
             <p>
               We may modify these Terms at any time. We will notify you of material changes by email
               or through the Service. Continued use after changes constitutes acceptance. If you
@@ -162,7 +162,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">15. Governing Law</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">15. Governing Law</h2>
             <p>
               These Terms are governed by the laws of the State of Connecticut, without regard to
               conflict of law principles. Any disputes shall be resolved in the courts located in
@@ -171,7 +171,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">16. Contact</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">16. Contact</h2>
             <p>
               For questions about these Terms, contact us at:<br />
               <strong>Email:</strong> support@getquarterback.com<br />
@@ -180,8 +180,8 @@ export default function TermsPage() {
           </section>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-[#EBEDF0] text-center">
-          <a href="/" className="text-sm text-[#5C6B5C] hover:underline">&larr; Back to Quarterback Health</a>
+        <div className="mt-12 pt-6 border-t border-[#E5EAF2] text-center">
+          <a href="/" className="text-sm text-[#1677FF] hover:underline">&larr; Back to Quarterback Health</a>
         </div>
       </div>
     </div>

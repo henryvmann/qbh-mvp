@@ -179,7 +179,7 @@ function LeafDecoration() {
         rx="120"
         ry="40"
         transform="rotate(-30 300 80)"
-        fill="#5C6B5C"
+        fill="#1677FF"
         opacity="0.08"
       />
       <ellipse
@@ -188,7 +188,7 @@ function LeafDecoration() {
         rx="100"
         ry="35"
         transform="rotate(15 340 160)"
-        fill="#5C6B5C"
+        fill="#1677FF"
         opacity="0.06"
       />
       <ellipse
@@ -197,7 +197,7 @@ function LeafDecoration() {
         rx="90"
         ry="30"
         transform="rotate(-45 280 220)"
-        fill="#5C6B5C"
+        fill="#1677FF"
         opacity="0.08"
       />
       <ellipse
@@ -206,7 +206,7 @@ function LeafDecoration() {
         rx="60"
         ry="25"
         transform="rotate(25 360 240)"
-        fill="#5C6B5C"
+        fill="#1677FF"
         opacity="0.05"
       />
     </svg>
@@ -691,7 +691,7 @@ function DashboardV4Inner() {
         className="min-h-screen"
         style={{
           background:
-            "linear-gradient(135deg, #1A1D2E 0%, #0F1218 30%, #1A2030 60%, #151820 100%)",
+            "linear-gradient(135deg, #071832 0%, #0F1218 30%, #1A2030 60%, #151820 100%)",
         }}
       />
     );
@@ -704,7 +704,7 @@ function DashboardV4Inner() {
       className="relative min-h-screen overflow-hidden px-4 pb-20 pt-8 sm:px-6"
       style={{
         background:
-          "linear-gradient(135deg, #1A1D2E 0%, #0F1218 30%, #1A2030 60%, #151820 100%)",
+          "linear-gradient(135deg, #071832 0%, #0F1218 30%, #1A2030 60%, #151820 100%)",
       }}
     >
       <AmbientOrbs />
@@ -733,7 +733,7 @@ export default function DashboardV4Page() {
           className="min-h-screen"
           style={{
             background:
-              "linear-gradient(135deg, #1A1D2E 0%, #0F1218 30%, #1A2030 60%, #151820 100%)",
+              "linear-gradient(135deg, #071832 0%, #0F1218 30%, #1A2030 60%, #151820 100%)",
           }}
         />
       }

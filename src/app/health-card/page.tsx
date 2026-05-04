@@ -44,7 +44,7 @@ export default function HealthCardPage() {
     return (
       <div className="min-h-screen bg-[#F4F5F7]">
         <TopNav />
-        <div className="flex items-center justify-center pt-32 text-[#7A7F8A]">Loading...</div>
+        <div className="flex items-center justify-center pt-32 text-[#4F5F73]">Loading...</div>
       </div>
     );
   }
@@ -56,8 +56,8 @@ export default function HealthCardPage() {
     <div className="min-h-screen bg-[#F4F5F7]">
       <TopNav />
       <div className="mx-auto max-w-md px-6 pt-24 pb-16">
-        <h1 className="text-xl font-semibold text-[#1A1D2E] text-center">Your Health Card</h1>
-        <p className="mt-1 text-sm text-[#7A7F8A] text-center">Share your health coordination progress</p>
+        <h1 className="text-xl font-semibold text-[#071832] text-center">Your Health Card</h1>
+        <p className="mt-1 text-sm text-[#4F5F73] text-center">Share your health coordination progress</p>
 
         {/* The card */}
         <div ref={cardRef} className="mt-8 rounded-3xl overflow-hidden shadow-xl" style={{ background: "linear-gradient(135deg, #0F1729, #1A2940)" }}>
@@ -135,13 +135,13 @@ export default function HealthCardPage() {
               }
             }}
             className="flex-1 rounded-xl py-3 text-sm font-semibold text-white"
-            style={{ backgroundColor: "#5C6B5C" }}
+            style={{ backgroundColor: "#1677FF" }}
           >
             {copied ? "Copied!" : "Share"}
           </button>
           <a
             href="/dashboard"
-            className="flex-1 rounded-xl py-3 text-sm font-semibold text-center border border-[#EBEDF0] text-[#1A1D2E] hover:bg-white"
+            className="flex-1 rounded-xl py-3 text-sm font-semibold text-center border border-[#E5EAF2] text-[#071832] hover:bg-white"
           >
             Back to Dashboard
           </a>

@@ -217,14 +217,14 @@ export default function CalendarViewPage() {
       <div className="mx-auto max-w-3xl px-6 pb-16 pt-10">
         <div className="mb-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Calendar size={22} strokeWidth={1.5} color="#5C6B5C" />
-            <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
+            <Calendar size={22} strokeWidth={1.5} color="#1677FF" />
+            <h1 className="font-serif text-2xl tracking-tight text-[#071832]">
               Calendar
             </h1>
           </div>
           <Link
             href="/dashboard"
-            className="text-xs font-semibold text-[#5C6B5C] hover:text-[#1A2E1A] underline underline-offset-2"
+            className="text-xs font-semibold text-[#1677FF] hover:text-[#1A2E1A] underline underline-offset-2"
           >
             Back to dashboard
           </Link>
@@ -232,27 +232,27 @@ export default function CalendarViewPage() {
 
         {/* Connect calendar card */}
         {!hasCalendar && (
-          <div className="mb-6 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
+          <div className="mb-6 rounded-2xl bg-white shadow-sm border border-[#E5EAF2] p-6">
             <div className="flex items-start gap-3">
-              <Link2 size={20} strokeWidth={1.5} className="text-[#5C6B5C] mt-0.5 shrink-0" />
+              <Link2 size={20} strokeWidth={1.5} className="text-[#1677FF] mt-0.5 shrink-0" />
               <div className="flex-1">
-                <h2 className="text-sm font-semibold text-[#1A1D2E]">
+                <h2 className="text-sm font-semibold text-[#071832]">
                   Connect your calendar
                 </h2>
-                <p className="mt-1 text-xs text-[#7A7F8A]">
+                <p className="mt-1 text-xs text-[#4F5F73]">
                   Link your calendar so Kate can find the best times for your appointments and avoid conflicts.
                 </p>
                 <div className="mt-3 flex gap-2">
                   <Link
                     href={userId ? `/calendar-connect?user_id=${userId}` : "/calendar-connect"}
                     className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold text-white transition hover:brightness-95"
-                    style={{ backgroundColor: "#5C6B5C" }}
+                    style={{ backgroundColor: "#1677FF" }}
                   >
                     Connect Google Calendar
                   </Link>
                   <Link
                     href="/calendar-connect"
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#EBEDF0] px-4 py-2 text-xs font-semibold text-[#5C6B5C] transition hover:bg-[#F0F2F5]"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[#E5EAF2] px-4 py-2 text-xs font-semibold text-[#1677FF] transition hover:bg-[#F0F2F5]"
                   >
                     Connect Outlook
                   </Link>
@@ -264,22 +264,22 @@ export default function CalendarViewPage() {
 
         {/* Calendar event confirmation */}
         {hasCalendar && calendarEvents.filter((e) => e.confirmed === null).length > 0 && (
-          <div className="mb-6 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-6">
-            <h2 className="text-sm font-semibold text-[#1A1D2E] mb-1">
+          <div className="mb-6 rounded-2xl bg-white shadow-sm border border-[#E5EAF2] p-6">
+            <h2 className="text-sm font-semibold text-[#071832] mb-1">
               Confirm doctor appointments
             </h2>
-            <p className="text-xs text-[#7A7F8A] mb-4">
+            <p className="text-xs text-[#4F5F73] mb-4">
               We found these calendar events that look like doctor appointments. Can you confirm?
             </p>
             <div className="space-y-3">
               {calendarEvents.filter((e) => e.confirmed === null).map((evt) => (
                 <div
                   key={evt.id}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] p-4"
+                  className="flex items-center justify-between gap-3 rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] p-4"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-[#1A1D2E] truncate">{evt.summary}</div>
-                    <div className="text-xs text-[#7A7F8A]">
+                    <div className="text-sm font-medium text-[#071832] truncate">{evt.summary}</div>
+                    <div className="text-xs text-[#4F5F73]">
                       {evt.start ? new Date(evt.start).toLocaleDateString("en-US", {
                         weekday: "short",
                         month: "short",
@@ -309,7 +309,7 @@ export default function CalendarViewPage() {
                         } catch { /* best effort */ }
                       }}
                       className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95"
-                      style={{ backgroundColor: "#5C6B5C" }}
+                      style={{ backgroundColor: "#1677FF" }}
                     >
                       <CheckCircle size={12} />
                       Yes, this is a doctor
@@ -321,7 +321,7 @@ export default function CalendarViewPage() {
                           prev.map((e) => e.id === evt.id ? { ...e, confirmed: false } : e)
                         );
                       }}
-                      className="flex items-center gap-1 rounded-lg border border-[#EBEDF0] px-3 py-1.5 text-xs font-medium text-[#7A7F8A] transition hover:bg-[#F0F2F5]"
+                      className="flex items-center gap-1 rounded-lg border border-[#E5EAF2] px-3 py-1.5 text-xs font-medium text-[#4F5F73] transition hover:bg-[#F0F2F5]"
                     >
                       <XCircle size={12} />
                       No, skip
@@ -334,31 +334,31 @@ export default function CalendarViewPage() {
         )}
 
         {/* Month navigation */}
-        <div data-tour="calendar-grid" className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#EBEDF0]">
+        <div data-tour="calendar-grid" className="rounded-2xl bg-white shadow-sm border border-[#E5EAF2] overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5EAF2]">
             <button
               onClick={prevMonth}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#4F5F73] hover:bg-[#F0F2F5] transition"
             >
               <ChevronLeft size={18} />
             </button>
-            <span className="text-base font-semibold text-[#1A1D2E]">
+            <span className="text-base font-semibold text-[#071832]">
               {formatMonthYear(currentYear, currentMonth)}
             </span>
             <button
               onClick={nextMonth}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#4F5F73] hover:bg-[#F0F2F5] transition"
             >
               <ChevronRight size={18} />
             </button>
           </div>
 
           {/* Day headers */}
-          <div className="grid grid-cols-7 border-b border-[#EBEDF0]">
+          <div className="grid grid-cols-7 border-b border-[#E5EAF2]">
             {DAY_NAMES.map((d) => (
               <div
                 key={d}
-                className="py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-[#B0B4BC]"
+                className="py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-[#4F5F73]"
               >
                 {d}
               </div>
@@ -385,15 +385,15 @@ export default function CalendarViewPage() {
                   key={key}
                   onClick={() => setSelectedDay(isSelected ? null : key)}
                   className={`relative h-16 border-b border-r border-[#F0F2F5] flex flex-col items-center pt-1.5 transition-colors ${
-                    isSelected ? "bg-[#5C6B5C]/10" : isToday ? "bg-[#5C6B5C]/8" : "hover:bg-[#F8F9FA]"
+                    isSelected ? "bg-[#1677FF]/10" : isToday ? "bg-[#1677FF]/8" : "hover:bg-[#F8F9FA]"
                   }`}
                   style={isToday && !isSelected ? { backgroundColor: "rgba(92,107,92,0.08)" } : undefined}
                 >
                   <span
                     className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ${
                       isToday
-                        ? "bg-[#5C6B5C] text-white font-semibold"
-                        : "text-[#1A1D2E]"
+                        ? "bg-[#1677FF] text-white font-semibold"
+                        : "text-[#071832]"
                     }`}
                   >
                     {day}
@@ -402,7 +402,7 @@ export default function CalendarViewPage() {
                   {(hasUpcoming || hasPast || hasFollowup) && (
                     <div className="mt-0.5 flex items-center gap-1">
                       {hasUpcoming && (
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#5C6B5C]" />
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#1677FF]" />
                       )}
                       {hasPast && (
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#2A6090]" />
@@ -418,26 +418,26 @@ export default function CalendarViewPage() {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-5 px-6 py-3 border-t border-[#EBEDF0]">
+          <div className="flex items-center gap-5 px-6 py-3 border-t border-[#E5EAF2]">
             <div className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2 rounded-full bg-[#5C6B5C]" />
-              <span className="text-[11px] text-[#7A7F8A]">Upcoming</span>
+              <span className="inline-block h-2 w-2 rounded-full bg-[#1677FF]" />
+              <span className="text-[11px] text-[#4F5F73]">Upcoming</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="inline-block h-2 w-2 rounded-full bg-[#2A6090]" />
-              <span className="text-[11px] text-[#7A7F8A]">Past visit</span>
+              <span className="text-[11px] text-[#4F5F73]">Past visit</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="inline-block h-2 w-2 rounded-full bg-[#C03020]" />
-              <span className="text-[11px] text-[#7A7F8A]">Needs booking</span>
+              <span className="text-[11px] text-[#4F5F73]">Needs booking</span>
             </div>
           </div>
         </div>
 
         {/* Selected day details */}
         {selectedDay && selectedEvents.length > 0 && (
-          <div className="mt-4 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-5">
-            <h3 className="text-sm font-semibold text-[#1A1D2E] mb-3">
+          <div className="mt-4 rounded-2xl bg-white shadow-sm border border-[#E5EAF2] p-5">
+            <h3 className="text-sm font-semibold text-[#071832] mb-3">
               {new Date(selectedDay + "T00:00:00").toLocaleDateString("en-US", {
                 weekday: "long",
                 month: "long",
@@ -449,27 +449,27 @@ export default function CalendarViewPage() {
               {selectedEvents.map((evt, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0]"
+                  className="flex items-center gap-3 rounded-xl bg-[#F0F2F5] p-4 border border-[#E5EAF2]"
                 >
                   <span
                     className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${
                       evt.type === "upcoming"
-                        ? "bg-[#5C6B5C]"
+                        ? "bg-[#1677FF]"
                         : evt.type === "past"
                         ? "bg-[#2A6090]"
                         : "bg-[#C03020]"
                     }`}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-[#1A1D2E]">
+                    <div className="text-sm font-semibold text-[#071832]">
                       {evt.label}
                     </div>
-                    <div className="text-xs text-[#7A7F8A]">{evt.detail}</div>
+                    <div className="text-xs text-[#4F5F73]">{evt.detail}</div>
                   </div>
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
                       evt.type === "upcoming"
-                        ? "bg-[#5C6B5C]/15 text-[#5C6B5C]"
+                        ? "bg-[#1677FF]/15 text-[#1677FF]"
                         : evt.type === "past"
                         ? "bg-[#2A6090]/15 text-[#2A6090]"
                         : "bg-[#C03020]/15 text-[#C03020]"
@@ -488,8 +488,8 @@ export default function CalendarViewPage() {
         )}
 
         {selectedDay && selectedEvents.length === 0 && (
-          <div className="mt-4 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-5">
-            <p className="text-sm text-[#7A7F8A]">
+          <div className="mt-4 rounded-2xl bg-white shadow-sm border border-[#E5EAF2] p-5">
+            <p className="text-sm text-[#4F5F73]">
               No appointments on{" "}
               {new Date(selectedDay + "T00:00:00").toLocaleDateString("en-US", {
                 weekday: "long",
@@ -500,13 +500,13 @@ export default function CalendarViewPage() {
           </div>
         )}
         {/* Availability preferences */}
-        <div data-tour="availability" className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-5 sm:p-6">
-          <h2 className="text-base font-semibold text-[#1A1D2E] mb-1">Your Availability</h2>
-          <p className="text-xs text-[#7A7F8A] mb-5">Tell Kate when you&apos;re available so she books at the right times.</p>
+        <div data-tour="availability" className="mt-8 rounded-2xl bg-white shadow-sm border border-[#E5EAF2] p-5 sm:p-6">
+          <h2 className="text-base font-semibold text-[#071832] mb-1">Your Availability</h2>
+          <p className="text-xs text-[#4F5F73] mb-5">Tell Kate when you&apos;re available so she books at the right times.</p>
 
           <div className="space-y-5">
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-2">Preferred Days</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-2">Preferred Days</label>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day) => {
                   const short = day.slice(0, 3);
@@ -522,7 +522,7 @@ export default function CalendarViewPage() {
                         });
                       }}
                       className={`rounded-lg px-2 py-2.5 text-sm font-medium transition ${
-                        isSelected ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                        isSelected ? "bg-[#1677FF] text-white" : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2]"
                       }`}
                     >
                       {short}
@@ -533,7 +533,7 @@ export default function CalendarViewPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-2">Preferred Times</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-2">Preferred Times</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {[
                   { value: "morning", label: "Morning (8–12)" },
@@ -547,7 +547,7 @@ export default function CalendarViewPage() {
                       type="button"
                       onClick={() => setAvailTime(time.value)}
                       className={`rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                        isSelected ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                        isSelected ? "bg-[#1677FF] text-white" : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2]"
                       }`}
                     >
                       {time.label}
@@ -558,13 +558,13 @@ export default function CalendarViewPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">Anything Else Kate Should Know?</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-1.5">Anything Else Kate Should Know?</label>
               <input
                 type="text"
                 value={availNotes}
                 onChange={(e) => setAvailNotes(e.target.value)}
                 placeholder="e.g., No appointments before 10am, avoid Wednesdays"
-                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               />
             </div>
 
@@ -592,7 +592,7 @@ export default function CalendarViewPage() {
               }}
               disabled={availSaving}
               className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               {availSaving ? "Saving..." : availSaved ? "Saved!" : "Save Availability"}
             </button>

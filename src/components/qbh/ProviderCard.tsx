@@ -75,7 +75,7 @@ function getHistoryBadgeClassName(event: BookingHistoryEvent): string {
   }
 
   if (event.event_type === "cancelled") {
-    return "bg-[#F0F2F5] text-[#7A7F8A] ring-1 ring-[#EBEDF0]";
+    return "bg-[#F0F2F5] text-[#4F5F73] ring-1 ring-[#E5EAF2]";
   }
 
   if (event.event_type === "failed") {
@@ -110,7 +110,7 @@ function getActionLabel(action: SystemActionItem | null): string {
 
 function getActionBadgeClassName(action: SystemActionItem | null): string {
   if (!action) {
-    return "bg-[#F0F2F5] text-[#7A7F8A] ring-1 ring-[#EBEDF0]";
+    return "bg-[#F0F2F5] text-[#4F5F73] ring-1 ring-[#E5EAF2]";
   }
 
   if (action.type === "REVIEW_BROKEN_STATE" || action.status === "BLOCKED") {
@@ -129,7 +129,7 @@ function getActionBadgeClassName(action: SystemActionItem | null): string {
     return "bg-sky-500/15 text-sky-400 ring-1 ring-sky-500/30";
   }
 
-  return "bg-[#F0F2F5] text-[#7A7F8A] ring-1 ring-[#EBEDF0]";
+  return "bg-[#F0F2F5] text-[#4F5F73] ring-1 ring-[#E5EAF2]";
 }
 
 function getState(snapshot: ProviderDashboardSnapshot) {
@@ -439,17 +439,17 @@ export default function ProviderCard({
   }
 
   const detailInputClass =
-    "w-full rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]";
+    "w-full rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]";
 
   return (
-    <article className="rounded-2xl bg-white p-5 border border-[#EBEDF0] shadow-sm">
+    <article className="rounded-2xl bg-white p-5 border border-[#E5EAF2] shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-[#1A1D2E]">
+          <h3 className="text-lg font-semibold text-[#071832]">
             {provider.name}
           </h3>
 
-          <div className="mt-1 text-sm text-[#7A7F8A]">
+          <div className="mt-1 text-sm text-[#4F5F73]">
             {isPharmacy
               ? "Pharmacy"
               : provider.doctor_name
@@ -467,7 +467,7 @@ export default function ProviderCard({
           <button
             type="button"
             onClick={() => setShowDetails(!showDetails)}
-            className="rounded-lg px-2.5 py-1 text-xs font-medium text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
+            className="rounded-lg px-2.5 py-1 text-xs font-medium text-[#4F5F73] hover:bg-[#F0F2F5] transition"
           >
             {showDetails ? "Close" : "Details"}
           </button>
@@ -480,13 +480,13 @@ export default function ProviderCard({
       </div>
 
       {showDetails && (
-        <div className="mt-4 rounded-xl bg-[#F0F2F5] p-4 border border-[#EBEDF0]">
-          <div className="text-xs font-semibold uppercase tracking-wider text-[#7A7F8A]">
+        <div className="mt-4 rounded-xl bg-[#F0F2F5] p-4 border border-[#E5EAF2]">
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#4F5F73]">
             Provider details
           </div>
           <div className="mt-3 flex flex-col gap-2.5">
             <div>
-              <label className="mb-1 block text-xs text-[#7A7F8A]">Display name</label>
+              <label className="mb-1 block text-xs text-[#4F5F73]">Display name</label>
               <input
                 type="text"
                 value={editDisplayName}
@@ -496,7 +496,7 @@ export default function ProviderCard({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[#7A7F8A]">Office phone number</label>
+              <label className="mb-1 block text-xs text-[#4F5F73]">Office phone number</label>
               <input
                 type="tel"
                 value={editPhone}
@@ -506,7 +506,7 @@ export default function ProviderCard({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[#7A7F8A]">Doctor&apos;s name</label>
+              <label className="mb-1 block text-xs text-[#4F5F73]">Doctor&apos;s name</label>
               <input
                 type="text"
                 value={editDoctorName}
@@ -516,7 +516,7 @@ export default function ProviderCard({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[#7A7F8A]">Provider Type</label>
+              <label className="mb-1 block text-xs text-[#4F5F73]">Provider Type</label>
               <div className="flex flex-wrap gap-1.5 mb-1.5">
                 {["Primary Care", "Therapist", "Dentist", "Eye Care", "Dermatology", "OB/GYN", "Specialist"].map((opt) => (
                   <button
@@ -525,8 +525,8 @@ export default function ProviderCard({
                     onClick={() => setEditSpecialty(opt)}
                     className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
                       editSpecialty === opt
-                        ? "bg-[#5C6B5C] text-white"
-                        : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                        ? "bg-[#1677FF] text-white"
+                        : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2]"
                     }`}
                   >
                     {opt}
@@ -542,7 +542,7 @@ export default function ProviderCard({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-[#7A7F8A]">Notes</label>
+              <label className="mb-1 block text-xs text-[#4F5F73]">Notes</label>
               <input
                 type="text"
                 value={editNotes}
@@ -558,21 +558,21 @@ export default function ProviderCard({
               onClick={saveDetails}
               disabled={savingDetails}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               {savingDetails ? "Saving..." : detailsSaved ? "Saved!" : "Save"}
             </button>
             <button
               type="button"
               onClick={() => setShowDetails(false)}
-              className="rounded-lg px-3 py-1.5 text-xs text-[#7A7F8A] hover:bg-white"
+              className="rounded-lg px-3 py-1.5 text-xs text-[#4F5F73] hover:bg-white"
             >
               Cancel
             </button>
           </div>
 
           {/* Recurring toggle */}
-          <div className="mt-3 pt-3 border-t border-[#EBEDF0]">
+          <div className="mt-3 pt-3 border-t border-[#E5EAF2]">
             {provider.confirmed_status === "recurring" ? (
               <button
                 onClick={async () => {
@@ -597,7 +597,7 @@ export default function ProviderCard({
                   });
                   window.location.reload();
                 }}
-                className="text-xs text-[#7A7F8A] hover:text-[#1A1D2E]"
+                className="text-xs text-[#4F5F73] hover:text-[#071832]"
               >
                 Mark as recurring — no booking needed
               </button>
@@ -606,22 +606,22 @@ export default function ProviderCard({
         </div>
       )}
 
-      <p className="mt-4 text-sm text-[#7A7F8A]">{state.description}</p>
+      <p className="mt-4 text-sm text-[#4F5F73]">{state.description}</p>
 
       {/* "Also assign to..." — share a provider across care recipients.
           Shown only when the user actually has additional recipients. */}
       {careRecipients.length > 0 && (
-        <div className="mt-3 rounded-xl bg-[#F4F5F7] border border-[#EBEDF0] px-3 py-2">
+        <div className="mt-3 rounded-xl bg-[#F4F5F7] border border-[#E5EAF2] px-3 py-2">
           <button
             type="button"
             onClick={() => setShowAssign((prev) => !prev)}
-            className="flex w-full items-center justify-between text-xs text-[#7A7F8A] hover:text-[#1A1D2E]"
+            className="flex w-full items-center justify-between text-xs text-[#4F5F73] hover:text-[#071832]"
           >
             <span>
               <span className="font-semibold">Assigned to:</span>{" "}
               {assigned.length > 0 ? assigned.join(", ") : "no one yet"}
             </span>
-            <span className="text-[#5C6B5C] font-semibold">
+            <span className="text-[#1677FF] font-semibold">
               {showAssign ? "Done" : "Edit"}
             </span>
           </button>
@@ -642,8 +642,8 @@ export default function ProviderCard({
                     }}
                     className={`rounded-full px-3 py-1 text-xs font-medium border transition ${
                       checked
-                        ? "bg-[#5C6B5C] text-white border-[#5C6B5C]"
-                        : "bg-white text-[#7A7F8A] border-[#EBEDF0] hover:border-[#5C6B5C]"
+                        ? "bg-[#1677FF] text-white border-[#1677FF]"
+                        : "bg-white text-[#4F5F73] border-[#E5EAF2] hover:border-[#1677FF]"
                     }`}
                   >
                     {checked ? "✓ " : ""}{name}
@@ -670,42 +670,42 @@ export default function ProviderCard({
             <div className="mb-2 space-y-1.5">
               {providerNotes.slice(0, 3).map((note) => (
                 <div key={note.id} className="group flex items-start gap-2 rounded-lg bg-[#F0F2F5] px-3 py-2">
-                  <FileText size={12} className="mt-0.5 shrink-0 text-[#7A7F8A]" />
+                  <FileText size={12} className="mt-0.5 shrink-0 text-[#4F5F73]" />
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs font-medium text-[#1A1D2E]">{note.title}</span>
-                    <p className="text-xs text-[#7A7F8A] line-clamp-1">{note.body}</p>
+                    <span className="text-xs font-medium text-[#071832]">{note.title}</span>
+                    <p className="text-xs text-[#4F5F73] line-clamp-1">{note.body}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleDeleteNote(note.id)}
-                    className="shrink-0 p-0.5 text-[#B0B4BC] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
+                    className="shrink-0 p-0.5 text-[#4F5F73] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
                   >
                     <Trash2 size={10} />
                   </button>
                 </div>
               ))}
               {providerNotes.length > 3 && (
-                <a href="/notes" className="text-xs text-[#5C6B5C] hover:underline">
+                <a href="/notes" className="text-xs text-[#1677FF] hover:underline">
                   View all {providerNotes.length} notes
                 </a>
               )}
             </div>
           )}
           {showAddNote ? (
-            <div className="rounded-xl bg-[#F0F2F5] p-3 border border-[#EBEDF0]">
+            <div className="rounded-xl bg-[#F0F2F5] p-3 border border-[#E5EAF2]">
               <input
                 type="text"
                 value={noteTitle}
                 onChange={(e) => setNoteTitle(e.target.value)}
                 placeholder="Note title"
-                className="w-full rounded-lg bg-white px-2.5 py-1.5 text-xs text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] mb-2"
+                className="w-full rounded-lg bg-white px-2.5 py-1.5 text-xs text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF] mb-2"
               />
               <input
                 type="text"
                 value={noteBody}
                 onChange={(e) => setNoteBody(e.target.value)}
                 placeholder="Write your note..."
-                className="w-full rounded-lg bg-white px-2.5 py-1.5 text-xs text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] mb-2"
+                className="w-full rounded-lg bg-white px-2.5 py-1.5 text-xs text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF] mb-2"
               />
               <div className="flex gap-2">
                 <button
@@ -713,14 +713,14 @@ export default function ProviderCard({
                   onClick={handleSaveNote}
                   disabled={savingNote || !noteTitle.trim() || !noteBody.trim()}
                   className="rounded-lg px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
-                  style={{ backgroundColor: "#5C6B5C" }}
+                  style={{ backgroundColor: "#1677FF" }}
                 >
                   {savingNote ? "..." : "Save"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddNote(false)}
-                  className="rounded-lg px-3 py-1 text-xs text-[#7A7F8A] hover:bg-white"
+                  className="rounded-lg px-3 py-1 text-xs text-[#4F5F73] hover:bg-white"
                 >
                   Cancel
                 </button>
@@ -730,7 +730,7 @@ export default function ProviderCard({
             <button
               type="button"
               onClick={() => setShowAddNote(true)}
-              className="flex items-center gap-1 text-xs font-medium text-[#5C6B5C] hover:underline"
+              className="flex items-center gap-1 text-xs font-medium text-[#1677FF] hover:underline"
             >
               <Plus size={12} />
               Add note
@@ -740,13 +740,13 @@ export default function ProviderCard({
       )}
 
       {currentAction ? (
-        <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 ring-1 ring-[#EBEDF0]">
+        <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 ring-1 ring-[#E5EAF2]">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-sm font-medium text-[#1A1D2E]">
+              <div className="text-sm font-medium text-[#071832]">
                 Current system action
               </div>
-              <div className="mt-1 text-sm text-[#7A7F8A]">
+              <div className="mt-1 text-sm text-[#4F5F73]">
                 {currentActionLabel}
                 {currentAction.status === "BLOCKED"
                   ? currentAction.userInputRequired
@@ -760,7 +760,7 @@ export default function ProviderCard({
               </div>
 
               {currentAction.blockingReason ? (
-                <div className="mt-1 text-xs text-[#B0B4BC]">
+                <div className="mt-1 text-xs text-[#4F5F73]">
                   Reason: {currentAction.blockingReason}
                 </div>
               ) : null}
@@ -776,9 +776,9 @@ export default function ProviderCard({
       ) : null}
 
       {nextAction && state.key !== "recurring" ? (
-        <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 ring-1 ring-[#EBEDF0]">
-          <div className="text-sm font-medium text-[#1A1D2E]">Next action</div>
-          <div className="mt-1 text-sm text-[#7A7F8A]">
+        <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 ring-1 ring-[#E5EAF2]">
+          <div className="text-sm font-medium text-[#071832]">Next action</div>
+          <div className="mt-1 text-sm text-[#4F5F73]">
             {getActionLabel(nextAction)}
             {nextAction.userInputRequired
               ? " — this requires a user-triggered step."
@@ -800,14 +800,14 @@ export default function ProviderCard({
 
       {snapshot.latestNote?.summary && state.key !== "upcoming" ? (
         <div className="mt-4 rounded-xl bg-[#F0F2F5] px-4 py-3 space-y-2">
-          <div className="text-sm text-[#1A1D2E]">{snapshot.latestNote.summary}</div>
+          <div className="text-sm text-[#071832]">{snapshot.latestNote.summary}</div>
           {snapshot.latestNote.follow_up_notes && (
-            <div className="text-xs text-[#7A7F8A]">
+            <div className="text-xs text-[#4F5F73]">
               <span className="font-semibold">Follow-up:</span> {snapshot.latestNote.follow_up_notes}
             </div>
           )}
           {snapshot.latestNote.office_instructions && (
-            <div className="text-xs text-[#7A7F8A]">
+            <div className="text-xs text-[#4F5F73]">
               <span className="font-semibold">Office notes:</span> {snapshot.latestNote.office_instructions}
             </div>
           )}
@@ -821,13 +821,13 @@ export default function ProviderCard({
               onClick={handleIt}
               disabled={isSubmitting}
               className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               {isSubmitting ? "Starting..." : "Book with Kate"}
             </button>
             <a
               href={`/providers/${provider.id}`}
-              className="inline-flex items-center justify-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
+              className="inline-flex items-center justify-center rounded-xl border border-[#E5EAF2] px-4 py-2 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
             >
               View details
             </a>
@@ -840,7 +840,7 @@ export default function ProviderCard({
                 });
                 window.location.reload();
               }}
-              className="inline-flex items-center justify-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
+              className="inline-flex items-center justify-center rounded-xl border border-[#E5EAF2] px-4 py-2 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
             >
               Already recurring
             </button>
@@ -857,21 +857,21 @@ export default function ProviderCard({
               });
               window.location.reload();
             }}
-            className="inline-flex items-center justify-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
+            className="inline-flex items-center justify-center rounded-xl border border-[#E5EAF2] px-4 py-2 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
           >
             Remove recurring status
           </button>
         )}
 
         {showAttemptId ? (
-          <div className="inline-flex items-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm text-[#7A7F8A]">
+          <div className="inline-flex items-center rounded-xl border border-[#E5EAF2] px-4 py-2 text-sm text-[#4F5F73]">
             Attempt #{snapshot.latestAttempt.id}
           </div>
         ) : null}
 
         {showAdjustButton ? (
           <>
-            <div className="inline-flex items-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm text-[#7A7F8A]">
+            <div className="inline-flex items-center rounded-xl border border-[#E5EAF2] px-4 py-2 text-sm text-[#4F5F73]">
               {bs.displayTime ||
                 formatEventDateTime(bs.appointmentStart!, bs.timezone)}
             </div>
@@ -880,7 +880,7 @@ export default function ProviderCard({
               onClick={handleAdjust}
               disabled={isSubmitting}
               className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               {isSubmitting ? "Starting..." : "Adjust"}
             </button>
@@ -889,22 +889,22 @@ export default function ProviderCard({
       </div>
 
       {history.length > 0 ? (
-        <div className="mt-5 rounded-2xl bg-[#F0F2F5] p-4 ring-1 ring-[#EBEDF0]">
-          <div className="text-sm font-medium text-[#1A1D2E]">History</div>
+        <div className="mt-5 rounded-2xl bg-[#F0F2F5] p-4 ring-1 ring-[#E5EAF2]">
+          <div className="text-sm font-medium text-[#071832]">History</div>
 
           <div className="mt-3 space-y-3">
             {history.map((event, index) => (
               <div
                 key={event.id}
-                className="rounded-xl bg-white shadow-sm px-4 py-3 ring-1 ring-[#EBEDF0]"
+                className="rounded-xl bg-white shadow-sm px-4 py-3 ring-1 ring-[#E5EAF2]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium text-[#1A1D2E]">
+                    <div className="text-sm font-medium text-[#071832]">
                       {getHistoryLabel(event)}
                     </div>
 
-                    <div className="mt-1 text-sm text-[#7A7F8A]">
+                    <div className="mt-1 text-sm text-[#4F5F73]">
                       {event.event_type === "failed" &&
                       index === 0 &&
                       snapshot.latestNote?.summary
@@ -912,7 +912,7 @@ export default function ProviderCard({
                         : getHistoryDescription(event)}
                     </div>
 
-                    <div className="mt-1 text-xs text-[#B0B4BC]">
+                    <div className="mt-1 text-xs text-[#4F5F73]">
                       Recorded{" "}
                       {formatEventDateTime(event.occurred_at, event.timezone)}
                     </div>
@@ -933,12 +933,12 @@ export default function ProviderCard({
       ) : null}
 
       {showCalendarPrompt ? (
-        <div className="mt-4 rounded-2xl bg-[#F0F2F5] p-4 ring-1 ring-[#EBEDF0]">
-          <div className="text-sm font-medium text-[#1A1D2E]">
+        <div className="mt-4 rounded-2xl bg-[#F0F2F5] p-4 ring-1 ring-[#E5EAF2]">
+          <div className="text-sm font-medium text-[#071832]">
             Connect Google Calendar for a better booking experience
           </div>
 
-          <div className="mt-1 text-sm text-[#7A7F8A]">
+          <div className="mt-1 text-sm text-[#4F5F73]">
             QBH can avoid conflicts and use your real availability before it
             places booking calls. You can also skip this for now and continue.
           </div>
@@ -946,7 +946,7 @@ export default function ProviderCard({
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={calendarConnectHref}
-              className="inline-flex items-center justify-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
+              className="inline-flex items-center justify-center rounded-xl border border-[#E5EAF2] px-4 py-2 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
             >
               Connect Google Calendar
             </Link>
@@ -957,7 +957,7 @@ export default function ProviderCard({
               }
               disabled={isSubmitting}
               className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               {isSubmitting
                 ? "Starting..."
@@ -969,7 +969,7 @@ export default function ProviderCard({
             <button
               onClick={() => setShowCalendarPrompt(false)}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
+              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
             >
               Cancel
             </button>

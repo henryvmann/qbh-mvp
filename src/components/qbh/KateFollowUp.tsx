@@ -45,13 +45,13 @@ export default function KateFollowUp() {
       <div className="flex items-center gap-2 mb-3">
         <div
           className="flex h-6 w-6 items-center justify-center rounded-md"
-          style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+          style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
         >
           <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
             <text x="7" y="11" textAnchor="middle" fontSize="11" fontWeight="700" fontFamily="system-ui" fill="#D8E8F5">K</text>
           </svg>
         </div>
-        <span className="text-xs font-bold uppercase tracking-widest text-[#7A7F8A]">
+        <span className="text-xs font-bold uppercase tracking-widest text-[#4F5F73]">
           Quick Questions from Kate
         </span>
       </div>
@@ -60,9 +60,9 @@ export default function KateFollowUp() {
         {pending.map((q) => (
           <div
             key={q.id}
-            className="rounded-xl bg-white border border-[#EBEDF0] shadow-sm p-4"
+            className="rounded-xl bg-white border border-[#E5EAF2] shadow-sm p-4"
           >
-            <div className="text-sm font-medium text-[#1A1D2E]">{q.question}</div>
+            <div className="text-sm font-medium text-[#071832]">{q.question}</div>
 
             {q.type === "choice" && q.options ? (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -70,7 +70,7 @@ export default function KateFollowUp() {
                   <button
                     key={opt}
                     onClick={() => saveAnswer(q.id, opt)}
-                    className="rounded-lg border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#1A1D2E] hover:bg-[#E8EBF0] transition"
+                    className="rounded-lg border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#071832] hover:bg-[#E8EBF0] transition"
                   >
                     {opt}
                   </button>
@@ -83,7 +83,7 @@ export default function KateFollowUp() {
                   value={answers[q.id] || ""}
                   onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
                   placeholder="Enter here..."
-                  className="flex-1 rounded-lg bg-[#F0F2F5] border border-[#EBEDF0] px-3 py-1.5 text-xs text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="flex-1 rounded-lg bg-[#F0F2F5] border border-[#E5EAF2] px-3 py-1.5 text-xs text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && answers[q.id]?.trim()) {
                       saveAnswer(q.id, answers[q.id].trim());
@@ -95,7 +95,7 @@ export default function KateFollowUp() {
                     if (answers[q.id]?.trim()) saveAnswer(q.id, answers[q.id].trim());
                   }}
                   className="rounded-lg px-3 py-1.5 text-xs font-medium text-white"
-                  style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+                  style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
                 >
                   Save
                 </button>

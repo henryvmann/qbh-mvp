@@ -120,7 +120,7 @@ const C = {
   cream: "#F0EDE8",
   muted: "rgba(240, 237, 232, 0.55)",
   mutedLight: "rgba(240, 237, 232, 0.4)",
-  olive: "#5C6B5C",
+  olive: "#1677FF",
   lavender: "#9078C8",
   skyBlue: "#B0D4F0",
   tagBg: "rgba(255, 255, 255, 0.1)",

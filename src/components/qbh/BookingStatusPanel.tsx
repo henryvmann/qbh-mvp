@@ -12,7 +12,7 @@ function badge(kind: "good" | "warn" | "neutral") {
     return `${base} bg-emerald-500/15 text-emerald-400 ring-emerald-500/30`;
   if (kind === "warn")
     return `${base} bg-amber-500/15 text-amber-400 ring-amber-500/30`;
-  return `${base} bg-[#F0F2F5] text-[#7A7F8A] ring-[#EBEDF0]`;
+  return `${base} bg-[#F0F2F5] text-[#4F5F73] ring-[#E5EAF2]`;
 }
 
 function labelForAttemptStatus(status: string): string {
@@ -49,8 +49,8 @@ export default function BookingStatusPanel({ snapshot }: Props) {
     <div className="mt-4 rounded-2xl bg-[#F0F2F5] p-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-[#1A1D2E]">{headline}</div>
-          <div className="mt-1 text-sm text-[#7A7F8A]">
+          <div className="text-sm font-semibold text-[#071832]">{headline}</div>
+          <div className="mt-1 text-sm text-[#4F5F73]">
             {ev ? (
               <span>
                 {formatDateRange(ev.start_at, ev.end_at, ev.timezone ?? undefined)}
@@ -58,7 +58,7 @@ export default function BookingStatusPanel({ snapshot }: Props) {
             ) : attempt ? (
               <span>
                 Latest attempt:{" "}
-                <span className="font-medium text-[#1A1D2E]">
+                <span className="font-medium text-[#071832]">
                   {labelForAttemptStatus(attempt.status)}
                 </span>
               </span>
@@ -71,7 +71,7 @@ export default function BookingStatusPanel({ snapshot }: Props) {
         <span className={badge(pill.kind)}>{pill.text}</span>
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs text-[#B0B4BC]">
+      <div className="mt-3 flex items-center justify-between text-xs text-[#4F5F73]">
         <div>{attempt ? <span>Attempt #{attempt.id}</span> : <span>—</span>}</div>
         <div>{ev ? <span>Calendar updated</span> : <span>System of record: Supabase</span>}</div>
       </div>

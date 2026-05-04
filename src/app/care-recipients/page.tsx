@@ -93,14 +93,14 @@ export default function CareRecipientsPage() {
       <div className="mx-auto max-w-3xl px-6 pt-8 pb-20">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">Care Recipients</h1>
-            <p className="mt-1 text-sm text-[#7A7F8A]">People you manage healthcare for</p>
+            <h1 className="font-serif text-2xl tracking-tight text-[#071832]">Care Recipients</h1>
+            <p className="mt-1 text-sm text-[#4F5F73]">People you manage healthcare for</p>
           </div>
           <button
             type="button"
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white"
-            style={{ backgroundColor: "#5C6B5C" }}
+            style={{ backgroundColor: "#1677FF" }}
           >
             <Plus size={14} /> Add Person
           </button>
@@ -108,22 +108,22 @@ export default function CareRecipientsPage() {
 
         {/* Add new recipient */}
         {showAdd && (
-          <div className="mt-4 rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-5">
-            <div className="text-sm font-semibold text-[#1A1D2E] mb-3">Add a Person</div>
+          <div className="mt-4 rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5">
+            <div className="text-sm font-semibold text-[#071832] mb-3">Add a Person</div>
             <div className="space-y-3">
               <input
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Name (e.g., Scarlett, Mom, Dad)"
-                className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 autoFocus
               />
               <div className="flex gap-3">
                 <select
                   value={newRelationship}
                   onChange={(e) => setNewRelationship(e.target.value)}
-                  className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 >
                   <option value="Self">Self</option>
                   <option value="Child">Child</option>
@@ -135,7 +135,7 @@ export default function CareRecipientsPage() {
                   type="date"
                   value={newDob}
                   onChange={(e) => setNewDob(e.target.value)}
-                  className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
               </div>
               <div className="flex gap-2">
@@ -148,11 +148,11 @@ export default function CareRecipientsPage() {
                     setNewName(""); setNewRelationship("Other"); setNewDob(""); setShowAdd(false);
                   }}
                   className="rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                  style={{ backgroundColor: "#5C6B5C" }}
+                  style={{ backgroundColor: "#1677FF" }}
                 >
                   {saving ? "Saving..." : "Add"}
                 </button>
-                <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl px-4 py-2 text-xs text-[#7A7F8A]">
+                <button type="button" onClick={() => setShowAdd(false)} className="rounded-xl px-4 py-2 text-xs text-[#4F5F73]">
                   Cancel
                 </button>
               </div>
@@ -167,7 +167,7 @@ export default function CareRecipientsPage() {
             const isEditing = editingId === r.id;
 
             return (
-              <div key={r.id} className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm overflow-hidden">
+              <div key={r.id} className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm overflow-hidden">
                 <div className="p-5">
                   {isEditing ? (
                     <div className="space-y-3">
@@ -175,14 +175,14 @@ export default function CareRecipientsPage() {
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="w-full rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                        className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                         autoFocus
                       />
                       <div className="flex gap-3">
                         <select
                           value={editRelationship}
                           onChange={(e) => setEditRelationship(e.target.value)}
-                          className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                          className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                         >
                           <option value="Self">Self</option>
                           <option value="Child">Child</option>
@@ -194,7 +194,7 @@ export default function CareRecipientsPage() {
                           type="date"
                           value={editDob}
                           onChange={(e) => setEditDob(e.target.value)}
-                          className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                          className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                         />
                       </div>
                       <div className="flex gap-2">
@@ -207,11 +207,11 @@ export default function CareRecipientsPage() {
                             setEditingId(null);
                           }}
                           className="rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                          style={{ backgroundColor: "#5C6B5C" }}
+                          style={{ backgroundColor: "#1677FF" }}
                         >
                           <Check size={12} className="inline mr-1" />{saving ? "Saving..." : "Save"}
                         </button>
-                        <button type="button" onClick={() => setEditingId(null)} className="rounded-xl px-4 py-2 text-xs text-[#7A7F8A]">
+                        <button type="button" onClick={() => setEditingId(null)} className="rounded-xl px-4 py-2 text-xs text-[#4F5F73]">
                           Cancel
                         </button>
                         <button
@@ -231,8 +231,8 @@ export default function CareRecipientsPage() {
                   ) : (
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="text-lg font-semibold text-[#1A1D2E]">{r.name}</div>
-                        <div className="text-xs text-[#7A7F8A] mt-0.5">
+                        <div className="text-lg font-semibold text-[#071832]">{r.name}</div>
+                        <div className="text-xs text-[#4F5F73] mt-0.5">
                           {r.relationship}
                           {r.dob && ` · Born ${new Date(r.dob).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
                         </div>
@@ -240,7 +240,7 @@ export default function CareRecipientsPage() {
                       <button
                         type="button"
                         onClick={() => { setEditingId(r.id); setEditName(r.name); setEditRelationship(r.relationship); setEditDob(r.dob || ""); }}
-                        className="text-xs text-[#5C6B5C] underline underline-offset-2"
+                        className="text-xs text-[#1677FF] underline underline-offset-2"
                       >
                         <Pencil size={12} className="inline mr-1" />Edit
                       </button>
@@ -250,7 +250,7 @@ export default function CareRecipientsPage() {
                   {/* Assigned providers */}
                   {!isEditing && (
                     <div className="mt-4">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-[#B0B4BC] mb-2">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-2">
                         Providers ({assignedProviders.length})
                       </div>
                       {assignedProviders.length > 0 ? (
@@ -262,14 +262,14 @@ export default function CareRecipientsPage() {
                                   <ProviderLink providerId={s.provider.id} providerName={s.provider.name} />
                                 </div>
                                 {s.provider.specialty && (
-                                  <div className="text-[10px] text-[#7A7F8A]">{s.provider.specialty}</div>
+                                  <div className="text-[10px] text-[#4F5F73]">{s.provider.specialty}</div>
                                 )}
                               </div>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-[#B0B4BC]">No providers assigned yet.</p>
+                        <p className="text-xs text-[#4F5F73]">No providers assigned yet.</p>
                       )}
 
                       {/* Add provider for this recipient */}
@@ -291,7 +291,7 @@ export default function CareRecipientsPage() {
                         <button
                           type="button"
                           onClick={() => setAddingProviderFor(r.id)}
-                          className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#5C6B5C] hover:underline underline-offset-2"
+                          className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#1677FF] hover:underline underline-offset-2"
                         >
                           <Plus size={12} /> Add Provider
                         </button>
@@ -305,9 +305,9 @@ export default function CareRecipientsPage() {
         </div>
 
         {recipients.length === 0 && (
-          <div className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#EBEDF0] text-center">
-            <p className="text-lg font-light text-[#1A1D2E]">No care recipients yet</p>
-            <p className="mt-1 text-sm text-[#7A7F8A]">Add the people you manage healthcare for.</p>
+          <div className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] text-center">
+            <p className="text-lg font-light text-[#071832]">No care recipients yet</p>
+            <p className="mt-1 text-sm text-[#4F5F73]">Add the people you manage healthcare for.</p>
           </div>
         )}
 

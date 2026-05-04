@@ -29,7 +29,7 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-5 min-h-[110px]">
+    <div className="flex flex-col items-center justify-center rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5 min-h-[110px]">
       <div className="text-3xl font-extralight" style={{ color }}>
         {value}
       </div>
@@ -57,26 +57,26 @@ function AchievementBadge({
     <div
       className={`flex items-center gap-3 rounded-xl border p-4 transition ${
         earned
-          ? "bg-white border-[#5C6B5C]/20 shadow-sm"
-          : "bg-[#F0F2F5] border-[#EBEDF0]"
+          ? "bg-white border-[#1677FF]/20 shadow-sm"
+          : "bg-[#F0F2F5] border-[#E5EAF2]"
       }`}
     >
-      <IconComp size={24} strokeWidth={1.5} color={earned ? "#5C6B5C" : "#7A7F8A"} />
+      <IconComp size={24} strokeWidth={1.5} color={earned ? "#1677FF" : "#4F5F73"} />
       <div className="flex-1 min-w-0">
-        <div className={`text-sm font-semibold ${earned ? "text-[#1A1D2E]" : "text-[#3A3F4B]"}`}>
+        <div className={`text-sm font-semibold ${earned ? "text-[#071832]" : "text-[#3A3F4B]"}`}>
           {title}
         </div>
-        <div className="text-xs text-[#7A7F8A]">{description}</div>
+        <div className="text-xs text-[#4F5F73]">{description}</div>
       </div>
       {earned ? (
         <span className="shrink-0">
-          <Check size={16} strokeWidth={2} color="#5C6B5C" />
+          <Check size={16} strokeWidth={2} color="#1677FF" />
         </span>
       ) : actionHref ? (
         <a
           href={actionHref}
           className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-          style={{ backgroundColor: "#5C6B5C" }}
+          style={{ backgroundColor: "#1677FF" }}
         >
           Go
         </a>
@@ -88,7 +88,7 @@ function AchievementBadge({
 function ProgressBar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   return (
-    <div className="h-2 w-full rounded-full bg-[#EBEDF0]">
+    <div className="h-2 w-full rounded-full bg-[#E5EAF2]">
       <div
         className="h-2 rounded-full transition-all duration-700"
         style={{ width: `${pct}%`, backgroundColor: color }}
@@ -163,26 +163,26 @@ export default function AnalyticsPage() {
     <PageShell>
       
       <div className="mx-auto max-w-2xl px-6 pt-8 pb-20">
-        <h1 className="font-serif text-2xl tracking-tight text-[#1A1D2E]">
+        <h1 className="font-serif text-2xl tracking-tight text-[#071832]">
           Your Progress
         </h1>
-        <p className="mt-1 text-sm text-[#7A7F8A]">
+        <p className="mt-1 text-sm text-[#4F5F73]">
           Track your health journey and celebrate milestones
         </p>
 
         {/* Stats grid */}
         <div data-tour="stats-grid" className="mt-6 grid grid-cols-3 gap-3">
-          <StatCard value={data.providerCount} label="Providers" color="#5C6B5C" />
+          <StatCard value={data.providerCount} label="Providers" color="#1677FF" />
           <StatCard value={data.bookedCount} label="Appointments" color="#2A6090" />
           <StatCard value={data.visitCount} label="Past Visits" color="#5C4A8A" />
         </div>
 
         {/* Kate's Health Summary */}
-        <div className="mt-6 rounded-2xl bg-[#5C6B5C]/5 border border-[#5C6B5C]/10 p-5">
-          <div className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">
+        <div className="mt-6 rounded-2xl bg-[#1677FF]/5 border border-[#1677FF]/10 p-5">
+          <div className="text-xs font-bold uppercase tracking-widest text-[#1677FF] mb-3">
             Your Health Summary
           </div>
-          <div className="space-y-2 text-sm text-[#1A1D2E]">
+          <div className="space-y-2 text-sm text-[#071832]">
             {data.providerCount === 0 ? (
               <p>You haven&apos;t added any providers yet. Start building your care team to get the most out of Quarterback.</p>
             ) : (
@@ -229,7 +229,7 @@ export default function AnalyticsPage() {
             <>
               {earned.length > 0 && (
                 <div data-tour="achievements" className="mt-6">
-                  <div className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">
+                  <div className="text-xs font-bold uppercase tracking-widest text-[#1677FF] mb-3">
                     Earned — {earned.length} of {achievements.length}
                   </div>
                   <div className="space-y-2">
@@ -242,7 +242,7 @@ export default function AnalyticsPage() {
 
               {outstanding.length > 0 && (
                 <div className="mt-6">
-                  <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">
+                  <div className="text-xs font-bold uppercase tracking-widest text-[#4F5F73] mb-3">
                     Still To Earn
                   </div>
                   <div className="space-y-2">

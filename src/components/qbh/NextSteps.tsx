@@ -62,7 +62,7 @@ export default function NextSteps() {
   return (
     <div className="mt-10 pb-8">
       <KatePageInsight />
-      <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-4 mt-6">
+      <div className="text-xs font-bold uppercase tracking-widest text-[#4F5F73] mb-4 mt-6">
         What To Do Next
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -70,10 +70,10 @@ export default function NextSteps() {
           <Link
             key={step.href}
             href={step.href}
-            className="rounded-2xl bg-white border border-[#EBEDF0] p-4 shadow-sm transition hover:shadow-md"
+            className="rounded-2xl bg-white border border-[#E5EAF2] p-4 shadow-sm transition hover:shadow-md"
           >
-            <div className="text-sm font-semibold text-[#1A1D2E]">{step.title}</div>
-            <div className="text-xs text-[#7A7F8A] mt-1">{step.description}</div>
+            <div className="text-sm font-semibold text-[#071832]">{step.title}</div>
+            <div className="text-xs text-[#4F5F73] mt-1">{step.description}</div>
           </Link>
         ))}
       </div>

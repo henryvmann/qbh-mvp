@@ -62,7 +62,7 @@ function DashboardInner() {
   if (!data) {
     return (
       <main className="min-h-screen flex items-center justify-center" style={{ background: BG }}>
-        <div className="text-center text-[#7A7F8A]">Setting up your dashboard...</div>
+        <div className="text-center text-[#4F5F73]">Setting up your dashboard...</div>
       </main>
     );
   }
@@ -89,7 +89,7 @@ function DashboardInner() {
 
         {/* ── Greeting ── */}
         <div className="pt-8 text-center">
-          <span className="text-sm" style={{ color: "#7A7F8A" }}>Hi, {userName || "there"}</span>
+          <span className="text-sm" style={{ color: "#4F5F73" }}>Hi, {userName || "there"}</span>
         </div>
 
         {/* ── Health Coordination Score ── */}
@@ -112,7 +112,7 @@ function DashboardInner() {
                 background: "linear-gradient(135deg, #4A6B4A, #5C7B5C)",
                 color: "#fff",
                 boxShadow: "0 2px 12px rgba(74,107,74,0.3)",
-              } : { color: "#B0B4BC" }}
+              } : { color: "#4F5F73" }}
             >
               <span className="text-[10px] font-medium">{day.abbrev}</span>
               <span className="text-sm font-semibold">{day.date}</span>
@@ -124,23 +124,23 @@ function DashboardInner() {
         <div className="mt-6 flex justify-center gap-8">
           <Link href="/providers" className="text-center group">
             <div className="text-2xl font-light text-[#4A6B4A] group-hover:scale-105 transition">{snapshots.length}</div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A]">Providers</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73]">Providers</div>
           </Link>
           {overdueCount > 0 && (
             <Link href="/visits" className="text-center group">
               <div className="text-2xl font-light text-[#E04030] group-hover:scale-105 transition">{overdueCount}</div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A]">Overdue</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73]">Overdue</div>
             </Link>
           )}
           <Link href="/visits" className="text-center group">
             <div className="text-2xl font-light text-[#D4A44C] group-hover:scale-105 transition">{upcomingCount}</div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A]">Upcoming</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73]">Upcoming</div>
           </Link>
         </div>
 
         {/* ── Provider List ── */}
         <div className="mt-8" data-wizard="providers">
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7A7F8A]">
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#4F5F73]">
             Your Providers
           </div>
           <div className="mt-3 rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 shadow-sm overflow-hidden">
@@ -149,7 +149,7 @@ function DashboardInner() {
               const booked = hasConfirmedBooking(s);
               const isLast = idx === snapshots.length - 1;
               const isPharmacy = s.provider.provider_type === "pharmacy";
-              const dotColor = isPharmacy ? "#B0B4BC" : overdue ? "#E04030" : booked ? "#D4A44C" : "#4A6B4A";
+              const dotColor = isPharmacy ? "#4F5F73" : overdue ? "#E04030" : booked ? "#D4A44C" : "#4A6B4A";
 
               return (
                 <div
@@ -167,12 +167,12 @@ function DashboardInner() {
                         <ProviderLink providerId={s.provider.id} providerName={s.provider.name} />
                       </span>
                       {s.provider.specialty && (
-                        <span className="ml-2 text-[10px] text-[#7A7F8A]">{s.provider.specialty}</span>
+                        <span className="ml-2 text-[10px] text-[#4F5F73]">{s.provider.specialty}</span>
                       )}
                     </div>
                   </div>
                   {isPharmacy ? (
-                    <span className="text-[10px] font-medium text-[#B0B4BC]">Pharmacy</span>
+                    <span className="text-[10px] font-medium text-[#4F5F73]">Pharmacy</span>
                   ) : overdue ? (
                     <HandleItButton userId={appUserId} providerId={s.provider.id} providerName={s.provider.name} label="Book" />
                   ) : booked ? (
@@ -184,7 +184,7 @@ function DashboardInner() {
               );
             })}
             {snapshots.length === 0 && (
-              <div className="px-5 py-8 text-center text-sm text-[#B0B4BC]">
+              <div className="px-5 py-8 text-center text-sm text-[#4F5F73]">
                 Add your first provider to get started.
               </div>
             )}
@@ -193,7 +193,7 @@ function DashboardInner() {
 
         {/* ── What To Do Next ── */}
         <div className="mt-10 pb-8" data-wizard="next-steps">
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7A7F8A] mb-3">
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#4F5F73] mb-3">
             What To Do Next
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -206,7 +206,7 @@ function DashboardInner() {
               <Link key={item.href} href={item.href}>
                 <div className="rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 p-4 transition hover:bg-white/70 hover:shadow-md group">
                   <div className="text-sm font-semibold text-[#1A2E1A]">{item.title}</div>
-                  <div className="text-xs mt-0.5 text-[#7A7F8A]">{item.desc}</div>
+                  <div className="text-xs mt-0.5 text-[#4F5F73]">{item.desc}</div>
                   <div className="mt-2 h-[2px] w-6 rounded-full bg-gradient-to-r from-[#0FA5A5] to-[#D4A44C] transition-all group-hover:w-10" />
                 </div>
               </Link>

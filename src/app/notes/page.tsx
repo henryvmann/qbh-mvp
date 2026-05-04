@@ -33,7 +33,7 @@ const NOTE_TYPE_COLORS: Record<string, string> = {
   question: "bg-blue-50 text-blue-600 ring-1 ring-blue-200",
   visit_note: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200",
   symptom: "bg-amber-50 text-amber-600 ring-1 ring-amber-200",
-  general: "bg-[#F0F2F5] text-[#7A7F8A] ring-1 ring-[#EBEDF0]",
+  general: "bg-[#F0F2F5] text-[#4F5F73] ring-1 ring-[#E5EAF2]",
 };
 
 function formatDate(iso: string): string {
@@ -144,18 +144,18 @@ export default function NotesPage() {
     return (
       <div
         key={note.id}
-        className="group flex items-start gap-3 rounded-xl bg-white px-4 py-3 border border-[#EBEDF0] shadow-sm"
+        className="group flex items-start gap-3 rounded-xl bg-white px-4 py-3 border border-[#E5EAF2] shadow-sm"
       >
-        <FileText size={16} className="mt-0.5 shrink-0 text-[#7A7F8A]" />
+        <FileText size={16} className="mt-0.5 shrink-0 text-[#4F5F73]" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-[#1A1D2E]">{note.title}</span>
+            <span className="text-sm font-medium text-[#071832]">{note.title}</span>
             <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${NOTE_TYPE_COLORS[note.note_type] || NOTE_TYPE_COLORS.general}`}>
               {NOTE_TYPE_LABELS[note.note_type] || "General"}
             </span>
           </div>
-          <p className="mt-1 text-sm text-[#7A7F8A] line-clamp-2">{note.body}</p>
-          <div className="mt-1 flex items-center gap-2 text-xs text-[#B0B4BC]">
+          <p className="mt-1 text-sm text-[#4F5F73] line-clamp-2">{note.body}</p>
+          <div className="mt-1 flex items-center gap-2 text-xs text-[#4F5F73]">
             <span>{formatDate(note.created_at)}</span>
             {showProvider && note.provider_id && (
               <span>- {getProviderName(note.provider_id)}</span>
@@ -165,7 +165,7 @@ export default function NotesPage() {
         <button
           type="button"
           onClick={() => handleDelete(note.id)}
-          className="shrink-0 p-1 text-[#B0B4BC] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
+          className="shrink-0 p-1 text-[#4F5F73] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
           aria-label="Delete note"
         >
           <Trash2 size={14} />
@@ -180,7 +180,7 @@ export default function NotesPage() {
         <TopNav />
         <main className="min-h-screen bg-[#F5F5F5]">
           <div className="mx-auto max-w-2xl px-6 py-8">
-            <div className="text-sm text-[#7A7F8A]">Loading notes...</div>
+            <div className="text-sm text-[#4F5F73]">Loading notes...</div>
           </div>
         </main>
       </>
@@ -193,12 +193,12 @@ export default function NotesPage() {
       <main className="min-h-screen bg-[#F5F5F5]">
         <div className="mx-auto max-w-2xl px-6 py-8">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-[#1A1D2E]">Notes</h1>
+            <h1 className="text-2xl font-semibold text-[#071832]">Notes</h1>
             <button
               type="button"
               onClick={() => setShowForm(!showForm)}
               className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
-              style={{ backgroundColor: "#5C6B5C" }}
+              style={{ backgroundColor: "#1677FF" }}
             >
               <Plus size={16} />
               Add Note
@@ -207,27 +207,27 @@ export default function NotesPage() {
 
           {/* Add Note Form */}
           {showForm && (
-            <div className="mt-4 rounded-2xl bg-white p-5 border border-[#EBEDF0] shadow-sm">
+            <div className="mt-4 rounded-2xl bg-white p-5 border border-[#E5EAF2] shadow-sm">
               <div className="flex flex-col gap-3">
                 <input
                   type="text"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="Note title"
-                  className="w-full rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
                 <textarea
                   value={formBody}
                   onChange={(e) => setFormBody(e.target.value)}
                   placeholder="Write your note..."
                   rows={3}
-                  className="w-full rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] resize-none"
+                  className="w-full rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF] resize-none"
                 />
                 <div className="flex gap-3">
                   <select
                     value={formProviderId}
                     onChange={(e) => setFormProviderId(e.target.value)}
-                    className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    className="flex-1 rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#071832] border border-[#E5EAF2] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                   >
                     <option value="">No provider (general)</option>
                     {providers.map((p) => (
@@ -237,7 +237,7 @@ export default function NotesPage() {
                   <select
                     value={formNoteType}
                     onChange={(e) => setFormNoteType(e.target.value)}
-                    className="rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#1A1D2E] border border-[#EBEDF0] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    className="rounded-lg bg-[#F0F2F5] px-3 py-2 text-sm text-[#071832] border border-[#E5EAF2] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                   >
                     <option value="general">General</option>
                     <option value="question">Question</option>
@@ -251,14 +251,14 @@ export default function NotesPage() {
                     onClick={handleSave}
                     disabled={saving || !formTitle.trim() || !formBody.trim()}
                     className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition hover:brightness-95"
-                    style={{ backgroundColor: "#5C6B5C" }}
+                    style={{ backgroundColor: "#1677FF" }}
                   >
                     {saving ? "Saving..." : "Save Note"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="rounded-lg px-4 py-2 text-sm text-[#7A7F8A] hover:bg-[#F0F2F5] transition"
+                    className="rounded-lg px-4 py-2 text-sm text-[#4F5F73] hover:bg-[#F0F2F5] transition"
                   >
                     Cancel
                   </button>
@@ -269,39 +269,39 @@ export default function NotesPage() {
 
           {notes.length === 0 && !showForm && (
             <div className="mt-8 text-center">
-              <MessageSquare size={40} className="mx-auto text-[#B0B4BC]" />
-              <p className="mt-3 text-sm text-[#7A7F8A]">No notes yet. Add your first note to keep track of questions, symptoms, or visit details.</p>
+              <MessageSquare size={40} className="mx-auto text-[#4F5F73]" />
+              <p className="mt-3 text-sm text-[#4F5F73]">No notes yet. Add your first note to keep track of questions, symptoms, or visit details.</p>
             </div>
           )}
 
           {/* By Provider */}
           {notesByProvider.size > 0 && (
             <div className="mt-8">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7A7F8A] mb-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#4F5F73] mb-3">
                 By Provider
               </h2>
               <div className="flex flex-col gap-2">
                 {Array.from(notesByProvider.entries()).map(([providerId, pNotes]) => {
                   const isExpanded = expandedProviders.has(providerId);
                   return (
-                    <div key={providerId} className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm overflow-hidden">
+                    <div key={providerId} className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm overflow-hidden">
                       <button
                         type="button"
                         onClick={() => toggleProvider(providerId)}
                         className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[#F0F2F5] transition"
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-[#1A1D2E]">
+                          <span className="text-sm font-medium text-[#071832]">
                             {getProviderName(providerId)}
                           </span>
-                          <span className="text-xs text-[#B0B4BC]">
+                          <span className="text-xs text-[#4F5F73]">
                             {pNotes.length} note{pNotes.length !== 1 ? "s" : ""}
                           </span>
                         </div>
                         {isExpanded ? (
-                          <ChevronDown size={16} className="text-[#7A7F8A]" />
+                          <ChevronDown size={16} className="text-[#4F5F73]" />
                         ) : (
-                          <ChevronRight size={16} className="text-[#7A7F8A]" />
+                          <ChevronRight size={16} className="text-[#4F5F73]" />
                         )}
                       </button>
                       {isExpanded && (
@@ -319,7 +319,7 @@ export default function NotesPage() {
           {/* General Notes */}
           {generalNotes.length > 0 && (
             <div className="mt-8">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7A7F8A] mb-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#4F5F73] mb-3">
                 General Notes
               </h2>
               <div className="flex flex-col gap-2">

@@ -179,7 +179,7 @@ export default function KateWidget({ userId }: KateWidgetProps) {
       <div className="fixed bottom-6 right-6 z-50">
         {/* Expanded panel */}
         <div
-          className={`absolute bottom-16 right-0 w-[360px] max-h-[480px] flex flex-col rounded-2xl border border-[#EBEDF0] bg-white shadow-2xl transition-all duration-300 ${
+          className={`absolute bottom-16 right-0 w-[360px] max-h-[480px] flex flex-col rounded-2xl border border-[#E5EAF2] bg-white shadow-2xl transition-all duration-300 ${
             open
               ? "translate-y-0 opacity-100 pointer-events-auto"
               : "translate-y-4 opacity-0 pointer-events-none"
@@ -188,14 +188,14 @@ export default function KateWidget({ userId }: KateWidgetProps) {
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
             <div>
-              <h3 className="text-base font-semibold text-[#1A1D2E]">Kate</h3>
-              <p className="text-xs text-[#7A7F8A]">
+              <h3 className="text-base font-semibold text-[#071832]">Kate</h3>
+              <p className="text-xs text-[#4F5F73]">
                 Here&apos;s what I&apos;m seeing
               </p>
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="rounded-lg p-1.5 text-[#7A7F8A] hover:bg-[#F0F2F5] hover:text-[#1A1D2E]"
+              className="rounded-lg p-1.5 text-[#4F5F73] hover:bg-[#F0F2F5] hover:text-[#071832]"
               aria-label="Close Kate panel"
             >
               <svg
@@ -216,17 +216,17 @@ export default function KateWidget({ userId }: KateWidgetProps) {
           <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-3">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#1677FF] border-t-transparent" />
               </div>
             ) : insights.length === 0 ? (
-              <p className="py-8 text-center text-sm text-[#7A7F8A]">
+              <p className="py-8 text-center text-sm text-[#4F5F73]">
                 No insights yet. Check back soon!
               </p>
             ) : (
               insights.map((insight) => (
                 <div
                   key={insight.id}
-                  className={`rounded-xl bg-white border border-[#EBEDF0] shadow-sm p-4 ${
+                  className={`rounded-xl bg-white border border-[#E5EAF2] shadow-sm p-4 ${
                     insight.priority === "high" ? "border-l-2 border-l-amber-400" : ""
                   }`}
                 >
@@ -235,16 +235,16 @@ export default function KateWidget({ userId }: KateWidgetProps) {
                       {insight.icon}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-[#1A1D2E]">
+                      <div className="text-sm font-medium text-[#071832]">
                         {insight.title}
                       </div>
-                      <div className="mt-1 text-xs text-[#7A7F8A]">
+                      <div className="mt-1 text-xs text-[#4F5F73]">
                         {insight.detail}
                       </div>
                       {insight.action && (
                         <a
                           href={insight.action.href}
-                          className="mt-2 inline-block text-xs font-medium text-[#5C6B5C] hover:underline"
+                          className="mt-2 inline-block text-xs font-medium text-[#1677FF] hover:underline"
                         >
                           {insight.action.label} &rarr;
                         </a>
@@ -260,8 +260,8 @@ export default function KateWidget({ userId }: KateWidgetProps) {
         {/* Floating avatar button */}
         <button
           onClick={() => setOpen((prev) => !prev)}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#5C6B5C]/50 focus:ring-offset-2"
-          style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+          className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#1677FF]/50 focus:ring-offset-2"
+          style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
           aria-label="Open Kate insights"
         >
           <span className="text-xl font-bold text-white leading-none">K</span>

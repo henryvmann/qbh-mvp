@@ -51,7 +51,7 @@ export default function TopNav() {
   return (
     <nav
       className="sticky top-0 z-30 border-b border-[#2A2F35]"
-      style={{ background: "#1A1D2E" }}
+      style={{ background: "#071832" }}
     >
       <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-3">
         {/* Hamburger menu — LEFT side */}
@@ -72,7 +72,7 @@ export default function TopNav() {
           </button>
 
           {menuOpen && (
-            <div className="absolute left-0 top-full mt-2 w-48 rounded-xl bg-[#1A1D2E] border border-white/10 shadow-2xl py-2 z-50">
+            <div className="absolute left-0 top-full mt-2 w-48 rounded-xl bg-[#071832] border border-white/10 shadow-2xl py-2 z-50">
               <button
                 onClick={() => setMenuOpen(false)}
                 className="absolute top-2 right-2 text-white/40 hover:text-white"

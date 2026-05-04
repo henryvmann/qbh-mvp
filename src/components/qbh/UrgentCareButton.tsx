@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { Phone, MapPin, AlertTriangle, Heart, X, Search, PhoneCall } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 
-const ACCENT = "#5C6B5C";
+const ACCENT = "#1677FF";
 const URGENT_RED = "#DC2626";
 
 type NearbyResult = {
@@ -124,7 +124,7 @@ export default function UrgentCareButton() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="absolute right-4 top-4 rounded-full p-1 text-[#B0B4BC] hover:bg-[#F0F2F5]"
+              className="absolute right-4 top-4 rounded-full p-1 text-[#4F5F73] hover:bg-[#F0F2F5]"
             >
               <X size={20} />
             </button>
@@ -133,7 +133,7 @@ export default function UrgentCareButton() {
               <>
                 <div className="flex items-center gap-2 mb-5">
                   <AlertTriangle size={20} className="text-red-600" />
-                  <h2 className="text-lg font-semibold text-[#1A1D2E]">
+                  <h2 className="text-lg font-semibold text-[#071832]">
                     Need help right now?
                   </h2>
                 </div>
@@ -162,7 +162,7 @@ export default function UrgentCareButton() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold" style={{ color: ACCENT }}>Find urgent care near you</div>
-                      <div className="text-xs text-[#7A7F8A]">Search and book immediately</div>
+                      <div className="text-xs text-[#4F5F73]">Search and book immediately</div>
                     </div>
                   </button>
 
@@ -178,7 +178,7 @@ export default function UrgentCareButton() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-[#5C4A8A]">Find your nearest ER</div>
-                      <div className="text-xs text-[#7A7F8A]">Search emergency rooms</div>
+                      <div className="text-xs text-[#4F5F73]">Search emergency rooms</div>
                     </div>
                   </button>
 
@@ -203,7 +203,7 @@ export default function UrgentCareButton() {
                       <div className="text-sm font-semibold text-[#2A6090]">
                         Ask Kate to help find care nearby
                       </div>
-                      <div className="text-xs text-[#7A7F8A]">Your care coordinator can help you find options</div>
+                      <div className="text-xs text-[#4F5F73]">Your care coordinator can help you find options</div>
                     </div>
                   </button>
                 </div>
@@ -214,27 +214,27 @@ export default function UrgentCareButton() {
                 <div className="flex items-center gap-2 mb-4">
                   <button
                     onClick={() => setView("menu")}
-                    className="rounded-lg p-1 text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                    className="rounded-lg p-1 text-[#4F5F73] hover:bg-[#F0F2F5]"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 19l-7-7 7-7" /></svg>
                   </button>
-                  <h2 className="text-lg font-semibold text-[#1A1D2E]">
+                  <h2 className="text-lg font-semibold text-[#071832]">
                     {searchType === "urgent_care" ? "Urgent Care" : "Emergency Rooms"}
                   </h2>
                 </div>
 
                 {searching ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#1677FF] border-t-transparent" />
                   </div>
                 ) : results.length === 0 ? (
                   <div className="py-8 text-center">
-                    <div className="text-sm text-[#7A7F8A]">No results found nearby.</div>
+                    <div className="text-sm text-[#4F5F73]">No results found nearby.</div>
                     <a
                       href={`https://www.google.com/maps/search/${searchType === "urgent_care" ? "urgent+care" : "emergency+room"}+near+me`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 inline-block text-sm font-medium text-[#5C6B5C] hover:underline"
+                      className="mt-3 inline-block text-sm font-medium text-[#1677FF] hover:underline"
                     >
                       Search on Google Maps instead →
                     </a>
@@ -249,21 +249,21 @@ export default function UrgentCareButton() {
                       return (
                         <div
                           key={result.name}
-                          className="rounded-xl border border-[#EBEDF0] bg-white p-4 shadow-sm"
+                          className="rounded-xl border border-[#E5EAF2] bg-white p-4 shadow-sm"
                         >
-                          <div className="text-sm font-semibold text-[#1A1D2E]">
+                          <div className="text-sm font-semibold text-[#071832]">
                             {result.name}
                           </div>
                           {result.address && (
-                            <div className="text-xs text-[#7A7F8A] mt-0.5">{result.address}</div>
+                            <div className="text-xs text-[#4F5F73] mt-0.5">{result.address}</div>
                           )}
                           {result.phone && (
-                            <div className="text-xs text-[#7A7F8A] mt-0.5">{result.phone}</div>
+                            <div className="text-xs text-[#4F5F73] mt-0.5">{result.phone}</div>
                           )}
 
                           <div className="mt-3 flex gap-2">
                             {isAdded ? (
-                              <span className="text-xs font-medium text-[#5C6B5C]">
+                              <span className="text-xs font-medium text-[#1677FF]">
                                 {isCalling ? "Kate is calling..." : "✓ Added — Kate is on it"}
                               </span>
                             ) : (
@@ -273,7 +273,7 @@ export default function UrgentCareButton() {
                                     onClick={() => addProviderAndCall(result)}
                                     disabled={!!addingProvider}
                                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-                                    style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+                                    style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
                                   >
                                     <PhoneCall size={12} />
                                     {isAdding ? "Adding..." : "Add & have Kate call"}
@@ -281,7 +281,7 @@ export default function UrgentCareButton() {
                                 )}
                                 <a
                                   href={`tel:${result.phone}`}
-                                  className="flex items-center gap-1.5 rounded-lg border border-[#EBEDF0] px-3 py-1.5 text-xs font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                                  className="flex items-center gap-1.5 rounded-lg border border-[#E5EAF2] px-3 py-1.5 text-xs font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
                                 >
                                   <Phone size={12} />
                                   Call directly
@@ -297,7 +297,7 @@ export default function UrgentCareButton() {
                       href={`https://www.google.com/maps/search/${searchType === "urgent_care" ? "urgent+care" : "emergency+room"}+near+me`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 block text-center text-xs text-[#7A7F8A] hover:underline"
+                      className="mt-2 block text-center text-xs text-[#4F5F73] hover:underline"
                     >
                       See more on Google Maps →
                     </a>

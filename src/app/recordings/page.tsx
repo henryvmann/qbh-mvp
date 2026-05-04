@@ -117,31 +117,31 @@ export default function RecordingsPage() {
     <PageShell>
       
       <div className="mx-auto max-w-3xl px-6 pt-10 pb-16">
-        <h1 className="font-serif text-3xl tracking-tight text-[#1A1D2E]">
+        <h1 className="font-serif text-3xl tracking-tight text-[#071832]">
           Visit Recordings
         </h1>
-        <p className="mt-2 max-w-2xl text-base text-[#7A7F8A]">
+        <p className="mt-2 max-w-2xl text-base text-[#4F5F73]">
           Record your doctor visits so you never forget what was discussed.
         </p>
 
         {/* How it works */}
-        <div className="mt-6 rounded-2xl bg-[#F0F2F5] border border-[#EBEDF0] p-5">
-          <div className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">How It Works</div>
+        <div className="mt-6 rounded-2xl bg-[#F0F2F5] border border-[#E5EAF2] p-5">
+          <div className="text-xs font-bold uppercase tracking-widest text-[#1677FF] mb-3">How It Works</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
-              <Mic size={20} className="mx-auto text-[#5C6B5C]" />
-              <div className="mt-2 text-sm font-medium text-[#1A1D2E]">Record</div>
-              <div className="text-xs text-[#7A7F8A]">Use your phone&apos;s voice memo during a visit or telehealth call</div>
+              <Mic size={20} className="mx-auto text-[#1677FF]" />
+              <div className="mt-2 text-sm font-medium text-[#071832]">Record</div>
+              <div className="text-xs text-[#4F5F73]">Use your phone&apos;s voice memo during a visit or telehealth call</div>
             </div>
             <div>
-              <Upload size={20} className="mx-auto text-[#5C6B5C]" />
-              <div className="mt-2 text-sm font-medium text-[#1A1D2E]">Upload</div>
-              <div className="text-xs text-[#7A7F8A]">Drop the audio file here — MP3, M4A, or WAV</div>
+              <Upload size={20} className="mx-auto text-[#1677FF]" />
+              <div className="mt-2 text-sm font-medium text-[#071832]">Upload</div>
+              <div className="text-xs text-[#4F5F73]">Drop the audio file here — MP3, M4A, or WAV</div>
             </div>
             <div>
-              <FileAudio size={20} className="mx-auto text-[#5C6B5C]" />
-              <div className="mt-2 text-sm font-medium text-[#1A1D2E]">Review</div>
-              <div className="text-xs text-[#7A7F8A]">Kate transcribes and summarizes the key points for you</div>
+              <FileAudio size={20} className="mx-auto text-[#1677FF]" />
+              <div className="mt-2 text-sm font-medium text-[#071832]">Review</div>
+              <div className="text-xs text-[#4F5F73]">Kate transcribes and summarizes the key points for you</div>
             </div>
           </div>
         </div>
@@ -166,15 +166,15 @@ export default function RecordingsPage() {
         )}
 
         {/* Upload area */}
-        <div className="mt-8 rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-8">
+        <div className="mt-8 rounded-2xl bg-white shadow-sm border border-[#E5EAF2] p-8">
           {/* Provider selector */}
           {providers.length > 0 && (
             <div className="mb-4">
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1.5">Which provider is this recording from?</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-1.5">Which provider is this recording from?</label>
               <select
                 value={selectedProvider}
                 onChange={(e) => setSelectedProvider(e.target.value)}
-                className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               >
                 <option value="">Select a provider (optional)</option>
                 {providers.map((p) => (
@@ -185,7 +185,7 @@ export default function RecordingsPage() {
           )}
 
           <div
-            className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F0F2F5] p-10 transition hover:border-[#5C6B5C] hover:bg-[#5C6B5C]/5 cursor-pointer"
+            className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F0F2F5] p-10 transition hover:border-[#1677FF] hover:bg-[#1677FF]/5 cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
             <input
@@ -197,19 +197,19 @@ export default function RecordingsPage() {
             />
             {uploading ? (
               <>
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
-                <p className="mt-3 text-sm font-medium text-[#1A1D2E]">Processing...</p>
-                <p className="mt-1 text-xs text-[#7A7F8A]">Uploading your recording</p>
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1677FF] border-t-transparent" />
+                <p className="mt-3 text-sm font-medium text-[#071832]">Processing...</p>
+                <p className="mt-1 text-xs text-[#4F5F73]">Uploading your recording</p>
               </>
             ) : (
               <>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#5C6B5C]/15">
-                  <Upload size={20} className="text-[#5C6B5C]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1677FF]/15">
+                  <Upload size={20} className="text-[#1677FF]" />
                 </div>
-                <p className="mt-3 text-sm font-medium text-[#1A1D2E]">
+                <p className="mt-3 text-sm font-medium text-[#071832]">
                   Click to upload a recording
                 </p>
-                <p className="mt-1 text-xs text-[#7A7F8A]">
+                <p className="mt-1 text-xs text-[#4F5F73]">
                   Accepts MP3, M4A, WAV, and WebM files
                 </p>
               </>
@@ -217,7 +217,7 @@ export default function RecordingsPage() {
           </div>
 
           {uploadSuccess && (
-            <div className="mt-4 rounded-xl bg-[#5C6B5C]/10 border border-[#5C6B5C]/30 px-4 py-3 text-sm text-[#5C6B5C] font-medium">
+            <div className="mt-4 rounded-xl bg-[#1677FF]/10 border border-[#1677FF]/30 px-4 py-3 text-sm text-[#1677FF] font-medium">
               Recording uploaded — Kate will analyze this shortly.
             </div>
           )}
@@ -225,19 +225,19 @@ export default function RecordingsPage() {
 
         {/* Recordings list */}
         <section className="mt-8">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#7A7F8A] mb-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#4F5F73] mb-3">
             Your recordings
           </h2>
 
           {loading ? (
-            <div className="flex items-center gap-2 text-sm text-[#7A7F8A]">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5C6B5C] border-t-transparent" />
+            <div className="flex items-center gap-2 text-sm text-[#4F5F73]">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1677FF] border-t-transparent" />
               Loading...
             </div>
           ) : recordings.length === 0 ? (
-            <div className="rounded-2xl bg-white shadow-sm border border-[#EBEDF0] p-8 text-center">
-              <Mic size={32} className="mx-auto text-[#B0B4BC]" />
-              <p className="mt-3 text-sm text-[#7A7F8A]">
+            <div className="rounded-2xl bg-white shadow-sm border border-[#E5EAF2] p-8 text-center">
+              <Mic size={32} className="mx-auto text-[#4F5F73]" />
+              <p className="mt-3 text-sm text-[#4F5F73]">
                 No recordings yet. Upload a recording and Kate will summarize it, helping you stay prepared for future appointments.
               </p>
             </div>
@@ -246,16 +246,16 @@ export default function RecordingsPage() {
               {recordings.map((rec) => (
                 <div
                   key={rec.id}
-                  className="rounded-xl bg-white shadow-sm border border-[#EBEDF0] px-5 py-4"
+                  className="rounded-xl bg-white shadow-sm border border-[#E5EAF2] px-5 py-4"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5C6B5C]/15 mt-0.5">
-                      <FileAudio size={16} className="text-[#5C6B5C]" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1677FF]/15 mt-0.5">
+                      <FileAudio size={16} className="text-[#1677FF]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-[#1A1D2E]">{rec.title}</div>
-                      <p className="mt-1 text-sm text-[#7A7F8A]">{rec.body}</p>
-                      <div className="mt-2 flex items-center gap-1.5 text-xs text-[#B0B4BC]">
+                      <div className="text-sm font-semibold text-[#071832]">{rec.title}</div>
+                      <p className="mt-1 text-sm text-[#4F5F73]">{rec.body}</p>
+                      <div className="mt-2 flex items-center gap-1.5 text-xs text-[#4F5F73]">
                         <Clock size={11} />
                         {formatDate(rec.created_at)}
                       </div>
@@ -284,7 +284,7 @@ export default function RecordingsPage() {
           ) : (
             <button
               onClick={() => setConsentExpanded(true)}
-              className="mt-6 w-full text-center text-xs text-[#B0B4BC] hover:text-[#7A7F8A] underline underline-offset-2 transition"
+              className="mt-6 w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73] underline underline-offset-2 transition"
             >
               Recording consent info
             </button>

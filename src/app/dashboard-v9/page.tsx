@@ -100,7 +100,7 @@ const C = {
   glassBlur: "blur(20px)",
   cream: "#F0EDE8",
   orange: "#E08850",
-  olive: "#5C6B5C",
+  olive: "#1677FF",
   skyBlue: "#B0D4F0",
   lavender: "#9078C8",
   coral: "#E04030",

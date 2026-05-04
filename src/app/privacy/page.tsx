@@ -7,12 +7,12 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-[#F4F5F7]">
       <div className="mx-auto max-w-3xl px-6 py-16">
-        <h1 className="text-3xl font-bold text-[#1A1D2E] mb-2">Privacy Policy</h1>
-        <p className="text-sm text-[#7A7F8A] mb-10">Last updated: April 25, 2026</p>
+        <h1 className="text-3xl font-bold text-[#071832] mb-2">Privacy Policy</h1>
+        <p className="text-sm text-[#4F5F73] mb-10">Last updated: April 25, 2026</p>
 
         <div className="space-y-8 text-[#3A3F4B] text-sm leading-relaxed">
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">1. Who We Are</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">1. Who We Are</h2>
             <p>
               Quarterback Health (&quot;QBH,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the Quarterback Health
               platform at getquarterback.com and associated mobile applications. We provide a healthcare
@@ -22,7 +22,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">2. Information We Collect</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">2. Information We Collect</h2>
             <p className="mb-3">We collect information you provide directly, including:</p>
             <ul className="list-disc pl-6 space-y-1.5">
               <li><strong>Account information:</strong> name, email address, password, date of birth, phone number</li>
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">3. Google Workspace API Limited Use</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">3. Google Workspace API Limited Use</h2>
             <p>
               Quarterback Health&rsquo;s use and transfer to any other app of information received from
               Google APIs will adhere to the{" "}
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">4. How We Use Your Information</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">4. How We Use Your Information</h2>
             <ul className="list-disc pl-6 space-y-1.5">
               <li>Organize and display your healthcare providers, appointments, and care team</li>
               <li>Make AI-assisted phone calls to provider offices on your behalf to schedule appointments</li>
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">5. AI and Automated Processing</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">5. AI and Automated Processing</h2>
             <p>
               We use artificial intelligence services (including OpenAI) to power Kate&apos;s chat responses,
               summarize health documents, classify transactions, and generate care suggestions. When we
@@ -92,7 +92,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">6. AI Phone Calls</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">6. AI Phone Calls</h2>
             <p>
               When you authorize it, our AI assistant Kate will call healthcare provider offices on your
               behalf to schedule, reschedule, or inquire about appointments. These calls are made using
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">7. Data Storage and Security</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">7. Data Storage and Security</h2>
             <p>
               Your account and provider data is stored in Supabase (cloud database) with encryption at
               rest. Health documents you upload are stored in AWS S3 with KMS encryption under
@@ -114,7 +114,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">8. Data Sharing</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">8. Data Sharing</h2>
             <p className="mb-3">We do not sell your personal information. We share data only with:</p>
             <ul className="list-disc pl-6 space-y-1.5">
               <li><strong>Service providers:</strong> Supabase (database), OpenAI (AI processing), VAPI/Twilio (voice calls), Plaid (bank connections), Google (calendar), AWS (file storage) &mdash; each under data protection agreements</li>
@@ -125,7 +125,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">9. Your Rights</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">9. Your Rights</h2>
             <p className="mb-3">You have the right to:</p>
             <ul className="list-disc pl-6 space-y-1.5">
               <li><strong>Access</strong> your personal information through your account settings</li>
@@ -142,7 +142,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">10. Cookies and Analytics</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">10. Cookies and Analytics</h2>
             <p>
               We use Cookiebot for cookie consent management and Google Analytics for understanding how
               our service is used. Analytics data is only collected with your consent. We use Google
@@ -152,7 +152,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">11. Children&apos;s Privacy</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">11. Children&apos;s Privacy</h2>
             <p>
               Quarterback Health is not intended for individuals under 18 years of age. We do not
               knowingly collect information from children. If you believe a minor has provided us with
@@ -161,7 +161,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">12. Changes to This Policy</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">12. Changes to This Policy</h2>
             <p>
               We may update this Privacy Policy from time to time. We will notify you of material changes
               by email or through the application. Your continued use of the service after changes
@@ -170,7 +170,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[#1A1D2E] mb-3">13. Contact Us</h2>
+            <h2 className="text-lg font-semibold text-[#071832] mb-3">13. Contact Us</h2>
             <p>
               If you have questions about this Privacy Policy or your data, contact us at:<br />
               <strong>Email:</strong> privacy@getquarterback.com<br />
@@ -179,8 +179,8 @@ export default function PrivacyPage() {
           </section>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-[#EBEDF0] text-center">
-          <a href="/" className="text-sm text-[#5C6B5C] hover:underline">&larr; Back to Quarterback Health</a>
+        <div className="mt-12 pt-6 border-t border-[#E5EAF2] text-center">
+          <a href="/" className="text-sm text-[#1677FF] hover:underline">&larr; Back to Quarterback Health</a>
         </div>
       </div>
     </div>

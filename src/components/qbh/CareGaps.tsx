@@ -195,27 +195,27 @@ export default function CareGaps() {
 
   return (
     <div className="mt-6 px-7">
-      <div className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-3">
+      <div className="text-xs font-bold uppercase tracking-widest text-[#4F5F73] mb-3">
         Care Gaps
       </div>
       <div className="space-y-2">
         {visibleGaps.slice(0, 3).map((gap) => (
           <div
             key={gap.type}
-            className="flex items-center justify-between gap-3 rounded-xl bg-white border border-[#EBEDF0] shadow-sm p-4"
+            className="flex items-center justify-between gap-3 rounded-xl bg-white border border-[#E5EAF2] shadow-sm p-4"
           >
             <div className="flex items-center gap-3">
               <span className="shrink-0">
                 {(() => {
                   const IconComp = careGapIconMap[gap.type] || Stethoscope;
-                  return <IconComp size={20} strokeWidth={1.5} color="#5C6B5C" />;
+                  return <IconComp size={20} strokeWidth={1.5} color="#1677FF" />;
                 })()}
               </span>
               <div>
-                <div className="text-sm font-medium text-[#1A1D2E]">
+                <div className="text-sm font-medium text-[#071832]">
                   No {gap.label} on file
                 </div>
-                <div className="text-xs text-[#7A7F8A]">{gap.description}</div>
+                <div className="text-xs text-[#4F5F73]">{gap.description}</div>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -225,7 +225,7 @@ export default function CareGaps() {
                   window.location.href = '/providers?add=true&search=' + encodeURIComponent(gap.label.toLowerCase());
                 }}
                 className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
-                style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+                style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
               >
                 Find One
               </button>
@@ -235,13 +235,13 @@ export default function CareGaps() {
                   // TODO: open provider assignment from existing providers
                   window.location.href = '/providers?add=true&search=' + encodeURIComponent(gap.label.toLowerCase());
                 }}
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#EBEDF0] text-[#1A1D2E] hover:bg-[#F0F2F5]"
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#E5EAF2] text-[#071832] hover:bg-[#F0F2F5]"
               >
                 Assign
               </button>
               <button
                 onClick={() => setDismissed((prev) => new Set([...prev, gap.type]))}
-                className="ml-1 text-[#B0B4BC] hover:text-[#7A7F8A]"
+                className="ml-1 text-[#4F5F73] hover:text-[#4F5F73]"
                 title="Dismiss"
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

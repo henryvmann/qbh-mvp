@@ -122,8 +122,8 @@ export default function ProviderDetailPage() {
       <main className="min-h-screen" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
         <TopNav />
         <div className="mx-auto max-w-2xl px-6 pt-8">
-          <p className="text-[#7A7F8A]">Provider not found.</p>
-          <Link href="/providers" className="mt-4 inline-block text-sm text-[#5C6B5C] underline">Back to providers</Link>
+          <p className="text-[#4F5F73]">Provider not found.</p>
+          <Link href="/providers" className="mt-4 inline-block text-sm text-[#1677FF] underline">Back to providers</Link>
         </div>
       </main>
     );
@@ -135,12 +135,12 @@ export default function ProviderDetailPage() {
     : provider.specialty || null;
 
   return (
-    <main className="min-h-screen pb-20 text-[#1A1D2E]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
+    <main className="min-h-screen pb-20 text-[#071832]" style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}>
       <TopNav />
       <div className="mx-auto max-w-2xl px-6 pt-6">
 
         {/* Back link */}
-        <Link href="/providers" className="inline-flex items-center gap-1.5 text-sm text-[#7A7F8A] hover:text-[#1A1D2E] transition mb-6">
+        <Link href="/providers" className="inline-flex items-center gap-1.5 text-sm text-[#4F5F73] hover:text-[#071832] transition mb-6">
           <ArrowLeft size={14} /> Back to providers
         </Link>
 
@@ -156,7 +156,7 @@ export default function ProviderDetailPage() {
             >
               {colors.label}
             </span>
-            <h1 className="mt-2 text-2xl font-semibold text-[#1A1D2E]">
+            <h1 className="mt-2 text-2xl font-semibold text-[#071832]">
               {provider.display_name || provider.name}
             </h1>
             {subtitle && (
@@ -165,7 +165,7 @@ export default function ProviderDetailPage() {
               </p>
             )}
             {provider.care_team && (
-              <span className="mt-2 inline-block rounded-full bg-[#5C6B5C]/10 px-3 py-1 text-xs font-medium text-[#5C6B5C]">
+              <span className="mt-2 inline-block rounded-full bg-[#1677FF]/10 px-3 py-1 text-xs font-medium text-[#1677FF]">
                 {provider.care_team}
               </span>
             )}
@@ -175,14 +175,14 @@ export default function ProviderDetailPage() {
               {provider.phone_number && (
                 <a
                   href={`tel:${provider.phone_number}`}
-                  className="flex items-center gap-2 text-sm text-[#1A1D2E] hover:text-[#5C6B5C] transition"
+                  className="flex items-center gap-2 text-sm text-[#071832] hover:text-[#1677FF] transition"
                 >
                   <Phone size={14} className="shrink-0" style={{ color: colors.accent }} />
                   {provider.phone_number.replace(/^\+1/, "").replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3")}
                 </a>
               )}
               {provider.npi && (
-                <div className="flex items-center gap-2 text-sm text-[#7A7F8A]">
+                <div className="flex items-center gap-2 text-sm text-[#4F5F73]">
                   <FileText size={14} className="shrink-0" />
                   NPI: {provider.npi}
                 </div>
@@ -190,7 +190,7 @@ export default function ProviderDetailPage() {
             </div>
 
             {provider.notes && !editing && (
-              <p className="mt-3 text-xs text-[#7A7F8A] italic">{provider.notes}</p>
+              <p className="mt-3 text-xs text-[#4F5F73] italic">{provider.notes}</p>
             )}
 
             {/* Edit toggle */}
@@ -216,17 +216,17 @@ export default function ProviderDetailPage() {
                   value={editPhone}
                   onChange={(e) => setEditPhone(e.target.value)}
                   placeholder="Phone number"
-                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
                 <input
                   type="text"
                   value={editDoctorName}
                   onChange={(e) => setEditDoctorName(e.target.value)}
                   placeholder="Doctor name (e.g. Sarah Chen)"
-                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
                 <div>
-                  <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Provider Type</label>
+                  <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Provider Type</label>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       { value: "Primary Care", label: "Primary Care" },
@@ -244,8 +244,8 @@ export default function ProviderDetailPage() {
                         onClick={() => setEditSpecialty(opt.value)}
                         className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
                           editSpecialty === opt.value
-                            ? "bg-[#5C6B5C] text-white"
-                            : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                            ? "bg-[#1677FF] text-white"
+                            : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2]"
                         }`}
                       >
                         {opt.label}
@@ -257,11 +257,11 @@ export default function ProviderDetailPage() {
                     value={editSpecialty}
                     onChange={(e) => setEditSpecialty(e.target.value)}
                     placeholder="Or type a specialty (e.g. Cardiology)"
-                    className="mt-1.5 w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    className="mt-1.5 w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Network Status</label>
+                  <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Network Status</label>
                   <div className="flex gap-1.5">
                     {[
                       { value: "in-network", label: "In-Network" },
@@ -277,8 +277,8 @@ export default function ProviderDetailPage() {
                         })}
                         className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
                           editNotes.includes(opt.label)
-                            ? "bg-[#5C6B5C] text-white"
-                            : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"
+                            ? "bg-[#1677FF] text-white"
+                            : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2]"
                         }`}
                       >
                         {opt.label}
@@ -291,7 +291,7 @@ export default function ProviderDetailPage() {
                   onChange={(e) => setEditNotes(e.target.value)}
                   placeholder="Notes about this provider..."
                   rows={2}
-                  className="w-full rounded-lg border border-[#EBEDF0] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] resize-none"
+                  className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF] resize-none"
                 />
                 <div className="flex gap-2">
                   <button
@@ -325,13 +325,13 @@ export default function ProviderDetailPage() {
                     }}
                     disabled={savingEdit}
                     className="rounded-lg px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-                    style={{ backgroundColor: "#5C6B5C" }}
+                    style={{ backgroundColor: "#1677FF" }}
                   >
                     {savingEdit ? "Saving..." : "Save"}
                   </button>
                   <button
                     onClick={() => setEditing(false)}
-                    className="rounded-lg px-4 py-1.5 text-xs text-[#7A7F8A] hover:bg-[#F0F2F5]"
+                    className="rounded-lg px-4 py-1.5 text-xs text-[#4F5F73] hover:bg-[#F0F2F5]"
                   >
                     Cancel
                   </button>
@@ -356,15 +356,15 @@ export default function ProviderDetailPage() {
         {/* ── Upcoming Appointments ── */}
         {upcoming.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-[#1677FF] mb-3">
               Upcoming Appointments
             </h2>
             <div className="space-y-2">
               {upcoming.map((e) => (
-                <div key={e.id} className="flex items-center justify-between rounded-xl bg-white border border-[#EBEDF0] shadow-sm px-4 py-3">
+                <div key={e.id} className="flex items-center justify-between rounded-xl bg-white border border-[#E5EAF2] shadow-sm px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <Calendar size={16} className="text-[#5C6B5C] shrink-0" />
-                    <span className="text-sm text-[#1A1D2E]">{formatDateTime(e.start_at)}</span>
+                    <Calendar size={16} className="text-[#1677FF] shrink-0" />
+                    <span className="text-sm text-[#071832]">{formatDateTime(e.start_at)}</span>
                   </div>
                   <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-600">
                     Confirmed
@@ -377,10 +377,10 @@ export default function ProviderDetailPage() {
 
         {/* ── Notes ── */}
         <section className="mt-6">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#1677FF] mb-3">
             Notes
           </h2>
-          <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-5">
+          <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5">
             {/* Add note */}
             <div className="flex gap-2 mb-4">
               <input
@@ -389,13 +389,13 @@ export default function ProviderDetailPage() {
                 onChange={(e) => setNewNote(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAddNote(); }}
                 placeholder="Add a note, question, or reminder..."
-                className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="flex-1 rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               />
               <button
                 onClick={handleAddNote}
                 disabled={!newNote.trim() || savingNote}
                 className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                style={{ backgroundColor: "#5C6B5C" }}
+                style={{ backgroundColor: "#1677FF" }}
               >
                 {savingNote ? "..." : "Add"}
               </button>
@@ -406,19 +406,19 @@ export default function ProviderDetailPage() {
                 {notes.map((note) => (
                   <div key={note.id} className="rounded-xl bg-[#F8F9FA] px-4 py-3">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-[#B0B4BC]">
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-[#4F5F73]">
                         {note.note_type || "General"}
                       </span>
-                      <span className="text-[10px] text-[#B0B4BC]">
+                      <span className="text-[10px] text-[#4F5F73]">
                         {formatDate(note.created_at)}
                       </span>
                     </div>
-                    <p className="text-sm text-[#1A1D2E]">{note.content}</p>
+                    <p className="text-sm text-[#071832]">{note.content}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[#B0B4BC] text-center py-2">No notes yet</p>
+              <p className="text-sm text-[#4F5F73] text-center py-2">No notes yet</p>
             )}
           </div>
         </section>
@@ -426,18 +426,18 @@ export default function ProviderDetailPage() {
         {/* ── Visit History ── */}
         {visits.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#5C6B5C] mb-3">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-[#1677FF] mb-3">
               Visit History
             </h2>
-            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm overflow-hidden divide-y divide-[#EBEDF0]">
+            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm overflow-hidden divide-y divide-[#E5EAF2]">
               {visits.map((v) => (
                 <div key={v.id} className="flex items-center justify-between px-5 py-3">
                   <div className="flex items-center gap-3">
-                    <Clock size={14} className="text-[#B0B4BC] shrink-0" />
-                    <span className="text-sm text-[#1A1D2E]">{formatDate(v.visit_date)}</span>
+                    <Clock size={14} className="text-[#4F5F73] shrink-0" />
+                    <span className="text-sm text-[#071832]">{formatDate(v.visit_date)}</span>
                   </div>
                   {v.amount != null && (
-                    <span className="text-sm text-[#7A7F8A]">
+                    <span className="text-sm text-[#4F5F73]">
                       ${Number(v.amount).toFixed(2)}
                     </span>
                   )}
@@ -450,23 +450,23 @@ export default function ProviderDetailPage() {
         {/* ── Call History ── */}
         {callHistory.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-[#7A7F8A] mb-3">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-[#4F5F73] mb-3">
               Kate&apos;s Call History
             </h2>
-            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm overflow-hidden divide-y divide-[#EBEDF0]">
+            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm overflow-hidden divide-y divide-[#E5EAF2]">
               {callHistory.map((c) => (
                 <div key={c.id} className="flex items-center justify-between px-5 py-3">
-                  <span className="text-sm text-[#1A1D2E]">{formatDate(c.date)}</span>
+                  <span className="text-sm text-[#071832]">{formatDate(c.date)}</span>
                   <div className="flex items-center gap-2">
                     {c.displayTime && (
-                      <span className="text-xs text-[#7A7F8A]">{c.displayTime}</span>
+                      <span className="text-xs text-[#4F5F73]">{c.displayTime}</span>
                     )}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       c.status === "BOOKED_CONFIRMED"
                         ? "bg-emerald-500/15 text-emerald-600"
                         : c.status === "FAILED"
                           ? "bg-red-50 text-red-600"
-                          : "bg-[#F0F2F5] text-[#7A7F8A]"
+                          : "bg-[#F0F2F5] text-[#4F5F73]"
                     }`}>
                       {c.status === "BOOKED_CONFIRMED" ? "Booked" : c.status === "FAILED" ? "Failed" : c.status}
                     </span>

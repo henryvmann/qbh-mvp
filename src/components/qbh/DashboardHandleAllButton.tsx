@@ -93,7 +93,7 @@ export default function DashboardHandleAllButton({
         onClick={handleAll}
         disabled={disabled}
         className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-        style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+        style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
       >
         {isSubmitting
           ? "Starting booking..."
@@ -104,11 +104,11 @@ export default function DashboardHandleAllButton({
 
       {showCalendarPrompt ? (
         <div className="max-w-xl rounded-2xl bg-[#F0F2F5] p-4">
-          <div className="text-sm font-medium text-[#1A1D2E]">
+          <div className="text-sm font-medium text-[#071832]">
             Connect Google Calendar for a better booking experience
           </div>
 
-          <div className="mt-1 text-sm text-[#7A7F8A]">
+          <div className="mt-1 text-sm text-[#4F5F73]">
             QBH can avoid conflicts and use your real availability before it
             places booking calls. You can skip this for now and continue
             anyway.
@@ -117,7 +117,7 @@ export default function DashboardHandleAllButton({
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={calendarConnectHref}
-              className="inline-flex items-center justify-center rounded-xl border border-[#EBEDF0] px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
+              className="inline-flex items-center justify-center rounded-xl border border-[#E5EAF2] px-4 py-2 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
             >
               Connect Google Calendar
             </Link>
@@ -126,7 +126,7 @@ export default function DashboardHandleAllButton({
               onClick={startHandleAll}
               disabled={isSubmitting}
               className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               {isSubmitting
                 ? "Starting booking..."
@@ -136,7 +136,7 @@ export default function DashboardHandleAllButton({
             <button
               onClick={() => setShowCalendarPrompt(false)}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#7A7F8A] hover:bg-[#F0F2F5]"
+              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
             >
               Cancel
             </button>

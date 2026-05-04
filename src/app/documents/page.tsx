@@ -131,23 +131,23 @@ export default function DocumentsPage() {
 
   return (
     <PageShell maxWidth="max-w-2xl">
-        <h1 className="font-serif text-3xl text-[#1A1D2E]">Health Documents</h1>
-        <p className="mt-2 text-sm text-[#7A7F8A]">
+        <h1 className="font-serif text-3xl text-[#071832]">Health Documents</h1>
+        <p className="mt-2 text-sm text-[#4F5F73]">
           Upload medical records, lab results, visit summaries, and more. Kate will summarize them and add to your health history.
         </p>
 
         {/* Upload Area */}
-        <div className="mt-8 rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-6">
-          <h2 className="text-sm font-semibold text-[#1A1D2E] mb-4">Upload a Document</h2>
+        <div className="mt-8 rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-6">
+          <h2 className="text-sm font-semibold text-[#071832] mb-4">Upload a Document</h2>
 
           {/* Provider selector */}
           {providers.length > 0 && (
             <div className="mb-4">
-              <label className="block text-xs font-medium text-[#7A7F8A] mb-1">Which provider is this from? (optional)</label>
+              <label className="block text-xs font-medium text-[#4F5F73] mb-1">Which provider is this from? (optional)</label>
               <select
                 value={selectedProvider}
                 onChange={(e) => setSelectedProvider(e.target.value)}
-                className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-4 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
               >
                 <option value="">General (no specific provider)</option>
                 {providers.map((p) => (
@@ -160,13 +160,13 @@ export default function DocumentsPage() {
           {/* Drop zone */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F8F9FA] p-8 cursor-pointer transition hover:border-[#5C6B5C] hover:bg-[#F0F4F0]"
+            className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F8F9FA] p-8 cursor-pointer transition hover:border-[#1677FF] hover:bg-[#F0F4F0]"
           >
-            <Upload size={28} className="text-[#B0B4BC]" />
-            <div className="text-sm font-medium text-[#7A7F8A]">
+            <Upload size={28} className="text-[#4F5F73]" />
+            <div className="text-sm font-medium text-[#4F5F73]">
               {uploading ? "Processing..." : "Click to upload"}
             </div>
-            <div className="text-xs text-[#B0B4BC]">
+            <div className="text-xs text-[#4F5F73]">
               PDF, text, images (.png, .jpg) — lab results, visit summaries, medical records
             </div>
           </div>
@@ -192,30 +192,30 @@ export default function DocumentsPage() {
 
         {/* Document Summaries */}
         <div className="mt-8">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#B0B4BC] mb-4">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#4F5F73] mb-4">
             {summaries.length > 0 ? `${summaries.length} Document${summaries.length === 1 ? "" : "s"} on File` : "No Documents Yet"}
           </h2>
 
           {summaries.length === 0 ? (
-            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-8 text-center">
+            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-8 text-center">
               <FileText size={32} className="mx-auto text-[#D0D3D8]" />
-              <div className="mt-3 text-sm font-medium text-[#7A7F8A]">No documents uploaded yet</div>
-              <div className="mt-1 text-xs text-[#B0B4BC]">
+              <div className="mt-3 text-sm font-medium text-[#4F5F73]">No documents uploaded yet</div>
+              <div className="mt-1 text-xs text-[#4F5F73]">
                 Upload lab results, visit summaries, or medical records above. Kate will read and summarize them.
               </div>
             </div>
           ) : (
             <div className="space-y-3">
               {summaries.map((doc, i) => (
-                <div key={i} className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-5">
+                <div key={i} className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <FileText size={14} className="text-[#5C6B5C]" />
-                      <span className="text-xs font-semibold text-[#1A1D2E]">
+                      <FileText size={14} className="text-[#1677FF]" />
+                      <span className="text-xs font-semibold text-[#071832]">
                         {doc.provider || "General Document"}
                       </span>
                     </div>
-                    <span className="text-[10px] text-[#B0B4BC]">{doc.date}</span>
+                    <span className="text-[10px] text-[#4F5F73]">{doc.date}</span>
                   </div>
                   <p className="text-sm text-[#3A3F4B] leading-relaxed whitespace-pre-line">
                     {doc.summary}

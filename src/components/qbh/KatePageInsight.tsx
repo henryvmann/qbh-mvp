@@ -104,7 +104,7 @@ export default function KatePageInsight() {
   if (!insight || dismissed) return null;
 
   return (
-    <div className="mt-6 mb-2 rounded-2xl bg-[#5C6B5C]/5 border border-[#5C6B5C]/10 px-5 py-4">
+    <div className="mt-6 mb-2 rounded-2xl bg-[#1677FF]/5 border border-[#1677FF]/10 px-5 py-4">
       <div className="flex items-start gap-3">
         <Image
           src="/kate-avatar.png"
@@ -114,16 +114,16 @@ export default function KatePageInsight() {
           className="rounded-full shrink-0 mt-0.5"
         />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-[#1A1D2E] leading-relaxed">{insight}</p>
+          <p className="text-sm text-[#071832] leading-relaxed">{insight}</p>
           {insight.includes("overdue") && (
-            <a href="/providers" className="mt-2 inline-block text-xs font-semibold text-[#5C6B5C] underline underline-offset-2">
+            <a href="/providers" className="mt-2 inline-block text-xs font-semibold text-[#1677FF] underline underline-offset-2">
               View providers &rarr;
             </a>
           )}
         </div>
         <button
           onClick={() => setDismissed(true)}
-          className="shrink-0 text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
+          className="shrink-0 text-xs text-[#4F5F73] hover:text-[#4F5F73]"
         >
           ✕
         </button>

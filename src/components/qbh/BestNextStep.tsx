@@ -457,7 +457,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
         <div
           className="animate-slideIn rounded-2xl bg-white shadow-sm"
           style={{
-            borderLeft: "3px solid #5C6B5C",
+            borderLeft: "3px solid #1677FF",
             animation: "slideIn 0.4s ease-out both",
           }}
         >
@@ -485,7 +485,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
             />
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#1A1D2E] leading-snug">
+              <p className="text-sm font-medium text-[#071832] leading-snug">
                 {current.text}
               </p>
 
@@ -497,14 +497,14 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
                     value={phoneValue}
                     onChange={(e) => setPhoneValue(e.target.value)}
                     placeholder="(555) 123-4567"
-                    className="flex-1 rounded-lg border border-[#EBEDF0] px-3 py-1.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                    className="flex-1 rounded-lg border border-[#E5EAF2] px-3 py-1.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                   />
                   <button
                     type="button"
                     onClick={handleSavePhone}
                     disabled={savingPhone || !phoneValue.trim()}
                     className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
-                    style={{ backgroundColor: "#5C6B5C" }}
+                    style={{ backgroundColor: "#1677FF" }}
                   >
                     {savingPhone ? "..." : "Save"}
                   </button>
@@ -513,7 +513,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
 
               {/* Action buttons */}
               {callStatus && (
-                <div className="mt-2 rounded-lg bg-[#5C6B5C]/10 px-3 py-1.5 text-xs text-[#5C6B5C]">
+                <div className="mt-2 rounded-lg bg-[#1677FF]/10 px-3 py-1.5 text-xs text-[#1677FF]">
                   {callStatus}
                 </div>
               )}
@@ -525,7 +525,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
                     onClick={handleAction}
                     disabled={callingProvider}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
-                    style={{ backgroundColor: "#5C6B5C" }}
+                    style={{ backgroundColor: "#1677FF" }}
                   >
                     {callingProvider ? "Starting call..." : current.actionLabel}
                     {!callingProvider && <ArrowRight size={12} />}
@@ -533,7 +533,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
                   <button
                     type="button"
                     onClick={handleDismiss}
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#7A7F8A] transition hover:bg-[#F0F2F5]"
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#4F5F73] transition hover:bg-[#F0F2F5]"
                   >
                     Later
                   </button>
@@ -545,7 +545,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
             <button
               type="button"
               onClick={handleDismiss}
-              className="shrink-0 p-0.5 text-[#B0B4BC] transition hover:text-[#7A7F8A]"
+              className="shrink-0 p-0.5 text-[#4F5F73] transition hover:text-[#4F5F73]"
               aria-label="Dismiss"
             >
               <X size={14} />
@@ -556,9 +556,9 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
 
       {/* All-dismissed fallback */}
       {!current && suggestions.length > 0 && (
-        <div className="rounded-xl bg-[#F0F2F5] border border-[#EBEDF0] px-4 py-3 flex items-center gap-3">
+        <div className="rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-3 flex items-center gap-3">
           <img src="/kate-avatar.png" alt="Kate" width={28} height={28} className="rounded-full shrink-0" />
-          <span className="text-xs text-[#7A7F8A]">
+          <span className="text-xs text-[#4F5F73]">
             You&apos;re on track! Here are some things you can do:
           </span>
         </div>
@@ -579,7 +579,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
                 router.push(chip.href);
               }
             }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs font-medium text-[#5C6B5C] shadow-sm transition hover:bg-[#F0F2F5] hover:border-[#5C6B5C]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#E5EAF2] bg-white px-3 py-1.5 text-xs font-medium text-[#1677FF] shadow-sm transition hover:bg-[#F0F2F5] hover:border-[#1677FF]"
           >
             {(chip.id === "prep-tomorrow") && <CalendarCheck size={12} />}
             {(chip.id === "add-visit-notes" || chip.id === "notes") && <FileText size={12} />}

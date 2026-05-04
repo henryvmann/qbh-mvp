@@ -116,9 +116,9 @@ function classifySnapshots(snapshots: Snapshot[]): ActionItem[] {
 /* ───────────────────────── Palette ───────────────────────── */
 
 const P = {
-  olive: "#5C6B5C",
+  olive: "#1677FF",
   cream: "#F0EDE8",
-  navy: "#1A1D2E",
+  navy: "#071832",
   lime: "#E2F0A0",
   skyBlue: "#B0D4F0",
   coral: "#E04030",
@@ -980,7 +980,7 @@ function LoadingSkeleton() {
       className="min-h-screen"
       style={{
         background:
-          "linear-gradient(160deg, #2A2E2A 0%, #1A1D2E 50%, #2A2830 100%)",
+          "linear-gradient(160deg, #2A2E2A 0%, #071832 50%, #2A2830 100%)",
       }}
     >
       <div className="space-y-6 px-4 pt-20">
@@ -1049,7 +1049,7 @@ function DashboardV6Inner() {
       className="relative min-h-screen overflow-hidden pb-24"
       style={{
         background:
-          "linear-gradient(160deg, #2A2E2A 0%, #1A1D2E 50%, #2A2830 100%)",
+          "linear-gradient(160deg, #2A2E2A 0%, #071832 50%, #2A2830 100%)",
       }}
     >
       <style dangerouslySetInnerHTML={{ __html: globalStyles }} />

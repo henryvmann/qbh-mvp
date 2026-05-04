@@ -14,8 +14,8 @@ const ACCENT = theme.green;
 const CARD_BG = theme.glass;
 const CARD_BORDER = theme.glassBorder;
 const TEXT_PRIMARY = theme.textPrimary;
-const TEXT_SECONDARY = "#7A7F8A";
-const TEXT_MUTED = "#B0B4BC";
+const TEXT_SECONDARY = "#4F5F73";
+const TEXT_MUTED = "#4F5F73";
 
 /* ── Types ── */
 type ChatMessage = {
@@ -53,12 +53,12 @@ function KateBubble({ children, typing }: { children: React.ReactNode; typing?: 
       <div className="max-w-[85%] rounded-2xl rounded-tl-sm backdrop-blur-sm px-4 py-3" style={{ background: theme.glass, border: `1px solid ${theme.glassBorder}`, boxShadow: theme.cardShadow }}>
         {typing ? (
           <div className="flex gap-1 py-1">
-            <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-bounce" style={{ animationDelay: "0ms" }} />
-            <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-bounce" style={{ animationDelay: "150ms" }} />
-            <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-bounce" style={{ animationDelay: "300ms" }} />
+            <span className="h-2 w-2 rounded-full bg-[#4F5F73] animate-bounce" style={{ animationDelay: "0ms" }} />
+            <span className="h-2 w-2 rounded-full bg-[#4F5F73] animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="h-2 w-2 rounded-full bg-[#4F5F73] animate-bounce" style={{ animationDelay: "300ms" }} />
           </div>
         ) : (
-          <div className="text-sm text-[#1A1D2E] leading-relaxed">{children}</div>
+          <div className="text-sm text-[#071832] leading-relaxed">{children}</div>
         )}
       </div>
     </div>
@@ -107,17 +107,17 @@ function ToggleCard({ icon: Icon, title, description, selected, onToggle }: {
     <button
       onClick={onToggle}
       className={`w-full rounded-2xl border p-4 text-left transition ${
-        selected ? "border-[#5C6B5C] bg-[#5C6B5C]/5 ring-1 ring-[#5C6B5C]" : "border-white/70 bg-white/55 backdrop-blur-sm hover:border-[#B0B4BC]"
+        selected ? "border-[#1677FF] bg-[#1677FF]/5 ring-1 ring-[#1677FF]" : "border-white/70 bg-white/55 backdrop-blur-sm hover:border-[#4F5F73]"
       }`}
     >
       <div className="flex items-start gap-3">
-        <Icon size={20} className={selected ? "text-[#5C6B5C]" : "text-[#B0B4BC]"} />
+        <Icon size={20} className={selected ? "text-[#1677FF]" : "text-[#4F5F73]"} />
         <div className="flex-1">
-          <div className="text-sm font-semibold text-[#1A1D2E]">{title}</div>
-          <p className="mt-1 text-xs text-[#7A7F8A] leading-relaxed">{description}</p>
+          <div className="text-sm font-semibold text-[#071832]">{title}</div>
+          <p className="mt-1 text-xs text-[#4F5F73] leading-relaxed">{description}</p>
         </div>
         <div className={`mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center transition ${
-          selected ? "border-[#5C6B5C] bg-[#5C6B5C]" : "border-[#D0D3D8]"
+          selected ? "border-[#1677FF] bg-[#1677FF]" : "border-[#D0D3D8]"
         }`}>
           {selected && <span className="text-white text-[10px]">&#10003;</span>}
         </div>
@@ -798,8 +798,8 @@ export default function OnboardingPage() {
       <div className="sticky top-0 z-10 backdrop-blur-md border-b px-6 py-3" style={{ background: "rgba(205,219,214,0.8)", borderColor: theme.glassBorder }}>
         <div className="mx-auto max-w-lg flex items-center gap-2">
           <Image src="/kate-avatar.png" alt="Kate" width={28} height={28} className="rounded-full" />
-          <span className="text-sm font-semibold text-[#1A1D2E]">Kate</span>
-          <span className="text-[10px] text-[#5C6B5C] font-medium ml-1">Care Coordinator</span>
+          <span className="text-sm font-semibold text-[#071832]">Kate</span>
+          <span className="text-[10px] text-[#1677FF] font-medium ml-1">Care Coordinator</span>
         </div>
       </div>
 
@@ -834,24 +834,24 @@ export default function OnboardingPage() {
         {phase === "value-props" && !typing && (
           <div className="space-y-3 animate-fadeIn">
             <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
-              <Search size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
+              <Search size={20} className="text-[#1677FF] shrink-0 mt-0.5" />
               <div>
-                <div className="text-sm font-semibold text-[#1A1D2E]">I'll find every doctor you've seen</div>
-                <p className="mt-1 text-xs text-[#7A7F8A]">I scan your co-pays and pull your complete provider history. No typing, no remembering.</p>
+                <div className="text-sm font-semibold text-[#071832]">I'll find every doctor you've seen</div>
+                <p className="mt-1 text-xs text-[#4F5F73]">I scan your co-pays and pull your complete provider history. No typing, no remembering.</p>
               </div>
             </div>
             <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
-              <Phone size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
+              <Phone size={20} className="text-[#1677FF] shrink-0 mt-0.5" />
               <div>
-                <div className="text-sm font-semibold text-[#1A1D2E]">Book appointments for you</div>
-                <p className="mt-1 text-xs text-[#7A7F8A]">I call the office, navigate the phone tree, and schedule. You don't pick up the phone.</p>
+                <div className="text-sm font-semibold text-[#071832]">Book appointments for you</div>
+                <p className="mt-1 text-xs text-[#4F5F73]">I call the office, navigate the phone tree, and schedule. You don't pick up the phone.</p>
               </div>
             </div>
             <div className="rounded-2xl backdrop-blur-sm p-4 flex items-start gap-3">
-              <Brain size={20} className="text-[#5C6B5C] shrink-0 mt-0.5" />
+              <Brain size={20} className="text-[#1677FF] shrink-0 mt-0.5" />
               <div>
-                <div className="text-sm font-semibold text-[#1A1D2E]">Connect the dots</div>
-                <p className="mt-1 text-xs text-[#7A7F8A]">I track what's overdue, prep you before visits, and follow up after. Your health — organized.</p>
+                <div className="text-sm font-semibold text-[#071832]">Connect the dots</div>
+                <p className="mt-1 text-xs text-[#4F5F73]">I track what's overdue, prep you before visits, and follow up after. Your health — organized.</p>
               </div>
             </div>
             <OptionButtons options={[{ label: "Let's do it", value: "go" }]} onSelect={handleValuePropsNext} />
@@ -872,7 +872,7 @@ export default function OnboardingPage() {
         {/* Family select */}
         {phase === "family-select" && !typing && (
           <div className="space-y-2 animate-fadeIn">
-            <p className="text-xs text-[#7A7F8A] mb-1">Select as many as you need</p>
+            <p className="text-xs text-[#4F5F73] mb-1">Select as many as you need</p>
             {[
               { label: "My partner/spouse", value: "partner" },
               { label: "My kid(s)", value: "children" },
@@ -883,7 +883,7 @@ export default function OnboardingPage() {
                 key={opt.value}
                 onClick={() => setFamilyMembers((prev) => prev.includes(opt.value) ? prev.filter((v) => v !== opt.value) : [...prev, opt.value])}
                 className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
-                  familyMembers.includes(opt.value) ? "border-[#5C6B5C] bg-[#5C6B5C]/5 text-[#1A1D2E]" : "border-[#EBEDF0] bg-white text-[#7A7F8A]"
+                  familyMembers.includes(opt.value) ? "border-[#1677FF] bg-[#1677FF]/5 text-[#071832]" : "border-[#E5EAF2] bg-white text-[#4F5F73]"
                 }`}
               >
                 {familyMembers.includes(opt.value) ? "✓ " : ""}{opt.label}
@@ -941,47 +941,47 @@ export default function OnboardingPage() {
           <div className="animate-fadeIn rounded-2xl backdrop-blur-sm p-5 space-y-3" style={{ background: theme.glass, border: `1px solid ${theme.glassBorder}`, boxShadow: theme.cardShadow }}>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">First name</label>
-                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">First name</label>
+                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Last name</label>
-                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Last name</label>
+                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+              <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Password</label>
+              <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Password</label>
               <div className="relative">
-                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] pr-10 focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B0B4BC]">
+                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] pr-10 focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4F5F73]">
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {password.length > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]">
-                  <span style={{ color: password.length >= 8 ? "#22C55E" : "#B0B4BC" }}>{password.length >= 8 ? "✓" : "○"} 8+ characters</span>
-                  <span style={{ color: hasUpper && hasLower ? "#22C55E" : "#B0B4BC" }}>{hasUpper && hasLower ? "✓" : "○"} Upper & lower</span>
-                  <span style={{ color: hasNumber ? "#22C55E" : "#B0B4BC" }}>{hasNumber ? "✓" : "○"} Number</span>
-                  <span style={{ color: hasSpecial ? "#22C55E" : "#B0B4BC" }}>{hasSpecial ? "✓" : "○"} Special char</span>
+                  <span style={{ color: password.length >= 8 ? "#22C55E" : "#4F5F73" }}>{password.length >= 8 ? "✓" : "○"} 8+ characters</span>
+                  <span style={{ color: hasUpper && hasLower ? "#22C55E" : "#4F5F73" }}>{hasUpper && hasLower ? "✓" : "○"} Upper & lower</span>
+                  <span style={{ color: hasNumber ? "#22C55E" : "#4F5F73" }}>{hasNumber ? "✓" : "○"} Number</span>
+                  <span style={{ color: hasSpecial ? "#22C55E" : "#4F5F73" }}>{hasSpecial ? "✓" : "○"} Special char</span>
                 </div>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Date of birth</label>
-                <input type="date" value={patientDob} onChange={(e) => setPatientDob(e.target.value)} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" style={isUnder18 ? { borderColor: "#E53E3E" } : {}} />
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Date of birth</label>
+                <input type="date" value={patientDob} onChange={(e) => setPatientDob(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" style={isUnder18 ? { borderColor: "#E53E3E" } : {}} />
                 {isUnder18 && <p className="mt-1 text-[10px] text-red-500">Must be 18 or older.</p>}
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Sex</label>
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Sex</label>
                 <div className="flex gap-1.5">
                   {[{ v: "male", l: "Male" }, { v: "female", l: "Female" }, { v: "non-binary", l: "Non-binary" }, { v: "other", l: "Other" }, { v: "prefer-not-to-say", l: "Prefer not to say" }].map((o) => (
                     <button key={o.v} type="button" onClick={() => setPatientGender(o.v)}
-                      className={`flex-1 rounded-xl py-2.5 text-[10px] font-medium transition ${patientGender === o.v ? "bg-[#5C6B5C] text-white" : "bg-[#F0F2F5] text-[#7A7F8A] border border-[#EBEDF0]"}`}>
+                      className={`flex-1 rounded-xl py-2.5 text-[10px] font-medium transition ${patientGender === o.v ? "bg-[#1677FF] text-white" : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2]"}`}>
                       {o.l}
                     </button>
                   ))}
@@ -989,19 +989,19 @@ export default function OnboardingPage() {
               </div>
             </div>
             <div className="relative">
-              <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Insurance provider</label>
-              <input type="text" value={patientInsurance} onChange={(e) => setPatientInsurance(e.target.value)} placeholder="Start typing..." className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+              <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Insurance provider</label>
+              <input type="text" value={patientInsurance} onChange={(e) => setPatientInsurance(e.target.value)} placeholder="Start typing..." className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
               {filteredInsurance.length > 0 && patientInsurance.length >= 2 && !KNOWN_INSURANCE.includes(patientInsurance) && (
-                <div className="absolute z-10 mt-1 w-full rounded-xl border border-[#EBEDF0] bg-white shadow-lg max-h-40 overflow-y-auto">
+                <div className="absolute z-10 mt-1 w-full rounded-xl border border-[#E5EAF2] bg-white shadow-lg max-h-40 overflow-y-auto">
                   {filteredInsurance.map((ins) => (
-                    <button key={ins} onClick={() => setPatientInsurance(ins)} className="w-full px-3 py-2 text-left text-sm text-[#1A1D2E] hover:bg-[#F0F2F5]">{ins}</button>
+                    <button key={ins} onClick={() => setPatientInsurance(ins)} className="w-full px-3 py-2 text-left text-sm text-[#071832] hover:bg-[#F0F2F5]">{ins}</button>
                   ))}
                 </div>
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Phone number</label>
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Phone number</label>
                 <input
                   type="tel"
                   inputMode="numeric"
@@ -1018,31 +1018,31 @@ export default function OnboardingPage() {
                     setPatientPhone(f);
                   }}
                   placeholder="(555) 123-4567"
-                  className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]"
+                  className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-[#7A7F8A] mb-1">Zip code <span className="text-[#B0B4BC]">(optional)</span></label>
-                <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="06880" maxLength={10} className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]" />
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Zip code <span className="text-[#4F5F73]">(optional)</span></label>
+                <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="06880" maxLength={10} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
               </div>
             </div>
             {/* Email confirmation (read-only) */}
             {email && (
-              <div className="rounded-xl bg-[#F0F2F5]/50 px-3 py-2 text-xs text-[#7A7F8A]">
-                Account email: <span className="font-medium text-[#1A1D2E]">{email}</span>
+              <div className="rounded-xl bg-[#F0F2F5]/50 px-3 py-2 text-xs text-[#4F5F73]">
+                Account email: <span className="font-medium text-[#071832]">{email}</span>
               </div>
             )}
             <label className="flex items-start gap-2 mt-2">
-              <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-0.5 h-4 w-4 rounded accent-[#5C6B5C]" />
-              <span className="text-[10px] text-[#7A7F8A] leading-relaxed">
-                I agree to the <a href="/terms" target="_blank" className="underline text-[#5C6B5C]">Terms</a> and <a href="/privacy" target="_blank" className="underline text-[#5C6B5C]">Privacy Policy</a>, and authorize Quarterback Health to call offices and use my info to coordinate my care.
+              <input type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-0.5 h-4 w-4 rounded accent-[#1677FF]" />
+              <span className="text-[10px] text-[#4F5F73] leading-relaxed">
+                I agree to the <a href="/terms" target="_blank" className="underline text-[#1677FF]">Terms</a> and <a href="/privacy" target="_blank" className="underline text-[#1677FF]">Privacy Policy</a>, and authorize Quarterback Health to call offices and use my info to coordinate my care.
               </span>
             </label>
             {error && (
               <div className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-600 ring-1 ring-red-200">
                 {error}
                 {error.toLowerCase().includes("already") && (
-                  <a href="/login" className="mt-1 block font-semibold text-[#5C6B5C] underline">Sign in instead</a>
+                  <a href="/login" className="mt-1 block font-semibold text-[#1677FF] underline">Sign in instead</a>
                 )}
               </div>
             )}
@@ -1067,7 +1067,7 @@ export default function OnboardingPage() {
             >
               Connect your bank
             </button>
-            <div className="mt-2 flex items-center justify-center gap-3 text-[10px] text-[#B0B4BC]">
+            <div className="mt-2 flex items-center justify-center gap-3 text-[10px] text-[#4F5F73]">
               <ShieldCheck size={12} /> Encrypted &middot; Read-only &middot; Powered by Plaid
             </div>
           </div>
@@ -1100,7 +1100,7 @@ export default function OnboardingPage() {
                 addKateMessage("No problem — we'll move on.");
                 setTimeout(() => setPhase(advanceAfter("calendar")), 1000);
               }}
-              className="w-full text-center text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
+              className="w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73]"
             >
               Skip for now
             </button>
@@ -1111,18 +1111,18 @@ export default function OnboardingPage() {
         {phase === "discovery-reveal" && (
           <div className="space-y-2 animate-fadeIn">
             {discoveredProviders.slice(0, revealIndex).map((p) => (
-              <div key={p.id} className="flex items-center gap-3 rounded-xl bg-white border border-[#EBEDF0] shadow-sm px-4 py-3 animate-fadeIn">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.overdue ? "#E04030" : "#5C6B5C" }} />
+              <div key={p.id} className="flex items-center gap-3 rounded-xl bg-white border border-[#E5EAF2] shadow-sm px-4 py-3 animate-fadeIn">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.overdue ? "#E04030" : "#1677FF" }} />
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-[#1A1D2E]">{p.name}</div>
+                  <div className="text-sm font-medium text-[#071832]">{p.name}</div>
                   {p.overdue && <span className="text-[10px] text-[#E04030]">might be overdue</span>}
-                  {!p.overdue && <span className="text-[10px] text-[#5C6B5C]">on track</span>}
+                  {!p.overdue && <span className="text-[10px] text-[#1677FF]">on track</span>}
                 </div>
               </div>
             ))}
             {!revealDone && revealIndex < discoveredProviders.length && (
-              <div className="flex items-center gap-2 text-xs text-[#B0B4BC]">
-                <span className="h-2 w-2 rounded-full bg-[#B0B4BC] animate-pulse" /> Scanning...
+              <div className="flex items-center gap-2 text-xs text-[#4F5F73]">
+                <span className="h-2 w-2 rounded-full bg-[#4F5F73] animate-pulse" /> Scanning...
               </div>
             )}
             {/* Active scan progress + skip — visible while discovery is polling
@@ -1130,12 +1130,12 @@ export default function OnboardingPage() {
                 Made prominent: full-width card, larger "Skip" button, animated
                 progress dot. Skip transitions to whichever phase is next. */}
             {discoveryActive && (
-              <div className="mt-3 rounded-2xl bg-white border-2 border-[#5C6B5C]/20 shadow-sm p-4 space-y-3">
+              <div className="mt-3 rounded-2xl bg-white border-2 border-[#1677FF]/20 shadow-sm p-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1">
-                    <span className="h-2 w-2 rounded-full bg-[#5C6B5C] animate-pulse" />
-                    <span className="h-2 w-2 rounded-full bg-[#5C6B5C] animate-pulse" style={{ animationDelay: "0.2s" }} />
-                    <span className="h-2 w-2 rounded-full bg-[#5C6B5C] animate-pulse" style={{ animationDelay: "0.4s" }} />
+                    <span className="h-2 w-2 rounded-full bg-[#1677FF] animate-pulse" />
+                    <span className="h-2 w-2 rounded-full bg-[#1677FF] animate-pulse" style={{ animationDelay: "0.2s" }} />
+                    <span className="h-2 w-2 rounded-full bg-[#1677FF] animate-pulse" style={{ animationDelay: "0.4s" }} />
                   </div>
                   <span className="text-sm font-medium text-[#1A2E1A]">Scanning your accounts…</span>
                 </div>
@@ -1149,7 +1149,7 @@ export default function OnboardingPage() {
                     // step in the pipeline (or score-reveal if none remain).
                     setTimeout(() => setPhase(advanceAfter(currentDiscoveryStep)), 800);
                   }}
-                  className="w-full rounded-xl border border-[#5C6B5C]/30 bg-white px-4 py-2.5 text-sm font-semibold text-[#5C6B5C] hover:bg-[#5C6B5C]/5"
+                  className="w-full rounded-xl border border-[#1677FF]/30 bg-white px-4 py-2.5 text-sm font-semibold text-[#1677FF] hover:bg-[#1677FF]/5"
                 >
                   Skip and continue
                 </button>
@@ -1172,10 +1172,10 @@ export default function OnboardingPage() {
                 const acted = !ambiguousProviders.find((x) => x.id === p.id); // unused; placeholder
                 void acted;
                 return (
-                  <div key={p.id} className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-3 flex items-center gap-3">
+                  <div key={p.id} className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-3 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-[#1A1D2E] truncate">{p.name}</div>
-                      <div className="text-[10px] text-[#7A7F8A]">
+                      <div className="text-sm font-medium text-[#071832] truncate">{p.name}</div>
+                      <div className="text-[10px] text-[#4F5F73]">
                         {isPharmacy ? "Pharmacy" : "Possible provider"}
                       </div>
                     </div>
@@ -1211,7 +1211,7 @@ export default function OnboardingPage() {
                             setAmbiguousProviders((prev) => prev.filter((x) => x.id !== p.id));
                           } finally { setReviewActioning(null); }
                         }}
-                        className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#EBEDF0] text-[#7A7F8A] hover:bg-[#F0F2F5] disabled:opacity-50"
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#E5EAF2] text-[#4F5F73] hover:bg-[#F0F2F5] disabled:opacity-50"
                       >
                         Drop
                       </button>
@@ -1239,18 +1239,18 @@ export default function OnboardingPage() {
             Always renders after bank/calendar (if selected) and before score. */}
         {phase === "manual-search" && !typing && (
           <div className="animate-fadeIn space-y-3">
-            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-4 space-y-3">
+            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-4 space-y-3">
               <label className="block text-xs font-semibold text-[#1A2E1A] mb-1">Search for a provider</label>
-              <p className="text-[11px] text-[#7A7F8A] mb-2">Type a name, specialty (e.g. "dermatologist"), or "doctor [city]". Tap Add on any match.</p>
+              <p className="text-[11px] text-[#4F5F73] mb-2">Type a name, specialty (e.g. "dermatologist"), or "doctor [city]". Tap Add on any match.</p>
               <input
                 type="text"
                 placeholder="e.g. Dr. Smith, dentist, cardiologist NYC"
                 value={manualSearchQuery}
                 onChange={(e) => setManualSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-[#EBEDF0] bg-white px-3 py-2.5 text-sm text-[#1A1D2E] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-2 focus:ring-[#5C6B5C]/30"
+                className="w-full rounded-xl border border-[#E5EAF2] bg-white px-3 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-2 focus:ring-[#1677FF]/30"
               />
               {manualSearching && (
-                <div className="text-xs text-[#B0B4BC]">Searching…</div>
+                <div className="text-xs text-[#4F5F73]">Searching…</div>
               )}
               {manualSearchResults.length > 0 && (
                 <div className="space-y-1.5 max-h-64 overflow-y-auto">
@@ -1258,11 +1258,11 @@ export default function OnboardingPage() {
                     const key = `${r.name}|${r.npi}`;
                     const isAdded = manualAdded.has(key);
                     return (
-                      <div key={key} className="flex items-center gap-2 rounded-xl border border-[#EBEDF0] px-3 py-2">
+                      <div key={key} className="flex items-center gap-2 rounded-xl border border-[#E5EAF2] px-3 py-2">
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#1A1D2E] truncate">{r.name}</div>
-                          {r.specialty && <div className="text-[10px] text-[#7A7F8A] truncate">{r.specialty}</div>}
-                          {r.address && <div className="text-[10px] text-[#B0B4BC] truncate">{r.address}</div>}
+                          <div className="text-sm font-medium text-[#071832] truncate">{r.name}</div>
+                          {r.specialty && <div className="text-[10px] text-[#4F5F73] truncate">{r.specialty}</div>}
+                          {r.address && <div className="text-[10px] text-[#4F5F73] truncate">{r.address}</div>}
                         </div>
                         <button
                           disabled={isAdded || manualAdding === key}
@@ -1289,7 +1289,7 @@ export default function OnboardingPage() {
                             }
                           }}
                           className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-                          style={{ backgroundColor: isAdded ? "#EBEDF0" : ACCENT, color: isAdded ? "#7A7F8A" : "white" }}
+                          style={{ backgroundColor: isAdded ? "#E5EAF2" : ACCENT, color: isAdded ? "#4F5F73" : "white" }}
                         >
                           {isAdded ? "Added" : manualAdding === key ? "Adding…" : "Add"}
                         </button>
@@ -1299,7 +1299,7 @@ export default function OnboardingPage() {
                 </div>
               )}
               {manualSearchQuery.trim().length >= 2 && !manualSearching && manualSearchResults.length === 0 && (
-                <div className="text-xs text-[#B0B4BC]">No matches — try a different name or specialty.</div>
+                <div className="text-xs text-[#4F5F73]">No matches — try a different name or specialty.</div>
               )}
             </div>
             <button
@@ -1320,7 +1320,7 @@ export default function OnboardingPage() {
                 addKateMessage("No problem — moving on.");
                 setTimeout(() => setPhase(advanceAfter("manual")), 800);
               }}
-              className="w-full text-center text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
+              className="w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73]"
             >
               Skip for now
             </button>
@@ -1345,7 +1345,7 @@ export default function OnboardingPage() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-4xl font-light text-[#0FA5A5]">{score}</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7A7F8A] mt-0.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73] mt-0.5">
                   {score >= 85 ? "Strong" : score >= 60 ? "On Track" : score >= 30 ? "Building" : "Starting"}
                 </span>
               </div>

@@ -111,7 +111,7 @@ export default function ProvidersHubC2() {
     return (
       <PageShell>
         {/* Back button */}
-        <button onClick={() => { setSelectedId(null); setActiveTab("overview"); }} className="flex items-center gap-1 text-sm text-[#7A7F8A] hover:text-[#1A2E1A] mb-4">
+        <button onClick={() => { setSelectedId(null); setActiveTab("overview"); }} className="flex items-center gap-1 text-sm text-[#4F5F73] hover:text-[#1A2E1A] mb-4">
           <ChevronLeft size={16} /> All Providers
         </button>
 
@@ -122,7 +122,7 @@ export default function ProvidersHubC2() {
               <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.accent }}>{colors.label}</span>
               <h1 className="mt-1 text-2xl font-serif text-[#1A2E1A]">{selected.provider.name}</h1>
               {selected.provider.doctor_name && (
-                <div className="text-sm text-[#7A7F8A] mt-0.5">Dr. {selected.provider.doctor_name}</div>
+                <div className="text-sm text-[#4F5F73] mt-0.5">Dr. {selected.provider.doctor_name}</div>
               )}
               {selected.provider.specialty && selected.provider.specialty !== colors.label && (
                 <div className="text-xs mt-1" style={{ color: colors.accent + "99" }}>{selected.provider.specialty}</div>
@@ -141,7 +141,7 @@ export default function ProvidersHubC2() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
-                activeTab === tab.key ? "bg-white shadow-sm text-[#1A2E1A]" : "text-[#7A7F8A] hover:text-[#1A2E1A]"
+                activeTab === tab.key ? "bg-white shadow-sm text-[#1A2E1A]" : "text-[#4F5F73] hover:text-[#1A2E1A]"
               }`}
             >
               <tab.icon size={14} />
@@ -155,20 +155,20 @@ export default function ProvidersHubC2() {
           {activeTab === "overview" && (
             <div className="space-y-4">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#B0B4BC] mb-2">Contact</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">Contact</div>
                 {selected.provider.phone ? (
                   <div className="flex items-center gap-2 text-sm text-[#1A2E1A]">
-                    <Phone size={14} className="text-[#7A7F8A]" />
+                    <Phone size={14} className="text-[#4F5F73]" />
                     <a href={`tel:${selected.provider.phone}`} className="hover:underline">{selected.provider.phone}</a>
                   </div>
                 ) : (
-                  <div className="text-sm text-[#B0B4BC]">No phone number on file</div>
+                  <div className="text-sm text-[#4F5F73]">No phone number on file</div>
                 )}
               </div>
 
               {selected.booking_state?.status === "BOOKED" && selected.booking_state.appointmentStart && (
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#B0B4BC] mb-2">Next Appointment</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">Next Appointment</div>
                   <div className="flex items-center gap-2 text-sm text-[#1A2E1A]">
                     <Calendar size={14} className="text-[#D4A44C]" />
                     {new Date(selected.booking_state.appointmentStart).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
@@ -177,8 +177,8 @@ export default function ProvidersHubC2() {
               )}
 
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#B0B4BC] mb-2">Visit Summary</div>
-                <div className="text-sm text-[#7A7F8A]">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">Visit Summary</div>
+                <div className="text-sm text-[#4F5F73]">
                   {selected.visitCount ? `${selected.visitCount} visit${selected.visitCount !== 1 ? "s" : ""} on record` : "No visits recorded yet"}
                   {selected.lastVisitDate && ` · Last: ${new Date(selected.lastVisitDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
                 </div>
@@ -186,7 +186,7 @@ export default function ProvidersHubC2() {
 
               {selected.latestNote?.office_instructions && (
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#B0B4BC] mb-2">Office Instructions</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">Office Instructions</div>
                   <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-900">
                     {selected.latestNote.office_instructions}
                   </div>
@@ -197,31 +197,31 @@ export default function ProvidersHubC2() {
 
           {activeTab === "history" && (
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#B0B4BC] mb-3">Visit History</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-3">Visit History</div>
               {selected.visitCount && selected.visitCount > 0 ? (
-                <div className="text-sm text-[#7A7F8A]">
+                <div className="text-sm text-[#4F5F73]">
                   {selected.visitCount} visit{selected.visitCount !== 1 ? "s" : ""} on record.
                   {selected.lastVisitDate && (
                     <span> Most recent: {new Date(selected.lastVisitDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
                   )}
-                  <p className="mt-2 text-xs">Full timeline available on the <a href="/timeline" className="underline text-[#5C6B5C]">Timeline page</a>.</p>
+                  <p className="mt-2 text-xs">Full timeline available on the <a href="/timeline" className="underline text-[#1677FF]">Timeline page</a>.</p>
                 </div>
               ) : (
-                <div className="text-sm text-[#B0B4BC]">No visit history recorded yet. Kate will track visits as they happen.</div>
+                <div className="text-sm text-[#4F5F73]">No visit history recorded yet. Kate will track visits as they happen.</div>
               )}
             </div>
           )}
 
           {activeTab === "documents" && (
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#B0B4BC] mb-3">Documents</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-3">Documents</div>
               <div className="text-center py-6">
                 <FileText size={32} className="mx-auto text-[#D0D3D8]" />
-                <div className="mt-2 text-sm text-[#7A7F8A]">No documents for this provider yet</div>
+                <div className="mt-2 text-sm text-[#4F5F73]">No documents for this provider yet</div>
                 <a
                   href="/documents"
                   className="mt-3 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white"
-                  style={{ backgroundColor: "#5C6B5C" }}
+                  style={{ backgroundColor: "#1677FF" }}
                 >
                   <Upload size={12} /> Upload a document
                 </a>
@@ -231,22 +231,22 @@ export default function ProvidersHubC2() {
 
           {activeTab === "notes" && (
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#B0B4BC] mb-3">Notes</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-3">Notes</div>
               {selected.provider.notes ? (
                 <div className="text-sm text-[#1A2E1A] whitespace-pre-line">{selected.provider.notes}</div>
               ) : (
-                <div className="text-sm text-[#B0B4BC]">No notes yet. Add notes from the provider detail page.</div>
+                <div className="text-sm text-[#4F5F73]">No notes yet. Add notes from the provider detail page.</div>
               )}
               {selected.latestNote?.summary && (
                 <div className="mt-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#B0B4BC] mb-1">Last Call Summary</div>
-                  <div className="text-sm text-[#7A7F8A]">{selected.latestNote.summary}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-1">Last Call Summary</div>
+                  <div className="text-sm text-[#4F5F73]">{selected.latestNote.summary}</div>
                 </div>
               )}
               {selected.latestNote?.follow_up_notes && (
                 <div className="mt-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#B0B4BC] mb-1">Follow-up</div>
-                  <div className="text-sm text-[#7A7F8A]">{selected.latestNote.follow_up_notes}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-1">Follow-up</div>
+                  <div className="text-sm text-[#4F5F73]">{selected.latestNote.follow_up_notes}</div>
                 </div>
               )}
             </div>
@@ -254,7 +254,7 @@ export default function ProvidersHubC2() {
         </div>
 
         <div className="mt-4 text-center">
-          <a href={`/providers/${selected.provider.id}`} className="text-xs text-[#7A7F8A] underline">Full provider detail page →</a>
+          <a href={`/providers/${selected.provider.id}`} className="text-xs text-[#4F5F73] underline">Full provider detail page →</a>
         </div>
       </PageShell>
     );
@@ -264,9 +264,9 @@ export default function ProvidersHubC2() {
   return (
     <PageShell>
       <h1 className="font-serif text-2xl text-[#1A2E1A]">Your Provider Hub</h1>
-      <p className="mt-1 text-sm text-[#7A7F8A]">{doctors.length} providers — tap any to see their full hub</p>
+      <p className="mt-1 text-sm text-[#4F5F73]">{doctors.length} providers — tap any to see their full hub</p>
 
-      <div className="mt-6 text-[10px] font-bold uppercase tracking-[0.15em] text-[#7A7F8A] mb-1">
+      <div className="mt-6 text-[10px] font-bold uppercase tracking-[0.15em] text-[#4F5F73] mb-1">
         Option C2: Jewel Tones Palette
       </div>
 
@@ -289,13 +289,13 @@ export default function ProvidersHubC2() {
                     <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.accent }}>{colors.label}</span>
                     <div className="text-sm font-semibold text-[#1A2E1A]">{s.provider.name}</div>
                     {s.provider.specialty && s.provider.specialty !== colors.label && (
-                      <div className="text-[10px] text-[#7A7F8A]">{s.provider.specialty}</div>
+                      <div className="text-[10px] text-[#4F5F73]">{s.provider.specialty}</div>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-semibold" style={{ color: status.color }}>{status.label}</span>
-                  <ChevronLeft size={14} className="rotate-180 text-[#B0B4BC]" />
+                  <ChevronLeft size={14} className="rotate-180 text-[#4F5F73]" />
                 </div>
               </div>
             </button>
@@ -304,9 +304,9 @@ export default function ProvidersHubC2() {
       </div>
 
       <div className="mt-6 text-center">
-        <a href="/providers" className="text-xs text-[#7A7F8A] underline">Back to current providers page</a>
+        <a href="/providers" className="text-xs text-[#4F5F73] underline">Back to current providers page</a>
         {" · "}
-        <a href="/providers-hub-c1" className="text-xs text-[#7A7F8A] underline">Warm Earth</a> · <a href="/providers-hub-c2" className="text-xs text-[#7A7F8A] underline">Jewel Tones</a> · <a href="/providers-hub-c3" className="text-xs text-[#7A7F8A] underline">Glass Tints</a>
+        <a href="/providers-hub-c1" className="text-xs text-[#4F5F73] underline">Warm Earth</a> · <a href="/providers-hub-c2" className="text-xs text-[#4F5F73] underline">Jewel Tones</a> · <a href="/providers-hub-c3" className="text-xs text-[#4F5F73] underline">Glass Tints</a>
       </div>
     </PageShell>
   );

@@ -119,7 +119,7 @@ function classifySnapshots(snapshots: Snapshot[]): ActionItem[] {
 /* ───────────────────────── Palette ───────────────────────── */
 
 const P = {
-  olive: "#5C6B5C",
+  olive: "#1677FF",
   cream: "#F0EDE8",
   navy: "#FFFFFF",
   lime: "#E2F0A0",

@@ -208,13 +208,13 @@ export default function SetupWizard() {
         }
       >
         <div
-          className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-[#EBEDF0] overflow-hidden pointer-events-auto"
+          className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-[#E5EAF2] overflow-hidden pointer-events-auto"
           style={hasTarget ? { width: "100%" } : {}}
         >
           {/* Progress bar */}
-          <div className="h-1.5 bg-[#EBEDF0]">
+          <div className="h-1.5 bg-[#E5EAF2]">
             <div
-              className="h-1.5 bg-[#5C6B5C] transition-all duration-300"
+              className="h-1.5 bg-[#1677FF] transition-all duration-300"
               style={{ width: `${((currentStep + 1) / WIZARD_STEPS.length) * 100}%` }}
             />
           </div>
@@ -229,15 +229,15 @@ export default function SetupWizard() {
                 className="rounded-full shrink-0 mt-0.5"
               />
               <div className="flex-1">
-                <div className="text-sm font-semibold text-[#1A1D2E]">{step.title}</div>
-                <p className="mt-1 text-xs text-[#7A7F8A] leading-relaxed">{step.body}</p>
+                <div className="text-sm font-semibold text-[#071832]">{step.title}</div>
+                <p className="mt-1 text-xs text-[#4F5F73] leading-relaxed">{step.body}</p>
               </div>
             </div>
 
             <div className="mt-4 flex items-center justify-between">
               <button
                 onClick={handleSkip}
-                className="text-xs text-[#B0B4BC] hover:text-[#7A7F8A] transition"
+                className="text-xs text-[#4F5F73] hover:text-[#4F5F73] transition"
               >
                 Skip Tour
               </button>
@@ -245,18 +245,18 @@ export default function SetupWizard() {
                 {currentStep > 0 && (
                   <button
                     onClick={() => setCurrentStep((prev) => prev - 1)}
-                    className="text-xs text-[#7A7F8A] hover:text-[#1A1D2E] transition"
+                    className="text-xs text-[#4F5F73] hover:text-[#071832] transition"
                   >
                     &larr; Previous
                   </button>
                 )}
-                <span className="text-[10px] text-[#B0B4BC]">
+                <span className="text-[10px] text-[#4F5F73]">
                   {currentStep + 1}/{WIZARD_STEPS.length}
                 </span>
                 <button
                   onClick={handleNext}
                   className="rounded-xl px-4 py-2 text-xs font-semibold text-white"
-                  style={{ backgroundColor: "#5C6B5C" }}
+                  style={{ backgroundColor: "#1677FF" }}
                 >
                   {isLast ? "Got It" : "Next"}
                 </button>

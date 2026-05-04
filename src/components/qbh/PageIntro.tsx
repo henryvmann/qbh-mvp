@@ -195,10 +195,10 @@ export default function PageIntro() {
             : { position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }
         }
       >
-        <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-[#EBEDF0] overflow-hidden pointer-events-auto">
-          <div className="h-1.5 bg-[#EBEDF0]">
+        <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-[#E5EAF2] overflow-hidden pointer-events-auto">
+          <div className="h-1.5 bg-[#E5EAF2]">
             <div
-              className="h-1.5 bg-[#5C6B5C] transition-all duration-300"
+              className="h-1.5 bg-[#1677FF] transition-all duration-300"
               style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}
             />
           </div>
@@ -206,25 +206,25 @@ export default function PageIntro() {
             <div className="flex items-start gap-3">
               <Image src="/kate-avatar.png" alt="Kate" width={32} height={32} className="rounded-full shrink-0 mt-0.5" />
               <div className="flex-1">
-                <div className="text-sm font-semibold text-[#1A1D2E]">{slide.title}</div>
-                <p className="mt-1 text-xs text-[#7A7F8A] leading-relaxed">{slide.body}</p>
+                <div className="text-sm font-semibold text-[#071832]">{slide.title}</div>
+                <p className="mt-1 text-xs text-[#4F5F73] leading-relaxed">{slide.body}</p>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between">
-              <button onClick={handleSkip} className="text-xs text-[#B0B4BC] hover:text-[#7A7F8A]">
+              <button onClick={handleSkip} className="text-xs text-[#4F5F73] hover:text-[#4F5F73]">
                 Got It
               </button>
               <div className="flex items-center gap-3">
                 {currentSlide > 0 && (
-                  <button onClick={() => setCurrentSlide((p) => p - 1)} className="text-xs text-[#7A7F8A]">
+                  <button onClick={() => setCurrentSlide((p) => p - 1)} className="text-xs text-[#4F5F73]">
                     &larr; Previous
                   </button>
                 )}
-                <span className="text-[10px] text-[#B0B4BC]">{currentSlide + 1}/{slides.length}</span>
+                <span className="text-[10px] text-[#4F5F73]">{currentSlide + 1}/{slides.length}</span>
                 <button
                   onClick={handleNext}
                   className="rounded-lg px-4 py-1.5 text-xs font-semibold text-white"
-                  style={{ backgroundColor: "#5C6B5C" }}
+                  style={{ backgroundColor: "#1677FF" }}
                 >
                   {isLast ? "Let's Go" : "Next"}
                 </button>

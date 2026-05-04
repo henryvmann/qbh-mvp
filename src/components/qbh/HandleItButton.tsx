@@ -213,23 +213,23 @@ export default function HandleItButton({
   }
 
   const inputClass =
-    "w-full rounded-xl bg-white px-3 py-2.5 text-sm text-[#1A1D2E] border border-[#EBEDF0] placeholder:text-[#B0B4BC] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C]";
+    "w-full rounded-xl bg-white px-3 py-2.5 text-sm text-[#071832] border border-[#E5EAF2] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]";
 
   return (
     <div className="mt-4">
       {/* Pre-call info form */}
       {showForm && (
-        <div className="mb-4 rounded-2xl border border-[#EBEDF0] bg-white p-5 shadow-sm">
-          <div className="text-sm font-semibold text-[#1A1D2E]">
+        <div className="mb-4 rounded-2xl border border-[#E5EAF2] bg-white p-5 shadow-sm">
+          <div className="text-sm font-semibold text-[#071832]">
             Before Kate calls
           </div>
-          <div className="mt-1 text-xs text-[#7A7F8A]">
+          <div className="mt-1 text-xs text-[#4F5F73]">
             The office will ask for these — it helps Kate book successfully.
           </div>
 
           <div className="mt-4 flex flex-col gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-[#7A7F8A]">
+              <label className="mb-1 block text-xs font-medium text-[#4F5F73]">
                 Full name (first and last)
               </label>
               <input
@@ -242,7 +242,7 @@ export default function HandleItButton({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-[#7A7F8A]">
+              <label className="mb-1 block text-xs font-medium text-[#4F5F73]">
                 Date of birth
               </label>
               <input
@@ -255,7 +255,7 @@ export default function HandleItButton({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-[#7A7F8A]">
+              <label className="mb-1 block text-xs font-medium text-[#4F5F73]">
                 Insurance provider
               </label>
               <input
@@ -269,8 +269,8 @@ export default function HandleItButton({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-[#7A7F8A]">
-                Member ID <span className="text-[#B0B4BC]">(optional)</span>
+              <label className="mb-1 block text-xs font-medium text-[#4F5F73]">
+                Member ID <span className="text-[#4F5F73]">(optional)</span>
               </label>
               <input
                 type="text"
@@ -283,7 +283,7 @@ export default function HandleItButton({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-[#7A7F8A]">
+              <label className="mb-1 block text-xs font-medium text-[#4F5F73]">
                 Your phone number
               </label>
               <input
@@ -299,7 +299,7 @@ export default function HandleItButton({
             {/* New/existing patient */}
             {providerName && (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-[#7A7F8A]">
+                <label className="mb-1.5 block text-xs font-medium text-[#4F5F73]">
                   Have you visited this provider before?
                 </label>
                 <div className="flex gap-2">
@@ -314,9 +314,9 @@ export default function HandleItButton({
                       onClick={() => setPatientStatus(opt.value)}
                       className="flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition"
                       style={{
-                        backgroundColor: patientStatus === opt.value ? "#5C6B5C" : "#F0F2F5",
-                        color: patientStatus === opt.value ? "#FFFFFF" : "#7A7F8A",
-                        border: `1px solid ${patientStatus === opt.value ? "#5C6B5C" : "#EBEDF0"}`,
+                        backgroundColor: patientStatus === opt.value ? "#1677FF" : "#F0F2F5",
+                        color: patientStatus === opt.value ? "#FFFFFF" : "#4F5F73",
+                        border: `1px solid ${patientStatus === opt.value ? "#1677FF" : "#E5EAF2"}`,
                       }}
                     >
                       {opt.label}
@@ -335,7 +335,7 @@ export default function HandleItButton({
               disabled={saving || (!dob.trim() && !insuranceProvider.trim())}
               className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
               style={{
-                background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)",
+                background: "linear-gradient(135deg, #1677FF, #006BFF)",
               }}
             >
               {saving ? "Saving..." : "Save & call"}
@@ -343,7 +343,7 @@ export default function HandleItButton({
             <button
               type="button"
               onClick={handleSkip}
-              className="rounded-xl border border-[#EBEDF0] px-4 py-2.5 text-sm text-[#7A7F8A] transition hover:bg-[#F0F2F5]"
+              className="rounded-xl border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#4F5F73] transition hover:bg-[#F0F2F5]"
             >
               Skip
             </button>
@@ -353,22 +353,22 @@ export default function HandleItButton({
 
       {/* Upgrade prompt for free users */}
       {showUpgradePrompt && (
-        <div className="rounded-2xl border border-[#EBEDF0] bg-white p-4 shadow-sm">
-          <p className="text-sm font-semibold text-[#1A1D2E]">You&apos;ve used your one free Kate call.</p>
-          <p className="mt-1 text-xs text-[#7A7F8A]">
+        <div className="rounded-2xl border border-[#E5EAF2] bg-white p-4 shadow-sm">
+          <p className="text-sm font-semibold text-[#071832]">You&apos;ve used your one free Kate call.</p>
+          <p className="mt-1 text-xs text-[#4F5F73]">
             Free accounts get one trial call to test out Kate. To have her keep scheduling for you, upgrade to Solo or Family.
           </p>
           <div className="mt-3 flex gap-2">
             <a
               href="/billing"
               className="flex-1 rounded-xl py-2.5 text-center text-sm font-semibold text-white"
-              style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+              style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
             >
               View Plans
             </a>
             <button
               onClick={() => setShowUpgradePrompt(false)}
-              className="rounded-xl px-4 py-2.5 text-sm text-[#7A7F8A] hover:text-[#1A1D2E]"
+              className="rounded-xl px-4 py-2.5 text-sm text-[#4F5F73] hover:text-[#071832]"
             >
               Not now
             </button>
@@ -383,7 +383,7 @@ export default function HandleItButton({
           onClick={checkSubscriptionAndProceed}
           disabled={loading}
           className="group relative w-full overflow-hidden rounded-2xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-[0.98] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
-          style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)" }}
+          style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)" }}
         >
           <span className="relative z-10">
             {loading ? "One moment…" : label}
@@ -399,21 +399,21 @@ export default function HandleItButton({
           className={
             "mt-2 rounded-xl px-3 py-2 text-xs shadow-sm " +
             (toast.kind === "ok"
-              ? "bg-[#5C6B5C]/15 text-[#5C6B5C]"
-              : "bg-amber-50 text-[#1A1D2E] border border-amber-200")
+              ? "bg-[#1677FF]/15 text-[#1677FF]"
+              : "bg-amber-50 text-[#071832] border border-amber-200")
           }
         >
           {toast.kind === "error" && toast.text.toLowerCase().includes("name") ? (
             <span>
               Kate needs your full name to call. {" "}
-              <a href="/settings" className="font-semibold text-[#5C6B5C] underline underline-offset-2">
+              <a href="/settings" className="font-semibold text-[#1677FF] underline underline-offset-2">
                 Add it in Settings →
               </a>
             </span>
           ) : toast.kind === "error" && (toast.text.toLowerCase().includes("profile") || toast.text.toLowerCase().includes("dob") || toast.text.toLowerCase().includes("insurance")) ? (
             <span>
               {toast.text} {" "}
-              <a href="/settings" className="font-semibold text-[#5C6B5C] underline underline-offset-2">
+              <a href="/settings" className="font-semibold text-[#1677FF] underline underline-offset-2">
                 Update in Settings →
               </a>
             </span>

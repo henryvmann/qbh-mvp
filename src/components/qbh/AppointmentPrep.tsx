@@ -60,9 +60,9 @@ export default function AppointmentPrep({
       <button
         onClick={generatePrep}
         disabled={loading}
-        className="mt-3 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-[#5C6B5C] bg-[#5C6B5C]/10 hover:bg-[#5C6B5C]/20 transition disabled:opacity-50"
+        className="mt-3 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-[#1677FF] bg-[#1677FF]/10 hover:bg-[#1677FF]/20 transition disabled:opacity-50"
       >
-        <ClipboardList size={14} strokeWidth={1.5} color="#5C6B5C" />
+        <ClipboardList size={14} strokeWidth={1.5} color="#1677FF" />
         {loading ? "Preparing..." : "Prep for this visit"}
       </button>
     );
@@ -71,22 +71,22 @@ export default function AppointmentPrep({
   if (!prep) return null;
 
   return (
-    <div className="mt-4 rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] p-5">
+    <div className="mt-4 rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <ClipboardList size={18} strokeWidth={1.5} color="#5C6B5C" />
+          <ClipboardList size={18} strokeWidth={1.5} color="#1677FF" />
           <div>
-            <div className="text-sm font-semibold text-[#1A1D2E]">
+            <div className="text-sm font-semibold text-[#071832]">
               Visit Prep: {prep.provider_name}
             </div>
             {prep.appointment_date && (
-              <div className="text-xs text-[#7A7F8A]">{prep.appointment_date}</div>
+              <div className="text-xs text-[#4F5F73]">{prep.appointment_date}</div>
             )}
           </div>
         </div>
         <button
           onClick={() => setOpen(false)}
-          className="rounded p-1 text-[#B0B4BC] hover:text-[#7A7F8A]"
+          className="rounded p-1 text-[#4F5F73] hover:text-[#4F5F73]"
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M4 4l8 8M12 4l-8 8" />
@@ -95,48 +95,48 @@ export default function AppointmentPrep({
       </div>
 
       {/* Visit type */}
-      <div className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C] mb-1">
+      <div className="text-xs font-semibold uppercase tracking-wider text-[#1677FF] mb-1">
         Visit Type
       </div>
-      <div className="text-sm text-[#1A1D2E] mb-4">{prep.visit_type}</div>
+      <div className="text-sm text-[#071832] mb-4">{prep.visit_type}</div>
 
       {/* History */}
-      <div className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C] mb-1">
+      <div className="text-xs font-semibold uppercase tracking-wider text-[#1677FF] mb-1">
         History
       </div>
-      <div className="text-sm text-[#7A7F8A] mb-4">{prep.history_summary}</div>
+      <div className="text-sm text-[#4F5F73] mb-4">{prep.history_summary}</div>
 
       {/* Related care */}
       {prep.related_care && (
         <>
-          <div className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C] mb-1">
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#1677FF] mb-1">
             Connected Care
           </div>
-          <div className="text-sm text-[#7A7F8A] mb-4">{prep.related_care}</div>
+          <div className="text-sm text-[#4F5F73] mb-4">{prep.related_care}</div>
         </>
       )}
 
       {/* Questions */}
-      <div className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C] mb-2">
+      <div className="text-xs font-semibold uppercase tracking-wider text-[#1677FF] mb-2">
         Questions to Ask
       </div>
       <div className="space-y-1.5 mb-4">
         {prep.questions_to_ask.map((q, i) => (
-          <div key={i} className="flex gap-2 text-sm text-[#1A1D2E]">
-            <Check size={14} strokeWidth={1.5} color="#5C6B5C" className="shrink-0 mt-0.5" />
+          <div key={i} className="flex gap-2 text-sm text-[#071832]">
+            <Check size={14} strokeWidth={1.5} color="#1677FF" className="shrink-0 mt-0.5" />
             <span>{q}</span>
           </div>
         ))}
       </div>
 
       {/* Things to bring */}
-      <div className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C] mb-2">
+      <div className="text-xs font-semibold uppercase tracking-wider text-[#1677FF] mb-2">
         Things to Bring
       </div>
       <div className="space-y-1.5 mb-4">
         {prep.things_to_bring.map((item, i) => (
-          <div key={i} className="flex gap-2 text-sm text-[#1A1D2E]">
-            <Check size={14} strokeWidth={1.5} color="#5C6B5C" className="shrink-0 mt-0.5" />
+          <div key={i} className="flex gap-2 text-sm text-[#071832]">
+            <Check size={14} strokeWidth={1.5} color="#1677FF" className="shrink-0 mt-0.5" />
             <span>{item}</span>
           </div>
         ))}
@@ -145,16 +145,16 @@ export default function AppointmentPrep({
       {/* Prep notes */}
       {prep.prep_notes && (
         <>
-          <div className="text-xs font-semibold uppercase tracking-wider text-[#5C6B5C] mb-1">
+          <div className="text-xs font-semibold uppercase tracking-wider text-[#1677FF] mb-1">
             Preparation
           </div>
-          <div className="text-sm text-[#7A7F8A] mb-4">{prep.prep_notes}</div>
+          <div className="text-sm text-[#4F5F73] mb-4">{prep.prep_notes}</div>
         </>
       )}
 
       {/* Kate's note */}
-      <div className="mt-3 rounded-lg bg-white border border-[#EBEDF0] p-3 text-xs text-[#7A7F8A] italic">
-        <span className="inline-flex items-center gap-1.5"><Lightbulb size={14} strokeWidth={1.5} color="#5C6B5C" /> {prep.kate_note}</span>
+      <div className="mt-3 rounded-lg bg-white border border-[#E5EAF2] p-3 text-xs text-[#4F5F73] italic">
+        <span className="inline-flex items-center gap-1.5"><Lightbulb size={14} strokeWidth={1.5} color="#1677FF" /> {prep.kate_note}</span>
       </div>
 
       {/* Actions */}
@@ -176,7 +176,7 @@ export default function AppointmentPrep({
             ].filter(Boolean).join("\n");
             navigator.clipboard.writeText(text);
           }}
-          className="rounded-lg border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs font-medium text-[#1A1D2E] hover:bg-[#F0F2F5]"
+          className="rounded-lg border border-[#E5EAF2] bg-white px-3 py-1.5 text-xs font-medium text-[#071832] hover:bg-[#F0F2F5]"
         >
           Copy to clipboard
         </button>
@@ -198,14 +198,14 @@ export default function AppointmentPrep({
             const subject = `Visit Prep: ${prep.provider_name}`;
             window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`);
           }}
-          className="rounded-lg border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs font-medium text-[#1A1D2E] hover:bg-[#F0F2F5]"
+          className="rounded-lg border border-[#E5EAF2] bg-white px-3 py-1.5 text-xs font-medium text-[#071832] hover:bg-[#F0F2F5]"
         >
           Email to myself
         </button>
         <button
           onClick={generatePrep}
           disabled={loading}
-          className="rounded-lg border border-[#EBEDF0] bg-white px-3 py-1.5 text-xs font-medium text-[#7A7F8A] hover:bg-[#F0F2F5] disabled:opacity-50"
+          className="rounded-lg border border-[#E5EAF2] bg-white px-3 py-1.5 text-xs font-medium text-[#4F5F73] hover:bg-[#F0F2F5] disabled:opacity-50"
         >
           {loading ? "Refreshing..." : "Regenerate"}
         </button>

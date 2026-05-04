@@ -80,14 +80,14 @@ export default function PostVisitPrompt() {
   }
 
   return (
-    <div className="mt-6 rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-5 animate-fadeIn">
+    <div className="mt-6 rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5 animate-fadeIn">
       <div className="flex items-start gap-3">
         <Image src="/kate-avatar.png" alt="Kate" width={32} height={32} className="rounded-full shrink-0 mt-0.5" />
         <div className="flex-1">
-          <div className="text-sm font-semibold text-[#1A1D2E]">
+          <div className="text-sm font-semibold text-[#071832]">
             How did it go with {recentVisit.providerName}?
           </div>
-          <p className="mt-1 text-xs text-[#7A7F8A]">
+          <p className="mt-1 text-xs text-[#4F5F73]">
             Your appointment was {new Date(recentVisit.visitDate).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
           </p>
 
@@ -102,7 +102,7 @@ export default function PostVisitPrompt() {
                 <button
                   key={opt.value}
                   onClick={() => setResponse(opt.value)}
-                  className="rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2 text-xs font-medium text-[#1A1D2E] hover:border-[#5C6B5C] transition"
+                  className="rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2 text-xs font-medium text-[#071832] hover:border-[#1677FF] transition"
                 >
                   {opt.label}
                 </button>
@@ -115,20 +115,20 @@ export default function PostVisitPrompt() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Any details to remember for next time?"
                 rows={2}
-                className="w-full rounded-xl border border-[#EBEDF0] bg-[#F0F2F5] px-3 py-2 text-sm text-[#1A1D2E] focus:outline-none focus:ring-1 focus:ring-[#5C6B5C] resize-none"
+                className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF] resize-none"
               />
               <div className="mt-2 flex gap-2">
                 <button
                   onClick={handleSave}
                   disabled={saving}
                   className="rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                  style={{ backgroundColor: "#5C6B5C" }}
+                  style={{ backgroundColor: "#1677FF" }}
                 >
                   {saving ? "Saving..." : "Save"}
                 </button>
                 <button
                   onClick={() => { setDismissed(true); sessionStorage.setItem("qbh_post_visit_dismissed", "true"); }}
-                  className="text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
+                  className="text-xs text-[#4F5F73] hover:text-[#4F5F73]"
                 >
                   Skip
                 </button>
@@ -136,7 +136,7 @@ export default function PostVisitPrompt() {
             </div>
           )}
         </div>
-        <button onClick={() => { setDismissed(true); sessionStorage.setItem("qbh_post_visit_dismissed", "true"); }} className="text-[#B0B4BC] hover:text-[#7A7F8A] shrink-0">
+        <button onClick={() => { setDismissed(true); sessionStorage.setItem("qbh_post_visit_dismissed", "true"); }} className="text-[#4F5F73] hover:text-[#4F5F73] shrink-0">
           &#10005;
         </button>
       </div>

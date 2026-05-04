@@ -147,7 +147,7 @@ function CalendarConnectPageInner() {
 
   return (
     <main
-      className="min-h-screen text-[#1A1D2E]"
+      className="min-h-screen text-[#071832]"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
       <TopNav />
@@ -155,50 +155,50 @@ function CalendarConnectPageInner() {
         <header className="flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="text-sm text-[#7A7F8A] underline underline-offset-4"
+            className="text-sm text-[#4F5F73] underline underline-offset-4"
           >
             Back
           </Link>
 
-          <div className="text-xs text-[#B0B4BC]">Calendar</div>
+          <div className="text-xs text-[#4F5F73]">Calendar</div>
         </header>
 
         <section className="mt-10">
           <h1 className="text-3xl font-light tracking-tight">
             Connect Your Calendar
           </h1>
-          <p className="mt-2 text-base text-[#7A7F8A]">
+          <p className="mt-2 text-base text-[#4F5F73]">
             Two reasons: Kate checks your calendar before booking so appointments never conflict —
             and she scans past events to find doctors you've already seen and fill in your health timeline.
           </p>
 
           {/* Visual — what happens */}
           <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-            <div className="rounded-xl bg-white border border-[#EBEDF0] p-4">
+            <div className="rounded-xl bg-white border border-[#E5EAF2] p-4">
               <div className="text-2xl mb-2">1</div>
-              <div className="text-xs font-medium text-[#1A1D2E]">Connect</div>
-              <div className="text-[10px] text-[#7A7F8A] mt-1">One click to link your calendar</div>
+              <div className="text-xs font-medium text-[#071832]">Connect</div>
+              <div className="text-[10px] text-[#4F5F73] mt-1">One click to link your calendar</div>
             </div>
-            <div className="rounded-xl bg-white border border-[#EBEDF0] p-4">
+            <div className="rounded-xl bg-white border border-[#E5EAF2] p-4">
               <div className="text-2xl mb-2">2</div>
-              <div className="text-xs font-medium text-[#1A1D2E]">Kate Scans</div>
-              <div className="text-[10px] text-[#7A7F8A] mt-1">Past visits + upcoming appointments</div>
+              <div className="text-xs font-medium text-[#071832]">Kate Scans</div>
+              <div className="text-[10px] text-[#4F5F73] mt-1">Past visits + upcoming appointments</div>
             </div>
-            <div className="rounded-xl bg-white border border-[#EBEDF0] p-4">
+            <div className="rounded-xl bg-white border border-[#E5EAF2] p-4">
               <div className="text-2xl mb-2">3</div>
-              <div className="text-xs font-medium text-[#1A1D2E]">Stay Organized</div>
-              <div className="text-[10px] text-[#7A7F8A] mt-1">Timeline filled in, future bookings around your schedule</div>
+              <div className="text-xs font-medium text-[#071832]">Stay Organized</div>
+              <div className="text-[10px] text-[#4F5F73] mt-1">Timeline filled in, future bookings around your schedule</div>
             </div>
           </div>
 
-          <div className="mt-3 text-center text-[10px] text-[#B0B4BC]">
+          <div className="mt-3 text-center text-[10px] text-[#4F5F73]">
             Read-only access &middot; Your data stays private
           </div>
 
           {/* Calendar buttons */}
           <div className="mt-8 space-y-4">
-            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-6">
-              <div className="text-sm font-medium text-[#1A1D2E] mb-3">Google Calendar</div>
+            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-6">
+              <div className="text-sm font-medium text-[#071832] mb-3">Google Calendar</div>
               {googleConnected ? (
                 <div className="space-y-2">
                   <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
@@ -217,7 +217,7 @@ function CalendarConnectPageInner() {
                       } catch {} finally { setSubmitting(false); }
                     }}
                     disabled={submitting}
-                    className="w-full rounded-2xl px-6 py-2.5 text-sm font-medium border border-[#EBEDF0] text-[#1A1D2E] hover:bg-[#F0F2F5] transition disabled:opacity-60"
+                    className="w-full rounded-2xl px-6 py-2.5 text-sm font-medium border border-[#E5EAF2] text-[#071832] hover:bg-[#F0F2F5] transition disabled:opacity-60"
                   >
                     {submitting ? "Scanning..." : "Scan for doctor appointments"}
                   </button>
@@ -227,15 +227,15 @@ function CalendarConnectPageInner() {
                   onClick={startGoogleCalendarConnect}
                   disabled={!userId || submitting || submittingOutlook}
                   className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                  style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
                 >
                   {submitting ? "Redirecting..." : "Connect Google Calendar"}
                 </button>
               )}
             </div>
 
-            <div className="rounded-2xl bg-white border border-[#EBEDF0] shadow-sm p-6">
-              <div className="text-sm font-medium text-[#1A1D2E] mb-3">Outlook Calendar</div>
+            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-6">
+              <div className="text-sm font-medium text-[#071832] mb-3">Outlook Calendar</div>
               {outlookConnected ? (
                 <div className="w-full rounded-2xl px-6 py-3 text-center font-medium bg-green-50 text-green-700 ring-1 ring-green-200">
                   Connected &#10003;
@@ -245,7 +245,7 @@ function CalendarConnectPageInner() {
                   onClick={startOutlookCalendarConnect}
                   disabled={!userId || submitting || submittingOutlook}
                   className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                  style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
                 >
                   {submittingOutlook ? "Redirecting..." : "Connect Outlook Calendar"}
                 </button>
@@ -256,7 +256,7 @@ function CalendarConnectPageInner() {
           {/* Return button — prominent */}
           <Link
             href="/dashboard"
-            className="mt-6 block w-full rounded-2xl border border-[#EBEDF0] bg-white px-6 py-3 text-center text-sm font-medium text-[#7A7F8A] shadow-sm transition hover:bg-[#F0F2F5]"
+            className="mt-6 block w-full rounded-2xl border border-[#E5EAF2] bg-white px-6 py-3 text-center text-sm font-medium text-[#4F5F73] shadow-sm transition hover:bg-[#F0F2F5]"
           >
             Return To Dashboard
           </Link>

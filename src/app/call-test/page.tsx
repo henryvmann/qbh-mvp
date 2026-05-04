@@ -87,7 +87,7 @@ export default function CallTestPage() {
       `}</style>
 
       <h1 className="text-xl font-semibold text-[#1A2E1A]">Call Test</h1>
-      <p className="mt-1 text-sm text-[#7A7F8A]">Tap any provider to trigger a Kate call. Repeatable.</p>
+      <p className="mt-1 text-sm text-[#4F5F73]">Tap any provider to trigger a Kate call. Repeatable.</p>
 
       <div className="mt-6 space-y-4">
         {providers.map((p) => {
@@ -102,8 +102,8 @@ export default function CallTestPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-semibold text-[#1A2E1A]">{p.name}</div>
-                  {p.specialty && <div className="text-xs text-[#7A7F8A]">{p.specialty}</div>}
-                  {p.phone && <div className="text-xs text-[#B0B4BC] mt-0.5">{p.phone}</div>}
+                  {p.specialty && <div className="text-xs text-[#4F5F73]">{p.specialty}</div>}
+                  {p.phone && <div className="text-xs text-[#4F5F73] mt-0.5">{p.phone}</div>}
                 </div>
                 {isActive && (
                   <div className="flex items-center gap-2">
@@ -133,14 +133,14 @@ export default function CallTestPage() {
           );
         })}
         {providers.length === 0 && (
-          <div className="text-center text-sm text-[#B0B4BC]">No providers found. Add some first.</div>
+          <div className="text-center text-sm text-[#4F5F73]">No providers found. Add some first.</div>
         )}
       </div>
 
       {callingId && (
         <button
           onClick={() => { setCallingId(null); setCallStatus(null); }}
-          className="mt-4 w-full text-center text-xs text-[#B0B4BC] hover:text-[#7A7F8A]"
+          className="mt-4 w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73]"
         >
           Reset call status
         </button>

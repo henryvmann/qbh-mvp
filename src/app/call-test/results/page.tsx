@@ -56,10 +56,10 @@ export default function CallTestResults() {
           {triggering ? "Triggering..." : "Trigger Test Call"}
         </button>
       </div>
-      <p className="mt-1 text-sm text-[#7A7F8A]">AI analysis of Kate's test calls with Sandra</p>
+      <p className="mt-1 text-sm text-[#4F5F73]">AI analysis of Kate's test calls with Sandra</p>
 
       {logs.length === 0 ? (
-        <div className="mt-8 text-center text-sm text-[#B0B4BC]">
+        <div className="mt-8 text-center text-sm text-[#4F5F73]">
           No test calls analyzed yet. Trigger a call or enable AUTO_ANALYZE_CALLS=true in env vars.
         </div>
       ) : (
@@ -68,18 +68,18 @@ export default function CallTestResults() {
             <div key={log.id || log.call_id} className="rounded-2xl bg-white/55 backdrop-blur-sm border border-white/70 shadow-sm overflow-hidden">
               <div className="px-5 py-3 border-b border-white/50 flex items-center justify-between">
                 <span className="text-xs font-semibold text-[#1A2E1A]">{log.call_id}</span>
-                <span className="text-[10px] text-[#B0B4BC]">
+                <span className="text-[10px] text-[#4F5F73]">
                   {new Date(log.created_at).toLocaleString()}
                 </span>
               </div>
               <div className="p-5">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#7A7F8A] mb-2">Analysis</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-2">Analysis</div>
                 <div className="text-sm text-[#1A2E1A] whitespace-pre-line leading-relaxed">
                   {log.analysis}
                 </div>
                 <details className="mt-4">
-                  <summary className="text-xs text-[#7A7F8A] cursor-pointer hover:text-[#1A2E1A]">View transcript</summary>
-                  <pre className="mt-2 text-xs text-[#7A7F8A] whitespace-pre-wrap max-h-60 overflow-y-auto bg-white/30 rounded-xl p-3">
+                  <summary className="text-xs text-[#4F5F73] cursor-pointer hover:text-[#1A2E1A]">View transcript</summary>
+                  <pre className="mt-2 text-xs text-[#4F5F73] whitespace-pre-wrap max-h-60 overflow-y-auto bg-white/30 rounded-xl p-3">
                     {log.transcript}
                   </pre>
                 </details>

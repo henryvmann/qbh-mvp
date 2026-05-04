@@ -100,18 +100,18 @@ function PortalConnectPageInner() {
 
   return (
     <main
-      className="min-h-screen text-[#1A1D2E]"
+      className="min-h-screen text-[#071832]"
       style={{ background: "linear-gradient(180deg, #D8E8F5 0%, #E8EFF5 40%, #F5F5F5 100%)" }}
     >
       <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
         <header className="flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="text-sm text-[#7A7F8A] underline underline-offset-4"
+            className="text-sm text-[#4F5F73] underline underline-offset-4"
           >
             Back
           </Link>
-          <div className="text-xs text-[#B0B4BC]">Patient Portal</div>
+          <div className="text-xs text-[#4F5F73]">Patient Portal</div>
         </header>
 
         <section className="mt-12">
@@ -119,20 +119,20 @@ function PortalConnectPageInner() {
             Connect Your Patient Portal
           </h1>
 
-          <p className="mt-4 max-w-2xl text-lg text-[#7A7F8A]">
+          <p className="mt-4 max-w-2xl text-lg text-[#4F5F73]">
             Connect your MyChart account so Quarterback can pull in your
             appointments, medications, and health records for a complete picture
             of your care.
           </p>
 
-          <div className="mt-10 rounded-2xl bg-white shadow-sm p-8 border border-[#EBEDF0]">
+          <div className="mt-10 rounded-2xl bg-white shadow-sm p-8 border border-[#E5EAF2]">
             <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr]">
               <div>
-                <div className="text-sm font-medium text-[#1A1D2E]">
+                <div className="text-sm font-medium text-[#071832]">
                   Why this matters
                 </div>
 
-                <div className="mt-4 space-y-4 text-sm text-[#7A7F8A]">
+                <div className="mt-4 space-y-4 text-sm text-[#4F5F73]">
                   <div className="rounded-2xl bg-[#F0F2F5] px-4 py-3">
                     QBH pulls in real medical data — appointments, conditions,
                     and medications — directly from your health system.
@@ -151,11 +151,11 @@ function PortalConnectPageInner() {
               </div>
 
               <div className="space-y-6">
-                <div className="rounded-2xl border border-[#EBEDF0] bg-[#F0F2F5] p-6">
-                  <div className="text-sm font-medium text-[#1A1D2E]">
+                <div className="rounded-2xl border border-[#E5EAF2] bg-[#F0F2F5] p-6">
+                  <div className="text-sm font-medium text-[#071832]">
                     Epic MyChart
                   </div>
-                  <div className="mb-5 mt-2 text-sm text-[#7A7F8A]">
+                  <div className="mb-5 mt-2 text-sm text-[#4F5F73]">
                     Search for your health system, then sign in through MyChart.
                   </div>
 
@@ -169,7 +169,7 @@ function PortalConnectPageInner() {
                       onClick={startPortalConnect}
                       disabled={!canConnect}
                       className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-60"
-                      style={{ background: "linear-gradient(135deg, #5C6B5C, #4A5A4A)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
+                      style={{ background: "linear-gradient(135deg, #1677FF, #006BFF)", boxShadow: "0 8px 24px rgba(92,107,92,0.35)" }}
                     >
                       {submitting
                         ? "Redirecting to MyChart..."
@@ -180,7 +180,7 @@ function PortalConnectPageInner() {
 
                 <Link
                   href="/dashboard"
-                  className="block text-center text-sm text-[#B0B4BC] underline underline-offset-4"
+                  className="block text-center text-sm text-[#4F5F73] underline underline-offset-4"
                 >
                   Return to dashboard
                 </Link>
