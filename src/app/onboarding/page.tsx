@@ -534,14 +534,8 @@ export default function OnboardingPage() {
               setError("Bank connection failed. Try again from settings.");
               return;
             }
-            // Fire discovery in the background; runBankDiscovery polls the
-            // dashboard for results. One retry inside runBankDiscovery
-            // covers Plaid's PRODUCT_NOT_READY warmup case.
-            apiFetch("/api/discovery/run", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ app_user_id: userId }),
-            }).catch(() => {});
+            // runBankDiscovery owns the call to /api/discovery/run on
+            // every poll tick \u2014 no need to fire one here too.
             setTimeout(() => {
               addKateMessage("On it \u2014 pulling your records now.");
               setPhase("discovery-reveal");
@@ -560,9 +554,9 @@ export default function OnboardingPage() {
 
   // ── Discovery ──
   async function runBankDiscovery() {
-    // Surface activity so the page does not look frozen (T3-3 - without
-    // these, "Give me a sec, I'm pulling your records now" sits static
-    // for up to 90s with no movement and users refresh assuming it broke).
+    // Surface activity so the page does not look frozen — without
+    // these, "pulling your records now" sits static for a minute+
+    // and users refresh assuming it broke.
     setCurrentDiscoveryStep("bank");
     setDiscoveryActive(true);
     setTyping(true);
@@ -573,21 +567,27 @@ export default function OnboardingPage() {
     const progress45 = setTimeout(() => {
       addKateMessage("Almost there — just finishing up.");
     }, 45000);
+    const progress90 = setTimeout(() => {
+      addKateMessage("Your bank's a little slow today — hang tight, this'll be worth it.");
+    }, 90000);
 
-    // Drive discovery from inside the loop so PRODUCT_NOT_READY (Plaid's
-    // 30-60s post-Link warmup) naturally retries on the next tick. Once
-    // discovery returns concrete provider counts (or determines truly empty),
-    // we advance.
-    // Lightweight poll: discovery/run is already running in the background
-    // (kicked off by Plaid onSuccess). Poll the dashboard cheaply for
-    // results. If we still see nothing at the 30s mark, fire a one-shot
-    // retry of discovery/run to cover Plaid's PRODUCT_NOT_READY warmup.
+    // Drive discovery from inside the poll loop. /api/discovery/run is
+    // idempotent (upsert-based) and cheap when there's nothing new.
+    // PRODUCT_NOT_READY can persist for 60-180s on credit cards, so we
+    // need to keep retrying — the previous one-shot-at-30s retry was
+    // the bug that left users with zero providers. Each tick:
+    //   1. Hit /api/discovery/run; if it returns concrete results
+    //      (ok && !pending), we're done.
+    //   2. Otherwise wait the next interval and try again.
+    //   3. After 3 minutes of pending, give up and let the user
+    //      proceed (manual entry / next step).
     let attempts = 0;
-    let retried = false;
+    const MAX_ATTEMPTS = 60; // 3 min @ 3s
     const finish = (providers: DiscoveredProvider[]) => {
       clearInterval(poll);
       clearTimeout(progress15);
       clearTimeout(progress45);
+      clearTimeout(progress90);
       setDiscoveryActive(false);
       setTyping(false);
       setDiscoveredProviders(providers);
@@ -596,32 +596,41 @@ export default function OnboardingPage() {
     const poll = setInterval(async () => {
       attempts++;
       try {
-        const dashRes = await apiFetch("/api/dashboard/data");
-        const dashData = await dashRes.json().catch(() => ({}));
-        const snapshots = dashData?.snapshots || [];
-        if (snapshots.length > 0) {
+        const runRes = await apiFetch("/api/discovery/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_user_id: userId }),
+        });
+        const runData = await runRes.json().catch(() => ({}));
+
+        // ok && !pending means Plaid handed us transactions and the
+        // classifier ran. Even if provider_count is 0 (truly no
+        // healthcare in transactions), advance so the user isn't stuck.
+        if (runData?.ok && !runData.pending) {
+          const dashRes = await apiFetch("/api/dashboard/data");
+          const dashData = await dashRes.json().catch(() => ({}));
+          const snapshots = dashData?.snapshots || [];
           const providers = snapshots
-            .filter((s: any) => s.provider.provider_type !== "pharmacy")
-            .map((s: any) => ({
-              id: s.provider.id, name: s.provider.name,
-              visit_count: s.visitCount || 0, status: "active",
-              overdue: s.followUpNeeded && s.booking_state?.status !== "BOOKED",
+            .filter((s: { provider: { provider_type?: string } }) => s.provider.provider_type !== "pharmacy")
+            .map((s: {
+              provider: { id: string; name: string };
+              visitCount?: number;
+              followUpNeeded?: boolean;
+              booking_state?: { status?: string };
+            }) => ({
+              id: s.provider.id,
+              name: s.provider.name,
+              visit_count: s.visitCount || 0,
+              status: "active" as const,
+              overdue: !!s.followUpNeeded && s.booking_state?.status !== "BOOKED",
             }));
           finish(providers);
           return;
         }
-        // Plaid warmup retry at 30s: once.
-        if (!retried && attempts >= 10) {
-          retried = true;
-          apiFetch("/api/discovery/run", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ app_user_id: userId }),
-          }).catch(() => {});
-        }
-        if (attempts > 25) finish([]); // ~75s ceiling
+
+        if (attempts >= MAX_ATTEMPTS) finish([]);
       } catch {
-        if (attempts > 25) finish([]);
+        if (attempts >= MAX_ATTEMPTS) finish([]);
       }
     }, 3000);
   }
