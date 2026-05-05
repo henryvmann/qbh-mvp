@@ -59,6 +59,6 @@ export const DEFAULT_NAV: NavItem[] = [
   { key: "home", label: "Home", href: "/dashboard" },
   { key: "timeline", label: "Timeline", href: "/timeline" },
   { key: "insights", label: "Insights", href: "/goals" },
-  { key: "kate", label: "Kate", href: "/dashboard" },
+  { key: "kate", label: "Kate", href: "/kate" },
   { key: "you", label: "You", href: "/account" },
 ];
