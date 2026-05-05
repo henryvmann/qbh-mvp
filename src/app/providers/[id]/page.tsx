@@ -23,7 +23,11 @@ type Provider = {
   source?: string | null;
   status?: string | null;
   created_at?: string | null;
+  /** JSON-stringified array of care-recipient names this provider is for. */
+  care_recipient?: string | null;
 };
+
+type CareRecipient = { id: string; name: string; relationship: string };
 
 type Visit = { id: string; visit_date: string; amount: number | null; source: string };
 type CalEvent = { id: string; start_at: string; end_at: string; status: string; source: string };
@@ -66,6 +70,18 @@ export default function ProviderDetailPage() {
   const [editCareTeam, setEditCareTeam] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [careRecipients, setCareRecipients] = useState<CareRecipient[]>([]);
+  const [editAssignedTo, setEditAssignedTo] = useState<string[]>([]);
+
+  useEffect(() => {
+    apiFetch("/api/patient-profile")
+      .then((r) => r.json())
+      .then((data) => {
+        const list = data?.profile?.care_recipients as CareRecipient[] | undefined;
+        if (Array.isArray(list)) setCareRecipients(list);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     apiFetch(`/api/providers/detail?id=${providerId}`)
@@ -192,6 +208,27 @@ export default function ProviderDetailPage() {
                 {provider.care_team}
               </span>
             )}
+            {(() => {
+              if (!provider.care_recipient) return null;
+              try {
+                const list = JSON.parse(provider.care_recipient);
+                if (!Array.isArray(list) || list.length === 0) return null;
+                return (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {list.map((name: string) => (
+                      <span
+                        key={name}
+                        className="inline-block rounded-full bg-[#071832]/5 px-3 py-1 text-xs font-medium text-[#071832]"
+                      >
+                        For {name}
+                      </span>
+                    ))}
+                  </div>
+                );
+              } catch {
+                return null;
+              }
+            })()}
 
             {/* Contact details */}
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -226,6 +263,15 @@ export default function ProviderDetailPage() {
                     setEditDoctorName(provider.doctor_name || "");
                     setEditCareTeam(provider.care_team || "");
                     setEditNotes(provider.notes || "");
+                    // care_recipient stored as JSON-stringified array of names.
+                    let assigned: string[] = [];
+                    try {
+                      if (provider.care_recipient) {
+                        const parsed = JSON.parse(provider.care_recipient);
+                        if (Array.isArray(parsed)) assigned = parsed;
+                      }
+                    } catch {}
+                    setEditAssignedTo(assigned);
                     setEditing(true);
                   }}
                   className="text-xs font-medium underline underline-offset-2 transition"
@@ -327,6 +373,34 @@ export default function ProviderDetailPage() {
                     ))}
                   </div>
                 </div>
+                {careRecipients.length > 0 && (
+                  <div>
+                    <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">For</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {careRecipients.map((r) => {
+                        const selected = editAssignedTo.includes(r.name);
+                        return (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() =>
+                              setEditAssignedTo((prev) =>
+                                prev.includes(r.name) ? prev.filter((n) => n !== r.name) : [...prev, r.name]
+                              )
+                            }
+                            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                              selected
+                                ? "bg-[#1677FF] text-white"
+                                : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2]"
+                            }`}
+                          >
+                            {selected ? "✓ " : ""}{r.name}{r.relationship && r.relationship !== "Self" ? ` · ${r.relationship}` : ""}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <textarea
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
@@ -349,6 +423,7 @@ export default function ProviderDetailPage() {
                             specialty: editSpecialty.trim() || null,
                             care_team: editCareTeam.trim() || null,
                             notes: editNotes.trim() || null,
+                            care_recipients: editAssignedTo,
                           }),
                         });
                         setProvider({
@@ -358,6 +433,8 @@ export default function ProviderDetailPage() {
                           specialty: editSpecialty.trim() || null,
                           care_team: editCareTeam.trim() || null,
                           notes: editNotes.trim() || null,
+                          care_recipient:
+                            editAssignedTo.length > 0 ? JSON.stringify(editAssignedTo) : null,
                         });
                         setEditing(false);
                       } finally {

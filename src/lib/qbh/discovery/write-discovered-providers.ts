@@ -68,9 +68,18 @@ function isFuzzyDuplicate(existingName: string, newName: string): boolean {
   // If shorter name is a prefix of the longer (with word boundary)
   const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
   if (longer.startsWith(shorter + " ") || longer.startsWith(shorter + "/")) return true;
-  // Strip common suffixes and compare
-  const strip = (s: string) => s.replace(/\s+(gifts?|shop|store|pharmacy|rx|inc|llc|pc|pllc|pa|md|dds)\s*$/g, "").trim();
+  // Strip common suffixes (entity types + "med*" prefixes that survived
+  // earlier passes) and compare. Comma + space is allowed before the
+  // suffix so "modern dermatology, p" collapses to "modern dermatology".
+  const strip = (s: string) =>
+    s
+      .replace(/^[a-z]{2,5}\*\s*/, "")
+      .replace(/[,\s]+(gifts?|shop|store|pharmacy|rx|inc|ltd|llc|pc|pllc|plc|pa|p|md|dds|do)\s*$/g, "")
+      .trim();
   if (strip(a) === strip(b)) return true;
+  // Recurse the strip in case both sides have multiple stripable suffixes
+  // ("modern dermatology, p" vs "modern dermatology pc").
+  if (strip(strip(a)) === strip(strip(b))) return true;
   return false;
 }
 

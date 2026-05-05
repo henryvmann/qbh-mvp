@@ -127,6 +127,15 @@ function cleanTransactionName(raw: string): string {
     name = achMatch[1].trim();
   }
 
+  // Card-processor prefix strip. Many merchants run charges through
+  // a billing platform that prepends a tag like "MED*", "SQ*", "PP*",
+  // "TST*", "ETC*" before the merchant's actual name. Without stripping,
+  // "Med*Willows Pediatric" classifies as a different provider than
+  // plain "Willows Pediatric" and we end up with doubles on the
+  // dashboard. The * delimiter is the universal signal — strip the
+  // 2-5 char prefix preceding it.
+  name = name.replace(/^[A-Z]{2,5}\*\s*/i, "");
+
   // Remove common transaction prefixes/suffixes
   name = name
     // The trailing \b is critical — without it, a token like "SEC" greedily
@@ -137,6 +146,14 @@ function cleanTransactionName(raw: string): string {
     .replace(/\d{6,}/g, "") // Remove long number sequences (trace IDs, etc.)
     .replace(/[:\/#]+/g, " ")
     .replace(/\s+/g, " ")
+    .trim();
+
+  // Strip trailing entity-type suffixes that survived earlier passes
+  // ("Modern Dermatology, P" / "Modern Dermatology, PC" / "Modern
+  // Dermatology PLLC"). Without this they classify separately from the
+  // bare-name variant and create dashboard doubles.
+  name = name
+    .replace(/[,\s]+(P|PC|PA|LLC|PLLC|PLC|INC|LTD|MD|DDS|DO)$/i, "")
     .trim();
 
   // Expand common abbreviations
