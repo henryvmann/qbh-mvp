@@ -240,6 +240,15 @@ export default function ProviderDetailPage() {
                 >
                   Remove from care team
                 </button>
+                <a
+                  href={`/api/superbill?provider_id=${providerId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium underline underline-offset-2 transition hover:opacity-80"
+                  style={{ color: colors.accent }}
+                >
+                  Generate superbill
+                </a>
               </div>
             ) : (
               <div className="mt-4 space-y-2.5">

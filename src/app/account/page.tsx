@@ -367,6 +367,20 @@ export default function AccountPage() {
           </div>
         </div>
 
+        {/* Insurance card capture — snap a photo, GPT-4o vision
+            extracts carrier / member ID / group / phone, auto-fills
+            the Insurance section below. */}
+        <div id="insurance-card" className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#1677FF] mb-2">
+            Insurance card
+          </h2>
+          <p className="text-xs text-[#4F5F73] mb-4 leading-relaxed">
+            Snap photos of the front (and back, if it has the customer-service number).
+            Kate reads the card and fills out everything below automatically.
+          </p>
+          <InsuranceCardUploader />
+        </div>
+
         {/* Insurance Info — editable */}
         <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-4">
           <div className="flex items-center justify-between mb-4">
@@ -929,5 +943,122 @@ export default function AccountPage() {
         </div>
       )}
     </PageShell>
+  );
+}
+
+/** Insurance card capture — uploads front (+ optional back) photos
+ *  and triggers GPT-4o vision extraction. The API merges extracted
+ *  fields into patient_profile, so the Insurance section just below
+ *  this auto-populates after a successful upload. */
+function InsuranceCardUploader() {
+  const [front, setFront] = useState<File | null>(null);
+  const [back, setBack] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    if (!front || uploading) return;
+    setUploading(true);
+    setError(null);
+    setDone(false);
+    try {
+      const fd = new FormData();
+      fd.append("front", front);
+      if (back) fd.append("back", back);
+      const res = await apiFetch("/api/insurance-card", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) {
+        setError(json?.error || "Couldn't read the card. Try clearer photos.");
+      } else {
+        setDone(true);
+        setFront(null);
+        setBack(null);
+        setTimeout(() => window.location.reload(), 800);
+      }
+    } catch {
+      setError("Network error — try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <CardSlot
+          label="Front of card"
+          file={front}
+          onChange={setFront}
+        />
+        <CardSlot
+          label="Back (optional)"
+          file={back}
+          onChange={setBack}
+        />
+      </div>
+      {error && (
+        <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{error}</div>
+      )}
+      {done && (
+        <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-xs text-green-700">
+          Card read — refreshing your insurance section…
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={submit}
+        disabled={!front || uploading}
+        className="w-full rounded-xl bg-[#1677FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:opacity-60"
+      >
+        {uploading ? "Reading your card…" : "Read my card"}
+      </button>
+    </div>
+  );
+}
+
+function CardSlot({
+  label,
+  file,
+  onChange,
+}: {
+  label: string;
+  file: File | null;
+  onChange: (f: File | null) => void;
+}) {
+  return (
+    <label className="block cursor-pointer">
+      <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-1.5">
+        {label}
+      </div>
+      <div className={`rounded-xl border-2 border-dashed px-3 py-6 text-center transition ${
+        file ? "border-[#1677FF] bg-[#1677FF]/5" : "border-[#E5EAF2] bg-[#FAF8F4] hover:border-[#1677FF]"
+      }`}>
+        {file ? (
+          <div>
+            <div className="text-xs font-semibold text-[#071832] truncate">{file.name}</div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                onChange(null);
+              }}
+              className="mt-2 text-[11px] text-[#E04030] underline underline-offset-2"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div className="text-xs text-[#4F5F73]">Tap to add photo</div>
+        )}
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+      />
+    </label>
   );
 }
