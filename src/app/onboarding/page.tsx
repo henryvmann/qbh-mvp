@@ -316,7 +316,7 @@ export default function OnboardingPage() {
       setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Some people have a few doctors and barely think about it. Others are in and out of appointments constantly \u2014 specialists, scans, refills, follow-ups." }]);
     }, 2000);
     const t3 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you are on that spectrum, I'll meet you there." }]);
+      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you are on that spectrum, I'll meet you there. Where do you fall?" }]);
       setTyping(false);
     }, 3400);
     setTyping(true);
@@ -335,21 +335,21 @@ export default function OnboardingPage() {
       <><strong>I&rsquo;ll book your appointments.</strong> I call the office, navigate the phone tree, and schedule. You don&rsquo;t have to pick up the phone.</>,
       <><strong>I&rsquo;ll connect the dots.</strong> I track what&rsquo;s overdue, prep you before visits, and follow up after &mdash; so you can show up informed instead of being your own health historian.</>,
     ];
-    if (value === "relatable") {
-      addUserMessage("Yeah, that's me");
+    if (value === "simple") {
+      addUserMessage("A few doctors, mostly simple");
       setTimeout(() => {
         addKateMessages([
-          "Totally fair \u2014 the system isn't designed for you to keep up with all of it. That's my job.",
+          "Easy mode. I'll keep things light \u2014 nudge you when something's overdue, handle booking calls, stay out of the way otherwise.",
           "Here's what you can look forward to:",
           ...valueProps,
         ]);
         setTimeout(() => setPhase("value-props"), 3600);
       }, 400);
     } else {
-      addUserMessage("I'm actually pretty on top of it");
+      addUserMessage("I see a lot of specialists");
       setTimeout(() => {
         addKateMessages([
-          "Good \u2014 and if your health is complex, you've earned that. I can still take some of the load off, especially the parts no one should have to carry alone.",
+          "Then I'll be useful. I'll keep your specialists in sync, handle the scheduling and follow-ups, and prep you so each visit isn't starting from scratch.",
           "Here's what you can look forward to:",
           ...valueProps,
         ]);
@@ -924,8 +924,8 @@ export default function OnboardingPage() {
         {phase === "intro" && !typing && !responded && messages.length >= 3 && (
           <OptionButtons
             options={[
-              { label: "Yeah, that's me", value: "relatable" },
-              { label: "I'm actually pretty on top of it", value: "organized" },
+              { label: "A few doctors, mostly simple", value: "simple" },
+              { label: "I see a lot of specialists", value: "complex" },
             ]}
             onSelect={(v) => { setPhase("intro-responded"); handleIntroResponse(v); }}
           />
