@@ -669,7 +669,10 @@ export async function POST(req: Request) {
           patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
           patient_insurance_member_id: formatMemberIdForSpeech(patientProfile.insurance_member_id) || "not available — the patient will provide when they arrive",
           patient_callback_phone: patientProfile.callback_phone || "not available",
-          patient_reason_for_visit: patientProfile.reason_for_visit || "routine checkup",
+          patient_reason_for_visit:
+            (typeof body?.reason_for_visit === "string" && body.reason_for_visit.trim()) ||
+            patientProfile.reason_for_visit ||
+            "routine checkup",
           patient_appointment_preferences: formatCarePreferencesForSpeech(patientProfile.care_preferences),
         },
       },
