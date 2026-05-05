@@ -146,6 +146,10 @@ export default function OnboardingPage() {
   const [userId] = useState(() => typeof window !== "undefined" ? (localStorage.getItem("qbh_user_id") || crypto.randomUUID()) : crypto.randomUUID());
   const [careFor, setCareFor] = useState<string>("just-me");
   const [familyMembers, setFamilyMembers] = useState<string[]>([]);
+  // Captured at onboarding so Kate can prioritize specialists, set
+  // appropriate cadence reminders, and tailor in-call language.
+  // Saved to patient_profile.medical_context.
+  const [medicalContext, setMedicalContext] = useState<string>("");
   const [connectBank, setConnectBank] = useState(false);
   const [connectCalendar, setConnectCalendar] = useState(false);
   const [connectManual, setConnectManual] = useState(false);
@@ -327,28 +331,26 @@ export default function OnboardingPage() {
     // streamed into the chat like every other message so there's no
     // out-of-flow component to flicker on transition.
     const valueProps: React.ReactNode[] = [
-      <><strong>I&rsquo;ll find every doctor you&rsquo;ve seen.</strong> I scan your co-pays and pull your complete provider history. No typing, no remembering.</>,
-      <><strong>I&rsquo;ll book appointments for you.</strong> I call the office, navigate the phone tree, and schedule. You don&rsquo;t pick up the phone.</>,
-      <><strong>I&rsquo;ll connect the dots.</strong> I track what&rsquo;s overdue, prep you before visits, and follow up after. Your health &mdash; organized.</>,
+      <><strong>I&rsquo;ll find your doctors.</strong> I scan your co-pays so you don&rsquo;t have to remember every name and date.</>,
+      <><strong>I&rsquo;ll book your appointments.</strong> I call the office, navigate the phone tree, and schedule. You don&rsquo;t have to pick up the phone.</>,
+      <><strong>I&rsquo;ll connect the dots.</strong> I track what&rsquo;s overdue, prep you before visits, and follow up after &mdash; so you can show up informed instead of being your own health historian.</>,
     ];
     if (value === "relatable") {
       addUserMessage("Yeah, that's me");
       setTimeout(() => {
         addKateMessages([
-          "No judgment \u2014 that's literally everyone. The system isn't built for you to keep track.",
-          "But I am. Here's what you can look forward to:",
+          "Totally fair \u2014 the system isn't designed for you to keep up with all of it. That's my job.",
+          "Here's what you can look forward to:",
           ...valueProps,
         ]);
-        // 5 messages \u00d7 600ms gap + 800ms base = 3200ms total reveal,
-        // give a short beat after the last line before the button.
         setTimeout(() => setPhase("value-props"), 3600);
       }, 400);
     } else {
       addUserMessage("I'm actually pretty on top of it");
       setTimeout(() => {
         addKateMessages([
-          "Love that. But I bet even you have a provider or two that's slipped through the cracks.",
-          "Either way \u2014 I'm about to make your life easier. Here's what you can look forward to:",
+          "Good \u2014 and if your health is complex, you've earned that. I can still take some of the load off, especially the parts no one should have to carry alone.",
+          "Here's what you can look forward to:",
           ...valueProps,
         ]);
         setTimeout(() => setPhase("value-props"), 3600);
@@ -372,8 +374,8 @@ export default function OnboardingPage() {
       addUserMessage("Just me");
       setFamilyMembers([]);
       setTimeout(() => {
-        setPhase("discovery-method");
-        addKateMessage("Let's pull in your doctors. Pick whichever's easiest \u2014 or all three. I'll handle the rest.");
+        addKateMessage("One more question \u2014 anything big going on health-wise I should know about? It helps me tailor what to track and how to talk to your providers.");
+        setTimeout(() => setPhase("medical-context"), 1200);
       }, 400);
     } else {
       addUserMessage("Me and my family");
@@ -384,15 +386,54 @@ export default function OnboardingPage() {
     }
   }
 
+  function handleMedicalContext(value: string) {
+    setResponded(true);
+    const labels: Record<string, string> = {
+      none: "Nothing major",
+      chronic: "Chronic illness",
+      cancer: "Cancer treatment",
+      surgery: "Recovering from surgery / major event",
+      mental: "Mental health treatment",
+      pregnancy: "Pregnancy",
+      caregiving: "Caregiving for someone else",
+      other: "Something else \u2014 I'll tell you later",
+    };
+    addUserMessage(labels[value] ?? value);
+    setMedicalContext(value);
+    setTimeout(() => {
+      const empathic =
+        value === "none"
+          ? "Good to know \u2014 I'll keep things simple unless that changes."
+          : value === "chronic"
+          ? "Thanks for telling me. I'll keep your specialists tightly tracked and flag anything that looks off-cadence."
+          : value === "cancer"
+          ? "I'm with you on this. I'll prioritize your oncology team, treatment dates, and follow-ups, and keep everything else from getting in the way."
+          : value === "surgery"
+          ? "Recovery is full of follow-ups. I'll watch for them and keep the post-op timeline organized."
+          : value === "mental"
+          ? "Thanks for sharing. I'll handle the scheduling and refills with care so you can focus on the work itself."
+          : value === "pregnancy"
+          ? "Congrats. I'll keep your prenatal cadence and any specialists tightly synced."
+          : value === "caregiving"
+          ? "That's a lot of people to track. I can hold each person's care separately so nothing crosses wires."
+          : "Got it \u2014 share whenever you're ready. Until then I'll keep things broad.";
+      addKateMessages([
+        empathic,
+        "Now let's pull in your doctors. Pick whichever's easiest \u2014 or all three. I'll handle the rest."
+      ]);
+      setTimeout(() => setPhase("discovery-method"), 2400);
+    }, 400);
+  }
+
   function handleFamilyDone() {
     setResponded(true);
     addUserMessage(`Me${familyMembers.length > 0 ? ", " + familyMembers.join(", ") : ""}`);
     setTimeout(() => {
       addKateMessages([
         "I'll set up a separate hub for each person. Everyone's providers, appointments, and history \u2014 organized individually but managed by you.",
-        "Let's pull in your doctors. Pick whichever's easiest \u2014 or all three. I'll handle the rest."
+        "One more question \u2014 anything big going on health-wise I should know about? It helps me tailor what to track and how to talk to your providers.",
       ]);
-      setTimeout(() => setPhase("discovery-method"), 2400);
+      setTimeout(() => setPhase("medical-context"), 2400);
     }, 400);
   }
 
@@ -504,6 +545,7 @@ export default function OnboardingPage() {
             insurance_member_id: patientMemberId.trim() || undefined,
             callback_phone: patientPhone.trim() || undefined,
             zip_code: zipCode.trim() || undefined,
+            medical_context: medicalContext || undefined,
           },
           consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
         }),
@@ -694,7 +736,7 @@ export default function OnboardingPage() {
         setDiscoveredProviders(providers);
         startReveal(providers, "calendar");
       } else {
-        addKateMessage("Nothing healthcare-related on your calendar yet. No worries — you can hand me a name from the dashboard anytime.");
+        addKateMessage("Nothing healthcare-related on your calendar yet. No worries — you can give me a name from the dashboard anytime.");
         setTimeout(() => { advanceWithReview("calendar"); }, 1500);
       }
     } catch {
@@ -878,6 +920,37 @@ export default function OnboardingPage() {
           />
         )}
 
+        {/* Medical context — captured early so Kate can tailor
+            cadence, in-call language, and which specialists she
+            prioritizes. Saved to patient_profile.medical_context. */}
+        {phase === "medical-context" && !responded && (
+          <div className="flex flex-wrap gap-2 justify-end animate-fadeIn">
+            {[
+              { label: "Nothing major", value: "none" },
+              { label: "Chronic illness", value: "chronic" },
+              { label: "Cancer treatment", value: "cancer" },
+              { label: "Recovering from surgery", value: "surgery" },
+              { label: "Mental health treatment", value: "mental" },
+              { label: "Pregnancy", value: "pregnancy" },
+              { label: "Caregiving for someone", value: "caregiving" },
+              { label: "Something else", value: "other" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleMedicalContext(opt.value)}
+                className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
+                style={{
+                  backgroundColor: "#1677FF",
+                  border: "1px solid #1677FF",
+                  color: "#FFFFFF",
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Family select */}
         {phase === "family-select" && !responded && (
           <div className="space-y-2 animate-fadeIn">
@@ -915,7 +988,7 @@ export default function OnboardingPage() {
             <ToggleCard
               icon={Building2}
               title="Scan your bank"
-              description="Your co-pays are a breadcrumb trail to every doctor you've seen. Powered by Plaid — bank-level encryption, read-only, never stores credentials."
+              description="Your co-pays are a breadcrumb trail to your doctors. Bank-level secure — same Plaid integration used by Venmo, Robinhood, and most major banks. We never see passwords, never move money, and only read healthcare-related transactions."
               selected={connectBank}
               onToggle={() => setConnectBank(!connectBank)}
             />
@@ -1316,7 +1389,7 @@ export default function OnboardingPage() {
                 const count = manualAdded.size;
                 addKateMessage(count > 0
                   ? `Added ${count} — I've got them now.`
-                  : "All set — you can hand me a name from the dashboard anytime.");
+                  : "All set — you can give me a name from the dashboard anytime.");
                 setTimeout(() => setPhase(advanceAfter("manual")), 1000);
               }}
               className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"

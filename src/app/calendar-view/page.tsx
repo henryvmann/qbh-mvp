@@ -34,6 +34,10 @@ type DayEvent = {
   type: "upcoming" | "past" | "followup";
   label: string;
   detail: string;
+  /** calendar_events.id for upcoming, provider_visits.id for past, null for followup */
+  eventId?: string;
+  /** provider this event is tied to — used by the caregiver share-link flow */
+  providerId?: string;
 };
 
 /* ── Helpers ── */
@@ -153,6 +157,7 @@ export default function CalendarViewPage() {
       type: "upcoming",
       label: v.providerName,
       detail: formatTime(v.startAt),
+      eventId: v.eventId,
     });
     eventMap.set(key, list);
   }
@@ -447,40 +452,42 @@ export default function CalendarViewPage() {
             </h3>
             <div className="space-y-3">
               {selectedEvents.map((evt, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 rounded-xl bg-[#F0F2F5] p-4 border border-[#E5EAF2]"
-                >
-                  <span
-                    className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${
-                      evt.type === "upcoming"
-                        ? "bg-[#1677FF]"
-                        : evt.type === "past"
-                        ? "bg-[#2A6090]"
-                        : "bg-[#C03020]"
-                    }`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-[#071832]">
-                      {evt.label}
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center gap-3 rounded-xl bg-[#F0F2F5] p-4 border border-[#E5EAF2]">
+                    <span
+                      className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 ${
+                        evt.type === "upcoming"
+                          ? "bg-[#1677FF]"
+                          : evt.type === "past"
+                          ? "bg-[#2A6090]"
+                          : "bg-[#C03020]"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-[#071832]">
+                        {evt.label}
+                      </div>
+                      <div className="text-xs text-[#4F5F73]">{evt.detail}</div>
                     </div>
-                    <div className="text-xs text-[#4F5F73]">{evt.detail}</div>
-                  </div>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
-                      evt.type === "upcoming"
-                        ? "bg-[#1677FF]/15 text-[#1677FF]"
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+                        evt.type === "upcoming"
+                          ? "bg-[#1677FF]/15 text-[#1677FF]"
+                          : evt.type === "past"
+                          ? "bg-[#2A6090]/15 text-[#2A6090]"
+                          : "bg-[#C03020]/15 text-[#C03020]"
+                      }`}
+                    >
+                      {evt.type === "upcoming"
+                        ? "Confirmed"
                         : evt.type === "past"
-                        ? "bg-[#2A6090]/15 text-[#2A6090]"
-                        : "bg-[#C03020]/15 text-[#C03020]"
-                    }`}
-                  >
-                    {evt.type === "upcoming"
-                      ? "Confirmed"
-                      : evt.type === "past"
-                      ? "Completed"
-                      : "Needs booking"}
-                  </span>
+                        ? "Completed"
+                        : "Needs booking"}
+                    </span>
+                  </div>
+                  {evt.type === "upcoming" && evt.eventId && (
+                    <CaregiverInline calendarEventId={evt.eventId} />
+                  )}
                 </div>
               ))}
             </div>
@@ -602,5 +609,202 @@ export default function CalendarViewPage() {
         <NextSteps />
       </div>
     </PageShell>
+  );
+}
+
+/**
+ * CaregiverInline — small expander beneath each upcoming visit
+ * card. Lets the user invite a caregiver to this specific
+ * appointment with a checklist of asks (ride / bring / music /
+ * timing / notes). Saves to appointment_caregivers and returns a
+ * share link the user can text or email.
+ */
+function CaregiverInline({ calendarEventId }: { calendarEventId: string }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [needsRide, setNeedsRide] = useState(false);
+  const [bring, setBring] = useState("");
+  const [music, setMusic] = useState("");
+  const [timing, setTiming] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await apiFetch("/api/appointment-caregivers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          calendar_event_id: calendarEventId,
+          caregiver_name: name.trim(),
+          caregiver_email: email.trim() || null,
+          asks: {
+            needs_ride: needsRide,
+            bring: bring.trim() ? bring.split(",").map((s) => s.trim()).filter(Boolean) : [],
+            music: music.trim() || null,
+            timing_note: timing.trim() || null,
+          },
+          notes: notes.trim() || null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) {
+        setError(json?.error || "Couldn't save");
+      } else {
+        setShareUrl(json.share_url);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function copy() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="text-xs font-medium text-[#1677FF] underline underline-offset-2 ml-3"
+      >
+        + Add a caregiver
+      </button>
+    );
+  }
+
+  if (shareUrl) {
+    return (
+      <div className="ml-3 mr-3 rounded-xl bg-white border border-[#E5EAF2] p-4 shadow-sm">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-[#27C46B] mb-2">
+          Share link ready
+        </div>
+        <div className="text-xs text-[#4F5F73] mb-3">
+          Send this link to {name}. They&rsquo;ll see only this one appointment and
+          how they can help.
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={shareUrl}
+            className="flex-1 rounded-lg bg-[#F0F2F5] border border-[#E5EAF2] px-3 py-2 text-xs text-[#071832] font-mono"
+          />
+          <button
+            onClick={copy}
+            className="rounded-lg bg-[#1677FF] px-3 py-2 text-xs font-semibold text-white hover:brightness-95 transition shrink-0"
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+        <button
+          onClick={() => {
+            setOpen(false);
+            setShareUrl(null);
+            setName("");
+            setEmail("");
+            setNeedsRide(false);
+            setBring("");
+            setMusic("");
+            setTiming("");
+            setNotes("");
+          }}
+          className="mt-3 text-xs text-[#4F5F73] underline underline-offset-2"
+        >
+          Done
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ml-3 mr-3 rounded-xl bg-white border border-[#E5EAF2] p-4 shadow-sm space-y-3">
+      <div className="text-[10px] font-bold uppercase tracking-widest text-[#1677FF]">
+        Invite a caregiver
+      </div>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Their name (e.g. Mom, Sarah, David)"
+        className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+      />
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Their email (optional)"
+        className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+      />
+      <div>
+        <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-2">
+          What do you need from them?
+        </div>
+        <label className="flex items-center gap-2 mb-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={needsRide}
+            onChange={(e) => setNeedsRide(e.target.checked)}
+            className="h-4 w-4 accent-[#1677FF]"
+          />
+          A ride to and from the appointment
+        </label>
+        <input
+          type="text"
+          value={bring}
+          onChange={(e) => setBring(e.target.value)}
+          placeholder="Bring: magazines, a sweater, snacks (comma-separated)"
+          className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF] mb-2"
+        />
+        <input
+          type="text"
+          value={music}
+          onChange={(e) => setMusic(e.target.value)}
+          placeholder="Music for the ride (e.g. mellow / Taylor Swift)"
+          className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF] mb-2"
+        />
+        <input
+          type="text"
+          value={timing}
+          onChange={(e) => setTiming(e.target.value)}
+          placeholder="Timing (e.g. pick me up 30 min early)"
+          className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+        />
+      </div>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Anything else they should know"
+        rows={2}
+        className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF] resize-none"
+      />
+      {error && <div className="text-xs text-red-600">{error}</div>}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={submit}
+          disabled={!name.trim() || saving}
+          className="rounded-lg bg-[#1677FF] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-95 transition disabled:opacity-60"
+        >
+          {saving ? "Saving…" : "Generate share link"}
+        </button>
+        <button
+          onClick={() => setOpen(false)}
+          className="text-xs text-[#4F5F73] underline underline-offset-2"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
