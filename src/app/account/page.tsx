@@ -51,14 +51,12 @@ export default function AccountPage() {
     group_appointments: boolean;
     same_location: boolean;
     reminders: { week: boolean; threeDay: boolean; day: boolean; morningOf: boolean };
-    ask_before_booking: boolean;
   };
   const DEFAULT_PREFS: CarePrefs = {
     time_of_day: "no_preference",
     group_appointments: false,
     same_location: false,
     reminders: { week: false, threeDay: false, day: true, morningOf: false },
-    ask_before_booking: true,
   };
   const [carePrefs, setCarePrefs] = useState<CarePrefs>(DEFAULT_PREFS);
   const [savingPrefs, setSavingPrefs] = useState(false);
@@ -597,8 +595,7 @@ export default function AccountPage() {
             {([
               { k: "group_appointments", l: "Group appointments together when possible", h: "Kate will try to schedule back-to-back visits to save trips." },
               { k: "same_location", l: "Prefer providers in the same area", h: "When adding new providers, Kate suggests ones near your existing care team." },
-              { k: "ask_before_booking", l: "Always ask before booking anything", h: "Kate proposes times; you confirm before she calls the office." },
-            ] as { k: keyof Pick<CarePrefs, "group_appointments" | "same_location" | "ask_before_booking">; l: string; h: string }[]).map((opt) => {
+            ] as { k: keyof Pick<CarePrefs, "group_appointments" | "same_location">; l: string; h: string }[]).map((opt) => {
               const checked = carePrefs[opt.k];
               return (
                 <label key={opt.k} className="flex items-start gap-3 cursor-pointer">
