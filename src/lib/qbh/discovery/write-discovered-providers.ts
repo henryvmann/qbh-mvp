@@ -90,7 +90,7 @@ export async function writeDiscoveredProviders({
   const { data: existingProviders, error: existingProvidersError } =
     await supabaseAdmin
       .from("providers")
-      .select("id, name")
+      .select("id, name, npi")
       .eq("app_user_id", userId);
 
   if (existingProvidersError) {
@@ -111,12 +111,30 @@ export async function writeDiscoveredProviders({
       provider.id,
     ])
   );
+  // NPI is the only authoritative dedup key — when two transactions
+  // produce different cleaned names ("Eric Echelman, DDS" vs "Echelman
+  // Dentistry") but resolve to the same NPI, name-based dedup misses
+  // them and we end up with doubles. Match on NPI first, then fall
+  // back to name/fuzzy.
+  const existingByNpi = new Map(
+    (existingProviders || [])
+      .filter((p): p is { id: string; name: string; npi: string } => Boolean(p.npi))
+      .map((p) => [p.npi, p.id])
+  );
 
   const seenInsertNames = new Set<string>();
+  const seenInsertNpis = new Set<string>();
 
   const filteredForInsert = writableProviders.filter((provider) => {
     const key = cleanName(provider.provider_name);
     if (!key) return false;
+    // NPI dedup — runs first so name variants of the same provider
+    // can't slip through.
+    if (provider.npi) {
+      if (existingByNpi.has(provider.npi)) return false;
+      if (seenInsertNpis.has(provider.npi)) return false;
+      seenInsertNpis.add(provider.npi);
+    }
     if (existingByName.has(key)) return false;
     for (const existingName of existingByName.keys()) {
       if (isFuzzyDuplicate(existingName, key)) return false;

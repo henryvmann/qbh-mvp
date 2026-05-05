@@ -419,9 +419,11 @@ export default function OnboardingPage() {
           : "Got it \u2014 share whenever you're ready. Until then I'll keep things broad.";
       addKateMessages([
         empathic,
-        "Now let's pull in your doctors. Pick whichever's easiest \u2014 or all three. I'll handle the rest."
-      ]);
-      setTimeout(() => setPhase("discovery-method"), 2400);
+        "Now let's pull in your doctors. Three ways \u2014 pick whichever feels easiest, or all three. I'll handle the rest.",
+        "Bank scan is the fastest: I look at your card statements for healthcare charges and find every doctor you've paid. Read-only, encrypted, never stored, never sold. Bank-grade secure \u2014 same Plaid integration Venmo and Robinhood use.",
+        "If that's not your thing, your calendar works too \u2014 I'll grab any doctor visits past or present. Or just type the names yourself."
+      ], 800, 1100);
+      setTimeout(() => setPhase("discovery-method"), 4800);
     }, 400);
   }
 
@@ -561,14 +563,32 @@ export default function OnboardingPage() {
       // Sequenced pipeline: bank → calendar → manual → score, executed
       // only for the steps the user opted into on the discovery-method screen.
       const next = advanceAfter(null);
-      const msg =
-        next === "plaid-connect"      ? "Account's saved. Let's connect your bank — this is where it gets handled."
-        : next === "calendar-connect" ? "Account's saved. Let's connect your calendar — I'll pull anything healthcare-related."
-        : next === "manual-search"    ? "Account's saved. Let's add the providers you already see."
-        :                                "Account's saved. Let's head to your dashboard — you can hand me a provider anytime.";
+      // Lead-in messages explain what's about to happen so the user
+      // isn't dropped on a "Connect" button without context. Bank in
+      // particular gets the security + copay-card framing every time.
+      const leadIn: React.ReactNode[] =
+        next === "plaid-connect"
+          ? [
+              "Account's saved. One last setup step before your dashboard.",
+              "Pick whatever account you use for copays — debit, credit, or FSA/HSA. FSA/HSA is gold for me because every charge is healthcare-only, no noise.",
+              "If you'd rather not connect a bank, no pressure — tap skip and I'll grab your calendar instead, or you can type names manually.",
+            ]
+          : next === "calendar-connect"
+          ? [
+              "Account's saved. Let me peek at your calendar — I'll grab any doctor visits past or present and add them to your timeline.",
+              "Google or Outlook, both work. Read-only, only events that look healthcare-related. I never touch the rest of your calendar.",
+            ]
+          : next === "manual-search"
+          ? [
+              "Account's saved. Let's add the doctors you already know about.",
+              "Just type a name — the doctor's, the office's, even just part of it. I'll find them as long as they have an NPI (basically every licensed provider in the US).",
+            ]
+          : ["Account's saved. Let's head to your dashboard — you can hand me a provider anytime."];
       setTimeout(() => {
-        addKateMessage(msg);
-        setTimeout(() => setPhase(next), 1200);
+        addKateMessages(leadIn, 400, 1100);
+        // Hold on the connect screen until the lead-in is fully shown.
+        const holdMs = 400 + Math.max(0, leadIn.length - 1) * 1100 + 800;
+        setTimeout(() => setPhase(next), holdMs);
       }, 400);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
@@ -633,14 +653,17 @@ export default function OnboardingPage() {
     setDiscoveryActive(true);
     setTyping(true);
 
-    const progress15 = setTimeout(() => {
-      addKateMessage("Still pulling — a large transaction history can take a sec…");
-    }, 15000);
-    const progress45 = setTimeout(() => {
-      addKateMessage("Almost there — just finishing up.");
-    }, 45000);
+    // Plaid PRODUCT_NOT_READY can persist 60-180s on credit cards. The
+    // user shouldn't sit staring at a spinner — give frequent "still
+    // working" beats AND surface a skip-ahead path early.
+    const progress10 = setTimeout(() => {
+      addKateMessage("Still pulling your statements. Big histories take a beat.");
+    }, 10000);
+    const progress30 = setTimeout(() => {
+      addKateMessage("Your bank's being chatty. If you'd rather not wait, hit skip — I'll keep scanning in the background and your doctors will show up on the dashboard when I'm done.");
+    }, 30000);
     const progress90 = setTimeout(() => {
-      addKateMessage("Your bank's a little slow today — hang tight, this'll be worth it.");
+      addKateMessage("Bank's slow today. Promise it's worth it — but hit skip anytime.");
     }, 90000);
 
     // Drive discovery from inside the poll loop. /api/discovery/run is
@@ -654,11 +677,17 @@ export default function OnboardingPage() {
     //   3. After 3 minutes of pending, give up and let the user
     //      proceed (manual entry / next step).
     let attempts = 0;
+    let finished = false;
     const MAX_ATTEMPTS = 60; // 3 min @ 3s
     const finish = (providers: DiscoveredProvider[]) => {
+      // setInterval ticks fired before we cleared the interval may
+      // already have an /api/discovery/run await in flight. When those
+      // resolve they'll also call finish(); guard so we only reveal once.
+      if (finished) return;
+      finished = true;
       clearInterval(poll);
-      clearTimeout(progress15);
-      clearTimeout(progress45);
+      clearTimeout(progress10);
+      clearTimeout(progress30);
       clearTimeout(progress90);
       setDiscoveryActive(false);
       setTyping(false);
@@ -809,7 +838,7 @@ export default function OnboardingPage() {
     if (phase !== "manual-search") return;
     if (manualSearchAnnouncedRef.current) return;
     manualSearchAnnouncedRef.current = true;
-    addKateMessage("Last step — search and add anyone else you already see. Just type a name or specialty.");
+    addKateMessage("Last step — type a name and I'll find them. Doctor name, office name, even just part of it works. Add as many as you want, then tap done.");
   }, [phase]);
 
   // ── Manual-search debounce ──
@@ -988,21 +1017,21 @@ export default function OnboardingPage() {
             <ToggleCard
               icon={Building2}
               title="Scan your bank"
-              description="Your co-pays are a breadcrumb trail to your doctors. Bank-level secure — same Plaid integration used by Venmo, Robinhood, and most major banks. We never see passwords, never move money, and only read healthcare-related transactions."
+              description="Use the card you'd swipe at a copay — FSA/HSA is even better. I'll find every doctor you've paid in the last year. Read-only, encrypted, never stored, never sold."
               selected={connectBank}
               onToggle={() => setConnectBank(!connectBank)}
             />
             <ToggleCard
               icon={Calendar}
               title="Scan your calendar"
-              description="I'll look through your Google or Outlook calendar for past and future doctor appointments, and add them to your timeline."
+              description="If you keep doctor visits in your calendar, I'll grab the past year and what's coming up. Past, present, and upcoming — all in one place."
               selected={connectCalendar}
               onToggle={() => setConnectCalendar(!connectCalendar)}
             />
             <ToggleCard
               icon={Search}
               title="I'll add them myself"
-              description="Know your doctors? You can search by name and add them one by one from your dashboard."
+              description="Know the doctor's name? The office name? Even just part of it? Type it and I'll find them. Works for anyone with an NPI."
               selected={connectManual}
               onToggle={() => setConnectManual(!connectManual)}
             />
