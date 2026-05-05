@@ -47,7 +47,6 @@ export default function HandleItButton({
 
   // Pre-call info collection
   const [showForm, setShowForm] = React.useState(false);
-  const [profileChecked, setProfileChecked] = React.useState(false);
   const [fullName, setFullName] = React.useState("");
   const [dob, setDob] = React.useState("");
   const [insuranceProvider, setInsuranceProvider] = React.useState("");
@@ -93,16 +92,13 @@ export default function HandleItButton({
     if (loading) return;
     setToast(null);
 
-    // If we already checked and profile is complete, go straight to call
-    if (profileChecked) {
-      startCall();
-      return;
-    }
-
+    // Always show the form on every tap. Timing + reason are
+    // per-booking — even if the user filled them once already this
+    // session, the next booking is a new context. The profile-
+    // completeness check only decides whether to also collapse-in
+    // the DOB/insurance/patient-status fields.
     try {
       setLoading(true);
-      // Pass providerId so the API also tells us whether we already
-      // know patient_status for this provider (via prior visit history).
       const res = await apiFetch(
         providerId ? `/api/patient-profile?provider_id=${encodeURIComponent(providerId)}` : "/api/patient-profile"
       );
@@ -110,26 +106,35 @@ export default function HandleItButton({
       const profile: PatientProfile = data?.profile || {};
       const providerVisitCount: number = typeof data?.provider_visit_count === "number" ? data.provider_visit_count : 0;
       const patientStatusKnown = providerVisitCount > 0;
-
-      // Always show the form so the user can give Kate per-booking
-      // context (timing window + visit reason). The profile fields
-      // are only shown when they're missing OR when patient_status
-      // is unknown for this provider — otherwise the form is "lite"
-      // (timing + reason only).
       const profileIncomplete =
         !isProfileComplete(profile) || !patientStatusKnown;
+
       setFullName(profile.full_name || "");
       setDob(profile.date_of_birth || "");
       setInsuranceProvider(profile.insurance_provider || "");
       setInsuranceMemberId(profile.insurance_member_id || "");
       setCallbackPhone(profile.callback_phone || "");
       setProfileNeedsFilling(profileIncomplete);
+      // Reset per-booking inputs so a previous booking's timing/reason
+      // doesn't leak into this one.
+      setBookingTimeframe("");
+      setBookingTimeframePreset("");
+      setBookingReason("");
+      setPatientStatus(null);
       setShowForm(true);
       setLoading(false);
     } catch {
-      // If profile check fails, still let them call
-      setProfileChecked(true);
-      startCall();
+      // Profile fetch failed — still open the form (with profile
+      // fields visible) instead of silently dialing. Failing to fetch
+      // is rare; surfacing the form lets the user give context and
+      // retry, and avoids the "tapped book, it just called" surprise.
+      setProfileNeedsFilling(true);
+      setBookingTimeframe("");
+      setBookingTimeframePreset("");
+      setBookingReason("");
+      setPatientStatus(null);
+      setShowForm(true);
+      setLoading(false);
     }
   }
 
@@ -156,7 +161,6 @@ export default function HandleItButton({
         }),
       });
 
-      setProfileChecked(true);
       setShowForm(false);
       setSaving(false);
 
