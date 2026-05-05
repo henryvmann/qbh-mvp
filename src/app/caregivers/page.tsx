@@ -1,179 +1,478 @@
-import Link from "next/link";
+"use client";
 
-export const metadata = {
-  title: "Caregivers • QBH",
-  description:
-    "Coordinate care with trusted people, roles, and visibility controls (coming soon).",
+/**
+ * /caregivers — hub for the people who help the user at appointments.
+ *
+ * What lives here:
+ *   1. Explanation of how caregivers work in QBH (view-only link, asks
+ *      checklist, no account needed)
+ *   2. Active invites — caregivers attached to upcoming/pending visits,
+ *      with one-click copy + resend
+ *   3. The "Rolodex" — unique people from past invites, ready to reuse
+ *      on the next appointment
+ *
+ * The actual per-appointment add UI lives inline on /calendar-view.
+ */
+
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { apiFetch } from "../../lib/api";
+import PageShell from "../../components/qbh/PageShell";
+import { T } from "../../components/brand";
+import { UserPlus, Copy, Calendar, Mail, Eye, Check, Loader2 } from "lucide-react";
+
+type Caregiver = {
+  id: string;
+  caregiver_name: string;
+  caregiver_email: string | null;
+  caregiver_phone: string | null;
+  calendar_event_id: string | null;
+  schedule_attempt_id: number | null;
+  provider_id: string | null;
+  asks: Record<string, unknown>;
+  notes: string | null;
+  share_token: string;
+  invited_at: string;
+  viewed_at: string | null;
+  status: string;
 };
 
-const features = [
-  {
-    title: "Share access",
-    description:
-      "Give trusted people visibility into your care — from upcoming appointments to medication lists — on your terms.",
-    icon: (
-      <svg
-        className="h-5 w-5 text-[#1677FF]"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
-        />
-      </svg>
-    ),
-  },
-  {
-    title: "Coordinate care",
-    description:
-      "Manage who handles what across your household — from scheduling appointments to picking up prescriptions.",
-    icon: (
-      <svg
-        className="h-5 w-5 text-[#1677FF]"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
-        />
-      </svg>
-    ),
-  },
-  {
-    title: "Stay informed",
-    description:
-      "Get updates when appointments are booked or changed, so everyone involved in care stays on the same page.",
-    icon: (
-      <svg
-        className="h-5 w-5 text-[#1677FF]"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
-        />
-      </svg>
-    ),
-  },
-];
+type EventInfo = {
+  startAt: string;
+  providerId: string;
+  providerName: string;
+};
+
+function fmtWhen(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+function fmtRelative(iso: string): string {
+  const d = new Date(iso);
+  const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return `${Math.floor(days / 7)} wk ago`;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 export default function CaregiversPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [caregivers, setCaregivers] = useState<Caregiver[]>([]);
+  const [events, setEvents] = useState<Record<string, EventInfo>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    const r = await apiFetch("/api/appointment-caregivers");
+    if (r.status === 401) {
+      router.push("/login");
+      return;
+    }
+    const j = await r.json().catch(() => ({}));
+    if (j?.ok) {
+      const list: Caregiver[] = j.caregivers ?? [];
+      setCaregivers(list);
+
+      // Hydrate appointment context for each row. Best-effort — if visits/data
+      // fails we just render rows without the time/provider line.
+      const visitsRes = await apiFetch(`/api/visits/data`).then((r) => r.json()).catch(() => null);
+      const upcoming: Array<{
+        eventId: string;
+        startAt: string;
+        providerId: string;
+        providerName: string;
+      }> = visitsRes?.upcoming ?? [];
+      const map: Record<string, EventInfo> = {};
+      for (const ev of upcoming) {
+        map[ev.eventId] = {
+          startAt: ev.startAt,
+          providerId: ev.providerId,
+          providerName: ev.providerName,
+        };
+      }
+      setEvents(map);
+    }
+    setLoading(false);
+  }, [router]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  function shareUrlFor(c: Caregiver): string {
+    if (typeof window === "undefined") return "";
+    return `${window.location.origin}/caregiver/${c.share_token}`;
+  }
+
+  async function copyShare(c: Caregiver) {
+    const url = shareUrlFor(c);
+    await navigator.clipboard.writeText(url);
+    setCopiedId(c.id);
+    setTimeout(() => setCopiedId(null), 1800);
+  }
+
+  async function resendInvite(c: Caregiver) {
+    if (!c.caregiver_email) return;
+    // Re-issue a POST against the same appointment. The backend
+    // creates a fresh row + queues a new email so the resend is
+    // auditable separately from the original invite.
+    await apiFetch("/api/appointment-caregivers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        caregiver_name: c.caregiver_name,
+        caregiver_email: c.caregiver_email,
+        caregiver_phone: c.caregiver_phone,
+        calendar_event_id: c.calendar_event_id,
+        schedule_attempt_id: c.schedule_attempt_id,
+        provider_id: c.provider_id,
+        asks: c.asks,
+        notes: c.notes,
+      }),
+    });
+    await refresh();
+  }
+
+  // Rolodex: unique people from past invites, ranked by recency.
+  const rolodex = (() => {
+    const seen = new Map<
+      string,
+      { name: string; email: string | null; phone: string | null; uses: number; lastInvitedAt: string }
+    >();
+    for (const c of caregivers) {
+      const key = (c.caregiver_email || c.caregiver_phone || c.caregiver_name).toLowerCase();
+      const prev = seen.get(key);
+      if (prev) {
+        prev.uses++;
+        if (c.invited_at > prev.lastInvitedAt) prev.lastInvitedAt = c.invited_at;
+      } else {
+        seen.set(key, {
+          name: c.caregiver_name,
+          email: c.caregiver_email,
+          phone: c.caregiver_phone,
+          uses: 1,
+          lastInvitedAt: c.invited_at,
+        });
+      }
+    }
+    return Array.from(seen.values()).sort((a, b) =>
+      a.lastInvitedAt < b.lastInvitedAt ? 1 : -1
+    );
+  })();
+
   return (
-    <main className="min-h-screen text-[#071832]" style={{ background: "#FAF8F4" }}>
-      <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-3xl tracking-tight text-[#071832]">
-              Caregivers
-            </h1>
-            <p className="mt-2 max-w-2xl text-base text-[#4F5F73]">
-              Coordinate health tasks across your household — sharing
-              visibility, delegating work, and keeping the right people in the
-              loop.
-            </p>
-          </div>
+    <PageShell>
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 80 }}>
+        <header>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: T.lightText, marginBottom: 8 }}>
+            Caregivers
+          </h1>
+          <p style={{ color: T.lightMuted, fontSize: 16, lineHeight: 1.5, maxWidth: 540 }}>
+            People who help you at appointments — a spouse, a parent, a friend.
+            Loop them in for a single visit and they get a view-only page with
+            the time, the place, and what would help. No login. No app.
+          </p>
+        </header>
 
-          <Link
-            href="/dashboard"
-            className="rounded-xl border border-[#E5EAF2] bg-white shadow-sm px-4 py-2 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
+        <Section title="How it works">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
+            }}
           >
-            Back to Dashboard
-          </Link>
-        </div>
-
-        {/* Coming Soon Header */}
-        <section className="mt-8 rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1677FF]/15">
-              <svg
-                className="h-5 w-5 text-[#1677FF]"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-            </div>
-            <div>
-              <h2 className="font-serif text-xl text-[#071832]">
-                Coming soon
-              </h2>
-              <p className="mt-1 text-sm text-[#4F5F73]">
-                We are building caregiver tools so trusted people can help
-                manage health without losing control of privacy.
-              </p>
-            </div>
+            <Step n={1} title="Add to a visit" body="Open an upcoming appointment and tap 'Add a caregiver'." />
+            <Step n={2} title="Pick what would help" body="A ride? Bringing something? Music? Whatever's useful." />
+            <Step n={3} title="Kate sends the link" body="kate@getquarterback.com emails them a view-only page. Or copy it yourself." />
+            <Step n={4} title="They show up ready" body="The link updates if anything changes. You'll see when they open it." />
           </div>
-        </section>
+        </Section>
 
-        {/* Feature Cards */}
-        <section className="mt-6 grid gap-4 md:grid-cols-3">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]"
+        <Section
+          title="Active invites"
+          right={
+            <Link
+              href="/calendar-view"
+              style={{
+                fontSize: 13,
+                color: T.electric,
+                textDecoration: "none",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1677FF]/15">
-                {feature.icon}
-              </div>
-              <h3 className="mt-4 text-base font-semibold text-[#071832]">
-                {feature.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-[#4F5F73]">
-                {feature.description}
-              </p>
+              <UserPlus size={14} />
+              Add to a visit
+            </Link>
+          }
+        >
+          {loading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.lightMuted }}>
+              <Loader2 size={16} className="animate-spin" />
+              Loading…
             </div>
-          ))}
-        </section>
+          ) : caregivers.length === 0 ? (
+            <Empty
+              icon={<UserPlus size={28} color={T.lightMuted} />}
+              title="No active caregiver invites"
+              body="When you add a caregiver to an appointment, they'll show up here."
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {caregivers.map((c) => {
+                const ev = c.calendar_event_id ? events[c.calendar_event_id] : null;
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      background: "rgba(255,255,255,0.85)",
+                      border: `1px solid ${T.lightBorder}`,
+                      borderRadius: 14,
+                      padding: 16,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        justifyContent: "space-between",
+                        gap: 12,
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, color: T.lightText, fontSize: 16 }}>
+                        {c.caregiver_name}
+                      </div>
+                      <div style={{ fontSize: 12, color: T.lightMuted }}>
+                        invited {fmtRelative(c.invited_at)}
+                      </div>
+                    </div>
+                    {c.caregiver_email && (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: T.lightMuted,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Mail size={12} />
+                        {c.caregiver_email}
+                      </div>
+                    )}
+                    {ev && (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: T.lightMuted,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Calendar size={12} />
+                        {fmtWhen(ev.startAt)} · {ev.providerName}
+                      </div>
+                    )}
+                    {c.viewed_at ? (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: T.green,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Eye size={12} />
+                        Viewed {fmtRelative(c.viewed_at)}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: T.lightMuted,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Eye size={12} />
+                        Not opened yet
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                      <button onClick={() => copyShare(c)} style={btnSecondary}>
+                        {copiedId === c.id ? <Check size={14} /> : <Copy size={14} />}
+                        {copiedId === c.id ? "Copied" : "Copy link"}
+                      </button>
+                      {c.caregiver_email && (
+                        <button onClick={() => resendInvite(c)} style={btnSecondary}>
+                          <Mail size={14} />
+                          Resend email
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Section>
 
-        {/* Interested Footer */}
-        <section className="mt-6 rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
-          <div className="flex items-start gap-4">
-            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1677FF]/15">
-              <svg
-                className="h-4 w-4 text-[#1677FF]"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
-                />
-              </svg>
+        {rolodex.length > 0 && (
+          <Section title="Your people">
+            <p style={{ color: T.lightMuted, fontSize: 14, marginBottom: 12 }}>
+              Folks you've looped in before. When you add a caregiver to your
+              next appointment, you can pick from this list instead of retyping.
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: 10,
+              }}
+            >
+              {rolodex.map((p) => (
+                <div
+                  key={`${p.name}-${p.email ?? p.phone ?? "n"}`}
+                  style={{
+                    background: "rgba(255,255,255,0.85)",
+                    border: `1px solid ${T.lightBorder}`,
+                    borderRadius: 14,
+                    padding: 14,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                  }}
+                >
+                  <div style={{ fontWeight: 600, color: T.lightText }}>{p.name}</div>
+                  {p.email && <div style={{ fontSize: 13, color: T.lightMuted }}>{p.email}</div>}
+                  {!p.email && p.phone && (
+                    <div style={{ fontSize: 13, color: T.lightMuted }}>{p.phone}</div>
+                  )}
+                  <div style={{ fontSize: 12, color: T.lightMuted, marginTop: 4 }}>
+                    {p.uses} {p.uses === 1 ? "appointment" : "appointments"} · last{" "}
+                    {fmtRelative(p.lastInvitedAt)}
+                  </div>
+                </div>
+              ))}
             </div>
-            <div>
-              <p className="text-sm font-medium text-[#071832]">
-                Interested? Let us know.
-              </p>
-              <p className="mt-1 text-sm text-[#4F5F73] leading-relaxed">
-                Caregiver features are actively in development. Your feedback
-                helps us prioritize what to build first — reach out anytime
-                through your dashboard.
-              </p>
-            </div>
-          </div>
-        </section>
+          </Section>
+        )}
       </div>
-    </main>
+    </PageShell>
   );
 }
+
+function Section({
+  title,
+  right,
+  children,
+}: {
+  title: string;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        }}
+      >
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: T.lightText, margin: 0 }}>{title}</h2>
+        {right}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Step({ n, title, body }: { n: number; title: string; body: string }) {
+  return (
+    <div
+      style={{
+        background: "rgba(22,119,255,0.06)",
+        border: `1px solid ${T.lightBorder}`,
+        borderRadius: 14,
+        padding: 14,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+      }}
+    >
+      <div
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          background: T.electric,
+          color: "#fff",
+          fontSize: 13,
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {n}
+      </div>
+      <div style={{ fontWeight: 600, color: T.lightText, fontSize: 14 }}>{title}</div>
+      <div style={{ fontSize: 13, color: T.lightMuted, lineHeight: 1.45 }}>{body}</div>
+    </div>
+  );
+}
+
+function Empty({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+  return (
+    <div
+      style={{
+        background: "rgba(255,255,255,0.7)",
+        border: `1px dashed ${T.lightBorder}`,
+        borderRadius: 14,
+        padding: 24,
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      {icon}
+      <div style={{ fontWeight: 600, color: T.lightText }}>{title}</div>
+      <div style={{ fontSize: 14, color: T.lightMuted, maxWidth: 360 }}>{body}</div>
+    </div>
+  );
+}
+
+const btnSecondary: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "8px 12px",
+  background: "rgba(22,119,255,0.08)",
+  color: T.electric,
+  border: `1px solid ${T.lightBorder}`,
+  borderRadius: 10,
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+};

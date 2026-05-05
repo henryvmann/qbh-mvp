@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { buildBookingSummary } from "../../../../lib/booking/build-booking-summary";
+import { enqueueEmail } from "../../../../lib/notifications/queue";
+import { renderBookingConfirmed } from "../../../../lib/notifications/templates/booking-confirmed";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -563,6 +565,19 @@ async function handleOne(
     });
   }
 
+  // Fire-and-forget confirmation email. Failures here must not break
+  // the booking flow — the cron drain handles retries on its own.
+  enqueueBookingConfirmedEmail({
+    appUserId: data?.app_user_id ?? attemptRow.app_user_id ?? null,
+    providerId: data?.provider_id ?? attemptRow.provider_id ?? null,
+    calendarEventId: data?.calendar_event_id ?? null,
+    startAt: data?.start_at ?? proposal.normalized_start ?? null,
+    timezone: tz,
+    confirmationNumber: confirmationNumber ?? null,
+  }).catch((err) =>
+    console.error("[vapi/confirm-booking] enqueueBookingConfirmedEmail failed", err)
+  );
+
   const patientName = String(attemptRow?.metadata?.patient_name ?? "the patient").split(" ")[0];
   const messageToSay = demoAutoconfirm
     ? `Great — ${patientName} is booked${spokenStart ? ` for ${spokenStart}` : ""}. Thanks so much for your help.`
@@ -639,4 +654,90 @@ export async function POST(req: Request) {
       }),
     ]);
   }
+}
+
+async function enqueueBookingConfirmedEmail(args: {
+  appUserId: string | null;
+  providerId: string | null;
+  calendarEventId: string | null;
+  startAt: string | null;
+  timezone: string;
+  confirmationNumber: string | null;
+}): Promise<void> {
+  if (!args.appUserId || !args.startAt) return;
+
+  // Look up the user's email + first name. If we don't have an email
+  // there's nothing to send — bail quietly. Email lives in
+  // auth.users, reachable through the auth_user_id pointer.
+  // patient_profile is a jsonb column on app_users.
+  const { data: appUser } = await supabaseAdmin
+    .from("app_users")
+    .select("auth_user_id, patient_profile")
+    .eq("id", args.appUserId)
+    .maybeSingle();
+  if (!appUser?.auth_user_id) return;
+  const { data: authData } = await supabaseAdmin.auth.admin.getUserById(
+    appUser.auth_user_id
+  );
+  const toEmail = authData?.user?.email ?? null;
+  if (!toEmail) return;
+
+  const profile = (appUser.patient_profile ?? {}) as Record<string, unknown>;
+  const fullName = typeof profile.full_name === "string" ? profile.full_name : "";
+  const firstName =
+    (typeof profile.first_name === "string" && profile.first_name.trim()) ||
+    (fullName.split(" ")[0] ?? "") ||
+    "there";
+
+  let providerLabel: string | undefined;
+  if (args.providerId) {
+    const { data: prov } = await supabaseAdmin
+      .from("providers")
+      .select("name, specialty, practice_name")
+      .eq("id", args.providerId)
+      .maybeSingle();
+    if (prov) {
+      providerLabel = [prov.name, prov.specialty, prov.practice_name]
+        .filter(Boolean)
+        .join(" · ");
+    }
+  }
+
+  const appointmentWhen = new Date(args.startAt).toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: args.timezone,
+    timeZoneName: "short",
+  });
+
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://www.getquarterback.com";
+  const visitUrl = `${baseUrl}/visits`;
+  const addCaregiverUrl = args.calendarEventId
+    ? `${baseUrl}/calendar-view?event=${encodeURIComponent(args.calendarEventId)}#caregiver`
+    : `${baseUrl}/caregivers`;
+
+  const rendered = renderBookingConfirmed({
+    patientFirstName: firstName,
+    appointmentWhen,
+    providerLabel,
+    confirmationNumber: args.confirmationNumber ?? undefined,
+    visitUrl,
+    addCaregiverUrl,
+  });
+
+  await enqueueEmail({
+    appUserId: args.appUserId,
+    to: toEmail,
+    subject: rendered.subject,
+    htmlBody: rendered.html,
+    textBody: rendered.text,
+    template: "booking_confirmed",
+    metadata: {
+      calendar_event_id: args.calendarEventId,
+      provider_id: args.providerId,
+    },
+  });
 }

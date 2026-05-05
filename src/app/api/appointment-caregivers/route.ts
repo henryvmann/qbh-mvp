@@ -3,6 +3,11 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionAppUserId } from "../../../lib/auth/get-session-app-user-id";
 import { supabaseAdmin } from "../../../lib/supabase-server";
+import { enqueueEmail } from "../../../lib/notifications/queue";
+import {
+  renderCaregiverInvite,
+  summarizeAsks,
+} from "../../../lib/notifications/templates/caregiver-invite";
 
 /**
  * Per-appointment caregiver loop.
@@ -71,11 +76,117 @@ export async function POST(req: NextRequest) {
   }
   // Build the share URL the user can copy to text/email the caregiver.
   const origin = req.headers.get("origin") ?? "https://www.getquarterback.com";
+  const shareUrl = `${origin}/caregiver/${data.share_token}`;
+
+  // If the caregiver has an email address and the user opted into the
+  // send (auto-on for now), queue an invite from kate@getquarterback.com.
+  let invite_queued = false;
+  if (data.caregiver_email && body?.send_email !== false) {
+    const ctx = await loadInviteContext(appUserId, data);
+    const rendered = renderCaregiverInvite({
+      patientFirstName: ctx.patientFirstName,
+      caregiverName: data.caregiver_name,
+      appointmentWhen: ctx.appointmentWhen,
+      providerLabel: ctx.providerLabel,
+      asksSummary: summarizeAsks(data.asks),
+      notes: data.notes ?? undefined,
+      shareUrl,
+    });
+    const enq = await enqueueEmail({
+      appUserId,
+      to: data.caregiver_email,
+      toName: data.caregiver_name,
+      subject: rendered.subject,
+      htmlBody: rendered.html,
+      textBody: rendered.text,
+      template: "caregiver_invite",
+      metadata: {
+        appointment_caregiver_id: data.id,
+        calendar_event_id: data.calendar_event_id,
+        schedule_attempt_id: data.schedule_attempt_id,
+      },
+    });
+    invite_queued = enq.ok;
+  }
+
   return NextResponse.json({
     ok: true,
     caregiver: data,
-    share_url: `${origin}/caregiver/${data.share_token}`,
+    share_url: shareUrl,
+    invite_queued,
   });
+}
+
+type CaregiverRow = {
+  id: string;
+  caregiver_name: string;
+  caregiver_email: string | null;
+  calendar_event_id: string | null;
+  schedule_attempt_id: number | null;
+  provider_id: string | null;
+  asks: Record<string, unknown> | null;
+  notes: string | null;
+};
+
+async function loadInviteContext(appUserId: string, row: CaregiverRow) {
+  // Patient first name. patient_profile is a jsonb column on app_users.
+  let patientFirstName = "your friend";
+  const { data: appUser } = await supabaseAdmin
+    .from("app_users")
+    .select("patient_profile")
+    .eq("id", appUserId)
+    .maybeSingle();
+  const profile = (appUser?.patient_profile ?? {}) as Record<string, unknown>;
+  const fullName = typeof profile.full_name === "string" ? profile.full_name : "";
+  const first =
+    typeof profile.first_name === "string" && profile.first_name.trim()
+      ? profile.first_name.trim()
+      : fullName.split(" ")[0];
+  if (first) patientFirstName = first;
+
+  // Provider label
+  let providerLabel: string | undefined;
+  if (row.provider_id) {
+    const { data: prov } = await supabaseAdmin
+      .from("providers")
+      .select("name, specialty, practice_name")
+      .eq("id", row.provider_id)
+      .maybeSingle();
+    if (prov) {
+      providerLabel = [prov.name, prov.specialty, prov.practice_name]
+        .filter(Boolean)
+        .join(" · ");
+    }
+  }
+
+  // Appointment time
+  let appointmentWhen: string | undefined;
+  if (row.calendar_event_id) {
+    const { data: ev } = await supabaseAdmin
+      .from("calendar_events")
+      .select("start_at")
+      .eq("id", row.calendar_event_id)
+      .maybeSingle();
+    if (ev?.start_at) appointmentWhen = formatWhen(ev.start_at);
+  }
+
+  return { patientFirstName, providerLabel, appointmentWhen };
+}
+
+function formatWhen(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+  } catch {
+    return iso;
+  }
 }
 
 export async function PATCH(req: NextRequest) {

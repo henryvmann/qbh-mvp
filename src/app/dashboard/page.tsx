@@ -40,6 +40,7 @@ import {
   PersonIcon,
   DocumentIcon,
   InsightsIcon,
+  UsersIcon,
 } from "../../components/brand/icons";
 import { T } from "../../components/brand";
 
@@ -360,6 +361,7 @@ function DashboardInner() {
             { href: "/providers", title: "Providers", desc: "Your care team", icon: <StethoscopeIcon color={T.electric} /> },
             { href: "/visits", title: "Visits", desc: "Upcoming & past", icon: <CalendarIcon color={T.electric} /> },
             { href: "/coverage", title: "Coverage", desc: "EOBs & claims", icon: <DocumentIcon color={T.electric} size={18} /> },
+            { href: "/caregivers", title: "Caregivers", desc: "People who help", icon: <UsersIcon color={T.electric} size={18} /> },
             { href: "/goals", title: "Goals", desc: "Track progress", icon: <InsightsIcon color={T.electric} size={18} /> },
           ].map((item) => (
             <GlassCard key={item.href} href={item.href} padding={14}>
