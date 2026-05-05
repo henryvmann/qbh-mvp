@@ -109,7 +109,58 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, results: [] });
   }
 
+  // Generous timeout — the NPI registry is often slow (3-6s typical),
+  // 5s was clipping legitimate queries. 10s is the max we'll wait.
+  const REGISTRY_TIMEOUT = 10000;
+  // Per-branch result count. The registry caps at 200; for our UX
+  // most users want maybe 20-30 highly relevant results, but we
+  // ask for more so the merge across branches has enough to dedupe
+  // and sort against. Was 5-10 — caused "not every provider shows up."
+  const BRANCH_LIMIT = "50";
+
   try {
+    // Direct NPI number lookup. If the user typed exactly 10 digits,
+    // they're searching by NPI itself, not by name. Previously this
+    // fell through every other branch and returned nothing.
+    const digits = query.replace(/\D/g, "");
+    if (digits.length === 10 && /^\d+$/.test(query.replace(/\s/g, ""))) {
+      const numUrl = `https://npiregistry.cms.hhs.gov/api/?version=2.1&number=${digits}&limit=1`;
+      const numRes = await fetch(numUrl, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) });
+      const numData = await numRes.json().catch(() => ({}));
+      const out: typeof results = [];
+      const results: Array<{
+        npi: string | null;
+        name: string;
+        specialty: string | null;
+        phone: string | null;
+        city: string | null;
+        state: string | null;
+        source: "npi" | "google_places";
+        place_id?: string | null;
+      }> = [];
+      for (const r of numData.results || []) {
+        const provName = r.basic?.organization_name
+          || `${r.basic?.first_name || ""} ${r.basic?.last_name || ""}`.trim();
+        const taxonomy = r.taxonomies?.[0]?.desc || null;
+        const location = (r.addresses || []).find((a: { address_purpose?: string }) => a.address_purpose === "LOCATION") || r.addresses?.[0];
+        let phone: string | null = null;
+        if (location?.telephone_number) {
+          const d = location.telephone_number.replace(/\D/g, "");
+          if (d.length === 10) phone = `+1${d}`;
+        }
+        out.push({
+          npi: r.number,
+          name: provName,
+          specialty: taxonomy,
+          phone,
+          city: location?.city || null,
+          state: location?.state || null,
+          source: "npi",
+        });
+      }
+      return NextResponse.json({ ok: true, results: out });
+    }
+
     // Handle "LastName, FirstName" format
     let normalizedQuery = query;
     if (query.includes(",")) {
@@ -129,11 +180,11 @@ export async function GET(req: NextRequest) {
     const orgParams = new URLSearchParams({
       version: "2.1",
       organization_name: `${name}*`,
-      limit: "10",
+      limit: BRANCH_LIMIT,
     });
     if (state) orgParams.set("state", state);
     if (city && !state) orgParams.set("city", `${city}*`);
-    searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${orgParams}`, { signal: AbortSignal.timeout(5000) }));
+    searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${orgParams}`, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }));
 
     // Search 2: Individual provider by name
     if (nameParts.length >= 2) {
@@ -141,11 +192,11 @@ export async function GET(req: NextRequest) {
         version: "2.1",
         first_name: `${nameParts[0]}*`,
         last_name: `${nameParts[nameParts.length - 1]}*`,
-        limit: "5",
+        limit: BRANCH_LIMIT,
       });
       if (state) indParams.set("state", state);
       if (city && !state) indParams.set("city", `${city}*`);
-      searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${indParams}`, { signal: AbortSignal.timeout(5000) }));
+      searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${indParams}`, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }));
 
       // Search 2b: If 3+ words, also try first two words as first/last name
       // Handles "Caroline Andrew Stamford Health" → first=Caroline last=Andrew
@@ -154,22 +205,22 @@ export async function GET(req: NextRequest) {
           version: "2.1",
           first_name: `${nameParts[0]}*`,
           last_name: `${nameParts[1]}*`,
-          limit: "5",
+          limit: BRANCH_LIMIT,
         });
         if (state) ind2Params.set("state", state);
         if (city && !state) ind2Params.set("city", `${city}*`);
-        searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${ind2Params}`, { signal: AbortSignal.timeout(5000) }));
+        searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${ind2Params}`, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }));
       }
     } else {
       // Single word — search as last name
       const indParams = new URLSearchParams({
         version: "2.1",
         last_name: `${nameParts[0]}*`,
-        limit: "5",
+        limit: BRANCH_LIMIT,
       });
       if (state) indParams.set("state", state);
       if (city && !state) indParams.set("city", `${city}*`);
-      searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${indParams}`, { signal: AbortSignal.timeout(5000) }));
+      searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${indParams}`, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }));
     }
 
     // Search by specialty + location if the query starts with a known specialty word
@@ -183,12 +234,12 @@ export async function GET(req: NextRequest) {
       const taxParams = new URLSearchParams({
         version: "2.1",
         taxonomy_description: specialtyMatch.specialty,
-        limit: "10",
+        limit: BRANCH_LIMIT,
       });
       if (specState) taxParams.set("state", specState);
       if (specCity) taxParams.set("city", `${specCity}*`);
       else if (city) taxParams.set("city", `${city}*`);
-      searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${taxParams}`, { signal: AbortSignal.timeout(5000) }));
+      searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${taxParams}`, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }));
     }
 
     // If we detected a city without state, also try without city filter (broader search)
@@ -200,17 +251,17 @@ export async function GET(req: NextRequest) {
           version: "2.1",
           organization_name: `${nameWithoutCity}*`,
           city: `${city}*`,
-          limit: "5",
+          limit: BRANCH_LIMIT,
         });
-        searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${broadOrgParams}`, { signal: AbortSignal.timeout(5000) }));
+        searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${broadOrgParams}`, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }));
 
         // Search 4: Org name without city word (no location filter — just broader)
         const broadestParams = new URLSearchParams({
           version: "2.1",
           organization_name: `${nameWithoutCity}*`,
-          limit: "5",
+          limit: BRANCH_LIMIT,
         });
-        searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${broadestParams}`, { signal: AbortSignal.timeout(5000) }));
+        searches.push(fetch(`https://npiregistry.cms.hhs.gov/api/?${broadestParams}`, { signal: AbortSignal.timeout(REGISTRY_TIMEOUT) }));
       }
     }
 
@@ -341,7 +392,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, results: results.slice(0, 15) });
+    return NextResponse.json({ ok: true, results: results.slice(0, 30) });
   } catch (err) {
     console.error("[npi/search] error:", err);
     return NextResponse.json({ ok: true, results: [] });
