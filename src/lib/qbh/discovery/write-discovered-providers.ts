@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "../../supabase-server";
 import { lookupPlaceDetails } from "../../google/places-lookup";
+import { batchNpiLookup } from "../../npi/lookup";
 import type {
   DiscoveredProvider,
   PlaidDiscoveryTransaction,
@@ -113,37 +114,64 @@ export async function writeDiscoveredProviders({
 
   const seenInsertNames = new Set<string>();
 
-  const providersToInsert = writableProviders
-    .filter((provider) => {
-      const key = cleanName(provider.provider_name);
-      if (!key) return false;
-      // Exact match with existing
-      if (existingByName.has(key)) return false;
-      // Fuzzy match with existing
-      for (const existingName of existingByName.keys()) {
-        if (isFuzzyDuplicate(existingName, key)) return false;
+  const filteredForInsert = writableProviders.filter((provider) => {
+    const key = cleanName(provider.provider_name);
+    if (!key) return false;
+    if (existingByName.has(key)) return false;
+    for (const existingName of existingByName.keys()) {
+      if (isFuzzyDuplicate(existingName, key)) return false;
+    }
+    for (const seenName of seenInsertNames) {
+      if (isFuzzyDuplicate(seenName, key)) return false;
+    }
+    seenInsertNames.add(key);
+    return true;
+  });
+
+  // Backfill NPI lookups for healthcare-bucketed providers that
+  // didn't get one during classification. The classifier only
+  // ran NPI for "person-name AI-said-no" candidates as a verification
+  // signal — confirmed-healthcare providers (CVS, Modern Dermatology,
+  // etc.) bypassed that path. Run a second batch here for any
+  // healthcare bucket without an npi yet, so the providers row gets
+  // populated correctly.
+  const npiBackfillCandidates = filteredForInsert
+    .filter((p) => p.bucket === "HEALTHCARE" && !p.npi)
+    .map((p) => ({
+      normalized_name: p.normalized_name,
+      original_name: p.provider_name,
+    }));
+  let npiBackfill = new Map<string, { npi: string | null }>();
+  if (npiBackfillCandidates.length > 0) {
+    try {
+      const results = await batchNpiLookup(npiBackfillCandidates);
+      for (const [k, v] of results.entries()) {
+        if (v.found && v.npi) npiBackfill.set(k, { npi: v.npi });
       }
-      // Fuzzy match with already-queued inserts
-      for (const seenName of seenInsertNames) {
-        if (isFuzzyDuplicate(seenName, key)) return false;
-      }
-      seenInsertNames.add(key);
-      return true;
-    })
-    .map((provider) => {
-      const { cleanedName, detectedSpecialty } = stripCredentials(provider.provider_name.trim());
-      return {
-        app_user_id: userId,
-        name: cleanedName,
-        specialty: detectedSpecialty || null,
-        status: provider.bucket === "HEALTHCARE" ? "active" : "review_needed",
-        guessed_portal_brand: null,
-        guessed_portal_confidence: null,
-        phone_number: provider.phone_number || null,
-        provider_type: provider.provider_type || null,
-        source: "plaid",
-      };
-    });
+      console.log(
+        `[writeDiscoveredProviders] NPI backfill: ${npiBackfill.size}/${npiBackfillCandidates.length} healthcare providers got NPI numbers`
+      );
+    } catch (err) {
+      console.error("[writeDiscoveredProviders] NPI backfill failed:", err);
+    }
+  }
+
+  const providersToInsert = filteredForInsert.map((provider) => {
+    const { cleanedName, detectedSpecialty } = stripCredentials(provider.provider_name.trim());
+    const npi = provider.npi || npiBackfill.get(provider.normalized_name)?.npi || null;
+    return {
+      app_user_id: userId,
+      name: cleanedName,
+      specialty: detectedSpecialty || null,
+      status: provider.bucket === "HEALTHCARE" ? "active" : "review_needed",
+      guessed_portal_brand: null,
+      guessed_portal_confidence: null,
+      phone_number: provider.phone_number || null,
+      provider_type: provider.provider_type || null,
+      npi,
+      source: "plaid",
+    };
+  });
 
   let insertedProviders: Array<{ id: string; name: string }> = [];
 

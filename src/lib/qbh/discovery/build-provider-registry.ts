@@ -49,6 +49,9 @@ export type DiscoveredProvider = {
   median_gap_days: number | null;
   source_transaction_ids: string[];
   phone_number: string | null;
+  /** NPI from the registry when we resolved one during classification.
+   *  Persisted to providers.npi by writeDiscoveredProviders. */
+  npi: string | null;
 };
 
 /**
@@ -587,7 +590,7 @@ export async function buildProviderRegistry(
     }
   }
 
-  let npiResults = new Map<string, { found: boolean; provider_type: string | null; phone_number: string | null }>();
+  let npiResults = new Map<string, { found: boolean; provider_type: string | null; phone_number: string | null; npi: string | null }>();
   if (npiCandidates.length > 0) {
     try {
       console.log(`[buildProviderRegistry] Checking ${npiCandidates.length} person-name merchants against NPI registry...`);
@@ -852,6 +855,7 @@ export async function buildProviderRegistry(
       median_gap_days: median(gaps),
       source_transaction_ids: entry.transaction_ids,
       phone_number: phoneNumber,
+      npi: (npiResult?.found && npiResult.npi) || null,
     });
   }
 
