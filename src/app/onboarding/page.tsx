@@ -313,10 +313,10 @@ export default function OnboardingPage() {
       setMessages([{ id: "k1", sender: "kate", content: "Hey \u2014 I'm Kate. I take healthcare off your plate." }]);
     }, 600);
     const t2 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Here's what I've noticed: most people have five, six, maybe seven doctors. And if I asked you when you last saw each one..." }]);
+      setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Some people have a few doctors and barely think about it. Others are in and out of appointments constantly \u2014 specialists, scans, refills, follow-ups." }]);
     }, 2000);
     const t3 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "...you'd probably have to guess." }]);
+      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you are on that spectrum, I'll meet you there." }]);
       setTyping(false);
     }, 3400);
     setTyping(true);
