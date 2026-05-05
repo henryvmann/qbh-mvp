@@ -9,6 +9,7 @@ import type {
   SystemActionItem,
 } from "../../app/lib/QBH/types";
 import AppointmentPrep from "./AppointmentPrep";
+import HandleItButton from "./HandleItButton";
 import { FileText, Plus, Trash2 } from "lucide-react";
 
 type ProviderCardProps = {
@@ -814,17 +815,22 @@ export default function ProviderCard({
         </div>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="mt-5 flex flex-wrap items-start gap-3">
         {showHandleButton ? (
           <>
-            <button
-              onClick={handleIt}
-              disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ background: "#1677FF" }}
-            >
-              {isSubmitting ? "Starting..." : "Book with Kate"}
-            </button>
+            {/* Defer to HandleItButton so booking from the providers
+                list goes through the same per-call timing/reason form
+                as every other Book entry. The legacy direct-startCall
+                path skipped the form and surprised users. */}
+            <div className="min-w-[220px]">
+              <HandleItButton
+                userId={userId}
+                providerId={provider.id}
+                providerName={provider.name}
+                phoneNumber={provider.phone}
+                label="Book with Kate"
+              />
+            </div>
             <a
               href={`/providers/${provider.id}`}
               className="inline-flex items-center justify-center rounded-xl border border-[#E5EAF2] px-4 py-2 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
