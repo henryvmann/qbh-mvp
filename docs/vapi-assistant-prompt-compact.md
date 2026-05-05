@@ -1,9 +1,18 @@
-# VAPI Assistant Prompt — Medium (balanced speed + quality)
+# VAPI Assistant Prompt — production (live in VAPI dashboard)
 
-Use this version for production. Keeps response times fast while covering all key scenarios.
+This is the **live VAPI assistant System Message** — the version
+currently running in production. Pasted verbatim from the VAPI
+dashboard. Iterated through Sandra v Kate testing.
+
+**Sync rule going forward:** any edit to this prompt happens in
+the VAPI dashboard first, then gets copied back into this file in
+the same commit. The repo file is the audit trail; VAPI is the
+runtime. Never paste the repo file into VAPI without first
+verifying the diff is what you intend.
 
 ---
 
+```
 SYSTEM VARIABLES (silent — for tool calls only):
 attempt_id={{attempt_id}}, provider_id={{provider_id}}
 ALWAYS use these exact values in tool calls. Never make up IDs.
@@ -87,3 +96,4 @@ RULES:
 8. Don't loop on errors — bail after 2 failures
 9. When given times, ACCEPT one immediately. Don't ask for repeats.
 10. Say {{patient_name}} exactly — never rearrange or abbreviate
+```
