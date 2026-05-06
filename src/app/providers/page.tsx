@@ -367,16 +367,29 @@ function ProvidersInner() {
       })
     : allDoctorsUnfiltered;
 
-  // Group doctors by specialty color for hub view
-  const specialtyGroups = new Map<string, typeof allDoctors>();
+  // Group doctors by specialty for the hub view. Section headers use
+  // groupLabel ("Dental Care Team") and sections render in `order`
+  // priority (PCP first, mental health, dentistry, etc.).
+  const specialtyGroups = new Map<
+    string,
+    { groupLabel: string; order: number; rows: typeof allDoctors }
+  >();
   for (const s of allDoctors) {
     const colors = getSpecialtyColor(s);
-    const label = colors.label;
-    if (!specialtyGroups.has(label)) specialtyGroups.set(label, []);
-    specialtyGroups.get(label)!.push(s);
+    const key = colors.label;
+    if (!specialtyGroups.has(key)) {
+      specialtyGroups.set(key, {
+        groupLabel: colors.groupLabel,
+        order: colors.order,
+        rows: [],
+      });
+    }
+    specialtyGroups.get(key)!.rows.push(s);
   }
+  const orderedGroups = Array.from(specialtyGroups.entries())
+    .sort((a, b) => a[1].order - b[1].order);
 
-  // Keep ungrouped for backwards compat
+  // Keep ungrouped for backwards compat (count + empty-state checks)
   const doctors = allDoctors;
 
   function toggleExpand(id: string) {
@@ -465,10 +478,19 @@ function ProvidersInner() {
           </div>
         ) : (
           <>
-            {/* Provider cards — color-coded by specialty */}
-            {doctors.length > 0 && (
-              <div data-tour="provider-list" className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                {doctors.map((snapshot) => {
+            {/* Provider cards — grouped by specialty (Dental Care Team,
+                Mental Health Care, etc.) with section headers. Each group
+                is its own grid so cards within a category sit together. */}
+            {doctors.length > 0 && orderedGroups.map(([key, group]) => (
+              <div key={key} data-tour="provider-list" className="mt-6">
+                <div className="text-[11px] font-bold uppercase tracking-widest text-[#4F5F73] mb-3">
+                  {group.groupLabel}
+                  <span className="ml-2 text-[#4F5F73] font-medium normal-case tracking-normal">
+                    ({group.rows.length})
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                {group.rows.map((snapshot) => {
                   const status = getStatusLabel(snapshot);
                   const colors = getSpecialtyColor(snapshot);
                   const isExpanded = expandedId === snapshot.provider.id;
@@ -762,8 +784,9 @@ function ProvidersInner() {
                     </div>
                   );
                 })}
+                </div>
               </div>
-            )}
+            ))}
 
             {/* Pharmacies */}
             {pharmacies.length > 0 && (
