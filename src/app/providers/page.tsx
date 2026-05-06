@@ -95,6 +95,11 @@ function AddProviderForm({
   const [adding, setAdding] = useState<string | null>(null);
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [userLocation, setUserLocation] = useState<string>("");
+  // Whether the displayed location came from the user's profile (zip)
+  // versus IP geolocation. We only label "Searching near …" when the
+  // user explicitly set a zip — IP-based bias still happens silently
+  // but isn't surfaced as text since it can be wildly wrong.
+  const [locationFromProfile, setLocationFromProfile] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -136,7 +141,8 @@ function AddProviderForm({
           };
           const state = PFX[zipPrefix];
           if (state) {
-            setUserLocation(state);
+            setUserLocation(zip);
+            setLocationFromProfile(true);
             return;
           }
         }
@@ -148,7 +154,11 @@ function AddProviderForm({
         const geoRes = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) });
         const geo = await geoRes.json();
         if (!cancelled && geo?.city && geo?.region_code) {
+          // Capture for behind-the-scenes search bias only — the
+          // "Searching near …" label is suppressed for IP-derived
+          // locations.
           setUserLocation(`${geo.city}, ${geo.region_code}`);
+          setLocationFromProfile(false);
         }
       } catch {
         // best effort
@@ -244,7 +254,7 @@ function AddProviderForm({
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#4F5F73]">Searching...</span>
           )}
         </div>
-        {userLocation && !query && (
+        {locationFromProfile && userLocation && !query && (
           <p className="mt-1.5 text-[10px] text-[#4F5F73]">
             Searching near {userLocation}. Include a city or state for other areas.
           </p>

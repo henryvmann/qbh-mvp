@@ -79,22 +79,10 @@ function buildPromptChips(
     }
   }
 
-  // Overdue provider
-  const overdue = dashboard.snapshots.find(
-    (s: any) =>
-      s.provider?.provider_type !== "pharmacy" &&
-      s.followUpNeeded &&
-      s.booking_state?.status !== "BOOKED" &&
-      s.booking_state?.status !== "IN_PROGRESS"
-  );
-  if (overdue) {
-    chips.push({
-      id: "book-overdue",
-      label: `Book ${overdue.provider.name.split(" ")[0]}`,
-      href: "#kate-book",
-      katePrompt: `I need to book an appointment with ${overdue.provider.name}. Can you help?`,
-    });
-  }
+  // The "Book <FirstWord>" chip used to live here for overdue providers
+  // — duplicated the "Let Kate book" CTA already in the suggestion card
+  // above. Reviewer asked for it removed (showed as nonsense like "Book
+  // D.D.S." when the stored name had credentials prefixed).
 
   return chips.slice(0, 3);
 }
