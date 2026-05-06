@@ -151,9 +151,9 @@ export default function OnboardingPage() {
   // appropriate cadence reminders, and tailor in-call language.
   // Saved to patient_profile.medical_context.
   const [medicalContext, setMedicalContext] = useState<string>("");
-  const [connectBank, setConnectBank] = useState(false);
-  const [connectCalendar, setConnectCalendar] = useState(false);
-  const [connectManual, setConnectManual] = useState(false);
+  const [connectBank, setConnectBank] = useState(true);
+  const [connectCalendar, setConnectCalendar] = useState(true);
+  const [connectManual, setConnectManual] = useState(true);
 
   // Account fields
   const [firstName, setFirstName] = useState("");
