@@ -94,6 +94,25 @@ export async function POST(req: NextRequest) {
 
   const merged = { ...(existing?.patient_profile || {}), ...incoming };
 
+  // If this update renamed any care recipients (same id, new name), the
+  // providers.care_recipient column for that user still holds the old
+  // name. Carry the rename through so providers stay attached to their
+  // recipient — otherwise the user has to re-tag every provider.
+  const oldRecipients = Array.isArray(existing?.patient_profile?.care_recipients)
+    ? (existing!.patient_profile.care_recipients as Array<{ id: string; name: string }>)
+    : [];
+  const newRecipients = Array.isArray(incoming?.care_recipients)
+    ? (incoming.care_recipients as Array<{ id: string; name: string }>)
+    : null;
+  const renames: Array<{ from: string; to: string }> = [];
+  if (newRecipients) {
+    const oldById = new Map(oldRecipients.map((r) => [r.id, r.name]));
+    for (const nr of newRecipients) {
+      const oldName = oldById.get(nr.id);
+      if (oldName && oldName !== nr.name) renames.push({ from: oldName, to: nr.name });
+    }
+  }
+
   const { error } = await supabaseAdmin
     .from("app_users")
     .update({ patient_profile: merged })
@@ -101,6 +120,38 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  }
+
+  // Apply rename migrations to existing provider rows.
+  if (renames.length > 0) {
+    const { data: providers } = await supabaseAdmin
+      .from("providers")
+      .select("id, care_recipient")
+      .eq("app_user_id", appUserId)
+      .not("care_recipient", "is", null);
+    for (const p of providers ?? []) {
+      try {
+        const arr: string[] = typeof p.care_recipient === "string"
+          ? JSON.parse(p.care_recipient)
+          : Array.isArray(p.care_recipient) ? p.care_recipient : [];
+        let changed = false;
+        const updated = arr.map((name) => {
+          const r = renames.find((x) => x.from === name);
+          if (r) { changed = true; return r.to; }
+          return name;
+        });
+        if (changed) {
+          await supabaseAdmin
+            .from("providers")
+            .update({
+              care_recipient: updated.length > 0 ? JSON.stringify(updated) : null,
+            })
+            .eq("id", p.id);
+        }
+      } catch {
+        // Malformed care_recipient — skip.
+      }
+    }
   }
 
   // Handle provider-specific patient status

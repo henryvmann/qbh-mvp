@@ -66,6 +66,11 @@ export default function SettingsPage() {
   const [newPersonName, setNewPersonName] = useState("");
   const [newPersonRelationship, setNewPersonRelationship] = useState("Parent");
   const [newPersonDob, setNewPersonDob] = useState("");
+  // Inline name editing for existing care recipients. Lets the user
+  // rename "My Partner" to "Henry" so /providers reads "Henry's care
+  // team" and /dashboard chips read "Henry · Partner".
+  const [editingRecipientId, setEditingRecipientId] = useState<string | null>(null);
+  const [editingRecipientName, setEditingRecipientName] = useState("");
 
   useEffect(() => {
     // Load providers for document upload selector
@@ -445,33 +450,95 @@ export default function SettingsPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {careRecipients.map((person) => (
-                <div
-                  key={person.id}
-                  className="group flex items-center justify-between rounded-xl bg-[#F0F2F5] px-4 py-3 border border-[#E5EAF2]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1677FF]/15">
-                      <Users size={14} className="text-[#1677FF]" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-[#071832]">{person.name}</div>
-                      <div className="text-xs text-[#4F5F73]">
-                        {person.relationship}
-                        {person.dob && ` — Born ${new Date(person.dob).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+              {careRecipients.map((person) => {
+                const isEditing = editingRecipientId === person.id;
+                return (
+                  <div
+                    key={person.id}
+                    className="group flex items-center justify-between rounded-xl bg-[#F0F2F5] px-4 py-3 border border-[#E5EAF2]"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1677FF]/15">
+                        <Users size={14} className="text-[#1677FF]" />
                       </div>
+                      {isEditing ? (
+                        <div className="flex-1 min-w-0">
+                          <input
+                            type="text"
+                            value={editingRecipientName}
+                            onChange={(e) => setEditingRecipientName(e.target.value)}
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                const name = editingRecipientName.trim();
+                                if (name) {
+                                  setCareRecipients((prev) =>
+                                    prev.map((r) => (r.id === person.id ? { ...r, name } : r))
+                                  );
+                                }
+                                setEditingRecipientId(null);
+                              } else if (e.key === "Escape") {
+                                setEditingRecipientId(null);
+                              }
+                            }}
+                            className="w-full rounded-lg border border-[#E5EAF2] bg-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+                          />
+                          <div className="text-[10px] text-[#4F5F73] mt-1">
+                            Enter to save · Esc to cancel
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-[#071832] truncate">{person.name}</div>
+                          <div className="text-xs text-[#4F5F73]">
+                            {person.relationship}
+                            {person.dob && ` — Born ${new Date(person.dob).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isEditing ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const name = editingRecipientName.trim();
+                            if (name) {
+                              setCareRecipients((prev) =>
+                                prev.map((r) => (r.id === person.id ? { ...r, name } : r))
+                              );
+                            }
+                            setEditingRecipientId(null);
+                          }}
+                          className="rounded-lg px-2.5 py-1 text-xs font-semibold text-white"
+                          style={{ backgroundColor: "#1677FF" }}
+                        >
+                          Save
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingRecipientId(person.id);
+                            setEditingRecipientName(person.name);
+                          }}
+                          className="px-2 py-1 text-xs font-medium text-[#1677FF] hover:underline"
+                        >
+                          Rename
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setCareRecipients((prev) => prev.filter((r) => r.id !== person.id))}
+                        className="p-1.5 text-[#4F5F73] hover:text-red-500 transition"
+                        aria-label="Remove person"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setCareRecipients((prev) => prev.filter((r) => r.id !== person.id))}
-                    className="shrink-0 p-1.5 text-[#4F5F73] opacity-0 group-hover:opacity-100 hover:text-red-500 transition"
-                    aria-label="Remove person"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
