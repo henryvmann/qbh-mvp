@@ -1684,12 +1684,12 @@ export default function OnboardingPage() {
                     "great starting place" and what Kate's about to do. */}
                 <KateBubble>
                   {score >= 85
-                    ? `${score} — strong. I'll keep it there. Add more anytime from your dashboard.`
+                    ? `${score} — strong. I'll keep it there.`
                     : score >= 60
-                    ? `${score} — on track. I'll keep it there. You can add more anytime.`
+                    ? `${score} — on track. I'll keep it there.`
                     : score >= 30
-                    ? `${score} today. Solid foundation — I'll handle the rest from here. Add more anytime.`
-                    : `${score} today. Great starting place. I'll handle the rest from here — by next week we'll be moving. You can add more anytime.`}
+                    ? `${score} today. Solid foundation. I'll handle the rest from here.`
+                    : `${score} today. Great starting place. I'll handle the rest from here — by next week we'll be moving.`}
                 </KateBubble>
               </div>
               <button
