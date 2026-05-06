@@ -255,42 +255,6 @@ export default function InsightsPage() {
           </div>
         )}
 
-        <div
-          style={{
-            background: "rgba(255,255,255,0.6)",
-            border: `1px solid ${T.lightBorder}`,
-            borderRadius: 14,
-            padding: 14,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: T.lightText }}>Looking for goals?</div>
-            <div style={{ fontSize: 12.5, color: T.lightMuted, marginTop: 2 }}>
-              The things you're working on are tracked separately.
-            </div>
-          </div>
-          <Link
-            href="/goals"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "8px 12px",
-              background: T.electric,
-              color: "white",
-              borderRadius: 10,
-              fontSize: 12.5,
-              fontWeight: 600,
-              textDecoration: "none",
-              flexShrink: 0,
-            }}
-          >
-            Open goals
-          </Link>
-        </div>
       </div>
     </PageShell>
   );

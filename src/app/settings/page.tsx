@@ -281,27 +281,33 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Health History */}
+        {/* Health context — replaces the old free-text history with a
+            link to the structured intake. The intake captures the same
+            information (chronic conditions, surgeries, family history,
+            allergies, meds) as discrete fields Kate can reason against
+            instead of one paragraph. Document upload still available
+            for medical-record summaries. */}
         <div data-tour="health-history" className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-6">
           <h2 className="text-sm font-semibold text-[#071832] mb-1">
-            Your Health History
+            Your Health Context
           </h2>
-          <p className="text-xs text-[#4F5F73] mb-2">
-            Tell Kate about your health background — conditions, surgeries, ongoing concerns, anything relevant. She&apos;ll use this to give you better, more personalized suggestions.
+          <p className="text-xs text-[#4F5F73] mb-3">
+            Tell Kate about your health background — conditions, surgeries,
+            mental health, sleep, care preferences. She uses these to
+            personalize your daily check-ins and what she mentions to offices.
           </p>
-          <p className="text-[10px] text-[#4F5F73] mb-4">
-            Kate won&apos;t provide medical advice — she&apos;ll summarize your history in your own words and use it to help organize your care and suggest relevant providers.
-          </p>
-          <textarea
-            value={healthHistory}
-            onChange={(e) => setHealthHistory(e.target.value)}
-            placeholder="e.g. I've had issues with my stomach for years, had knee surgery in 2023, currently managing high blood pressure..."
-            rows={4}
-            className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-3 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF] resize-none"
-          />
+          <a
+            href="/intake"
+            className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95"
+            style={{ backgroundColor: "#1677FF" }}
+          >
+            Open my intake →
+          </a>
 
-          {/* Document upload */}
-          <div className="mt-4 rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F8F9FA] p-4">
+          {/* Optional document upload — keeps the existing path for
+              users who'd rather upload medical records than answer
+              the structured intake. */}
+          <div className="mt-5 rounded-xl border-2 border-dashed border-[#D0D3D8] bg-[#F8F9FA] p-4">
             <p className="text-xs font-medium text-[#4F5F73] mb-2">Or upload a health document</p>
             <p className="text-[10px] text-[#4F5F73] mb-3">PDF, text, or image of medical records — Kate will summarize it</p>
             {docProviders.length > 0 && (
@@ -334,14 +340,8 @@ export default function SettingsPage() {
                   try {
                     const res = await apiFetch("/api/health-docs", { method: "POST", body: formData });
                     const data = await res.json();
-                    if (data.ok && data.summary) {
-                      // Refresh health history to include the summary
-                      const profileRes = await apiFetch("/api/patient-profile");
-                      const profileData = await profileRes.json();
-                      if (profileData?.profile?.health_history) {
-                        setHealthHistory(profileData.profile.health_history);
-                      }
-                      alert("Document uploaded and summarized! Review your health history above.");
+                    if (data.ok) {
+                      alert("Document uploaded and summarized.");
                     } else {
                       alert(data.error || "Failed to process document");
                     }

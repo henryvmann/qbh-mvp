@@ -26,21 +26,24 @@ type Group = {
 
 const NAV_GROUPS: Group[] = [
   {
+    // Active healthcare surfaces — the things the user manages
+    // directly. Order from most-used to least.
     label: "Care",
     items: [
       { label: "Providers", href: "/providers", description: "Your care team" },
       { label: "Visits", href: "/visits", description: "Upcoming & past" },
+      { label: "Coverage", href: "/coverage", description: "Insurance & claims" },
       { label: "Caregivers", href: "/caregivers", description: "People who help" },
-      { label: "Goals", href: "/goals", description: "Track progress" },
+      { label: "Medications", href: "/medications" },
+      { label: "Documents", href: "/documents", description: "Uploads, labs, EOBs" },
     ],
   },
   {
-    label: "Records",
+    // Things Kate produces or the user observes — second tier.
+    label: "Tracking",
     items: [
       { label: "Insights", href: "/insights", description: "Kate's read on your week" },
-      { label: "Documents", href: "/documents", description: "Uploads, labs, EOBs" },
-      { label: "Coverage", href: "/coverage", description: "Insurance & claims" },
-      { label: "Medications", href: "/medications" },
+      { label: "Goals", href: "/goals", description: "Track progress" },
       { label: "Notes", href: "/notes" },
       { label: "Recordings", href: "/recordings" },
     ],
