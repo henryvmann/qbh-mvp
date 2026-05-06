@@ -172,7 +172,14 @@ function AddProviderForm({
   return (
     <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b border-[#E5EAF2]">
-        <span className="text-sm font-semibold text-[#071832]">Add a Provider</span>
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-[#071832]">Add a Provider</div>
+          {defaultCareRecipient && (
+            <div className="text-[11px] text-[#4F5F73] mt-0.5">
+              For <span className="font-medium text-[#071832]">{defaultCareRecipient}</span>
+            </div>
+          )}
+        </div>
         <button type="button" onClick={onClose} className="p-1 text-[#4F5F73] hover:text-[#4F5F73]">
           <X size={16} />
         </button>
@@ -478,10 +485,26 @@ function ProvidersInner() {
                       className="rounded-2xl shadow-sm overflow-hidden transition-shadow hover:shadow-md"
                       style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
                     >
-                      <button
-                        type="button"
-                        onClick={() => toggleExpand(snapshot.provider.id)}
-                        className="w-full text-left p-5"
+                      {/* Outer click area used to be a <button> wrapping a
+                          <Link> — invalid HTML that swallowed the link
+                          click, so users couldn't navigate into a provider.
+                          Now a div; the inner Link navigates, anywhere
+                          else toggles the inline expand. */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          if ((e.target as HTMLElement).closest("a, button")) return;
+                          toggleExpand(snapshot.provider.id);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            if ((e.target as HTMLElement).closest("a, button")) return;
+                            e.preventDefault();
+                            toggleExpand(snapshot.provider.id);
+                          }
+                        }}
+                        className="w-full text-left p-5 cursor-pointer"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
@@ -579,7 +602,7 @@ function ProvidersInner() {
                             </span>
                           </div>
                         </div>
-                      </button>
+                      </div>
 
                       {/* Confirm Provider for unconfirmed calendar providers */}
                       {snapshot.provider.source === "calendar" && !snapshot.provider.confirmed_status && snapshot.booking_state?.status === "NONE" && (
@@ -805,7 +828,12 @@ function ProvidersInner() {
                         key={m.label}
                         className="rounded-2xl border-2 border-dashed p-5 cursor-pointer transition hover:shadow-sm"
                         style={{ borderColor: m.border, backgroundColor: m.color + "40" }}
-                        onClick={() => {
+                        onClick={(e) => {
+                          // Don't open the add form if the click landed
+                          // on the inner "Help me find one" / dismiss
+                          // affordances — those have their own handlers.
+                          if ((e.target as HTMLElement).closest("button")) return;
+                          setInitialSearch(m.label.toLowerCase());
                           setShowAddForm(true);
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
