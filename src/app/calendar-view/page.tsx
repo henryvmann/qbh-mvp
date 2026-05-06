@@ -619,10 +619,19 @@ export default function CalendarViewPage() {
  * timing / notes). Saves to appointment_caregivers and returns a
  * share link the user can text or email.
  */
+type CaregiverContact = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  relationship: string | null;
+};
+
 function CaregiverInline({ calendarEventId }: { calendarEventId: string }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [needsRide, setNeedsRide] = useState(false);
   const [bring, setBring] = useState("");
   const [music, setMusic] = useState("");
@@ -632,6 +641,35 @@ function CaregiverInline({ calendarEventId }: { calendarEventId: string }) {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Saved caregiver Rolodex — populated when the form opens. Tapping a
+  // contact pre-fills name/email/phone so the user doesn't retype.
+  const [contacts, setContacts] = useState<CaregiverContact[]>([]);
+  const [pickedContactId, setPickedContactId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    apiFetch("/api/caregiver-contacts")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.ok) setContacts(data.contacts ?? []);
+      })
+      .catch(() => {});
+  }, [open]);
+
+  function pickContact(c: CaregiverContact) {
+    if (pickedContactId === c.id) {
+      // Tapping the active chip clears — lets the user start fresh.
+      setPickedContactId(null);
+      setName("");
+      setEmail("");
+      setPhone("");
+      return;
+    }
+    setPickedContactId(c.id);
+    setName(c.name);
+    setEmail(c.email ?? "");
+    setPhone(c.phone ?? "");
+  }
 
   async function submit() {
     if (!name.trim() || saving) return;
@@ -645,6 +683,7 @@ function CaregiverInline({ calendarEventId }: { calendarEventId: string }) {
           calendar_event_id: calendarEventId,
           caregiver_name: name.trim(),
           caregiver_email: email.trim() || null,
+          caregiver_phone: phone.trim() || null,
           asks: {
             needs_ride: needsRide,
             bring: bring.trim() ? bring.split(",").map((s) => s.trim()).filter(Boolean) : [],
@@ -714,6 +753,8 @@ function CaregiverInline({ calendarEventId }: { calendarEventId: string }) {
             setShareUrl(null);
             setName("");
             setEmail("");
+            setPhone("");
+            setPickedContactId(null);
             setNeedsRide(false);
             setBring("");
             setMusic("");
@@ -733,6 +774,52 @@ function CaregiverInline({ calendarEventId }: { calendarEventId: string }) {
       <div className="text-[10px] font-bold uppercase tracking-widest text-[#1677FF]">
         Invite a caregiver
       </div>
+
+      {/* Rolodex quick-pick — tap a saved caregiver to pre-fill name/
+          email/phone. Falls through to manual entry if the user wants
+          someone new. Empty if no saved contacts; surfaces a link to
+          /caregivers to add some. */}
+      {contacts.length > 0 ? (
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-2">
+            Quick pick
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {contacts.map((c) => {
+              const active = pickedContactId === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => pickContact(c)}
+                  className="rounded-full px-3 py-1 text-xs font-medium transition"
+                  style={{
+                    backgroundColor: active ? "#1677FF" : "#F0F2F5",
+                    color: active ? "#FFFFFF" : "#071832",
+                    border: `1px solid ${active ? "#1677FF" : "#E5EAF2"}`,
+                  }}
+                >
+                  {active ? "✓ " : ""}{c.name}
+                  {c.relationship && (
+                    <span style={{ opacity: 0.6, marginLeft: 4 }}>· {c.relationship}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <a
+            href="/caregivers"
+            className="mt-2 inline-block text-[10px] text-[#4F5F73] underline underline-offset-2"
+          >
+            Manage saved caregivers →
+          </a>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-[#E5EAF2] bg-[#F0F2F5]/40 px-3 py-2 text-[11px] text-[#4F5F73]">
+          Save people in <a href="/caregivers" className="underline">your caregivers list</a> for one-tap pick on the next visit.
+        </div>
+      )}
+
       <input
         type="text"
         value={name}
@@ -745,6 +832,13 @@ function CaregiverInline({ calendarEventId }: { calendarEventId: string }) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Their email (optional)"
+        className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+      />
+      <input
+        type="tel"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        placeholder="Their phone (optional)"
         className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
       />
       <div>
