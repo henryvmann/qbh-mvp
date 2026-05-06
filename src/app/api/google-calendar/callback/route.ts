@@ -191,18 +191,10 @@ export async function GET(req: Request) {
       );
     }
 
-    // Trigger background calendar scan for healthcare providers
-    try {
-      const scanUrl = new URL("/api/calendar/scan", url.origin);
-      fetch(scanUrl.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-app-user-id": parsedState.app_user_id },
-      }).catch(() => {
-        // Fire-and-forget — don't block the redirect
-      });
-    } catch {
-      // Never block the OAuth callback redirect
-    }
+    // The caller (onboarding flow, /calendar-connect page) drives the
+    // scan after redirect. Firing here too caused a race: both this
+    // background fetch and the caller's scan saw empty existingProviders
+    // and both inserted the same calendar matches, doubling rows.
 
     // Honor the return_to hint from OAuth state so callers like onboarding
     // can resume their flow instead of dumping the user on /calendar-connect.

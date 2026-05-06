@@ -192,6 +192,9 @@ export default function OnboardingPage() {
   // user skipped — drives the "still scanning" indicator on the
   // unified reveal page.
   const [bankScanDeferred, setBankScanDeferred] = useState(false);
+  // Separate from bankScanDeferred: the 30s safety cap on the
+  // manual-search wait screen. We unblock the UI but keep polling.
+  const [manualWaitTimedOut, setManualWaitTimedOut] = useState(false);
 
   // Manual NPI search (third step in the discovery pipeline)
   const [manualSearchQuery, setManualSearchQuery] = useState("");
@@ -917,24 +920,25 @@ export default function OnboardingPage() {
   const manualSearchAnnouncedRef = useRef(false);
   useEffect(() => {
     if (phase !== "manual-search") return;
-    if (bankScanDeferred) return;
+    if (bankScanDeferred && !manualWaitTimedOut) return;
     if (manualSearchAnnouncedRef.current) return;
     manualSearchAnnouncedRef.current = true;
     addKateMessage("Last step — type a name and I'll find them. Doctor name, office name, even just part of it works. Add as many as you want, then tap done.");
-  }, [phase, bankScanDeferred]);
+  }, [phase, bankScanDeferred, manualWaitTimedOut]);
 
   // Cap the bank-scan wait on manual-search at 30s. If Plaid is genuinely
-  // slow we unblock the manual input — the background poll keeps running
-  // and any late-arriving providers still land via the dashboard/data poll.
+  // slow we unblock the manual input — but keep bankScanDeferred true so
+  // the dashboard/data poll keeps running and late providers still land.
   useEffect(() => {
     if (phase !== "manual-search") return;
     if (!bankScanDeferred) return;
+    if (manualWaitTimedOut) return;
     const t = setTimeout(() => {
-      setBankScanDeferred(false);
+      setManualWaitTimedOut(true);
       addKateMessage("Bank's still pulling — I'll keep it going in the background. Anyone else you want to add?");
     }, 30000);
     return () => clearTimeout(t);
-  }, [phase, bankScanDeferred]);
+  }, [phase, bankScanDeferred, manualWaitTimedOut]);
 
   // ── Manual-search debounce ──
   // Single source of truth for the NPI search query; cancels stale fetches.
@@ -1464,7 +1468,7 @@ export default function OnboardingPage() {
         {/* Manual NPI search — third step in the discovery pipeline.
             Opted into via "Enter providers yourself" on discovery-method.
             Always renders after bank/calendar (if selected) and before score. */}
-        {phase === "manual-search" && !responded && bankScanDeferred && (
+        {phase === "manual-search" && !responded && bankScanDeferred && !manualWaitTimedOut && (
           <div className="animate-fadeIn">
             <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5 flex items-center gap-3">
               <div
@@ -1478,7 +1482,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {phase === "manual-search" && !responded && !bankScanDeferred && (
+        {phase === "manual-search" && !responded && (!bankScanDeferred || manualWaitTimedOut) && (
           <div className="animate-fadeIn space-y-3">
             {/* Unified reveal — what bank + calendar pulled so far. The
                 reviewer asked for "here are the providers we found, here
