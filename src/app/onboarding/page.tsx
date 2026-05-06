@@ -867,11 +867,16 @@ export default function OnboardingPage() {
 
   // ── Score + unified reveal ──
   useEffect(() => {
-    if (phase !== "score-reveal") return;
-    apiFetch("/api/health-score")
-      .then((r) => r.json())
-      .then((d) => { if (d.ok) setScore(d.score); })
-      .catch(() => setScore(0));
+    // Load the unified provider list on score-reveal (final summary)
+    // AND on manual-search (so the user sees what's already on their
+    // team before adding more by name).
+    if (phase !== "score-reveal" && phase !== "manual-search") return;
+    if (phase === "score-reveal") {
+      apiFetch("/api/health-score")
+        .then((r) => r.json())
+        .then((d) => { if (d.ok) setScore(d.score); })
+        .catch(() => setScore(0));
+    }
 
     let cancelled = false;
     async function loadAll() {
@@ -1446,8 +1451,55 @@ export default function OnboardingPage() {
             Always renders after bank/calendar (if selected) and before score. */}
         {phase === "manual-search" && !responded && (
           <div className="animate-fadeIn space-y-3">
+            {/* Unified reveal — what bank + calendar pulled so far. The
+                reviewer asked for "here are the providers we found, here
+                are the ones for review from both your calendar and your
+                bank. if you know any others, put them here." */}
+            {allDiscovered.length > 0 && (
+              <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-4">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-2">
+                  Here's what I found
+                </div>
+                <div className="text-sm font-semibold text-[#071832] mb-3">
+                  {allDiscovered.length} provider{allDiscovered.length === 1 ? "" : "s"} on your team
+                  {bankScanDeferred && (
+                    <span className="ml-1 text-[11px] text-[#4F5F73] font-normal">
+                      · bank still scanning
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-1.5 max-h-44 overflow-y-auto">
+                  {allDiscovered.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2 bg-[#F8F9FB]"
+                    >
+                      <span
+                        className="h-1.5 w-1.5 rounded-full shrink-0"
+                        style={{
+                          backgroundColor:
+                            p.source === "manual" ? "#1677FF" : p.source === "calendar" ? "#27C46B" : "#E08A1F",
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-[#071832] truncate">{p.name}</div>
+                        {p.specialty && (
+                          <div className="text-[10px] text-[#4F5F73] truncate">{p.specialty}</div>
+                        )}
+                      </div>
+                      <span className="text-[9px] uppercase tracking-wider text-[#4F5F73] shrink-0">
+                        {p.source === "manual" ? "Added" : p.source === "calendar" ? "Calendar" : "Bank"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-4 space-y-3">
-              <label className="block text-xs font-semibold text-[#071832] mb-1">Search for a provider</label>
+              <label className="block text-xs font-semibold text-[#071832] mb-1">
+                {allDiscovered.length > 0 ? "Know any others? Add them by name" : "Search for a provider"}
+              </label>
               <p className="text-[11px] text-[#4F5F73] mb-2">Type a name, specialty (e.g. "dermatologist"), or "doctor [city]". Tap Add on any match.</p>
               <input
                 type="text"

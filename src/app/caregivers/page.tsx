@@ -292,143 +292,6 @@ export default function CaregiversPage() {
           </div>
         </Section>
 
-        <Section
-          title="Active invites"
-          right={
-            <Link
-              href="/calendar-view"
-              style={{
-                fontSize: 13,
-                color: T.electric,
-                textDecoration: "none",
-                fontWeight: 600,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <UserPlus size={14} />
-              Add to a visit
-            </Link>
-          }
-        >
-          {loading ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.lightMuted }}>
-              <Loader2 size={16} className="animate-spin" />
-              Loading…
-            </div>
-          ) : caregivers.length === 0 ? (
-            <Empty
-              icon={<UserPlus size={28} color={T.lightMuted} />}
-              title="No active caregiver invites"
-              body="When you add a caregiver to an appointment, they'll show up here."
-            />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {caregivers.map((c) => {
-                const ev = c.calendar_event_id ? events[c.calendar_event_id] : null;
-                return (
-                  <div
-                    key={c.id}
-                    style={{
-                      background: "rgba(255,255,255,0.85)",
-                      border: `1px solid ${T.lightBorder}`,
-                      borderRadius: 14,
-                      padding: 16,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "baseline",
-                        justifyContent: "space-between",
-                        gap: 12,
-                      }}
-                    >
-                      <div style={{ fontWeight: 600, color: T.lightText, fontSize: 16 }}>
-                        {c.caregiver_name}
-                      </div>
-                      <div style={{ fontSize: 12, color: T.lightMuted }}>
-                        invited {fmtRelative(c.invited_at)}
-                      </div>
-                    </div>
-                    {c.caregiver_email && (
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: T.lightMuted,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <Mail size={12} />
-                        {c.caregiver_email}
-                      </div>
-                    )}
-                    {ev && (
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: T.lightMuted,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <Calendar size={12} />
-                        {fmtWhen(ev.startAt)} · {ev.providerName}
-                      </div>
-                    )}
-                    {c.viewed_at ? (
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: T.green,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <Eye size={12} />
-                        Viewed {fmtRelative(c.viewed_at)}
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: T.lightMuted,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <Eye size={12} />
-                        Not opened yet
-                      </div>
-                    )}
-                    <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-                      <button onClick={() => copyShare(c)} style={btnSecondary}>
-                        {copiedId === c.id ? <Check size={14} /> : <Copy size={14} />}
-                        {copiedId === c.id ? "Copied" : "Copy link"}
-                      </button>
-                      {c.caregiver_email && (
-                        <button onClick={() => resendInvite(c)} style={btnSecondary}>
-                          <Mail size={14} />
-                          Resend email
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Section>
-
         {/* Saved caregivers — explicit Rolodex. The user can add people
             here without invitations attached. When they later add a
             caregiver to a visit, the per-event picker pulls from this
@@ -606,6 +469,143 @@ export default function CaregiversPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </Section>
+
+        <Section
+          title="Active invites"
+          right={
+            <Link
+              href="/calendar-view"
+              style={{
+                fontSize: 13,
+                color: T.electric,
+                textDecoration: "none",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <UserPlus size={14} />
+              Add to a visit
+            </Link>
+          }
+        >
+          {loading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: T.lightMuted }}>
+              <Loader2 size={16} className="animate-spin" />
+              Loading…
+            </div>
+          ) : caregivers.length === 0 ? (
+            <Empty
+              icon={<UserPlus size={28} color={T.lightMuted} />}
+              title="No active caregiver invites"
+              body="When you add a caregiver to an appointment, they'll show up here."
+            />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {caregivers.map((c) => {
+                const ev = c.calendar_event_id ? events[c.calendar_event_id] : null;
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      background: "rgba(255,255,255,0.85)",
+                      border: `1px solid ${T.lightBorder}`,
+                      borderRadius: 14,
+                      padding: 16,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        justifyContent: "space-between",
+                        gap: 12,
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, color: T.lightText, fontSize: 16 }}>
+                        {c.caregiver_name}
+                      </div>
+                      <div style={{ fontSize: 12, color: T.lightMuted }}>
+                        invited {fmtRelative(c.invited_at)}
+                      </div>
+                    </div>
+                    {c.caregiver_email && (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: T.lightMuted,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Mail size={12} />
+                        {c.caregiver_email}
+                      </div>
+                    )}
+                    {ev && (
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: T.lightMuted,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Calendar size={12} />
+                        {fmtWhen(ev.startAt)} · {ev.providerName}
+                      </div>
+                    )}
+                    {c.viewed_at ? (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: T.green,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Eye size={12} />
+                        Viewed {fmtRelative(c.viewed_at)}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: T.lightMuted,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <Eye size={12} />
+                        Not opened yet
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+                      <button onClick={() => copyShare(c)} style={btnSecondary}>
+                        {copiedId === c.id ? <Check size={14} /> : <Copy size={14} />}
+                        {copiedId === c.id ? "Copied" : "Copy link"}
+                      </button>
+                      {c.caregiver_email && (
+                        <button onClick={() => resendInvite(c)} style={btnSecondary}>
+                          <Mail size={14} />
+                          Resend email
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </Section>
