@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -57,7 +58,14 @@ const NAV_GROUPS: Group[] = [
 
 export default function HamburgerMenu() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname() ?? "";
+
+  // Portal target — wait for client-side mount before reading
+  // document.body. SSR doesn't have a body to attach to.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close drawer on route change.
   useEffect(() => {
@@ -107,7 +115,7 @@ export default function HamburgerMenu() {
         <Menu size={22} />
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <>
           {/* Backdrop */}
           <div
@@ -215,7 +223,8 @@ export default function HamburgerMenu() {
               ))}
             </div>
           </aside>
-        </>
+        </>,
+        document.body
       )}
     </>
   );

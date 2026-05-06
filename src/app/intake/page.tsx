@@ -26,7 +26,7 @@ import PageShell from "../../components/qbh/PageShell";
 import { T } from "../../components/brand";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
-type QuestionType = "chips" | "multi-chips" | "text" | "scale";
+type QuestionType = "chips" | "multi-chips" | "scale";
 
 type Question = {
   id: string;
@@ -34,28 +34,33 @@ type Question = {
   prompt: string;
   helper?: string;
   type: QuestionType;
-  options?: string[];
-  placeholder?: string;
-  /** Allow free-text alongside chips for nuance. */
-  freeTextLabel?: string;
+  options: string[];
+  /** Placeholder for the always-present notes textarea. */
+  notesPlaceholder?: string;
 };
 
+// Every question is chips-first (single or multi-select) with a notes
+// textarea for nuance. The reviewer was specific: no more bouncing
+// between free-text and chips — chip prompts give Kate something
+// structured to reason against, notes catch the rest.
 const QUESTIONS: Question[] = [
-  // ── Mental health (front-loaded — highest leverage for personalization) ──
+  // ── Mental health ──
   {
     id: "mh_concerns",
     bucket: "Mental health",
     prompt: "Anything weighing on you mental-health-wise?",
     helper: "Pick all that apply. This is between us — I won't share with offices unless you ask.",
     type: "multi-chips",
-    options: ["Anxiety", "Depression", "Stress", "Sleep trouble", "Burnout", "Grief", "None of those right now"],
+    options: ["Anxiety", "Depression", "Stress", "Sleep trouble", "Burnout", "Grief", "ADHD / focus", "Trauma", "None right now"],
+    notesPlaceholder: "Anything else you'd want me to know?",
   },
   {
     id: "mh_therapist",
     bucket: "Mental health",
     prompt: "Therapist or psychiatrist on file?",
     type: "chips",
-    options: ["Yes — current", "Used to", "No — but I'm curious", "No — not for me"],
+    options: ["Yes — current", "Used to", "Curious about it", "Not for me"],
+    notesPlaceholder: "Their name, or what you've been thinking about?",
   },
   {
     id: "mh_stress_level",
@@ -64,6 +69,7 @@ const QUESTIONS: Question[] = [
     helper: "1 = totally chill, 10 = barely holding it together",
     type: "scale",
     options: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+    notesPlaceholder: "What's driving it lately?",
   },
 
   // ── Lifestyle ──
@@ -73,13 +79,23 @@ const QUESTIONS: Question[] = [
     prompt: "How's sleep these days?",
     type: "chips",
     options: ["Great", "OK most nights", "Hit or miss", "Bad — need to fix this"],
+    notesPlaceholder: "Anything specific going on with sleep?",
   },
   {
     id: "ls_movement",
     bucket: "Lifestyle",
-    prompt: "Movement and food — anything you're working on?",
-    type: "text",
-    placeholder: "e.g. 'walking 5x/wk, trying to eat more protein'",
+    prompt: "How are you moving these days?",
+    type: "multi-chips",
+    options: ["Walking", "Running", "Yoga / stretching", "Weights / strength", "Team sports", "Cycling / spin", "Swimming", "Not really moving"],
+    notesPlaceholder: "Anything specific you're working on?",
+  },
+  {
+    id: "ls_food",
+    bucket: "Lifestyle",
+    prompt: "How about food?",
+    type: "multi-chips",
+    options: ["Eat what I want", "Trying to eat better", "Specific diet", "Food allergies / intolerances", "Tracking macros", "Pregnancy / postpartum needs"],
+    notesPlaceholder: "Specific diet, restrictions, or goals?",
   },
   {
     id: "ls_substances",
@@ -88,68 +104,77 @@ const QUESTIONS: Question[] = [
     helper: "Helps Kate frame visit prep when offices ask.",
     type: "multi-chips",
     options: ["Smoke / vape", "Drink occasionally", "Drink regularly", "THC / cannabis", "Other recreational", "None of the above"],
+    notesPlaceholder: "Frequency or anything you're cutting back on?",
   },
 
   // ── Health history ──
   {
     id: "hx_chronic",
     bucket: "Health history",
-    prompt: "Any chronic conditions I should know about?",
-    helper: "Diabetes, BP, autoimmune, asthma, etc.",
-    type: "text",
-    placeholder: "e.g. 'high blood pressure (controlled), seasonal allergies'",
+    prompt: "Any chronic conditions to keep on file?",
+    helper: "Pick what applies — Kate uses these when prepping for appointments.",
+    type: "multi-chips",
+    options: ["High blood pressure", "Diabetes", "Asthma", "Autoimmune", "Heart condition", "Thyroid", "Migraine", "IBS / GI", "Chronic pain", "None of those"],
+    notesPlaceholder: "Specifics — controlled, severity, anything else?",
   },
   {
     id: "hx_surgeries",
     bucket: "Health history",
     prompt: "Past surgeries or hospitalizations worth flagging?",
-    type: "text",
-    placeholder: "e.g. 'gallbladder out 2019'",
+    type: "multi-chips",
+    options: ["Cesarean / childbirth", "Appendix", "Gallbladder", "Tonsils / adenoids", "Knee / joint", "Other surgery", "Hospitalized (no surgery)", "None"],
+    notesPlaceholder: "Year, doctor, or any details to remember?",
   },
   {
     id: "hx_family",
     bucket: "Health history",
-    prompt: "Family history that runs?",
-    helper: "Heart disease, cancer, mental health, autoimmune — anything close family deals with.",
-    type: "text",
-    placeholder: "e.g. 'heart disease (dad), breast cancer (grandma)'",
+    prompt: "Any family history we should keep an eye on?",
+    helper: "What close family deals with — parents, siblings, grandparents.",
+    type: "multi-chips",
+    options: ["Heart disease", "Cancer", "Diabetes", "Mental health", "Autoimmune", "Stroke", "High blood pressure", "Alzheimer's / dementia", "None I know of"],
+    notesPlaceholder: "Who, and any specifics?",
   },
   {
     id: "hx_allergies",
     bucket: "Health history",
-    prompt: "Allergies — meds, food, environmental?",
-    type: "text",
-    placeholder: "e.g. 'penicillin (rash), peanuts (mild)'",
+    prompt: "Allergies?",
+    type: "multi-chips",
+    options: ["Medication allergy", "Food allergy", "Environmental / seasonal", "Pet allergy", "Latex", "None"],
+    notesPlaceholder: "Specifics — what, severity, what happens?",
   },
   {
     id: "hx_meds",
     bucket: "Health history",
-    prompt: "Current meds (anything you take regularly)?",
-    type: "text",
-    placeholder: "e.g. 'Lisinopril 10mg daily, Lexapro 20mg'",
+    prompt: "What do you take regularly?",
+    type: "multi-chips",
+    options: ["Birth control", "BP / heart meds", "Mental health meds", "Diabetes meds", "Thyroid", "Hormonal therapy", "Sleep aid", "Pain relief", "Vitamins / supplements", "Nothing regular"],
+    notesPlaceholder: "Names + doses if you have them handy",
   },
 
   // ── Day-to-day ──
   {
     id: "dt_addressing",
     bucket: "Day-to-day",
-    prompt: "Anything you've been meaning to address but haven't gotten to?",
-    type: "text",
-    placeholder: "e.g. 'overdue dental cleaning, weird mole I keep ignoring'",
+    prompt: "Anything you've been meaning to address?",
+    type: "multi-chips",
+    options: ["Overdue checkup", "Dental cleaning", "Eye exam", "Skin / mole check", "Mental health support", "Specialist visit", "Bloodwork", "Nothing pressing"],
+    notesPlaceholder: "What's been on your mind?",
   },
   {
     id: "dt_repro",
     bucket: "Day-to-day",
     prompt: "Where are you on the family front?",
     type: "chips",
-    options: ["Not relevant", "Trying to conceive", "Currently pregnant", "Postpartum", "Done having kids", "Skip"],
+    options: ["Not relevant right now", "Trying to conceive", "Currently pregnant", "Postpartum", "Done having kids"],
+    notesPlaceholder: "Anything I should know to help here?",
   },
   {
     id: "dt_goals",
     bucket: "Day-to-day",
     prompt: "Any health goals I should help you toward?",
-    type: "text",
-    placeholder: "e.g. 'lose 15 lbs, lower BP, sleep better'",
+    type: "multi-chips",
+    options: ["Weight", "Sleep", "Mental health", "Fertility", "Energy", "Strength / fitness", "Eating habits", "Just maintain"],
+    notesPlaceholder: "Specifics — what would success look like?",
   },
 
   // ── Care preferences ──
@@ -159,6 +184,7 @@ const QUESTIONS: Question[] = [
     prompt: "Telehealth or in-person when you have a choice?",
     type: "chips",
     options: ["Telehealth always", "Telehealth when possible", "In-person preferred", "No preference"],
+    notesPlaceholder: "Anything specific?",
   },
   {
     id: "cp_gender",
@@ -166,18 +192,24 @@ const QUESTIONS: Question[] = [
     prompt: "Provider-gender preference?",
     type: "chips",
     options: ["Female", "Male", "No preference"],
+    notesPlaceholder: "Any context?",
   },
   {
     id: "cp_accommodations",
     bucket: "Care preferences",
-    prompt: "Anything offices should know that helps your visits go better?",
-    helper: "Mobility, language, sensory, anxiety around procedures, etc.",
-    type: "text",
-    placeholder: "e.g. 'high white-coat anxiety, prefer slow blood draw'",
+    prompt: "Anything offices should know to make visits easier?",
+    type: "multi-chips",
+    options: ["Mobility help", "Language preference", "Sensory sensitivities", "Procedure / needle anxiety", "Need extra time", "Hearing accommodations", "None of those"],
+    notesPlaceholder: "e.g. 'high white-coat anxiety, prefer slow blood draw'",
   },
 ];
 
-type Answers = Record<string, string | string[] | number>;
+type AnswerValue = {
+  selection: string[];
+  notes?: string;
+};
+
+type Answers = Record<string, AnswerValue | string | string[] | number>;
 
 export default function IntakePage() {
   const router = useRouter();
@@ -186,8 +218,10 @@ export default function IntakePage() {
   const [done, setDone] = useState(false);
   const [answers, setAnswers] = useState<Answers>({});
   const [index, setIndex] = useState(0);
-  const [textDraft, setTextDraft] = useState("");
+  // Per-question working state. Every question is chips + optional
+  // notes; chipsDraft is single- or multi-select depending on question.type.
   const [chipsDraft, setChipsDraft] = useState<string[]>([]);
+  const [notesDraft, setNotesDraft] = useState("");
 
   const total = QUESTIONS.length;
   const q = QUESTIONS[index];
@@ -234,27 +268,35 @@ export default function IntakePage() {
   }, []);
 
   // Reset drafts whenever the question changes — pre-fill from saved
-  // answer if the user is revisiting.
+  // answer (handles legacy string/array shapes alongside the new
+  // {selection, notes} object).
   useEffect(() => {
     if (!q) return;
     const existing = answers[q.id];
-    if (q.type === "text") {
-      setTextDraft(typeof existing === "string" ? existing : "");
-      setChipsDraft([]);
-    } else if (q.type === "multi-chips") {
-      setChipsDraft(Array.isArray(existing) ? existing : []);
-      setTextDraft("");
+    if (existing && typeof existing === "object" && !Array.isArray(existing)) {
+      const av = existing as AnswerValue;
+      setChipsDraft(Array.isArray(av.selection) ? av.selection : []);
+      setNotesDraft(av.notes ?? "");
+    } else if (Array.isArray(existing)) {
+      setChipsDraft(existing);
+      setNotesDraft("");
+    } else if (typeof existing === "string") {
+      setChipsDraft([existing]);
+      setNotesDraft("");
     } else {
-      setChipsDraft(typeof existing === "string" ? [existing] : []);
-      setTextDraft("");
+      setChipsDraft([]);
+      setNotesDraft("");
     }
   }, [q, answers]);
 
-  async function recordAndAdvance(value: string | string[] | number | null) {
+  async function recordAndAdvance(value: AnswerValue | null) {
     if (!q) return;
     const next: Answers = { ...answers };
-    if (value === null || value === "" || (Array.isArray(value) && value.length === 0)) {
-      // Skip — record empty so we don't ask again on resume.
+    if (
+      value === null ||
+      (value.selection.length === 0 && !(value.notes && value.notes.trim()))
+    ) {
+      // Skip — record sentinel so we don't ask again on resume.
       next[q.id] = "__skipped__";
     } else {
       next[q.id] = value;
@@ -341,10 +383,9 @@ export default function IntakePage() {
   if (!q) return null;
 
   const progress = ((index + 1) / total) * 100;
-  const canSubmit =
-    q.type === "text"
-      ? textDraft.trim().length > 0
-      : chipsDraft.length > 0;
+  // Submit is enabled if the user picked at least one chip OR typed
+  // a notes-only answer. Either is a real signal.
+  const canSubmit = chipsDraft.length > 0 || notesDraft.trim().length > 0;
 
   return (
     <PageShell maxWidth="max-w-xl">
@@ -394,27 +435,6 @@ export default function IntakePage() {
           <p style={{ color: T.lightMuted, fontSize: 13.5, lineHeight: 1.5, marginBottom: 20 }}>
             {q.helper}
           </p>
-        )}
-
-        {q.type === "text" && (
-          <textarea
-            value={textDraft}
-            onChange={(e) => setTextDraft(e.target.value)}
-            placeholder={q.placeholder || ""}
-            rows={3}
-            style={{
-              width: "100%",
-              padding: "12px 14px",
-              fontSize: 15,
-              color: T.lightText,
-              border: `1px solid ${T.lightBorder}`,
-              borderRadius: 12,
-              outline: "none",
-              background: "white",
-              resize: "vertical",
-              fontFamily: "inherit",
-            }}
-          />
         )}
 
         {q.type === "chips" && q.options && (
@@ -505,6 +525,43 @@ export default function IntakePage() {
           </div>
         )}
 
+        {/* Notes — always available so users can add nuance the chips
+            can't capture. Optional; the chips are the structured part
+            Kate uses for personalization. */}
+        <div style={{ marginTop: 16 }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 0.6,
+              color: T.lightMuted,
+              textTransform: "uppercase",
+              marginBottom: 6,
+            }}
+          >
+            Notes <span style={{ fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>(optional)</span>
+          </label>
+          <textarea
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            placeholder={q.notesPlaceholder || "Anything else you'd like to add?"}
+            rows={2}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              fontSize: 14,
+              color: T.lightText,
+              border: `1px solid ${T.lightBorder}`,
+              borderRadius: 12,
+              outline: "none",
+              background: "white",
+              resize: "vertical",
+              fontFamily: "inherit",
+            }}
+          />
+        </div>
+
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24, gap: 12 }}>
           <button
             onClick={previous}
@@ -541,13 +598,11 @@ export default function IntakePage() {
             </button>
             <button
               onClick={() => {
-                if (q.type === "text") {
-                  if (canSubmit) recordAndAdvance(textDraft.trim());
-                } else if (q.type === "multi-chips") {
-                  if (canSubmit) recordAndAdvance(chipsDraft);
-                } else {
-                  if (canSubmit) recordAndAdvance(chipsDraft[0]);
-                }
+                if (!canSubmit) return;
+                recordAndAdvance({
+                  selection: chipsDraft,
+                  notes: notesDraft.trim() || undefined,
+                });
               }}
               disabled={!canSubmit || saving}
               style={{

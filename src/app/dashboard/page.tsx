@@ -268,15 +268,16 @@ function DashboardInner() {
         </div>
       </GlassCard>
 
+      {/* Intake CTA — sits directly under the score so it's the
+          first thing the eye lands on, and uses brand-blue background
+          to drive intake completion. Self-hides on completion or
+          dismissal. */}
+      <IntakeCTA />
+
       {/* Kate's #1 Suggestion */}
       <div style={{ marginBottom: 18 }} data-wizard="best-next-step">
         <BestNextStep />
       </div>
-
-      {/* Intake CTA — only shows when the user hasn't completed the
-          opt-in intake quiz. Once dismissed (via the X) it doesn't
-          come back; once completed it stops showing automatically. */}
-      <IntakeCTA />
 
       {/* Week strip */}
       <Link

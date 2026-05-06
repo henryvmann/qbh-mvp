@@ -82,6 +82,30 @@ export async function computeReadinessScore(appUserId: string): Promise<number |
     // Health history (5)
     if ((profile.health_history as string)?.trim()) earned += 5;
 
+    // Intake completion — every answered question buys readiness points
+    // (each one tells Kate something about how to personalize). Cap at
+    // 15 so the intake alone can't pin the score; the rest comes from
+    // active care management.
+    const intake = profile.intake as { answers?: Record<string, unknown>; completed_at?: string | null } | undefined;
+    if (intake?.answers) {
+      const answered = Object.values(intake.answers).filter((v) => {
+        if (v === undefined || v === null) return false;
+        if (v === "__skipped__") return false;
+        if (typeof v === "string") return v.trim().length > 0;
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "object") {
+          const av = v as { selection?: unknown[]; notes?: string };
+          const hasSelection = Array.isArray(av.selection) && av.selection.length > 0;
+          const hasNotes = typeof av.notes === "string" && av.notes.trim().length > 0;
+          return hasSelection || hasNotes;
+        }
+        return false;
+      }).length;
+      // 1 point per answered question, cap at 15. Completion bonus +3.
+      earned += Math.min(answered, 15);
+      if (intake.completed_at) earned += 3;
+    }
+
     return Math.max(0, Math.min(100, earned));
   } catch (err) {
     console.error("[health-score] computeReadinessScore failed for", appUserId, err);

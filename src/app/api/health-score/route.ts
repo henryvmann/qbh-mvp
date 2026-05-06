@@ -121,6 +121,35 @@ export async function GET(req: Request) {
     factors.push({ label: "Health history added", points: hasHistory ? 5 : 0, earned: hasHistory });
     if (hasHistory) earned += 5;
 
+    // Intake quiz — 1 point per answered question (cap 15), +3 on
+    // completion. Kept in sync with lib/qbh/health-score.ts.
+    const intake = profile.intake as { answers?: Record<string, unknown>; completed_at?: string | null } | undefined;
+    let intakeAnswered = 0;
+    let intakeCompleted = false;
+    if (intake?.answers) {
+      intakeAnswered = Object.values(intake.answers).filter((v) => {
+        if (v === undefined || v === null) return false;
+        if (v === "__skipped__") return false;
+        if (typeof v === "string") return v.trim().length > 0;
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "object") {
+          const av = v as { selection?: unknown[]; notes?: string };
+          const hasSelection = Array.isArray(av.selection) && av.selection.length > 0;
+          const hasNotes = typeof av.notes === "string" && av.notes.trim().length > 0;
+          return hasSelection || hasNotes;
+        }
+        return false;
+      }).length;
+      intakeCompleted = !!intake.completed_at;
+    }
+    const intakePoints = Math.min(intakeAnswered, 15) + (intakeCompleted ? 3 : 0);
+    factors.push({
+      label: `Intake answered (${intakeAnswered}${intakeCompleted ? ", complete" : ""})`,
+      points: intakePoints,
+      earned: intakePoints > 0,
+    });
+    earned += intakePoints;
+
     // Clamp to 0-100
     const score = Math.max(0, Math.min(100, earned));
 
