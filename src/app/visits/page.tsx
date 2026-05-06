@@ -6,6 +6,7 @@ import { apiFetch } from "../../lib/api";
 import PageShell from "../../components/qbh/PageShell";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import HandleItButton from "../../components/qbh/HandleItButton";
+import BookAllButton from "../../components/qbh/BookAllButton";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import NextSteps from "../../components/qbh/NextSteps";
 import { Pencil, Trash2, X as XIcon } from "lucide-react";
@@ -228,9 +229,12 @@ function VisitsInner() {
                   Providers that are overdue or don&apos;t have a future appointment.
                 </p>
               </div>
-              <span className="text-sm font-medium text-[#4F5F73]">
-                {followUps.length} to be scheduled
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-[#4F5F73]">
+                  {followUps.length} to be scheduled
+                </span>
+                <BookAllButton followUps={followUps} />
+              </div>
             </div>
 
             {followUps.length > 0 ? (

@@ -584,6 +584,27 @@ export async function POST(req: Request) {
     existingBookedAppointment,
   });
 
+  // Batch tagging: when the call originated from BookAllButton the
+  // body carries batch_id / batch_position / batch_size. Stamping these
+  // into metadata ties every attempt in a batch together so analytics
+  // and future webhook-driven advancement can find them by the same
+  // batch_id without changing schemas.
+  if (typeof body?.batch_id === "string" && body.batch_id) {
+    (metadata as Record<string, unknown>).batch_id = body.batch_id;
+    if (typeof body.batch_position === "number") {
+      (metadata as Record<string, unknown>).batch_position = body.batch_position;
+    }
+    if (typeof body.batch_size === "number") {
+      (metadata as Record<string, unknown>).batch_size = body.batch_size;
+    }
+  }
+  if (
+    typeof body?.reason_for_visit === "string" &&
+    body.reason_for_visit.trim()
+  ) {
+    (metadata as Record<string, unknown>).reason_for_visit = body.reason_for_visit.trim();
+  }
+
   if (!attempt_id) {
     const { data: attempt, error: attemptErr } = await supabaseAdmin
       .from("schedule_attempts")
