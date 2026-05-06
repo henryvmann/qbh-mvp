@@ -222,8 +222,8 @@ function CalendarConnectPageInner() {
                 <button
                   onClick={startGoogleCalendarConnect}
                   disabled={!userId || submitting || submittingOutlook}
-                  className="w-full rounded-2xl px-6 py-3 text-white font-medium shadow-sm transition hover:brightness-95 disabled:opacity-60"
-                  style={{ background: "#1677FF", boxShadow: "0 8px 24px rgba(22,119,255,0.28)" }}
+                  className="w-full rounded-2xl px-6 py-3 font-medium shadow-sm transition hover:brightness-95 disabled:opacity-60"
+                  style={{ background: "#1677FF", color: "#FFFFFF", boxShadow: "0 8px 24px rgba(22,119,255,0.28)" }}
                 >
                   {submitting ? "Redirecting..." : "Connect Google Calendar"}
                 </button>

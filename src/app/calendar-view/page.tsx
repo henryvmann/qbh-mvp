@@ -250,8 +250,8 @@ export default function CalendarViewPage() {
                 <div className="mt-3 flex gap-2">
                   <Link
                     href={userId ? `/calendar-connect?user_id=${userId}` : "/calendar-connect"}
-                    className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold text-white transition hover:brightness-95"
-                    style={{ backgroundColor: "#1677FF" }}
+                    className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition hover:brightness-95"
+                    style={{ backgroundColor: "#1677FF", color: "#FFFFFF" }}
                   >
                     Connect Google Calendar
                   </Link>

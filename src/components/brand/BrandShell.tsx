@@ -27,6 +27,7 @@ import {
   SparkleIcon,
   PersonIcon,
 } from "./icons";
+import HamburgerMenu from "../qbh/HamburgerMenu";
 import {
   brandTheme,
   T,
@@ -126,11 +127,15 @@ function TopAppBar({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: 8,
         }}
       >
-        <Link href="/dashboard" style={{ textDecoration: "none" }}>
-          <Wordmark mode={mode} size={19} />
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <HamburgerMenu />
+          <Link href="/dashboard" style={{ textDecoration: "none" }}>
+            <Wordmark mode={mode} size={19} />
+          </Link>
+        </div>
         <div>{topRight}</div>
       </div>
     </header>

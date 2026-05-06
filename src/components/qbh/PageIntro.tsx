@@ -195,7 +195,16 @@ export default function PageIntro() {
             : { position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }
         }
       >
-        <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-[#E5EAF2] overflow-hidden pointer-events-auto">
+        <div
+          className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-[#E5EAF2] pointer-events-auto"
+          style={{
+            // Cap height so the Next button stays in view on short
+            // screens. Without this the button sometimes lands below
+            // the viewport and the user has to refresh to escape.
+            maxHeight: "calc(100vh - 80px)",
+            overflowY: "auto",
+          }}
+        >
           <div className="h-1.5 bg-[#E5EAF2]">
             <div
               className="h-1.5 bg-[#1677FF] transition-all duration-300"

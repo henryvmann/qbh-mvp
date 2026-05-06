@@ -327,7 +327,7 @@ function DashboardInner() {
                 padding: "12px 0",
               }}
             >
-              Hand off your first provider →
+              Add your first provider →
             </Link>
           </GlassCard>
         ) : (
