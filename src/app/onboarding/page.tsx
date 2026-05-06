@@ -683,16 +683,9 @@ export default function OnboardingPage() {
 
     // Plaid PRODUCT_NOT_READY can persist 60-180s on credit cards. The
     // user already linked Plaid — they shouldn't sit staring at a
-    // spinner. Give a brief beat for fast-completing banks, then
-    // auto-advance to the next opted-in step. The poll keeps running
-    // silently in the background and the unified reveal at the end
-    // surfaces whatever it finds.
-    const progress10 = setTimeout(() => {
-      addKateMessage("Still pulling your statements. I'll keep this going in the background while we keep moving.");
-    }, 10000);
-    // Auto-defer at 15s if still pending. Same effect as Skip but
-    // automatic — Plaid succeeded, the scan can run silently, and
-    // the user advances to calendar/manual.
+    // spinner. Auto-defer fast (5s) so the user keeps moving; the poll
+    // keeps running silently in the background and the unified reveal
+    // at the end surfaces whatever it finds.
     const autoDefer = setTimeout(() => {
       if (finished) return;
       bankSkippedRef.current = true;
@@ -701,13 +694,7 @@ export default function OnboardingPage() {
       setTyping(false);
       addKateMessage("I'll keep scanning in the background — let's keep going.");
       setTimeout(() => setPhase(advanceAfter("bank")), 1000);
-    }, 15000);
-    const progress90 = setTimeout(() => {
-      // Belt-and-suspenders — if the user lingered (e.g., bounced
-      // back to onboarding mid-scan), drop a friendly note that the
-      // scan is still working in the background.
-      addKateMessage("Bank's slow today. Still working on it in the background.");
-    }, 90000);
+    }, 5000);
 
     // Drive discovery from inside the poll loop. /api/discovery/run is
     // idempotent (upsert-based) and cheap when there's nothing new.
@@ -729,9 +716,7 @@ export default function OnboardingPage() {
       if (finished) return;
       finished = true;
       clearInterval(poll);
-      clearTimeout(progress10);
       clearTimeout(autoDefer);
-      clearTimeout(progress90);
       setDiscoveryActive(false);
       setTyping(false);
       setDiscoveredProviders(providers);
