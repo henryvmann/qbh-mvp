@@ -273,13 +273,18 @@ function DashboardInner() {
               const booked = hasConfirmedBooking(s);
               const isPharmacy = s.provider.provider_type === "pharmacy";
               const isLast = idx === snapshots.length - 1;
+              // "On track" only when actually booked. Without a booking
+              // there's nothing to be on track for — we fall through to
+              // a neutral state instead. Providers the user is no longer
+              // seeing belong in the Archive (status='archived'), not in
+              // this active list at all.
               const dotColor = isPharmacy
                 ? T.lightMuted
                 : overdue
                 ? T.red
                 : booked
-                ? T.warn
-                : T.green;
+                ? T.green
+                : T.lightMuted;
 
               return (
                 <div
@@ -332,14 +337,10 @@ function DashboardInner() {
                       label="Book"
                     />
                   ) : booked ? (
-                    <Pill bg="rgba(224,138,31,0.14)" fg={T.warn}>
-                      Upcoming
-                    </Pill>
-                  ) : (
                     <Pill bg="rgba(39,196,107,0.14)" fg={T.green}>
                       On track
                     </Pill>
-                  )}
+                  ) : null}
                 </div>
               );
             })}

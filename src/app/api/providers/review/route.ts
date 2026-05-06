@@ -22,11 +22,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (action !== "approve" && action !== "dismiss" && action !== "delete") {
+    if (
+      action !== "approve" &&
+      action !== "dismiss" &&
+      action !== "delete" &&
+      action !== "archive" &&
+      action !== "restore"
+    ) {
       return NextResponse.json(
-        { ok: false, error: "Action must be 'approve', 'dismiss', or 'delete'" },
+        {
+          ok: false,
+          error:
+            "Action must be 'approve', 'dismiss', 'delete', 'archive', or 'restore'",
+        },
         { status: 400 }
       );
+    }
+
+    // Archive / restore — soft state for providers the user is no
+    // longer seeing but wants to keep history for. Distinct from
+    // 'dismiss' (which poisons future discovery for that name) and
+    // 'delete' (which hard-purges everything). Archive flips the
+    // status only; nothing else changes — visits, notes, calls all
+    // stay attached so the user can review history later.
+    if (action === "archive" || action === "restore") {
+      const newStatus = action === "archive" ? "archived" : "active";
+      const { error } = await supabaseAdmin
+        .from("providers")
+        .update({ status: newStatus })
+        .eq("id", providerId)
+        .eq("app_user_id", appUserId);
+      if (error) {
+        return NextResponse.json(
+          { ok: false, error: "Failed to update provider" },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json({ ok: true, status: newStatus });
     }
 
     // Delete branch: hard-purge the provider + dependent rows AND

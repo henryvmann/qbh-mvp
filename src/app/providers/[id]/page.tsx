@@ -125,6 +125,32 @@ export default function ProviderDetailPage() {
     }
   }
 
+  async function handleArchiveProvider() {
+    if (!provider) return;
+    // Archive = "I no longer see this doctor, but keep the history."
+    // No data is deleted; the row just stops showing on the active
+    // dashboard. User can restore from /providers/archived.
+    const ok = window.confirm(
+      `Archive ${provider.display_name || provider.name}?\n\nKeeps all your history with this provider, but stops showing them on your active care team. You can restore them later from the Archive page.`
+    );
+    if (!ok) return;
+    try {
+      const res = await apiFetch("/api/providers/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider_id: providerId, action: "archive" }),
+      });
+      const json = await res.json();
+      if (json?.ok) {
+        router.push("/providers");
+      } else {
+        window.alert(`Couldn't archive provider: ${json?.error ?? "unknown error"}`);
+      }
+    } catch (err) {
+      window.alert(`Couldn't archive provider: ${err instanceof Error ? err.message : "network error"}`);
+    }
+  }
+
   async function handleAddNote() {
     if (!newNote.trim() || savingNote) return;
     setSavingNote(true);
@@ -278,6 +304,13 @@ export default function ProviderDetailPage() {
                   style={{ color: colors.accent }}
                 >
                   Edit details
+                </button>
+                <button
+                  onClick={handleArchiveProvider}
+                  className="text-xs font-medium underline underline-offset-2 transition hover:opacity-80"
+                  style={{ color: "#4F5F73" }}
+                >
+                  No longer seeing — archive
                 </button>
                 <button
                   onClick={handleRemoveProvider}
