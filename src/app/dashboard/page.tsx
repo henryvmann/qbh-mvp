@@ -21,7 +21,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import UserAvatar from "../../components/qbh/UserAvatar";
 import { apiFetch } from "../../lib/api";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import BestNextStep from "../../components/qbh/BestNextStep";
@@ -561,29 +561,6 @@ function Pill({
   );
 }
 
-function UserAvatar() {
-  return (
-    <Link
-      href="/account"
-      style={{
-        display: "block",
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        overflow: "hidden",
-        border: `1.5px solid ${T.lightBorder}`,
-      }}
-    >
-      <Image
-        src="/kate-avatar.png"
-        alt="You"
-        width={36}
-        height={36}
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-      />
-    </Link>
-  );
-}
 
 export default function DashboardPage() {
   return (
