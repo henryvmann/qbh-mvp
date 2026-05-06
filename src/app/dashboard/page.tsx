@@ -84,6 +84,14 @@ function DashboardInner() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [careRecipients, setCareRecipients] = useState<
+    Array<{ id: string; name: string; relationship: string }>
+  >([]);
+  // Scope filter — null = "All". Otherwise filters provider count,
+  // overdue, upcoming, and the care-team list to providers attached
+  // to that recipient. Stored only client-side; the dashboard query
+  // returns everyone.
+  const [scope, setScope] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -106,6 +114,16 @@ function DashboardInner() {
       setLoading(false);
     }
     load().catch(() => setLoading(false));
+
+    // Care recipients drive the scope chips. Best-effort — if the
+    // fetch fails we just don't render the toggle.
+    apiFetch("/api/patient-profile")
+      .then((r) => r.json())
+      .then((p) => {
+        const list = p?.profile?.care_recipients;
+        if (Array.isArray(list)) setCareRecipients(list);
+      })
+      .catch(() => {});
   }, [router]);
 
   if (loading) {
@@ -132,7 +150,33 @@ function DashboardInner() {
     );
   }
 
-  const { appUserId, userName, snapshots } = data;
+  const { appUserId, userName, snapshots: allSnapshots } = data;
+
+  // Scope filter — applies the care_recipient match the user picked
+  // (null = All). Same matching rules as /providers: literal name,
+  // relationship match, and Self-label aliases ("Myself", "Me").
+  const SELF_LABELS = ["self", "myself", "me", "my health"];
+  const snapshots = scope
+    ? allSnapshots.filter((s) => {
+        try {
+          const raw = (s.provider as { care_recipient?: string | string[] | null }).care_recipient;
+          if (!raw) return false;
+          const recipients: string[] = typeof raw === "string" ? JSON.parse(raw) : raw;
+          const selfRecipient = careRecipients.find((r) => r.name === scope);
+          return recipients.some((r) => {
+            const lower = r.toLowerCase().trim();
+            if (r === scope || lower === scope.toLowerCase()) return true;
+            if (selfRecipient?.relationship === "Self" && SELF_LABELS.includes(lower)) return true;
+            const match = careRecipients.find((cr) => cr.name === scope);
+            if (match && (match.relationship === r || match.relationship.toLowerCase() === lower)) return true;
+            return false;
+          });
+        } catch {
+          return false;
+        }
+      })
+    : allSnapshots;
+
   const nonPharmacy = snapshots.filter((s) => s.provider.provider_type !== "pharmacy");
   const overdueCount = nonPharmacy.filter(isOverdue).length;
   const upcomingCount = nonPharmacy.filter(hasConfirmedBooking).length;
@@ -160,6 +204,26 @@ function DashboardInner() {
         </div>
         <AustinHeading size={32}>{checkIn}</AustinHeading>
       </div>
+
+      {/* Scope chips — All / Self / Partner / Child / etc.
+          Provider count + overdue + upcoming + the care-team list all
+          recompute against the selected scope. Without this, the
+          dashboard's "7 providers, 5 overdue" was ambiguous when a
+          user is managing a household. */}
+      {careRecipients.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+          <ScopeChip label="All" active={scope === null} onClick={() => setScope(null)} />
+          {careRecipients.map((r) => (
+            <ScopeChip
+              key={r.id}
+              label={r.name}
+              sublabel={r.relationship && r.relationship !== "Self" ? r.relationship : undefined}
+              active={scope === r.name}
+              onClick={() => setScope(scope === r.name ? null : r.name)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Health Coordination Score */}
       <GlassCard padding={20} style={{ marginBottom: 18 }}>
@@ -428,6 +492,45 @@ function StatTile({
         </div>
       </GlassCard>
     </Link>
+  );
+}
+
+function ScopeChip({
+  label,
+  sublabel,
+  active,
+  onClick,
+}: {
+  label: string;
+  sublabel?: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "6px 12px",
+        background: active ? T.electric : "rgba(255,255,255,0.6)",
+        color: active ? T.white : T.lightText,
+        border: `1px solid ${active ? T.electric : T.lightBorder}`,
+        borderRadius: 999,
+        fontSize: 12.5,
+        fontWeight: 600,
+        cursor: "pointer",
+      }}
+    >
+      {label}
+      {sublabel && (
+        <span style={{ fontSize: 10, opacity: active ? 0.8 : 0.6, fontWeight: 500 }}>
+          {sublabel}
+        </span>
+      )}
+    </button>
   );
 }
 
