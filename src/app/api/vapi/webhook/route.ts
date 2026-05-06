@@ -202,96 +202,10 @@ function extractDocumentsToBring(transcript: string): string | null {
   return Array.from(new Set(docPhrases)).join(", ");
 }
 
-function extractOfficeInstructions(lines: string[]): string | null {
-  const instructionLines = lines.filter((line) => {
-    const lower = line.toLowerCase();
-    // Only check user (office) lines for instructions
-    if (!lower.startsWith("user:")) return false;
-    return (
-      lower.includes("bring ") ||
-      lower.includes("please bring") ||
-      lower.includes("need to bring") ||
-      lower.includes("needs to") ||
-      lower.includes("let them know") ||
-      lower.includes("let her know") ||
-      lower.includes("let him know") ||
-      lower.includes("let the patient know") ||
-      lower.includes("let jenny know") ||
-      lower.includes("tell them") ||
-      lower.includes("tell her") ||
-      lower.includes("tell him") ||
-      lower.includes("make sure") ||
-      lower.includes("don't eat") ||
-      lower.includes("not eat") ||
-      lower.includes("fasting") ||
-      lower.includes("arrive early") ||
-      lower.includes("arrive 15") ||
-      lower.includes("arrive thirty") ||
-      lower.includes("paperwork") ||
-      lower.includes("insurance information") ||
-      lower.includes("medical records") ||
-      lower.includes("photo id") ||
-      lower.includes("referral") ||
-      lower.includes("out of pocket") ||
-      lower.includes("out-of-pocket") ||
-      lower.includes("copay") ||
-      lower.includes("co-pay") ||
-      lower.includes("don't take") ||
-      lower.includes("don't accept") ||
-      lower.includes("not accept") ||
-      lower.includes("not in network")
-    );
-  });
-
-  if (instructionLines.length === 0) return null;
-
-  // Clean up: remove "user: " prefix, filler words, and transcript artifacts
-  return instructionLines
-    .slice(0, 4)
-    .map((line) => {
-      let clean = line.replace(/^user:\s*/i, "").trim();
-      // Remove filler words and speech artifacts
-      clean = clean.replace(/\b(um|uh|ugh|hmm|like,?\s|you know,?\s|so,?\s(?=\w))\b/gi, "");
-      // Clean double spaces
-      clean = clean.replace(/\s{2,}/g, " ").trim();
-      // Capitalize first letter
-      clean = clean.charAt(0).toUpperCase() + clean.slice(1);
-      return clean;
-    })
-    .filter((line) => line.length > 5)
-    .join(". ");
-}
-
-function extractFollowUpNotes(lines: string[]): string | null {
-  const followUpLines = lines.filter((line) => {
-    const lower = line.toLowerCase();
-    // Only extract from office (user) lines, not Kate's responses
-    if (!lower.startsWith("user:")) return false;
-    return (
-      lower.includes("call back") ||
-      lower.includes("follow up") ||
-      lower.includes("follow-up") ||
-      lower.includes("confirm") ||
-      lower.includes("remind") ||
-      lower.includes("arrive") ||
-      lower.includes("before the appointment")
-    );
-  });
-
-  if (followUpLines.length === 0) return null;
-
-  return followUpLines
-    .slice(0, 2)
-    .map((line) => {
-      let clean = line.replace(/^user:\s*/i, "").trim();
-      clean = clean.replace(/\b(um|uh|ugh|hmm|like,?\s|you know,?\s|so,?\s(?=\w))\b/gi, "");
-      clean = clean.replace(/\s{2,}/g, " ").trim();
-      clean = clean.charAt(0).toUpperCase() + clean.slice(1);
-      return clean;
-    })
-    .filter((line) => line.length > 5)
-    .join(". ");
-}
+// extractOfficeInstructions / extractFollowUpNotes were keyword-regex
+// fallbacks that leaked raw Kate dialogue ("Can you spell the
+// patient's name?") onto users' provider pages. AI summarization is
+// the only writer now — see lib/openai/summarize-office-notes.
 
 async function buildStructuredBookingNotes(transcript: string): Promise<StructuredBookingNotes> {
   const lines = transcript
@@ -315,15 +229,14 @@ async function buildStructuredBookingNotes(transcript: string): Promise<Structur
   const appointmentTimeSpoken = extractAppointmentTimeSpoken(transcript);
   const documentsToBring = extractDocumentsToBring(transcript);
 
-  // Prefer AI summarization for the user-facing fields. Fall back to
-  // the regex-based extractors only when AI fails — they leak raw
-  // verbatim dialogue ("Oh hold on, I just wanted to make sure...")
-  // and we never want that on a real user's provider page.
+  // AI is the only writer of office_instructions / follow_up_notes
+  // now. The regex fallback was leaking raw Kate dialogue ("Can you
+  // spell the patient's name?") onto users' provider pages because
+  // its keyword filters fire on questions and hesitations as easily
+  // as on real instructions. Null > leaked dialogue.
   const aiSummary = await summarizeOfficeNotes(transcript);
-  const officeInstructions =
-    aiSummary?.office_instructions ?? extractOfficeInstructions(lines);
-  const followUpNotes =
-    aiSummary?.follow_up_notes ?? extractFollowUpNotes(lines);
+  const officeInstructions = aiSummary?.office_instructions ?? null;
+  const followUpNotes = aiSummary?.follow_up_notes ?? null;
 
   const summaryParts: string[] = [];
 

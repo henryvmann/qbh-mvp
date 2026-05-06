@@ -41,40 +41,35 @@ export async function summarizeOfficeNotes(
       messages: [
         {
           role: "system",
-          content: `You extract clean, user-facing notes from a transcript of a phone call between Kate (an AI assistant calling a doctor's office on a patient's behalf) and the office receptionist.
+          content: `You convert a transcript of a phone call between Kate (an AI calling a doctor's office on a patient's behalf) and the office receptionist into clean, user-facing notes.
 
-Your output is shown to the patient on their provider page as "Important Notes from Office." So it must be:
-- Clean prose, not raw dialogue.
-- Only the things the office actually told Kate to convey to the patient.
-- Concise — under 200 characters total when possible.
-- Written FROM Kate's perspective summarizing what the office said.
+Your output renders on the patient's provider page under "Important Notes from Office." It must therefore:
+- Be CLEAN PROSE, never raw dialogue.
+- Never quote, paraphrase, or summarize anything Kate said. ONLY summarize what the OFFICE conveyed.
+- Be written as a third-person summary ("The office asks you to bring photo ID..."), not as direct speech.
+- Be concise — under 200 characters when possible.
 
-Return JSON in this EXACT shape:
-{
-  "office_instructions": "<short prose, or null>",
-  "follow_up_notes": "<short prose, or null>"
-}
+Return JSON exactly:
+{ "office_instructions": "<prose or null>", "follow_up_notes": "<prose or null>" }
 
-WHAT GOES IN office_instructions:
-- "Bring photo ID and insurance card"
-- "Arrive 15 minutes early"
-- "Office prefers cash payment for new patients"
-- "Mention you're a new patient when you check in"
-- Visit-prep instructions, what to bring, who to ask for, when to arrive
+office_instructions = visit-prep instructions the office gave for the patient:
+- "Bring photo ID and insurance card."
+- "Arrive 15 minutes early to fill out paperwork."
+- "New patient — mention this at check-in."
+- "Office accepts only cash for first visit."
 
-WHAT GOES IN follow_up_notes:
-- "Office asked us to send insurance info ahead of the appointment"
-- "They want lab results from prior provider before visit"
-- Anything the patient or Kate needs to follow up on before / after the visit
+follow_up_notes = things to do BEFORE the next visit:
+- "Office requested insurance info be sent ahead of the appointment."
+- "Lab results from prior provider needed before visit."
 
-WHAT TO IGNORE (set to null if the call only contained these):
-- Receptionist clarifying questions ("hold on, was that for the patient or another person?")
-- Hold music, voicemail prompts, abrupt endings, "doctor retired" type info that ended the call
-- Kate's own statements
-- Anything that's a transcript artifact rather than real instruction
-- Generic confirmations like "see you Tuesday" without instruction content
+HARD RULES — output null instead if any of these apply:
+1. The candidate text is a question. Receptionists don't issue questions to the patient. Questions in the transcript are ALWAYS Kate asking ("Can you spell the patient's name?"). Drop them.
+2. The text starts with "I", "I'm", "I want", "I just", "Let me", "Hold on", "Oh", or "Sorry" — these are speaker fillers, not instructions.
+3. The text is something Kate would say (referring to herself, asking the office something, requesting clarification).
+4. The text describes call mechanics ("doctor retired," "they're not taking new patients," "left a voicemail").
+5. The text is a generic confirmation ("see you Tuesday") without instruction content.
 
-If the call had no real instruction content, return BOTH fields as null. Better to return nothing than fabricate or echo raw dialogue.`,
+If neither field has clean instruction content, return both as null. Empty output is correct and expected — most calls will have nothing for these fields. NEVER fabricate or echo verbatim dialogue.`,
         },
         {
           role: "user",
@@ -89,11 +84,34 @@ If the call had no real instruction content, return BOTH fields as null. Better 
     const office = typeof parsed.office_instructions === "string" ? parsed.office_instructions.trim() : null;
     const followUp = typeof parsed.follow_up_notes === "string" ? parsed.follow_up_notes.trim() : null;
     return {
-      office_instructions: office && office.length > 0 ? office : null,
-      follow_up_notes: followUp && followUp.length > 0 ? followUp : null,
+      office_instructions: gateOutput(office),
+      follow_up_notes: gateOutput(followUp),
     };
   } catch (err) {
     console.error("[summarize-office-notes] failed:", err);
     return null;
   }
+}
+
+/**
+ * Sanity gate. Even with a strict prompt, the LLM occasionally still
+ * returns Kate's verbatim dialogue (questions, hesitations, "let me
+ * just"-style fillers). When it does, we'd rather show nothing than
+ * leak it onto the user's provider page. Returns null when the text
+ * looks like dialogue rather than a real instruction.
+ */
+function gateOutput(text: string | null): string | null {
+  if (!text || text.length < 5) return null;
+  const t = text.trim();
+  // Questions — receptionists don't issue questions to patients; these
+  // are always Kate asking the office something.
+  if (t.endsWith("?")) return null;
+  // First-person dialogue tells (Kate's own utterances).
+  if (/^(i\b|i'm|i'll|i just|let me|hold on|oh\b|sorry\b|um\b|uh\b|wait\b|yeah\b|okay so)/i.test(t)) {
+    return null;
+  }
+  // Quoted dialogue — instructions don't include the office's own
+  // quoted speech, that's a transcript artifact.
+  if (/^["“]/.test(t)) return null;
+  return t;
 }
