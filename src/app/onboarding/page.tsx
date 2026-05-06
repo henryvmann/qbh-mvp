@@ -289,19 +289,29 @@ export default function OnboardingPage() {
   }
 
   function addKateMessages(contents: React.ReactNode[], baseDelay = 800, gap = 600) {
+    // Interleave typing-then-message for each item so Kate appears
+    // to actively type each line, instead of bursting all messages
+    // out behind a single sustained typing indicator.
+    let elapsed = 0;
     contents.forEach((content, i) => {
+      const messageDelay = i === 0 ? baseDelay : gap;
+      const startTyping = elapsed;
+      const dropMessage = startTyping + messageDelay;
+      setTimeout(() => setTyping(true), startTyping);
       setTimeout(() => {
-        if (i < contents.length - 1) {
-          setMessages((prev) => [...prev, { id: `kate-${Date.now()}-${i}`, sender: "kate", content }]);
-        } else {
-          setTyping(false);
-          setMessages((prev) => [...prev, { id: `kate-${Date.now()}-${i}`, sender: "kate", content }]);
-        }
-      }, baseDelay + i * gap);
+        setTyping(false);
+        setMessages((prev) => [
+          ...prev,
+          { id: `kate-${Date.now()}-${i}-${Math.random()}`, sender: "kate", content },
+        ]);
+      }, dropMessage);
+      // Brief pause after each message lands before the next typing
+      // indicator reappears — gives the reader a beat to read.
+      const postPause = 350;
+      elapsed = dropMessage + postPause;
     });
-    setTyping(true);
-    // Stop typing when last message lands
-    setTimeout(() => setTyping(false), baseDelay + (contents.length - 1) * gap);
+    // Each message now manages its own typing-on / typing-off
+    // bracket above; no global trailing timer needed.
   }
 
   function addUserMessage(content: string) {
@@ -594,9 +604,18 @@ export default function OnboardingPage() {
             ]
           : ["Account's saved. Let's head to your dashboard — you can hand me a provider anytime."];
       setTimeout(() => {
-        addKateMessages(leadIn, 400, 1100);
-        // Hold on the connect screen until the lead-in is fully shown.
-        const holdMs = 400 + Math.max(0, leadIn.length - 1) * 1100 + 800;
+        const baseDelay = 400;
+        const gap = 1100;
+        const postPause = 350;
+        addKateMessages(leadIn, baseDelay, gap);
+        // Hold until the typed-out lead-in is fully shown. Mirrors
+        // the addKateMessages timing math: first message at baseDelay,
+        // each subsequent at gap + postPause, then a small buffer.
+        const holdMs =
+          baseDelay +
+          gap +
+          Math.max(0, leadIn.length - 1) * (gap + postPause) +
+          800;
         setTimeout(() => setPhase(next), holdMs);
       }, 400);
     } catch (err) {
