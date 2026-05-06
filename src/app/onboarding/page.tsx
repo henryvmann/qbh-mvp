@@ -682,16 +682,31 @@ export default function OnboardingPage() {
     setTyping(true);
 
     // Plaid PRODUCT_NOT_READY can persist 60-180s on credit cards. The
-    // user shouldn't sit staring at a spinner — give frequent "still
-    // working" beats AND surface a skip-ahead path early.
+    // user already linked Plaid — they shouldn't sit staring at a
+    // spinner. Give a brief beat for fast-completing banks, then
+    // auto-advance to the next opted-in step. The poll keeps running
+    // silently in the background and the unified reveal at the end
+    // surfaces whatever it finds.
     const progress10 = setTimeout(() => {
-      addKateMessage("Still pulling your statements. Big histories take a beat.");
+      addKateMessage("Still pulling your statements. I'll keep this going in the background while we keep moving.");
     }, 10000);
-    const progress30 = setTimeout(() => {
-      addKateMessage("Your bank's being chatty. If you'd rather not wait, hit skip — I'll keep scanning in the background and your doctors will show up on the dashboard when I'm done.");
-    }, 30000);
+    // Auto-defer at 15s if still pending. Same effect as Skip but
+    // automatic — Plaid succeeded, the scan can run silently, and
+    // the user advances to calendar/manual.
+    const autoDefer = setTimeout(() => {
+      if (finished) return;
+      bankSkippedRef.current = true;
+      setBankScanDeferred(true);
+      setDiscoveryActive(false);
+      setTyping(false);
+      addKateMessage("I'll keep scanning in the background — let's keep going.");
+      setTimeout(() => setPhase(advanceAfter("bank")), 1000);
+    }, 15000);
     const progress90 = setTimeout(() => {
-      addKateMessage("Bank's slow today. Promise it's worth it — but hit skip anytime.");
+      // Belt-and-suspenders — if the user lingered (e.g., bounced
+      // back to onboarding mid-scan), drop a friendly note that the
+      // scan is still working in the background.
+      addKateMessage("Bank's slow today. Still working on it in the background.");
     }, 90000);
 
     // Drive discovery from inside the poll loop. /api/discovery/run is
@@ -715,7 +730,7 @@ export default function OnboardingPage() {
       finished = true;
       clearInterval(poll);
       clearTimeout(progress10);
-      clearTimeout(progress30);
+      clearTimeout(autoDefer);
       clearTimeout(progress90);
       setDiscoveryActive(false);
       setTyping(false);
