@@ -240,7 +240,7 @@ function DashboardInner() {
             />
           ))}
           <Link
-            href="/settings"
+            href="/care-recipients"
             style={{
               display: "inline-flex",
               alignItems: "center",

@@ -604,6 +604,12 @@ export async function POST(req: Request) {
   ) {
     (metadata as Record<string, unknown>).reason_for_visit = body.reason_for_visit.trim();
   }
+  if (
+    typeof body?.booking_for_name === "string" &&
+    body.booking_for_name.trim()
+  ) {
+    (metadata as Record<string, unknown>).booking_for_name = body.booking_for_name.trim();
+  }
 
   if (!attempt_id) {
     const { data: attempt, error: attemptErr } = await supabaseAdmin
@@ -686,7 +692,10 @@ export async function POST(req: Request) {
           patient_status: patientStatus,
           existing_appointment_note: existingAppointmentInfo || "none",
           doctor_name: doctorName ? (doctorName.match(/^(Dr\.?|Doctor)\s/i) ? doctorName : `Dr. ${doctorName}`) : "not specified",
-          patient_date_of_birth: formatDobForSpeech(patientProfile.date_of_birth) || "not available — the patient will provide when they arrive",
+          patient_date_of_birth:
+            (typeof body?.patient_date_of_birth === "string" && formatDobForSpeech(body.patient_date_of_birth)) ||
+            formatDobForSpeech(patientProfile.date_of_birth) ||
+            "not available — the patient will provide when they arrive",
           patient_insurance_provider: patientProfile.insurance_provider || "not available — the patient will provide when they arrive",
           patient_insurance_member_id: formatMemberIdForSpeech(patientProfile.insurance_member_id) || "not available — the patient will provide when they arrive",
           patient_callback_phone: patientProfile.callback_phone || "not available",

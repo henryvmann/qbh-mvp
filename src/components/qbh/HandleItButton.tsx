@@ -65,6 +65,16 @@ export default function HandleItButton({
   // context. The profile-completeness gate then decides whether the
   // form is "lite" (just timing + reason) or "full" (also DOB / insurance).
   const [profileNeedsFilling, setProfileNeedsFilling] = React.useState(false);
+  // Care recipient resolution. When a user manages multiple people
+  // (Self + Partner + Child), the booking has to be FOR someone —
+  // Kate can't dial a pediatrician using the parent's name. We:
+  //  1. Load the user's care_recipients list from patient_profile
+  //  2. Default to whichever recipient the provider is already tagged for
+  //  3. Force pick when the provider has no tag and the user has 2+ recipients
+  type CareRecipient = { id: string; name: string; relationship: string; dob?: string | null };
+  const [careRecipients, setCareRecipients] = React.useState<CareRecipient[]>([]);
+  const [bookingForName, setBookingForName] = React.useState<string | null>(null);
+  const [providerCareRecipients, setProviderCareRecipients] = React.useState<string[]>([]);
 
   async function checkSubscriptionAndProceed() {
     if (loading) return;
@@ -103,11 +113,48 @@ export default function HandleItButton({
         providerId ? `/api/patient-profile?provider_id=${encodeURIComponent(providerId)}` : "/api/patient-profile"
       );
       const data = await res.json();
-      const profile: PatientProfile = data?.profile || {};
+      const profile: PatientProfile & { care_recipients?: CareRecipient[] } =
+        data?.profile || {};
       const providerVisitCount: number = typeof data?.provider_visit_count === "number" ? data.provider_visit_count : 0;
       const patientStatusKnown = providerVisitCount > 0;
       const profileIncomplete =
         !isProfileComplete(profile) || !patientStatusKnown;
+
+      const recipients: CareRecipient[] = Array.isArray(profile.care_recipients) ? profile.care_recipients : [];
+      setCareRecipients(recipients);
+
+      // Pull provider's care_recipient tagging so we can default the
+      // "Booking for" picker. Quick separate fetch — we already
+      // have the provider id.
+      let providerTagged: string[] = [];
+      if (providerId) {
+        try {
+          const detailRes = await apiFetch(`/api/providers/detail?id=${encodeURIComponent(providerId)}`);
+          const detail = await detailRes.json().catch(() => ({}));
+          const raw = detail?.provider?.care_recipient;
+          if (raw) {
+            const arr = typeof raw === "string" ? JSON.parse(raw) : raw;
+            if (Array.isArray(arr)) providerTagged = arr;
+          }
+        } catch {
+          // best effort
+        }
+      }
+      setProviderCareRecipients(providerTagged);
+
+      // Default booking-for selection:
+      //   • If the provider has exactly one tagged recipient → preselect it
+      //   • Else if the user has only one care recipient → preselect it
+      //   • Else → leave null and force the user to pick before submit
+      let initialFor: string | null = null;
+      if (providerTagged.length === 1) {
+        initialFor = providerTagged[0];
+      } else if (recipients.length === 1) {
+        initialFor = recipients[0].name;
+      } else if (recipients.length === 0) {
+        initialFor = profile.full_name?.split(" ")[0] || null;
+      }
+      setBookingForName(initialFor);
 
       setFullName(profile.full_name || "");
       setDob(profile.date_of_birth || "");
@@ -133,6 +180,7 @@ export default function HandleItButton({
       setBookingTimeframePreset("");
       setBookingReason("");
       setPatientStatus(null);
+      setBookingForName(null);
       setShowForm(true);
       setLoading(false);
     }
@@ -200,7 +248,19 @@ export default function HandleItButton({
     try {
       const preferredTimeframe = buildPreferredTimeframe();
       const reasonForVisit = bookingReason.trim() || null;
-      const body = {
+
+      // Resolve who Kate is calling FOR. When the user picked a
+      // care recipient (Wyatt, the child), pass their name + DOB
+      // so Kate doesn't introduce the call as the parent. The Self
+      // recipient is treated like the user — name/DOB pulled from
+      // patient_profile by start-call.
+      const selectedRecipient = bookingForName
+        ? careRecipients.find((r) => r.name === bookingForName)
+        : null;
+      const isNonSelf =
+        !!selectedRecipient && selectedRecipient.relationship !== "Self";
+
+      const body: Record<string, unknown> = {
         ...(userId ? { app_user_id: userId } : {}),
         provider_id: providerId,
         ...(providerName ? { provider_name: providerName } : {}),
@@ -208,6 +268,13 @@ export default function HandleItButton({
         ...(attemptId ? { attempt_id: attemptId } : {}),
         ...(preferredTimeframe ? { preferred_timeframe: preferredTimeframe } : {}),
         ...(reasonForVisit ? { reason_for_visit: reasonForVisit } : {}),
+        ...(bookingForName ? { booking_for_name: bookingForName } : {}),
+        ...(isNonSelf
+          ? {
+              patient_name: selectedRecipient.name,
+              ...(selectedRecipient.dob ? { patient_date_of_birth: selectedRecipient.dob } : {}),
+            }
+          : {}),
       };
 
       const res = await apiFetch("/api/vapi/start-call", {
@@ -258,6 +325,46 @@ export default function HandleItButton({
           </div>
 
           <div className="mt-4 flex flex-col gap-3">
+            {/* Booking-for picker — required when the user manages
+                multiple people. Without this, Kate would call a
+                pediatrician and introduce herself as the parent
+                instead of "calling for [child's name]." */}
+            {careRecipients.length > 1 && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#4F5F73]">
+                  Who is this appointment for?
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {careRecipients.map((r) => {
+                    const selected = bookingForName === r.name;
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setBookingForName(r.name)}
+                        className="rounded-lg px-2.5 py-1 text-xs font-medium transition"
+                        style={{
+                          backgroundColor: selected ? "#1677FF" : "#F0F2F5",
+                          color: selected ? "#FFFFFF" : "#4F5F73",
+                          border: `1px solid ${selected ? "#1677FF" : "#E5EAF2"}`,
+                        }}
+                      >
+                        {selected ? "✓ " : ""}{r.name}
+                        {r.relationship && r.relationship !== "Self" && (
+                          <span className="ml-1 opacity-70">· {r.relationship}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!bookingForName && (
+                  <div className="mt-1 text-[11px] text-[#E04030]">
+                    Pick who this appointment is for before Kate calls.
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Timing window — always shown. The user-driven case for this
                 is "I want to book it now but it's not urgent — schedule
                 for around April next year." Without this Kate just takes
@@ -434,7 +541,8 @@ export default function HandleItButton({
               onClick={handleFormSubmit}
               disabled={
                 saving ||
-                (profileNeedsFilling && !dob.trim() && !insuranceProvider.trim())
+                (profileNeedsFilling && !dob.trim() && !insuranceProvider.trim()) ||
+                (careRecipients.length > 1 && !bookingForName)
               }
               className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
               style={{
