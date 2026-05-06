@@ -575,30 +575,56 @@ function IntakeCTA() {
   if (!show) return null;
 
   return (
-    <div
+    <Link
+      href="/intake"
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         gap: 12,
-        background: "rgba(22,119,255,0.06)",
-        border: `1px solid rgba(22,119,255,0.20)`,
+        // Solid electric blue — eye-catching primary CTA, the
+        // brightest card on the dashboard so users see the path to
+        // personalizing Kate.
+        background: T.electric,
+        color: "white",
         borderRadius: 16,
-        padding: 14,
+        padding: "16px 18px",
         marginBottom: 18,
+        textDecoration: "none",
+        boxShadow: "0 8px 24px rgba(22,119,255,0.28)",
       }}
     >
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: T.lightText }}>
-          {progressLabel}
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, opacity: 0.85, textTransform: "uppercase", marginBottom: 4 }}>
+          {progressLabel.startsWith("Continue") ? "Pick up where you left off" : "Help Kate get to know you"}
         </div>
-        <div style={{ fontSize: 12.5, color: T.lightMuted, marginTop: 2 }}>
-          A few questions about your health, sleep, stress. Skip anything. Update anytime.
+        <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>
+          {progressLabel.startsWith("Continue") ? progressLabel : "Tell me what makes you, you"}
+        </div>
+        <div style={{ fontSize: 12.5, marginTop: 4, opacity: 0.85 }}>
+          A few questions on health, sleep, stress. Earns score points. Skip anything.
         </div>
       </div>
-      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "10px 16px",
+            background: "rgba(255,255,255,0.18)",
+            color: "white",
+            borderRadius: 10,
+            fontSize: 13.5,
+            fontWeight: 700,
+            border: "1px solid rgba(255,255,255,0.30)",
+          }}
+        >
+          Start →
+        </span>
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             localStorage.setItem("qbh_intake_cta_dismissed", "1");
             setShow(false);
           }}
@@ -606,32 +632,17 @@ function IntakeCTA() {
           style={{
             background: "transparent",
             border: "none",
-            color: T.lightMuted,
-            fontSize: 18,
+            color: "rgba(255,255,255,0.7)",
+            fontSize: 20,
             cursor: "pointer",
-            padding: "0 6px",
+            padding: "0 4px",
+            lineHeight: 1,
           }}
         >
           ×
         </button>
-        <Link
-          href="/intake"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "8px 14px",
-            background: T.electric,
-            color: "white",
-            borderRadius: 10,
-            fontSize: 13,
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Start
-        </Link>
       </div>
-    </div>
+    </Link>
   );
 }
 
