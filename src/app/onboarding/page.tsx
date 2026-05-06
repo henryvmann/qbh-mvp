@@ -183,6 +183,14 @@ export default function OnboardingPage() {
   const [currentDiscoveryStep, setCurrentDiscoveryStep] = useState<"bank" | "calendar" | null>(null);
   const [revealIndex, setRevealIndex] = useState(0);
   const [revealDone, setRevealDone] = useState(false);
+  // When the user skips a slow bank scan, the poll keeps running but
+  // the inline reveal must NOT pull the user back to discovery-reveal.
+  // Tracked as a ref because we read it inside the running interval.
+  const bankSkippedRef = useRef(false);
+  // Whether the deferred bank scan has actually completed since the
+  // user skipped — drives the "still scanning" indicator on the
+  // unified reveal page.
+  const [bankScanDeferred, setBankScanDeferred] = useState(false);
 
   // Manual NPI search (third step in the discovery pipeline)
   const [manualSearchQuery, setManualSearchQuery] = useState("");
@@ -692,6 +700,14 @@ export default function OnboardingPage() {
       setDiscoveryActive(false);
       setTyping(false);
       setDiscoveredProviders(providers);
+      // If the user already skipped, stash the providers silently and
+      // mark the deferred scan complete — the unified reveal page will
+      // surface them. Calling startReveal here would yank the user
+      // back to discovery-reveal mid-calendar/manual.
+      if (bankSkippedRef.current) {
+        setBankScanDeferred(false);
+        return;
+      }
       startReveal(providers, "bank");
     };
     const poll = setInterval(async () => {
@@ -821,14 +837,53 @@ export default function OnboardingPage() {
     });
   }
 
-  // ── Score ──
+  // All providers discovered across all opt-in methods, hydrated for
+  // the unified reveal on score-reveal. Pulled from dashboard/data so
+  // bank-deferred completions land here naturally even if the user
+  // skipped past the inline reveal earlier.
+  const [allDiscovered, setAllDiscovered] = useState<
+    Array<{ id: string; name: string; specialty: string | null; source: string | null }>
+  >([]);
+
+  // ── Score + unified reveal ──
   useEffect(() => {
     if (phase !== "score-reveal") return;
     apiFetch("/api/health-score")
       .then((r) => r.json())
       .then((d) => { if (d.ok) setScore(d.score); })
       .catch(() => setScore(0));
-  }, [phase]);
+
+    let cancelled = false;
+    async function loadAll() {
+      const r = await apiFetch("/api/dashboard/data");
+      const j = await r.json().catch(() => ({}));
+      if (cancelled) return;
+      if (j?.ok) {
+        const list = (j.snapshots ?? [])
+          .filter((s: { provider: { provider_type?: string } }) => s.provider.provider_type !== "pharmacy")
+          .map((s: { provider: { id: string; name: string; specialty: string | null; source: string | null } }) => ({
+            id: s.provider.id,
+            name: s.provider.name,
+            specialty: s.provider.specialty,
+            source: s.provider.source,
+          }));
+        setAllDiscovered(list);
+      }
+    }
+    loadAll();
+
+    // If the bank scan is still deferred, poll dashboard/data every
+    // few seconds so the reveal updates as new providers land. Stops
+    // once bankScanDeferred flips false (the deferred scan finished).
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (bankScanDeferred) {
+      interval = setInterval(loadAll, 4000);
+    }
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+    };
+  }, [phase, bankScanDeferred]);
 
   // ── Manual-search entry message ──
   // Whenever we land in manual-search, drop a Kate message explaining
@@ -1253,11 +1308,21 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    // Bank step skip: defer the in-flight scan but
+                    // keep the poll running. The reveal happens on the
+                    // unified score-reveal page after all opt-in steps
+                    // complete. (Calendar skip stays single-shot.)
+                    if (currentDiscoveryStep === "bank") {
+                      bankSkippedRef.current = true;
+                      setBankScanDeferred(true);
+                    }
                     setDiscoveryActive(false);
                     setTyping(false);
-                    addKateMessage("No problem — moving on.");
-                    // Skip advances past the in-flight step to the next selected
-                    // step in the pipeline (or score-reveal if none remain).
+                    addKateMessage(
+                      currentDiscoveryStep === "bank"
+                        ? "On it — I'll keep scanning in the background. We'll see what I find at the end."
+                        : "No problem — moving on."
+                    );
                     setTimeout(() => setPhase(advanceAfter(currentDiscoveryStep)), 800);
                   }}
                   className="w-full rounded-xl border border-[#1677FF]/30 bg-white px-4 py-2.5 text-sm font-semibold text-[#1677FF] hover:bg-[#1677FF]/5"
@@ -1438,43 +1503,105 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Score reveal */}
+        {/* Score + unified reveal */}
         {phase === "score-reveal" && score !== null && (
-          <div className="animate-fadeIn text-center">
-            <div className="relative mx-auto" style={{ width: 140, height: 140 }}>
-              <svg width={140} height={140} viewBox="0 0 140 140" className="transform -rotate-90">
-                <circle cx={70} cy={70} r={58} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={7} />
-                <defs>
-                  <linearGradient id="revealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#1677FF" />
-                    <stop offset="100%" stopColor="#27C46B" />
-                  </linearGradient>
-                </defs>
-                <circle cx={70} cy={70} r={58} fill="none" stroke="url(#revealGrad)" strokeWidth={7} strokeLinecap="round"
-                  strokeDasharray={`${(score / 100) * 2 * Math.PI * 58} ${2 * Math.PI * 58}`}
-                  className="transition-all duration-1000" />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-light text-[#1677FF]">{score}</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73] mt-0.5">
-                  {score >= 85 ? "Strong" : score >= 60 ? "On Track" : score >= 30 ? "Building" : "Starting"}
-                </span>
+          <div className="animate-fadeIn">
+            {/* Big reveal — what Kate found */}
+            <div className="text-center mb-6">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-2">
+                Here's what I found
               </div>
+              <div className="font-serif text-2xl text-[#071832]">
+                {allDiscovered.length === 0
+                  ? bankScanDeferred
+                    ? "Still scanning…"
+                    : "We'll start fresh."
+                  : `${allDiscovered.length} provider${allDiscovered.length === 1 ? "" : "s"} on your team`}
+              </div>
+              {bankScanDeferred && allDiscovered.length > 0 && (
+                <div className="mt-1 text-xs text-[#4F5F73]">
+                  Bank scan still finishing — more may show up.
+                </div>
+              )}
             </div>
-            <div className="mt-4">
-              <KateBubble>
-                {score >= 50
-                  ? `${score} today. We'll build from here — I'll keep things on track so you don't have to.`
-                  : `${score} today. Most people start around 30. We'll build from here — I've got it.`}
-              </KateBubble>
+
+            {allDiscovered.length > 0 && (
+              <div className="mb-6 space-y-2 max-h-72 overflow-y-auto rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-3">
+                {allDiscovered.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full shrink-0"
+                      style={{
+                        backgroundColor:
+                          p.source === "manual"
+                            ? "#1677FF"
+                            : p.source === "calendar"
+                            ? "#27C46B"
+                            : "#E08A1F",
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-[#071832] truncate">{p.name}</div>
+                      {p.specialty && (
+                        <div className="text-[10px] text-[#4F5F73] truncate">{p.specialty}</div>
+                      )}
+                    </div>
+                    <span className="text-[9px] uppercase tracking-wider text-[#4F5F73]">
+                      {p.source === "manual" ? "Added" : p.source === "calendar" ? "Calendar" : "Bank"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Score circle */}
+            <div className="text-center">
+              <div className="relative mx-auto" style={{ width: 140, height: 140 }}>
+                <svg width={140} height={140} viewBox="0 0 140 140" className="transform -rotate-90">
+                  <circle cx={70} cy={70} r={58} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={7} />
+                  <defs>
+                    <linearGradient id="revealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#1677FF" />
+                      <stop offset="100%" stopColor="#27C46B" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx={70} cy={70} r={58} fill="none" stroke="url(#revealGrad)" strokeWidth={7} strokeLinecap="round"
+                    strokeDasharray={`${(score / 100) * 2 * Math.PI * 58} ${2 * Math.PI * 58}`}
+                    className="transition-all duration-1000" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-light text-[#1677FF]">{score}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#4F5F73] mt-0.5">
+                    {score >= 85 ? "Strong" : score >= 60 ? "On Track" : score >= 30 ? "Building" : "Starting"}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4">
+                {/* Positive framing — never compare to a baseline ("most
+                    people start around 30"). The earlier copy made low
+                    scores feel like a deficit; this version lands on
+                    "great starting place" and what Kate's about to do. */}
+                <KateBubble>
+                  {score >= 85
+                    ? `${score} — strong. I'll keep it there.`
+                    : score >= 60
+                    ? `${score} — on track. I'll keep it there.`
+                    : score >= 30
+                    ? `${score} today. Solid foundation — I'll handle the rest from here.`
+                    : `${score} today. Great starting place. I'll handle the rest from here — by next week we'll be moving.`}
+                </KateBubble>
+              </div>
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                style={{ backgroundColor: ACCENT }}
+              >
+                Take me to my dashboard
+              </button>
             </div>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
-              style={{ backgroundColor: ACCENT }}
-            >
-              Take me to my dashboard
-            </button>
           </div>
         )}
 
