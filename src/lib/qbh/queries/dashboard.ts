@@ -818,7 +818,15 @@ export async function getDashboardProvidersForUser(
       : null;
 
     const visitCount = visitCountByProvider.get(pRow.id) ?? 0;
-    const hasVisitHistory = visitCount > 0;
+    // Past confirmed calendar events count toward visit history so a
+    // calendar-discovered provider with prior events but no future
+    // booking shows up as "needs booking" instead of falling through
+    // to status NONE. Without this, the reviewer's case ("calendar
+    // shows other appointments but Willow's has no upcoming, why
+    // isn't QBH flagging it?") never triggers.
+    const allConfirmed = confirmedEventsByProvider.get(pRow.id) ?? [];
+    const hasPastConfirmedEvent = allConfirmed.some((e) => e.start_at < nowIso);
+    const hasVisitHistory = visitCount > 0 || hasPastConfirmedEvent;
     const hasMultipleFutureConfirmedEvents = futureConfirmedEvents.length > 1;
 
     const hasActiveBookingAttempt = latestAttempt
