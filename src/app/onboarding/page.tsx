@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { Search, Calendar, Building2, ShieldCheck, Brain, Phone, Eye, EyeOff } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import { createClient } from "../../lib/supabase/client";
@@ -1586,12 +1587,12 @@ export default function OnboardingPage() {
                     "great starting place" and what Kate's about to do. */}
                 <KateBubble>
                   {score >= 85
-                    ? `${score} — strong. I'll keep it there.`
+                    ? `${score} — strong. I'll keep it there. Add more anytime from your dashboard.`
                     : score >= 60
-                    ? `${score} — on track. I'll keep it there.`
+                    ? `${score} — on track. I'll keep it there. You can add more anytime.`
                     : score >= 30
-                    ? `${score} today. Solid foundation — I'll handle the rest from here.`
-                    : `${score} today. Great starting place. I'll handle the rest from here — by next week we'll be moving.`}
+                    ? `${score} today. Solid foundation — I'll handle the rest from here. Add more anytime.`
+                    : `${score} today. Great starting place. I'll handle the rest from here — by next week we'll be moving. You can add more anytime.`}
                 </KateBubble>
               </div>
               <button
@@ -1601,6 +1602,48 @@ export default function OnboardingPage() {
               >
                 Take me to my dashboard
               </button>
+
+              {/* "You can always add more later" — covers the case
+                  where a user only opted into one or two methods and
+                  later wants the others. Surfaces only the methods
+                  they didn't run during onboarding. */}
+              {(!connectCalendar || !connectManual || !connectBank) && (
+                <div className="mt-4 rounded-2xl bg-white border border-[#E5EAF2] p-4 text-left">
+                  <div className="text-xs font-semibold text-[#071832] mb-1">
+                    You can always add more
+                  </div>
+                  <p className="text-xs text-[#4F5F73] leading-relaxed mb-3">
+                    Whenever you're ready, you can pull in more from your
+                    bank, calendar, or just type in a doctor by name.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {!connectBank && (
+                      <Link
+                        href="/account"
+                        className="text-xs font-semibold text-[#1677FF] underline underline-offset-2"
+                      >
+                        Connect bank →
+                      </Link>
+                    )}
+                    {!connectCalendar && (
+                      <Link
+                        href="/calendar-connect"
+                        className="text-xs font-semibold text-[#1677FF] underline underline-offset-2"
+                      >
+                        Connect calendar →
+                      </Link>
+                    )}
+                    {!connectManual && (
+                      <Link
+                        href="/providers?add=true"
+                        className="text-xs font-semibold text-[#1677FF] underline underline-offset-2"
+                      >
+                        Add a provider →
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
