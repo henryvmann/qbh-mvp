@@ -172,7 +172,7 @@ function AddProviderForm({
   return (
     <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b border-[#E5EAF2]">
-        <span className="text-sm font-semibold text-[#071832]">Hand off a provider</span>
+        <span className="text-sm font-semibold text-[#071832]">Add a Provider</span>
         <button type="button" onClick={onClose} className="p-1 text-[#4F5F73] hover:text-[#4F5F73]">
           <X size={16} />
         </button>
@@ -434,7 +434,7 @@ function ProvidersInner() {
               className="flex items-center gap-2 rounded-xl border border-dashed border-[#C0C8D0] px-4 py-2.5 text-sm font-medium text-[#1677FF] transition hover:bg-white hover:border-[#1677FF]"
             >
               <Plus size={16} />
-              Hand off a provider
+              Add a Provider
             </button>
           )}
         </div>
@@ -446,7 +446,7 @@ function ProvidersInner() {
               <img src="/kate-avatar.png" alt="Kate" className="w-8 h-8 rounded-full shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-[#071832]">Let's get your team set up. Tell me who you've seen — primary care, dentist, anyone — and I'll handle the rest.</p>
-                <a href="/providers?add=true" className="mt-2 inline-block text-xs font-semibold text-[#1677FF] underline underline-offset-2">Hand off a provider &rarr;</a>
+                <a href="/providers?add=true" className="mt-2 inline-block text-xs font-semibold text-[#1677FF] underline underline-offset-2">Add a Provider &rarr;</a>
               </div>
             </div>
             <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">

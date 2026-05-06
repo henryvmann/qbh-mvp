@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "../../supabase-server";
 import { lookupPlaceDetails } from "../../google/places-lookup";
 import { batchNpiLookup } from "../../npi/lookup";
+import { normalizeProviderName } from "../provider-name";
 import type {
   DiscoveredProvider,
   PlaidDiscoveryTransaction,
@@ -16,46 +17,8 @@ function cleanName(input: string): string {
   return input.trim().toLowerCase();
 }
 
-/** Map credential prefixes to specialty labels */
-const CREDENTIAL_TO_SPECIALTY: Record<string, string> = {
-  "md": "Physician", "do": "Physician", "dds": "Dentist", "dmd": "Dentist",
-  "od": "Optometrist", "dc": "Chiropractor", "dpm": "Podiatrist",
-  "np": "Nurse Practitioner", "pa": "Physician Assistant", "rn": "Nurse",
-  "phd": "Psychologist", "psyd": "Psychologist",
-  "lcsw": "Therapist", "lmft": "Therapist", "lpc": "Therapist",
-  "fnp-bc": "Nurse Practitioner", "aprn": "Nurse Practitioner",
-};
-
-/** Move credential prefixes to after the name and detect specialty */
-function stripCredentials(name: string): { cleanedName: string; detectedSpecialty: string | null } {
-  const CRED_PREFIXES = /^\s*(M\.?D\.?|D\.?D\.?S\.?|D\.?O\.?|D\.?P\.?M\.?|N\.?P\.?|P\.?A\.?|R\.?N\.?|D\.?C\.?|O\.?D\.?|Ph\.?D\.?|Psy\.?D\.?|D\.?M\.?D\.?|FNP-BC|LCSW|LMFT|LPC|APRN)\s+/i;
-  let cleaned = name.trim();
-  let specialty: string | null = null;
-  const credentials: string[] = [];
-
-  // Extract credentials from the front
-  let match = cleaned.match(CRED_PREFIXES);
-  while (match) {
-    const raw = match[1].replace(/\./g, "").toUpperCase();
-    const cred = raw.toLowerCase();
-    if (!specialty) specialty = CREDENTIAL_TO_SPECIALTY[cred] || null;
-    credentials.push(raw);
-    cleaned = cleaned.replace(CRED_PREFIXES, "").trim();
-    match = cleaned.match(CRED_PREFIXES);
-  }
-
-  // Title case if ALL CAPS
-  if (cleaned === cleaned.toUpperCase() && cleaned.length > 3) {
-    cleaned = cleaned.replace(/\b\w+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-  }
-
-  // Append credentials after name: "Eric Echelman, DDS"
-  if (credentials.length > 0) {
-    cleaned = `${cleaned}, ${credentials.join(", ")}`;
-  }
-
-  return { cleanedName: cleaned || name.trim(), detectedSpecialty: specialty };
-}
+// Credential normalization moved to ../provider-name.ts so the manual-add
+// path can use the same logic.
 
 /**
  * Check if two provider names are likely the same entity.
@@ -184,7 +147,7 @@ export async function writeDiscoveredProviders({
   }
 
   const providersToInsert = filteredForInsert.map((provider) => {
-    const { cleanedName, detectedSpecialty } = stripCredentials(provider.provider_name.trim());
+    const { cleanedName, detectedSpecialty } = normalizeProviderName(provider.provider_name.trim());
     const npi = provider.npi || npiBackfill.get(provider.normalized_name)?.npi || null;
     return {
       app_user_id: userId,

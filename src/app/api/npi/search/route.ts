@@ -2,6 +2,35 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { lookupPlacePhone } from "../../../../lib/google/places-lookup";
+import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
+import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { zipToState } from "../../../../lib/qbh/zip-to-state";
+
+// Look up the searching user's home state so the NPI registry biases
+// toward providers near them. Without this, unscoped names like
+// "Eric Eckelman" return whatever the registry surfaces first —
+// users in CT were seeing Yonkers, NY hits for local providers.
+async function resolveUserHomeState(req: NextRequest): Promise<string | null> {
+  try {
+    const appUserId = await getSessionAppUserId(req);
+    if (!appUserId) return null;
+    const { data } = await supabaseAdmin
+      .from("app_users")
+      .select("patient_profile")
+      .eq("id", appUserId)
+      .maybeSingle();
+    const profile = (data?.patient_profile || {}) as Record<string, unknown>;
+    if (typeof profile.state === "string" && profile.state.length === 2) {
+      return profile.state.toUpperCase();
+    }
+    if (typeof profile.zip_code === "string") {
+      return zipToState(profile.zip_code);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 // Common US state names and abbreviations for detecting location in queries
 const STATE_PATTERNS = /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|ALABAMA|ALASKA|ARIZONA|ARKANSAS|CALIFORNIA|COLORADO|CONNECTICUT|DELAWARE|FLORIDA|GEORGIA|HAWAII|IDAHO|ILLINOIS|INDIANA|IOWA|KANSAS|KENTUCKY|LOUISIANA|MAINE|MARYLAND|MASSACHUSETTS|MICHIGAN|MINNESOTA|MISSISSIPPI|MISSOURI|MONTANA|NEBRASKA|NEVADA|NEW HAMPSHIRE|NEW JERSEY|NEW MEXICO|NEW YORK|NORTH CAROLINA|NORTH DAKOTA|OHIO|OKLAHOMA|OREGON|PENNSYLVANIA|RHODE ISLAND|SOUTH CAROLINA|SOUTH DAKOTA|TENNESSEE|TEXAS|UTAH|VERMONT|VIRGINIA|WASHINGTON|WEST VIRGINIA|WISCONSIN|WYOMING)\b/i;
@@ -168,7 +197,14 @@ export async function GET(req: NextRequest) {
       if (first && last) normalizedQuery = `${first} ${last}`;
     }
 
-    const { name, city, state } = splitNameAndLocation(normalizedQuery);
+    const parsed = splitNameAndLocation(normalizedQuery);
+    const { name, city } = parsed;
+    // Use the state from the query if the user typed one explicitly;
+    // otherwise fall back to the searching user's home state. Without
+    // a fallback, NPI surfaces results from anywhere — usually the
+    // wrong place for the user.
+    const homeState = await resolveUserHomeState(req);
+    const state = parsed.state || homeState;
 
     // Split name into potential first/last
     const nameParts = name.split(" ").filter(Boolean);

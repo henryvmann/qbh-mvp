@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 import { lookupPlaceDetails } from "../../../../lib/google/places-lookup";
+import { normalizeProviderName } from "../../../../lib/qbh/provider-name";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,9 +14,14 @@ export async function POST(req: NextRequest) {
     if (!appUserId) {
       appUserId = await getSessionAppUserId(req) || "";
     }
-    const name = String(body?.name || "").trim();
+    const rawName = String(body?.name || "").trim();
+    // Reorder credentials so "LCSW Jennifer Mann" lands as "Jennifer Mann,
+    // LCSW" — same shape as bank-discovered providers — and pull the
+    // implied specialty if the form didn't set one.
+    const { cleanedName: name, detectedSpecialty } = normalizeProviderName(rawName);
     const phone = String(body?.phone_number || "").trim() || null;
-    const specialty = String(body?.specialty || "").trim() || null;
+    const explicitSpecialty = String(body?.specialty || "").trim() || null;
+    const specialty = explicitSpecialty || detectedSpecialty;
     const npi = String(body?.npi || "").trim() || null;
     const careRecipients = Array.isArray(body?.care_recipients) ? body.care_recipients :
       body?.care_recipient ? [body.care_recipient] : [];

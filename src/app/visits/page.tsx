@@ -229,7 +229,7 @@ function VisitsInner() {
                 </p>
               </div>
               <span className="text-sm font-medium text-[#4F5F73]">
-                {followUps.length} open
+                {followUps.length} to be scheduled
               </span>
             </div>
 

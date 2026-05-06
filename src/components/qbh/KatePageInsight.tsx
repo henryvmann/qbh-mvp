@@ -45,7 +45,7 @@ function generateInsight(pathname: string, data: DashboardData): string | null {
         if (days <= 7) return `Your appointment with ${next.provider.name} is in ${days} day${days !== 1 ? "s" : ""}. Want help preparing?`;
         return `Next up: ${next.provider.name} on ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}.`;
       }
-      if (overdue.length > 0) return `${overdue.length} provider${overdue.length !== 1 ? "s" : ""} may be overdue. Check your providers page to schedule.`;
+      if (overdue.length > 0) return `${overdue.length} provider${overdue.length !== 1 ? "s" : ""} may be overdue. You can schedule them right here.`;
       if (doctors.length === 0) return "No visits yet. Add providers and Kate will help you stay on top of appointments.";
       return null;
     }
