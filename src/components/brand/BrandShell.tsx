@@ -23,7 +23,7 @@ import Wordmark from "./Wordmark";
 import {
   HomeIcon,
   TimelineIcon,
-  InsightsIcon,
+  DocumentIcon,
   SparkleIcon,
   PersonIcon,
 } from "./icons";
@@ -39,7 +39,7 @@ import {
 const NAV_ICONS: Record<NavKey, React.ComponentType<{ color?: string; size?: number }>> = {
   home: HomeIcon,
   timeline: TimelineIcon,
-  insights: InsightsIcon,
+  documents: DocumentIcon,
   kate: SparkleIcon,
   you: PersonIcon,
 };
@@ -200,7 +200,7 @@ function BottomNav({
                 color,
               }}
             >
-              <Icon color={color} />
+              <Icon color={color} size={22} />
               <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
             </Link>
           );
