@@ -1226,13 +1226,24 @@ export default function OnboardingPage() {
 
         {/* Plaid connect */}
         {phase === "plaid-connect" && !responded && (
-          <div className="animate-fadeIn">
+          <div className="animate-fadeIn space-y-3">
             <button
               onClick={openPlaidLink}
               className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
               style={{ backgroundColor: ACCENT }}
             >
               Connect your bank
+            </button>
+            <button
+              onClick={() => {
+                addKateMessage("No problem — moving on.");
+                // Pretend bank step is done so advanceAfter routes to
+                // the next opted-in step (calendar / manual / score).
+                setTimeout(() => setPhase(advanceAfter("bank")), 800);
+              }}
+              className="w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73]"
+            >
+              Skip for now
             </button>
             <div className="mt-2 flex items-center justify-center gap-3 text-[10px] text-[#4F5F73]">
               <ShieldCheck size={12} /> Encrypted &middot; Read-only &middot; Powered by Plaid
