@@ -18,7 +18,7 @@
  *   - Bottom nav (5 tabs)
  */
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import UserAvatar from "../../components/qbh/UserAvatar";
@@ -208,9 +208,10 @@ function DashboardInner() {
 
       {/* Scope chips — All / Self / Partner / Child / etc.
           Provider count + overdue + upcoming + the care-team list all
-          recompute against the selected scope. Without this, the
-          dashboard's "7 providers, 5 overdue" was ambiguous when a
-          user is managing a household. */}
+          recompute against the selected scope. Default-named chips
+          ("My Partner" / "My Child" / "My Parent") prompt for a real
+          name on first tap so the user can personalize without
+          going to settings. */}
       {careRecipients.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
           <ScopeChip label="All" active={scope === null} onClick={() => setScope(null)} />
@@ -220,9 +221,40 @@ function DashboardInner() {
               label={r.name}
               sublabel={r.relationship && r.relationship !== "Self" ? r.relationship : undefined}
               active={scope === r.name}
+              isDefault={/^my\s/i.test(r.name)}
               onClick={() => setScope(scope === r.name ? null : r.name)}
+              onRename={async (newName) => {
+                const trimmed = newName.trim();
+                if (!trimmed || trimmed === r.name) return;
+                const updated = careRecipients.map((rr) =>
+                  rr.id === r.id ? { ...rr, name: trimmed } : rr
+                );
+                setCareRecipients(updated);
+                if (scope === r.name) setScope(trimmed);
+                await apiFetch("/api/patient-profile", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ profile: { care_recipients: updated } }),
+                });
+              }}
             />
           ))}
+          <Link
+            href="/settings"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "6px 12px",
+              borderRadius: 999,
+              border: `1px dashed ${T.lightBorder}`,
+              fontSize: 12.5,
+              color: T.lightMuted,
+              fontWeight: 500,
+              textDecoration: "none",
+            }}
+          >
+            + Add another
+          </Link>
         </div>
       )}
 
@@ -519,16 +551,107 @@ function ScopeChip({
   sublabel,
   active,
   onClick,
+  isDefault,
+  onRename,
 }: {
   label: string;
   sublabel?: string;
   active: boolean;
   onClick: () => void;
+  /** True when the chip's name is still the onboarding placeholder
+   *  ("My Partner" / "My Child" / "My Parent"). First tap on a
+   *  default-named chip swaps the chip into rename mode instead of
+   *  toggling scope, so the user can personalize without going to
+   *  settings. After rename, taps toggle scope as normal. */
+  isDefault?: boolean;
+  onRename?: (newName: string) => void;
 }) {
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(label);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (renaming) {
+      setDraft(label);
+      setTimeout(() => inputRef.current?.focus(), 10);
+    }
+  }, [renaming, label]);
+
+  if (renaming) {
+    return (
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          padding: "4px 8px",
+          background: "white",
+          border: `1px solid ${T.electric}`,
+          borderRadius: 999,
+        }}
+      >
+        <input
+          ref={inputRef}
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={sublabel ? `e.g. ${sublabel === "Partner" ? "Henry" : sublabel === "Child" ? "Wyatt" : "Mom"}` : "Name"}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const t = draft.trim();
+              if (t && onRename) onRename(t);
+              setRenaming(false);
+            } else if (e.key === "Escape") {
+              setRenaming(false);
+            }
+          }}
+          style={{
+            border: "none",
+            outline: "none",
+            background: "transparent",
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: T.lightText,
+            width: 110,
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            const t = draft.trim();
+            if (t && onRename) onRename(t);
+            setRenaming(false);
+          }}
+          style={{
+            border: "none",
+            background: T.electric,
+            color: T.white,
+            borderRadius: 999,
+            padding: "2px 8px",
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Save
+        </button>
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => {
+        if (isDefault && onRename) {
+          setRenaming(true);
+        } else {
+          onClick();
+        }
+      }}
+      onDoubleClick={() => {
+        if (onRename) setRenaming(true);
+      }}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -542,6 +665,7 @@ function ScopeChip({
         fontWeight: 600,
         cursor: "pointer",
       }}
+      title={isDefault && onRename ? "Tap to name this person" : undefined}
     >
       {label}
       {sublabel && (
