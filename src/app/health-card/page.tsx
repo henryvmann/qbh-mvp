@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "../../lib/api";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 
 type CardData = {
   name: string;
@@ -42,10 +42,9 @@ export default function HealthCardPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-[#F4F5F7]">
-        <TopNav />
-        <div className="flex items-center justify-center pt-32 text-[#4F5F73]">Loading...</div>
-      </div>
+      <PageShell maxWidth="max-w-md">
+        <div className="text-[#4F5F73]">Loading...</div>
+      </PageShell>
     );
   }
 
@@ -53,9 +52,8 @@ export default function HealthCardPage() {
   const progress = (data.score / 100) * circumference;
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7]">
-      <TopNav />
-      <div className="mx-auto max-w-md px-6 pt-24 pb-16">
+    <PageShell maxWidth="max-w-md">
+      <div className="pb-16">
         <h1 className="text-xl font-semibold text-[#071832] text-center">Your Health Card</h1>
         <p className="mt-1 text-sm text-[#4F5F73] text-center">Share your health coordination progress</p>
 
@@ -147,6 +145,6 @@ export default function HealthCardPage() {
           </a>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

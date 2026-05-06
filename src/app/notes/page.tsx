@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../lib/api";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import NextSteps from "../../components/qbh/NextSteps";
 import { FileText, Plus, Trash2, MessageSquare, ChevronDown, ChevronRight } from "lucide-react";
 
@@ -176,22 +176,15 @@ export default function NotesPage() {
 
   if (!loaded) {
     return (
-      <>
-        <TopNav />
-        <main className="min-h-screen bg-[#F5F5F5]">
-          <div className="mx-auto max-w-2xl px-6 py-8">
-            <div className="text-sm text-[#4F5F73]">Loading notes...</div>
-          </div>
-        </main>
-      </>
+      <PageShell maxWidth="max-w-2xl">
+        <div className="text-sm text-[#4F5F73]">Loading notes...</div>
+      </PageShell>
     );
   }
 
   return (
-    <>
-      <TopNav />
-      <main className="min-h-screen bg-[#F5F5F5]">
-        <div className="mx-auto max-w-2xl px-6 py-8">
+    <PageShell maxWidth="max-w-2xl">
+      <div className="py-2">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold text-[#071832]">Notes</h1>
             <button
@@ -328,8 +321,7 @@ export default function NotesPage() {
             </div>
           )}
           <NextSteps />
-        </div>
-      </main>
-    </>
+      </div>
+    </PageShell>
   );
 }

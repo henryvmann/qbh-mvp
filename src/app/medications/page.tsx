@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 import NextSteps from "../../components/qbh/NextSteps";
 import { Plus, Trash2, Pill, Phone, RefreshCw } from "lucide-react";
 
@@ -148,12 +148,8 @@ export default function MedicationsPage() {
   }
 
   return (
-    <main
-      className="min-h-screen text-[#071832]"
-      style={{ background: "#FAF8F4" }}
-    >
-      <TopNav />
-      <div className="mx-auto max-w-5xl px-6 pt-10 pb-16">
+    <PageShell maxWidth="max-w-5xl">
+      <div className="text-[#071832] pb-16">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-serif text-3xl tracking-tight text-[#071832]">
@@ -385,6 +381,6 @@ export default function MedicationsPage() {
         </section>
         <NextSteps />
       </div>
-    </main>
+    </PageShell>
   );
 }

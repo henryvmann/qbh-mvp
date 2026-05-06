@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiFetch } from "../../lib/api";
-import TopNav from "../../components/qbh/TopNav";
+import PageShell from "../../components/qbh/PageShell";
 
 function CalendarConnectPageInner() {
   const searchParams = useSearchParams();
@@ -146,12 +146,8 @@ function CalendarConnectPageInner() {
   }
 
   return (
-    <main
-      className="min-h-screen text-[#071832]"
-      style={{ background: "#FAF8F4" }}
-    >
-      <TopNav />
-      <div className="mx-auto max-w-4xl px-6 pb-16 pt-10">
+    <PageShell maxWidth="max-w-4xl">
+      <div className="text-[#071832] pb-16">
         <header className="flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -268,7 +264,7 @@ function CalendarConnectPageInner() {
           ) : null}
         </section>
       </div>
-    </main>
+    </PageShell>
   );
 }
 

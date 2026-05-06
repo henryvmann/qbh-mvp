@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../../lib/api";
 import { getSpecialtyColor } from "../../../lib/qbh/provider-utils";
-import TopNav from "../../../components/qbh/TopNav";
+import PageShell from "../../../components/qbh/PageShell";
 import HandleItButton from "../../../components/qbh/HandleItButton";
 import { ArrowLeft, Phone, MapPin, FileText, Calendar, Clock } from "lucide-react";
 
@@ -176,21 +176,20 @@ export default function ProviderDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen" style={{ background: "#FAF8F4" }}>
-        <TopNav />
-      </main>
+      <PageShell>
+        <div />
+      </PageShell>
     );
   }
 
   if (!provider) {
     return (
-      <main className="min-h-screen" style={{ background: "#FAF8F4" }}>
-        <TopNav />
-        <div className="mx-auto max-w-2xl px-6 pt-8">
+      <PageShell>
+        <div className="pt-2">
           <p className="text-[#4F5F73]">Provider not found.</p>
           <Link href="/providers" className="mt-4 inline-block text-sm text-[#1677FF] underline">Back to providers</Link>
         </div>
-      </main>
+      </PageShell>
     );
   }
 
@@ -200,9 +199,8 @@ export default function ProviderDetailPage() {
     : provider.specialty || null;
 
   return (
-    <main className="min-h-screen pb-20 text-[#071832]" style={{ background: "#FAF8F4" }}>
-      <TopNav />
-      <div className="mx-auto max-w-2xl px-6 pt-6">
+    <PageShell maxWidth="max-w-2xl">
+      <div className="pb-20 text-[#071832]">
 
         {/* Back link */}
         <Link href="/providers" className="inline-flex items-center gap-1.5 text-sm text-[#4F5F73] hover:text-[#071832] transition mb-6">
@@ -629,6 +627,6 @@ export default function ProviderDetailPage() {
         )}
 
       </div>
-    </main>
+    </PageShell>
   );
 }
