@@ -912,14 +912,29 @@ export default function OnboardingPage() {
 
   // ── Manual-search entry message ──
   // Whenever we land in manual-search, drop a Kate message explaining
-  // what to do (covers all entry paths — including review-team Done).
+  // what to do. Hold the message until the deferred bank scan finishes
+  // so the user sees the full list before being asked to add more.
   const manualSearchAnnouncedRef = useRef(false);
   useEffect(() => {
     if (phase !== "manual-search") return;
+    if (bankScanDeferred) return;
     if (manualSearchAnnouncedRef.current) return;
     manualSearchAnnouncedRef.current = true;
     addKateMessage("Last step — type a name and I'll find them. Doctor name, office name, even just part of it works. Add as many as you want, then tap done.");
-  }, [phase]);
+  }, [phase, bankScanDeferred]);
+
+  // Cap the bank-scan wait on manual-search at 30s. If Plaid is genuinely
+  // slow we unblock the manual input — the background poll keeps running
+  // and any late-arriving providers still land via the dashboard/data poll.
+  useEffect(() => {
+    if (phase !== "manual-search") return;
+    if (!bankScanDeferred) return;
+    const t = setTimeout(() => {
+      setBankScanDeferred(false);
+      addKateMessage("Bank's still pulling — I'll keep it going in the background. Anyone else you want to add?");
+    }, 30000);
+    return () => clearTimeout(t);
+  }, [phase, bankScanDeferred]);
 
   // ── Manual-search debounce ──
   // Single source of truth for the NPI search query; cancels stale fetches.
@@ -1449,7 +1464,21 @@ export default function OnboardingPage() {
         {/* Manual NPI search — third step in the discovery pipeline.
             Opted into via "Enter providers yourself" on discovery-method.
             Always renders after bank/calendar (if selected) and before score. */}
-        {phase === "manual-search" && !responded && (
+        {phase === "manual-search" && !responded && bankScanDeferred && (
+          <div className="animate-fadeIn">
+            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5 flex items-center gap-3">
+              <div
+                className="h-4 w-4 rounded-full border-2 border-[#1677FF] border-t-transparent animate-spin shrink-0"
+                aria-hidden
+              />
+              <div className="text-sm text-[#071832]">
+                Finishing your bank scan — pulling in any providers from the last year. One sec.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {phase === "manual-search" && !responded && !bankScanDeferred && (
           <div className="animate-fadeIn space-y-3">
             {/* Unified reveal — what bank + calendar pulled so far. The
                 reviewer asked for "here are the providers we found, here
@@ -1462,11 +1491,6 @@ export default function OnboardingPage() {
                 </div>
                 <div className="text-sm font-semibold text-[#071832] mb-3">
                   {allDiscovered.length} provider{allDiscovered.length === 1 ? "" : "s"} on your team
-                  {bankScanDeferred && (
-                    <span className="ml-1 text-[11px] text-[#4F5F73] font-normal">
-                      · bank still scanning
-                    </span>
-                  )}
                 </div>
                 <div className="space-y-1.5 max-h-44 overflow-y-auto">
                   {allDiscovered.map((p) => (
