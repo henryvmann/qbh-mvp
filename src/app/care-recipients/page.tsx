@@ -43,15 +43,28 @@ export default function CareRecipientsPage() {
   const [newDob, setNewDob] = useState("");
 
   useEffect(() => {
+    // /api/providers/list returns the raw active rows including
+    // care_recipient — broader than dashboard/data which strips
+    // calendar-typed providers and applies booking-state logic. We
+    // want the assignment view to faithfully reflect what's stored.
     Promise.all([
       apiFetch("/api/patient-profile").then((r) => r.json()),
-      apiFetch("/api/dashboard/data").then((r) => r.json()),
-    ]).then(([profileData, dashData]) => {
+      apiFetch("/api/providers/list?status=active").then((r) => r.json()),
+    ]).then(([profileData, listData]) => {
       if (profileData?.profile?.care_recipients) {
         setRecipients(profileData.profile.care_recipients);
       }
-      if (dashData?.ok) {
-        setProviders(dashData.snapshots || []);
+      if (listData?.ok) {
+        setProviders(
+          (listData.providers ?? []).map((p: { id: string; name: string; specialty: string | null; care_recipient: string | null }) => ({
+            provider: {
+              id: p.id,
+              name: p.name,
+              specialty: p.specialty,
+              care_recipient: p.care_recipient,
+            },
+          }))
+        );
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -71,12 +84,25 @@ export default function CareRecipientsPage() {
   }
 
   function getProvidersForRecipient(recipientName: string, recipientRelationship: string): ProviderSnapshot[] {
+    const SELF_ALIASES = ["self", "myself", "me", "my health"];
+    const wantName = recipientName.trim().toLowerCase();
+    const wantRel = recipientRelationship.trim().toLowerCase();
+    const isSelf = wantRel === "self";
     return providers.filter((s) => {
       const raw = s.provider.care_recipient;
       if (!raw) return false;
       try {
         const arr: string[] = typeof raw === "string" ? JSON.parse(raw) : raw;
-        return arr.some((r) => r === recipientRelationship || r === recipientName);
+        return arr.some((r) => {
+          const v = (r || "").trim().toLowerCase();
+          if (!v) return false;
+          if (v === wantName) return true;
+          if (v === wantRel) return true;
+          // Self-recipient also catches the legacy "Myself"/"Me"/"Self"
+          // labels some providers were tagged with before names existed.
+          if (isSelf && SELF_ALIASES.includes(v)) return true;
+          return false;
+        });
       } catch { return false; }
     });
   }
@@ -276,13 +302,26 @@ export default function CareRecipientsPage() {
                       {addingProviderFor === r.id ? (
                         <div className="mt-3">
                           <InlineProviderSearch
-                            careRecipientLabel={r.relationship}
+                            careRecipientLabel={r.name}
                             onAdded={async () => {
                               setAddingProviderFor(null);
-                              // Refresh providers
-                              const dashRes = await apiFetch("/api/dashboard/data");
-                              const dashData = await dashRes.json();
-                              if (dashData?.ok) setProviders(dashData.snapshots || []);
+                              // Refresh — pull all owned providers regardless
+                              // of status/type so newly-added show up here even
+                              // before the dashboard pipeline includes them.
+                              const listRes = await apiFetch("/api/providers/list?status=active");
+                              const listData = await listRes.json().catch(() => ({}));
+                              if (listData?.ok) {
+                                setProviders(
+                                  (listData.providers ?? []).map((p: { id: string; name: string; specialty: string | null; care_recipient: string | null }) => ({
+                                    provider: {
+                                      id: p.id,
+                                      name: p.name,
+                                      specialty: p.specialty,
+                                      care_recipient: p.care_recipient,
+                                    },
+                                  }))
+                                );
+                              }
                             }}
                             onCancel={() => setAddingProviderFor(null)}
                           />
@@ -310,6 +349,89 @@ export default function CareRecipientsPage() {
             <p className="mt-1 text-sm text-[#4F5F73]">Add the people you manage healthcare for.</p>
           </div>
         )}
+
+        {/* Unassigned providers — gives the user a way to tag legacy
+            rows that came in before the recipient flow existed (Plaid-
+            discovered, manually-added before recipient defaulting, etc.).
+            Without this surface, users have to open each provider detail
+            page to set the For chip. */}
+        {(() => {
+          const unassigned = providers.filter((s) => {
+            const raw = s.provider.care_recipient;
+            if (!raw) return true;
+            try {
+              const arr: string[] = typeof raw === "string" ? JSON.parse(raw) : raw;
+              return !Array.isArray(arr) || arr.length === 0;
+            } catch {
+              return true;
+            }
+          });
+          if (unassigned.length === 0 || recipients.length === 0) return null;
+          return (
+            <div className="mt-8 rounded-2xl bg-white shadow-sm p-5 border border-[#E5EAF2]">
+              <div className="text-sm font-semibold text-[#071832]">
+                Unassigned providers ({unassigned.length})
+              </div>
+              <p className="mt-1 text-xs text-[#4F5F73]">
+                Providers without a care recipient yet. Tap any to assign.
+              </p>
+              <div className="mt-3 space-y-2">
+                {unassigned.map((s) => (
+                  <div
+                    key={s.provider.id}
+                    className="flex items-center justify-between gap-3 rounded-xl bg-[#F0F2F5] px-4 py-2.5 border border-[#E5EAF2]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-[#071832] truncate">
+                        <ProviderLink providerId={s.provider.id} providerName={s.provider.name} />
+                      </div>
+                      {s.provider.specialty && (
+                        <div className="text-[10px] text-[#4F5F73] truncate">
+                          {s.provider.specialty}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1 shrink-0">
+                      {recipients.map((r) => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={async () => {
+                            await apiFetch("/api/providers/update", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                provider_id: s.provider.id,
+                                care_recipients: [r.name],
+                              }),
+                            });
+                            const listRes = await apiFetch("/api/providers/list?status=active");
+                            const listData = await listRes.json().catch(() => ({}));
+                            if (listData?.ok) {
+                              setProviders(
+                                (listData.providers ?? []).map((p: { id: string; name: string; specialty: string | null; care_recipient: string | null }) => ({
+                                  provider: {
+                                    id: p.id,
+                                    name: p.name,
+                                    specialty: p.specialty,
+                                    care_recipient: p.care_recipient,
+                                  },
+                                }))
+                              );
+                            }
+                          }}
+                          className="rounded-lg px-2 py-1 text-[10px] font-medium bg-white text-[#1677FF] border border-[#E5EAF2] hover:bg-[#1677FF]/5"
+                        >
+                          → {r.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         <NextSteps />
       </div>
