@@ -32,7 +32,7 @@ const NAV_LINKS = [
 ];
 
 const SECONDARY_LINKS = [
-  { label: "Settings", href: "/settings" },
+  { label: "Settings", href: "/account" },
   { label: "Account", href: "/account" },
   { label: "Documents", href: "/documents" },
   { label: "Recordings", href: "/recordings" },

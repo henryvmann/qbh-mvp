@@ -617,14 +617,14 @@ export default function HandleItButton({
           {toast.kind === "error" && toast.text.toLowerCase().includes("name") ? (
             <span>
               Kate needs your full name to call. {" "}
-              <a href="/settings" className="font-semibold text-[#1677FF] underline underline-offset-2">
+              <a href="/account" className="font-semibold text-[#1677FF] underline underline-offset-2">
                 Add it in Settings →
               </a>
             </span>
           ) : toast.kind === "error" && (toast.text.toLowerCase().includes("profile") || toast.text.toLowerCase().includes("dob") || toast.text.toLowerCase().includes("insurance")) ? (
             <span>
               {toast.text} {" "}
-              <a href="/settings" className="font-semibold text-[#1677FF] underline underline-offset-2">
+              <a href="/account" className="font-semibold text-[#1677FF] underline underline-offset-2">
                 Update in Settings →
               </a>
             </span>

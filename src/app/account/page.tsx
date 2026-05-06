@@ -62,6 +62,49 @@ export default function AccountPage() {
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [prefsSaved, setPrefsSaved] = useState(false);
 
+  // Kate settings — communication style, proactivity, focus areas,
+  // calendar flexibility. Ported from /settings now that page is
+  // gone. Persists via the same /api/patient-profile PUT.
+  const [displayName, setDisplayName] = useState("");
+  const [commStyle, setCommStyle] = useState("friend");
+  const [proactivity, setProactivity] = useState("balanced");
+  const [focusAreas, setFocusAreas] = useState<string[]>(["booking", "reminders"]);
+  const [calendarFlexibility, setCalendarFlexibility] = useState<"flexible" | "balanced" | "strict">("balanced");
+  const [savingKate, setSavingKate] = useState(false);
+  const [kateSaved, setKateSaved] = useState(false);
+
+  async function saveKateSettings(next: {
+    display_name?: string | null;
+    kate_communication_style?: string;
+    kate_proactivity?: string;
+    kate_focus_areas?: string[];
+    calendar_flexibility?: "flexible" | "balanced" | "strict";
+  }) {
+    setSavingKate(true);
+    setKateSaved(false);
+    try {
+      await apiFetch("/api/patient-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile: next }),
+      });
+      setKateSaved(true);
+      setTimeout(() => setKateSaved(false), 2000);
+    } catch {
+      // Non-critical — value stays in local state
+    } finally {
+      setSavingKate(false);
+    }
+  }
+
+  function toggleFocus(area: string) {
+    const next = focusAreas.includes(area)
+      ? focusAreas.filter((a) => a !== area)
+      : [...focusAreas, area];
+    setFocusAreas(next);
+    saveKateSettings({ kate_focus_areas: next });
+  }
+
   async function saveCarePrefs(next: CarePrefs) {
     setCarePrefs(next);
     setSavingPrefs(true);
@@ -213,6 +256,18 @@ export default function AccountPage() {
             setMemberId(p.member_id || p.memberId || null);
             if (p.care_preferences && typeof p.care_preferences === "object") {
               setCarePrefs({ ...DEFAULT_PREFS, ...(p.care_preferences as Partial<CarePrefs>) });
+            }
+            // Kate settings
+            setDisplayName(p.display_name || p.nickname || "");
+            if (typeof p.kate_communication_style === "string") setCommStyle(p.kate_communication_style);
+            if (typeof p.kate_proactivity === "string") setProactivity(p.kate_proactivity);
+            if (Array.isArray(p.kate_focus_areas)) setFocusAreas(p.kate_focus_areas as string[]);
+            if (
+              p.calendar_flexibility === "flexible" ||
+              p.calendar_flexibility === "balanced" ||
+              p.calendar_flexibility === "strict"
+            ) {
+              setCalendarFlexibility(p.calendar_flexibility);
             }
           }
         }
@@ -656,6 +711,173 @@ export default function AccountPage() {
                   </button>
                 );
               })}
+            </div>
+          </div>
+        </div>
+
+        {/* Kate settings — communication style, proactivity, focus
+            areas, calendar flexibility. Ported from /settings now
+            that page is gone. Each control auto-saves on change. */}
+        <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2] mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-[#1677FF]">
+              Kate settings
+            </h2>
+            {savingKate && <span className="text-xs text-[#4F5F73]">Saving…</span>}
+            {!savingKate && kateSaved && <span className="text-xs text-[#27C46B] font-semibold">Saved</span>}
+          </div>
+          <p className="text-xs text-[#4F5F73] mb-5 leading-relaxed">
+            How Kate addresses you, how she talks, how involved she should be.
+          </p>
+
+          {/* Nickname */}
+          <div className="mb-5">
+            <label className="block text-xs font-medium text-[#4F5F73] mb-1.5">What should Kate call you?</label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              onBlur={() => saveKateSettings({ display_name: displayName.trim() || null })}
+              placeholder="e.g. Jenny, Hank, Dr. J"
+              className="w-full rounded-xl bg-[#F0F2F5] border border-[#E5EAF2] px-4 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+            />
+          </div>
+
+          {/* Communication style */}
+          <div className="border-t border-[#E5EAF2] pt-5 mb-5">
+            <label className="block text-xs font-medium text-[#4F5F73] mb-2">How should Kate talk to you?</label>
+            <div className="flex gap-2">
+              {[
+                { value: "friend", label: "Like a friend", desc: "Warm, casual" },
+                { value: "professional", label: "Professional", desc: "Direct, efficient" },
+                { value: "minimal", label: "Just the facts", desc: "Short and to the point" },
+              ].map((style) => (
+                <button
+                  key={style.value}
+                  onClick={() => {
+                    setCommStyle(style.value);
+                    saveKateSettings({ kate_communication_style: style.value });
+                  }}
+                  className={`flex-1 rounded-xl p-3 text-left transition ${
+                    commStyle === style.value
+                      ? "bg-[#1677FF]/10 border border-[#1677FF]"
+                      : "bg-[#F0F2F5] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
+                  }`}
+                >
+                  <div className="text-sm font-medium text-[#071832]">{style.label}</div>
+                  <div className="text-xs text-[#4F5F73]">{style.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Proactivity */}
+          <div className="border-t border-[#E5EAF2] pt-5 mb-5">
+            <label className="block text-xs font-medium text-[#4F5F73] mb-2">How involved should Kate be?</label>
+            <div className="space-y-2">
+              {[
+                { value: "minimal", label: "Hands off", desc: "Only when I ask" },
+                { value: "balanced", label: "Balanced", desc: "Reminders + a few suggestions a week" },
+                { value: "proactive", label: "Take the wheel", desc: "Surface everything you find" },
+              ].map((level) => (
+                <button
+                  key={level.value}
+                  onClick={() => {
+                    setProactivity(level.value);
+                    saveKateSettings({ kate_proactivity: level.value });
+                  }}
+                  className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition ${
+                    proactivity === level.value
+                      ? "bg-[#1677FF]/10 border border-[#1677FF]"
+                      : "bg-[#F0F2F5] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
+                  }`}
+                >
+                  <div
+                    className={`h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center ${
+                      proactivity === level.value ? "border-[#1677FF]" : "border-[#4F5F73]"
+                    }`}
+                  >
+                    {proactivity === level.value && (
+                      <div className="h-2 w-2 rounded-full bg-[#1677FF]" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-[#071832]">{level.label}</div>
+                    <div className="text-xs text-[#4F5F73]">{level.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Focus areas */}
+          <div className="border-t border-[#E5EAF2] pt-5 mb-5">
+            <label className="block text-xs font-medium text-[#4F5F73] mb-2">What should Kate focus on?</label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: "booking", label: "Booking" },
+                { value: "reminders", label: "Reminders" },
+                { value: "prep", label: "Visit prep" },
+                { value: "claims", label: "Claims & EOBs" },
+                { value: "mental_health", label: "Mental health" },
+                { value: "family", label: "Family care" },
+              ].map((area) => {
+                const selected = focusAreas.includes(area.value);
+                return (
+                  <button
+                    key={area.value}
+                    onClick={() => toggleFocus(area.value)}
+                    className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
+                      selected
+                        ? "bg-[#1677FF] text-white"
+                        : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
+                    }`}
+                  >
+                    {selected ? "✓ " : ""}{area.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Calendar flexibility */}
+          <div className="border-t border-[#E5EAF2] pt-5">
+            <label className="block text-xs font-medium text-[#4F5F73] mb-2">
+              How should Kate handle scheduling around your calendar?
+            </label>
+            <div className="space-y-2">
+              {([
+                { value: "flexible" as const, label: "I'm flexible", desc: "Book at the earliest time and I'll adjust" },
+                { value: "balanced" as const, label: "Usually up to date", desc: "Avoid conflicts, but take earliest if nothing in 2 weeks" },
+                { value: "strict" as const, label: "My calendar is set in stone", desc: "Never book over any event" },
+              ]).map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setCalendarFlexibility(option.value);
+                    saveKateSettings({ calendar_flexibility: option.value });
+                  }}
+                  className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition ${
+                    calendarFlexibility === option.value
+                      ? "bg-[#1677FF]/10 border border-[#1677FF]"
+                      : "bg-[#F0F2F5] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
+                  }`}
+                >
+                  <div
+                    className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
+                      calendarFlexibility === option.value ? "border-[#1677FF]" : "border-[#4F5F73]"
+                    }`}
+                  >
+                    {calendarFlexibility === option.value && (
+                      <div className="h-2 w-2 rounded-full bg-[#1677FF]" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-[#071832]">{option.label}</div>
+                    <div className="text-xs text-[#4F5F73]">{option.desc}</div>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>

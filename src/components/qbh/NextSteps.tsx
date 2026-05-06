@@ -13,7 +13,7 @@ type NextStep = {
 const PAGE_NEXT_STEPS: Record<string, NextStep[]> = {
   "/providers": [
     { href: "/visits", title: "View Visits", description: "See upcoming and past appointments" },
-    { href: "/settings", title: "Update Profile", description: "Health history, insurance, preferences" },
+    { href: "/account", title: "Update Profile", description: "Health history, insurance, preferences" },
     { href: "/goals", title: "Set Goals", description: "Track what matters to your health" },
   ],
   "/visits": [
@@ -23,15 +23,15 @@ const PAGE_NEXT_STEPS: Record<string, NextStep[]> = {
   ],
   "/goals": [
     { href: "/providers", title: "Manage Providers", description: "Add providers to reach your goals" },
-    { href: "/settings", title: "Your Profile", description: "Health history and preferences" },
+    { href: "/account", title: "Your Profile", description: "Health history and preferences" },
     { href: "/dashboard", title: "Dashboard", description: "Back to your home base" },
   ],
   "/timeline": [
     { href: "/visits", title: "Visits", description: "Upcoming and past appointments" },
     { href: "/providers", title: "Providers", description: "Your care team" },
-    { href: "/settings", title: "Settings", description: "Update your profile and preferences" },
+    { href: "/account", title: "Settings", description: "Update your profile and preferences" },
   ],
-  "/settings": [
+  "/account": [
     { href: "/providers", title: "Providers", description: "Manage your care team" },
     { href: "/goals", title: "Goals", description: "Set and track health goals" },
     { href: "/dashboard", title: "Dashboard", description: "Back to your home base" },
@@ -43,11 +43,11 @@ const PAGE_NEXT_STEPS: Record<string, NextStep[]> = {
   ],
   "/medications": [
     { href: "/providers", title: "Providers", description: "Who prescribed what" },
-    { href: "/settings", title: "Settings", description: "Update your health profile" },
+    { href: "/account", title: "Settings", description: "Update your health profile" },
     { href: "/dashboard", title: "Dashboard", description: "Back to your home base" },
   ],
   "/recordings": [
-    { href: "/settings", title: "Settings", description: "Update your profile" },
+    { href: "/account", title: "Settings", description: "Update your profile" },
     { href: "/providers", title: "Providers", description: "See provider details" },
     { href: "/dashboard", title: "Dashboard", description: "Back to your home base" },
   ],

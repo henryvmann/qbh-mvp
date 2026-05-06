@@ -33,7 +33,7 @@ const PAGE_INTROS: Record<string, Slide[]> = {
     { title: "Your Calendar", body: "Click any date to see appointments. Health events are highlighted.", target: "calendar-grid", position: "below" },
     { title: "Availability", body: "Set your preferred days and times so Kate books when it works for you.", target: "availability", position: "above" },
   ],
-  "/settings": [
+  "/account": [
     { title: "Your Profile", body: "Keep your info up to date so Kate can give you the best experience.", target: "center", position: "below" },
     { title: "Health History", body: "Tell Kate about your health background — she'll use it to make better suggestions.", target: "health-history", position: "below" },
     { title: "Kate Preferences", body: "Choose how Kate talks to you and how involved she should be.", target: "kate-preferences", position: "above" },

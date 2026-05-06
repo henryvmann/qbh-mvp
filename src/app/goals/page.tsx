@@ -43,7 +43,7 @@ function getGoalAction(goal: {
 
   // Profile-related goals → navigate to settings
   if (t.includes("profile") || t.includes("health profile") || t.includes("complete your") || t.includes("update your info")) {
-    return { kind: "navigate", href: "/settings", label: "Go to profile" };
+    return { kind: "navigate", href: "/account", label: "Go to profile" };
   }
 
   // Calendar-related goals → connect flow

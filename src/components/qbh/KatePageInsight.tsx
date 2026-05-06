@@ -59,7 +59,7 @@ function generateInsight(pathname: string, data: DashboardData): string | null {
       if (!hasPCP) return "A great first goal: find a primary care doctor for your care team.";
       return "Tell Kate what you want to work on and she'll help you make a plan.";
     }
-    case "/settings": {
+    case "/account": {
       return "Keep your profile up to date so Kate can give you the best recommendations.";
     }
     case "/calendar-view": {
@@ -85,7 +85,7 @@ export default function KatePageInsight() {
       "/visits": "Track your appointments and stay on top of your care.",
       "/timeline": "Your health story — past visits, upcoming appointments, and connections.",
       "/goals": "Set goals and let Kate help you track your progress.",
-      "/settings": "Keep your profile up to date for the best experience.",
+      "/account": "Keep your profile up to date for the best experience.",
       "/calendar-view": "Your health calendar — see what's coming up.",
     };
     setInsight(fallbacks[pathname] || null);

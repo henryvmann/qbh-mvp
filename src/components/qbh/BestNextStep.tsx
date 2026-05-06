@@ -158,7 +158,7 @@ function buildSuggestions(
       text: `Kate needs your ${missing.join(" and ")} to book for you — add ${missing.length > 1 ? "them" : "it"} now?`,
       actionLabel: "Add now",
       actionType: "link",
-      actionHref: "/settings",
+      actionHref: "/account",
     });
   }
 
@@ -402,7 +402,7 @@ export default function BestNextStep({ context = "dashboard" }: { context?: Best
           if (errMsg.toLowerCase().includes("name")) {
             setCallStatus(null);
             setCallingProvider(false);
-            router.push("/settings");
+            router.push("/account");
             return;
           }
           setCallStatus(errMsg);

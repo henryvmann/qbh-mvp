@@ -45,14 +45,14 @@ const NAV_GROUPS: Group[] = [
       { label: "Insights", href: "/insights", description: "Kate's read on your week" },
       { label: "Goals", href: "/goals", description: "Track progress" },
       { label: "Notes", href: "/notes", description: "Visit notes and reminders" },
-      { label: "Recordings", href: "/recordings", description: "Voice memos and call replays" },
+      { label: "Recordings", href: "/recordings", description: "Appointment recordings and summaries" },
     ],
   },
   {
     label: "You",
     items: [
       { label: "About me", href: "/intake", description: "Help Kate get to know you" },
-      { label: "Account", href: "/account", description: "Profile, prefs, and preferences" },
+      { label: "Account", href: "/account", description: "Profile and preferences" },
       { label: "Health Card", href: "/health-card" },
     ],
   },
