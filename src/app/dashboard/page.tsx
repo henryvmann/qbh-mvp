@@ -41,6 +41,7 @@ import {
   DocumentIcon,
   InsightsIcon,
   UsersIcon,
+  SparkleIcon,
 } from "../../components/brand/icons";
 import { T } from "../../components/brand";
 
@@ -444,7 +445,8 @@ function DashboardInner() {
             { href: "/visits", title: "Visits", desc: "Upcoming & past", icon: <CalendarIcon color={T.electric} /> },
             { href: "/coverage", title: "Coverage", desc: "EOBs & claims", icon: <DocumentIcon color={T.electric} size={18} /> },
             { href: "/caregivers", title: "Caregivers", desc: "People who help", icon: <UsersIcon color={T.electric} size={18} /> },
-            { href: "/goals", title: "Goals", desc: "Track progress", icon: <InsightsIcon color={T.electric} size={18} /> },
+            { href: "/insights", title: "Insights", desc: "Kate's read on your week", icon: <InsightsIcon color={T.electric} size={18} /> },
+            { href: "/goals", title: "Goals", desc: "Track progress", icon: <SparkleIcon color={T.electric} size={18} /> },
           ].map((item) => (
             <GlassCard key={item.href} href={item.href} padding={14}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

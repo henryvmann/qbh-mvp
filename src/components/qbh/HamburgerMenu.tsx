@@ -36,6 +36,7 @@ const NAV_GROUPS: Group[] = [
   {
     label: "Records",
     items: [
+      { label: "Insights", href: "/insights", description: "Kate's read on your week" },
       { label: "Documents", href: "/documents", description: "Uploads, labs, EOBs" },
       { label: "Coverage", href: "/coverage", description: "Insurance & claims" },
       { label: "Medications", href: "/medications" },
