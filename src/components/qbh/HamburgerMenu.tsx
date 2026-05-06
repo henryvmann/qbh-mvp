@@ -34,7 +34,7 @@ const NAV_GROUPS: Group[] = [
       { label: "Visits", href: "/visits", description: "Upcoming & past" },
       { label: "Coverage", href: "/coverage", description: "Insurance & claims" },
       { label: "Caregivers", href: "/caregivers", description: "People who help" },
-      { label: "Medications", href: "/medications" },
+      { label: "Medications", href: "/medications", description: "Refills and prescriptions" },
       { label: "Documents", href: "/documents", description: "Uploads, labs, EOBs" },
     ],
   },
@@ -44,16 +44,15 @@ const NAV_GROUPS: Group[] = [
     items: [
       { label: "Insights", href: "/insights", description: "Kate's read on your week" },
       { label: "Goals", href: "/goals", description: "Track progress" },
-      { label: "Notes", href: "/notes" },
-      { label: "Recordings", href: "/recordings" },
+      { label: "Notes", href: "/notes", description: "Visit notes and reminders" },
+      { label: "Recordings", href: "/recordings", description: "Voice memos and call replays" },
     ],
   },
   {
     label: "You",
     items: [
       { label: "About me", href: "/intake", description: "Help Kate get to know you" },
-      { label: "Account", href: "/account" },
-      { label: "Settings", href: "/settings" },
+      { label: "Account", href: "/account", description: "Profile, prefs, and preferences" },
       { label: "Health Card", href: "/health-card" },
     ],
   },

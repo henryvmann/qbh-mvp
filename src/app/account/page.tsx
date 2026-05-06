@@ -513,7 +513,7 @@ export default function AccountPage() {
               { href: "/providers", label: "Care team", sub: "Doctors, dentists, specialists" },
               { href: "/documents", label: "Documents & labs", sub: "Uploads, imports, history" },
               { href: "/billing", label: "Plan & billing", sub: "Subscription and payment method" },
-              { href: "/settings", label: "Notifications & preferences", sub: "Quiet hours, Kate focus areas" },
+              { href: "/intake", label: "About me", sub: "Help Kate get to know you" },
             ].map((row) => (
               <Link
                 key={row.href}
