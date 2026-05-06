@@ -13,6 +13,9 @@ export type Provider = {
   care_recipient?: string | null;
   source?: string | null;
   confirmed_status?: string | null;
+  /** Whether this is the user's designated primary provider. Single
+   *  primary per user enforced by /api/providers/update. */
+  is_primary?: boolean | null;
 };
 
 export type LastVisitCategory =

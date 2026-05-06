@@ -543,7 +543,16 @@ function ProvidersInner() {
                                 </span>
                               )}
                             </div>
-                            <div className="mt-1.5 text-base font-semibold leading-tight">
+                            <div className="mt-1.5 text-base font-semibold leading-tight flex items-center gap-1.5">
+                              {snapshot.provider.is_primary && (
+                                <span
+                                  title="Primary"
+                                  className="text-[#E08A1F]"
+                                  style={{ fontSize: 14 }}
+                                >
+                                  ★
+                                </span>
+                              )}
                               <ProviderLink providerId={snapshot.provider.id} providerName={snapshot.provider.name} />
                             </div>
                             {subtitle && (

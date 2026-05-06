@@ -18,6 +18,10 @@ type UpdateBody = {
   // the providers.care_recipient column as a JSON-stringified array. An
   // empty array clears the assignment.
   care_recipients?: string[];
+  // Mark this provider as the user's single primary. When true, the
+  // API also clears is_primary on the user's other providers so only
+  // one primary exists at a time.
+  is_primary?: boolean;
 };
 
 export async function POST(req: Request) {
@@ -64,9 +68,28 @@ export async function POST(req: Request) {
     updates.care_recipient =
       body.care_recipients.length > 0 ? JSON.stringify(body.care_recipients) : null;
   }
+  if (typeof body.is_primary === "boolean") updates.is_primary = body.is_primary;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ ok: true, message: "Nothing to update" });
+  }
+
+  // Single-primary invariant: when promoting this provider to primary,
+  // clear is_primary on every other provider for the user. Done first
+  // so a failure here doesn't leave two primaries — if the second
+  // update fails, neither change persists.
+  if (body.is_primary === true) {
+    const { error: clearErr } = await supabaseAdmin
+      .from("providers")
+      .update({ is_primary: false })
+      .eq("app_user_id", appUserId)
+      .neq("id", providerId);
+    if (clearErr) {
+      return NextResponse.json(
+        { ok: false, error: clearErr.message },
+        { status: 500 }
+      );
+    }
   }
 
   const { error: updateErr } = await supabaseAdmin

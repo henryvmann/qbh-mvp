@@ -25,6 +25,7 @@ type Provider = {
   created_at?: string | null;
   /** JSON-stringified array of care-recipient names this provider is for. */
   care_recipient?: string | null;
+  is_primary?: boolean | null;
 };
 
 type CareRecipient = { id: string; name: string; relationship: string };
@@ -125,6 +126,22 @@ export default function ProviderDetailPage() {
     }
   }
 
+  async function togglePrimary() {
+    if (!provider) return;
+    const next = !provider.is_primary;
+    const res = await apiFetch("/api/providers/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider_id: providerId, is_primary: next }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!json?.ok) {
+      window.alert(`Couldn't update: ${json?.error ?? "unknown error"}`);
+      return;
+    }
+    setProvider({ ...provider, is_primary: next });
+  }
+
   async function handleArchiveProvider() {
     if (!provider) return;
     // Archive = "I no longer see this doctor, but keep the history."
@@ -219,8 +236,17 @@ export default function ProviderDetailPage() {
             >
               {colors.label}
             </span>
-            <h1 className="mt-2 text-2xl font-semibold text-[#071832]">
+            <h1 className="mt-2 text-2xl font-semibold text-[#071832] flex items-center gap-2">
               {provider.display_name || provider.name}
+              {provider.is_primary && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                  style={{ backgroundColor: "#E08A1F1A", color: "#E08A1F" }}
+                  title="Your primary provider"
+                >
+                  ★ Primary
+                </span>
+              )}
             </h1>
             {subtitle && (
               <p className="mt-1 text-sm" style={{ color: colors.accent + "99" }}>
@@ -302,6 +328,13 @@ export default function ProviderDetailPage() {
                   style={{ color: colors.accent }}
                 >
                   Edit details
+                </button>
+                <button
+                  onClick={togglePrimary}
+                  className="text-xs font-medium underline underline-offset-2 transition"
+                  style={{ color: provider.is_primary ? "#E08A1F" : colors.accent }}
+                >
+                  {provider.is_primary ? "★ Primary — unset" : "Set as primary"}
                 </button>
                 <button
                   onClick={handleArchiveProvider}

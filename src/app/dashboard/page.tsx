@@ -44,7 +44,7 @@ import {
 } from "../../components/brand/icons";
 import { T } from "../../components/brand";
 
-type Provider = { id: string; name: string; provider_type?: string; specialty?: string | null };
+type Provider = { id: string; name: string; provider_type?: string; specialty?: string | null; is_primary?: boolean | null };
 type BookingState = { status?: string };
 type Snapshot = {
   provider: Provider;
@@ -376,7 +376,24 @@ function DashboardInner() {
                       }}
                     />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14.5, fontWeight: 500, color: T.lightText }}>
+                      <div
+                        style={{
+                          fontSize: 14.5,
+                          fontWeight: 500,
+                          color: T.lightText,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        {s.provider.is_primary && (
+                          <span
+                            title="Primary"
+                            style={{ color: T.warn, fontSize: 14, lineHeight: 1 }}
+                          >
+                            ★
+                          </span>
+                        )}
                         <ProviderLink
                           providerId={s.provider.id}
                           providerName={s.provider.name}

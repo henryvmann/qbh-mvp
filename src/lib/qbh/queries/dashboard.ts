@@ -141,6 +141,7 @@ type ProviderRow = {
   care_team: string | null;
   care_recipient: string | null;
   confirmed_status: string | null;
+  is_primary: boolean | null;
 };
 
 type AttemptRow = {
@@ -641,7 +642,7 @@ export async function getDashboardProvidersForUser(
 
   const { data: providers, error: providersError } = await supabaseAdmin
     .from("providers")
-    .select("id,name,display_name,status,created_at,app_user_id,phone_number,specialty,doctor_name,notes,provider_type,source,care_team,care_recipient,confirmed_status")
+    .select("id,name,display_name,status,created_at,app_user_id,phone_number,specialty,doctor_name,notes,provider_type,source,care_team,care_recipient,confirmed_status,is_primary")
     .eq("app_user_id", cleanedUserId)
     .eq("status", "active")
     .order("created_at", { ascending: true });
@@ -805,6 +806,7 @@ export async function getDashboardProvidersForUser(
       care_recipient: pRow.care_recipient || null,
       source: pRow.source || null,
       confirmed_status: pRow.confirmed_status || null,
+      is_primary: pRow.is_primary ?? false,
     };
 
     const futureConfirmedEvent = futureConfirmedByProvider.get(pRow.id) ?? null;
