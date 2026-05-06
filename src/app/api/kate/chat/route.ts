@@ -50,12 +50,17 @@ type ChatMessage = {
 
 async function buildContext(appUserId: string): Promise<{ text: string; commStyle: string; proactivity: string }> {
   const [providersRes, userRes, eventsRes, visitsRes] = await Promise.all([
+    // Pull every active provider regardless of source. The earlier
+    // .neq("provider_type", "calendar") filter excluded calendar-
+    // discovered providers from Kate's context, so she'd answer
+    // "no providers on file" while the user was looking at Dr. Kelly
+    // on her dashboard. Calendar-source providers are legitimate
+    // care team members now.
     supabaseAdmin
       .from("providers")
       .select("name, status, provider_type, doctor_name, specialty, phone_number, source")
       .eq("app_user_id", appUserId)
-      .eq("status", "active")
-      .neq("provider_type", "calendar"),
+      .eq("status", "active"),
     supabaseAdmin
       .from("app_users")
       .select("patient_profile, auth_user_id")

@@ -58,17 +58,17 @@ export default function HealthCardPage() {
         <p className="mt-1 text-sm text-[#4F5F73] text-center">Share your health coordination progress</p>
 
         {/* The card */}
-        <div ref={cardRef} className="mt-8 rounded-3xl overflow-hidden shadow-xl" style={{ background: "linear-gradient(135deg, #0F1729, #1A2940)" }}>
+        <div ref={cardRef} className="mt-8 rounded-3xl overflow-hidden shadow-xl border border-[#E5EAF2]" style={{ background: "#FFFFFF" }}>
           <div className="p-8">
             {/* Name */}
-            <div className="text-lg font-light text-white/90">{data.name}</div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40 mt-1">Health Coordination</div>
+            <div className="text-lg font-light text-[#071832]">{data.name}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#4F5F73] mt-1">Health Coordination</div>
 
             {/* Score ring */}
             <div className="mt-6 flex items-center gap-6">
               <div className="relative" style={{ width: 96, height: 96 }}>
                 <svg width={96} height={96} viewBox="0 0 96 96" className="transform -rotate-90">
-                  <circle cx={48} cy={48} r={42} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={5} />
+                  <circle cx={48} cy={48} r={42} fill="none" stroke="rgba(7,24,50,0.08)" strokeWidth={5} />
                   <defs>
                     <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#1677FF" />
@@ -79,37 +79,37 @@ export default function HealthCardPage() {
                     strokeDasharray={`${progress} ${circumference - progress}`} />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-light text-white">{data.score}</span>
+                  <span className="text-3xl font-light text-[#071832]">{data.score}</span>
                 </div>
               </div>
 
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/50">Providers</span>
+                  <span className="text-xs text-[#4F5F73]">Providers</span>
                   <span className="text-sm font-light text-[#1677FF]">{data.providerCount}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/50">Upcoming</span>
+                  <span className="text-xs text-[#4F5F73]">Upcoming</span>
                   <span className="text-sm font-light text-[#27C46B]">{data.upcomingCount}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/50">Overdue</span>
-                  <span className="text-sm font-light" style={{ color: data.overdueCount > 0 ? "#F87171" : "#22C55E" }}>{data.overdueCount}</span>
+                  <span className="text-xs text-[#4F5F73]">Overdue</span>
+                  <span className="text-sm font-light" style={{ color: data.overdueCount > 0 ? "#E04030" : "#27C46B" }}>{data.overdueCount}</span>
                 </div>
               </div>
             </div>
 
             {/* Level */}
-            <div className="mt-5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/30">
+            <div className="mt-5 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#4F5F73]">
               {data.levelLabel}
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-8 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-8 py-4" style={{ borderTop: "1px solid #E5EAF2" }}>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-medium text-white/30">Healthcare Changed for Good</span>
-              <span className="text-[10px] font-semibold text-white/50">getquarterback.com</span>
+              <span className="text-[10px] font-medium text-[#4F5F73]">Healthcare Changed for Good</span>
+              <span className="text-[10px] font-semibold text-[#1677FF]">getquarterback.com</span>
             </div>
           </div>
         </div>

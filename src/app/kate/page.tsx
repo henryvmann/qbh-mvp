@@ -21,11 +21,10 @@ import { CalendarPlus, FileText, Stethoscope, HelpCircle, Sparkles, Send } from 
 
 type Message = { role: "user" | "assistant"; content: string };
 
-const PROACTIVE_OPENERS = [
-  "Hey — here's what I'm thinking about for you today.",
-  "I've been looking at your care team. A few things worth your attention:",
-  "Quick check-in — these are the things on my mind for you this week:",
-];
+// Proactive opener removed — the dead-end "Hey, here's what I'm
+// thinking about for you today" with nothing after it confused users.
+// Kate now waits for the user to ask (via the prompt chips or the
+// message box) and answers in context.
 
 const QUICK_PROMPTS = [
   { label: "What should I focus on?", prompt: "What are the most important things I should do for my health right now?", icon: HelpCircle },
@@ -44,14 +43,10 @@ export default function KatePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Proactive opener: Kate kicks off with a generic intro line
-  // immediately, then primes the model to surface specific
-  // what-to-do-next ideas as soon as the user asks (or via the
-  // suggestion chips below).
+  // No proactive opener — Kate waits for the user to ask. Quick
+  // prompts above the message box give the user a one-tap entry.
   useEffect(() => {
     if (hasOpened) return;
-    const opener = PROACTIVE_OPENERS[Math.floor(Math.random() * PROACTIVE_OPENERS.length)];
-    setMessages([{ role: "assistant", content: opener }]);
     setHasOpened(true);
   }, [hasOpened]);
 
