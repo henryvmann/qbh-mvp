@@ -273,6 +273,11 @@ function DashboardInner() {
         <BestNextStep />
       </div>
 
+      {/* Intake CTA — only shows when the user hasn't completed the
+          opt-in intake quiz. Once dismissed (via the X) it doesn't
+          come back; once completed it stops showing automatically. */}
+      <IntakeCTA />
+
       {/* Week strip */}
       <Link
         href="/calendar-view"
@@ -543,6 +548,89 @@ function StatTile({
         </div>
       </GlassCard>
     </Link>
+  );
+}
+
+function IntakeCTA() {
+  const [show, setShow] = useState(false);
+  const [progressLabel, setProgressLabel] = useState("Help Kate get to know you");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("qbh_intake_cta_dismissed") === "1") {
+      return;
+    }
+    apiFetch("/api/patient-profile")
+      .then((r) => r.json())
+      .then((data) => {
+        const intake = data?.profile?.intake;
+        if (intake?.completed_at) return;
+        const answered = intake?.answers ? Object.keys(intake.answers).length : 0;
+        if (answered > 0) setProgressLabel(`Continue your intake (${answered} answered)`);
+        setShow(true);
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        background: "rgba(22,119,255,0.06)",
+        border: `1px solid rgba(22,119,255,0.20)`,
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 18,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: T.lightText }}>
+          {progressLabel}
+        </div>
+        <div style={{ fontSize: 12.5, color: T.lightMuted, marginTop: 2 }}>
+          A few questions about your health, sleep, stress. Skip anything. Update anytime.
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+        <button
+          onClick={() => {
+            localStorage.setItem("qbh_intake_cta_dismissed", "1");
+            setShow(false);
+          }}
+          aria-label="Dismiss"
+          style={{
+            background: "transparent",
+            border: "none",
+            color: T.lightMuted,
+            fontSize: 18,
+            cursor: "pointer",
+            padding: "0 6px",
+          }}
+        >
+          ×
+        </button>
+        <Link
+          href="/intake"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "8px 14px",
+            background: T.electric,
+            color: "white",
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+        >
+          Start
+        </Link>
+      </div>
+    </div>
   );
 }
 

@@ -47,6 +47,7 @@ const NAV_GROUPS: Group[] = [
   {
     label: "You",
     items: [
+      { label: "About me", href: "/intake", description: "Help Kate get to know you" },
       { label: "Account", href: "/account" },
       { label: "Settings", href: "/settings" },
       { label: "Health Card", href: "/health-card" },
