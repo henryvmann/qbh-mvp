@@ -677,25 +677,25 @@ export default function OnboardingPage() {
 
   // ── Discovery ──
   async function runBankDiscovery() {
-    // Surface activity so the page does not look frozen — without
-    // these, "pulling your records now" sits static for a minute+
-    // and users refresh assuming it broke.
     setCurrentDiscoveryStep("bank");
     setDiscoveryActive(true);
     setTyping(true);
 
-    // Plaid PRODUCT_NOT_READY can persist 60-180s on credit cards. The
-    // user already linked Plaid — they shouldn't sit staring at a
-    // spinner. Auto-defer fast (5s) so the user keeps moving; the poll
-    // keeps running silently in the background and the unified reveal
-    // at the end surfaces whatever it finds.
+    // Bank scan ALWAYS defers to background after a fixed beat. We
+    // never show an inline "found X" reveal for the bank step — Plaid
+    // can take 60-180s and even when it's fast, the reviewer wants the
+    // bank+calendar reveal unified at the end, not split across phases.
+    // bankSkippedRef is set immediately so finish() (whether it fires
+    // before or after the timeout) takes the silent path.
+    bankSkippedRef.current = true;
+    setBankScanDeferred(true);
     const autoDefer = setTimeout(() => {
-      if (finished) return;
-      bankSkippedRef.current = true;
-      setBankScanDeferred(true);
+      // Always advance after the fixed beat — even if finish() already
+      // ran (fast Plaid). The unified reveal on manual-search picks up
+      // whatever finish() stashed.
       setDiscoveryActive(false);
       setTyping(false);
-      addKateMessage("I'll keep scanning in the background — let's keep going.");
+      addKateMessage("I'll keep scanning your bank in the background — let's keep going.");
       setTimeout(() => setPhase(advanceAfter("bank")), 1000);
     }, 5000);
 
