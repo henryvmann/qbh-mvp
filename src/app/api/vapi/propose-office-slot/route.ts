@@ -404,13 +404,43 @@ async function handleOne(
       if (!dayMatch && hasMonthName) {
         // Has a month name — parse as month + day (handled below in the month+day section)
       } else if (!dayMatch && !hasMonthName) {
-        // No day-of-week and no month name — might be "the 21st" or "the twenty first"
-        // Extract any number and assume it's a day of the current or next month.
-        // Run dayNumMatch on the ORIGINAL raw text so a time like "at 3 PM" doesn't
-        // get mistaken for a day-of-month (e.g. "the twentieth at 3 PM" should
-        // resolve to day=20 from wordNumMatch, not day=3 from a stray time digit).
-        const dayNumMatch = officeOfferRawText.match(/\b(\d{1,2})(?:st|nd|rd|th)?\b/);
+        // No day-of-week and no month name — might be "the 21st" or
+        // "the twenty first". Extract any number and assume it's a
+        // day of the current or next month.
+        //
+        // CRITICAL: skip digits that are clearly times. "3 PM" alone
+        // means time, not day-of-month — the agent should have passed
+        // the date along with the time, but if it didn't, we'd rather
+        // fail-safely than silently book "June 3rd at 3 PM" when the
+        // user said "June 17th, 3 PM."
+        //
+        // dayNumDateOnlyRegex: a digit that is NOT immediately followed
+        // by an am/pm marker, colon-time, or "o'clock". A "3" in
+        // "March 3rd" passes; a "3" in "3 PM" does not.
+        const dayNumDateOnlyRegex = /\b(\d{1,2})(?:st|nd|rd|th)?\b(?!\s*(?::\d{2}|\s*[ap]\.?m\.?|\s*o'?clock))/i;
+        const dayNumMatch = officeOfferRawText.match(dayNumDateOnlyRegex);
         const wordNumMatch = officeOfferRawText.match(/\b(twenty[- ]?first|twenty[- ]?second|twenty[- ]?third|twenty[- ]?fourth|twenty[- ]?fifth|twenty[- ]?sixth|twenty[- ]?seventh|twenty[- ]?eighth|twenty[- ]?ninth|thirtieth|thirty[- ]?first|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth)\b/i);
+
+        // If after both checks we have no day signal AND the input
+        // contains time signals, the agent gave us a time-only string.
+        // Refuse to invent a date — return an error so the agent
+        // re-prompts with the date in context.
+        const looksLikeTimeOnly =
+          /\b(\d{1,2}\s*[ap]\.?m\.?|\d{1,2}:\d{2}|noon|midnight|o'?clock)\b/i.test(officeOfferRawText) &&
+          !dayNumMatch &&
+          !wordNumMatch;
+        if (looksLikeTimeOnly) {
+          console.log("[propose-office-slot] time-only input rejected:", officeOfferRawText);
+          return {
+            toolCallId,
+            result: JSON.stringify({
+              status: "OK",
+              code: "NEED_DATE",
+              message_to_say: "Sorry — what date was that for?",
+              next_action: "WAIT_FOR_OFFICE_DATE",
+            }),
+          };
+        }
 
         let dayNum: number | null = null;
         if (dayNumMatch) {

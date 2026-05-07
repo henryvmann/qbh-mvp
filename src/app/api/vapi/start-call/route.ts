@@ -114,12 +114,11 @@ function cleanProviderNameForSpeech(raw: string | null | undefined): string {
  * "Thistle Mann" → "Thistle, Mann" — the comma adds a pause so TTS doesn't run names together.
  */
 function formatNameForSpeech(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 2) {
-    // Add comma between first and last for a natural pause
-    return `${parts[0]}, ${parts[1]}`;
-  }
-  return name;
+  // Used to insert a comma between first and last for a "natural
+  // pause" — but TTS read "Frank, Mann" as "Frank, man" with the
+  // last name garbled, and the forced comma broke names with
+  // suffixes. Trust the TTS to handle pacing.
+  return name.trim();
 }
 
 function asRecord(value: unknown): JsonRecord | null {
