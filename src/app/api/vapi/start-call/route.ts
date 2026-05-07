@@ -684,6 +684,25 @@ export async function POST(req: Request) {
     }
   }
 
+  // Compose a mode-aware first-message that matches what we're actually
+  // doing on this call. Without this, the assistant's stored greeting
+  // ("calling to get an appointment scheduled") plays even when we're
+  // rescheduling — confusing the receptionist.
+  const speechName = formatNameForSpeech(resolvedPatientName);
+  const speechProvider = cleanProviderNameForSpeech(provider_name);
+  const firstMessageByMode: Record<string, string> = {
+    BOOK: speechProvider
+      ? `Hi, this is Kate — calling to schedule an appointment for ${speechName} with ${speechProvider}.`
+      : `Hi, this is Kate — calling to schedule an appointment for ${speechName}.`,
+    ADJUST: speechProvider
+      ? `Hi, this is Kate — calling to reschedule ${speechName}'s appointment with ${speechProvider}.`
+      : `Hi, this is Kate — calling to reschedule an existing appointment for ${speechName}.`,
+    INQUIRY: speechProvider
+      ? `Hi, this is Kate, ${speechName}'s care coordinator — I had a quick question about ${speechProvider}.`
+      : `Hi, this is Kate, ${speechName}'s care coordinator — I had a quick question.`,
+  };
+  const firstMessage = firstMessageByMode[mode] || firstMessageByMode.BOOK;
+
   const vapiRes = await fetch("https://api.vapi.ai/call", {
     method: "POST",
     headers: {
@@ -695,6 +714,7 @@ export async function POST(req: Request) {
       assistantId,
       customer: { number: office_number, numberE164CheckEnabled: false },
       assistantOverrides: {
+        firstMessage,
         variableValues: {
           attempt_id,
           provider_id,
