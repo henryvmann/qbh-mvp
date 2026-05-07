@@ -22,32 +22,46 @@ export async function POST(req: Request) {
   }
 
   // Reuse an existing test provider for this user, or create one.
-  // Marked status="archived" so it doesn't appear on the dashboard.
+  // status="inactive" so it doesn't appear on dashboards but is still
+  // a valid row for VAPI to call against.
   let providerId: string | null = null;
-  const { data: existing } = await supabaseAdmin
+  const { data: existing, error: lookupErr } = await supabaseAdmin
     .from("providers")
     .select("id")
     .eq("app_user_id", appUserId)
     .eq("name", TEST_PROVIDER_NAME)
     .maybeSingle();
 
+  if (lookupErr) {
+    return NextResponse.json(
+      { ok: false, error: "Failed to look up test provider", details: lookupErr.message },
+      { status: 500 }
+    );
+  }
+
   if (existing?.id) {
     providerId = existing.id;
   } else {
-    const { data: created, error } = await supabaseAdmin
+    const { data: created, error: insertErr } = await supabaseAdmin
       .from("providers")
       .insert({
         app_user_id: appUserId,
         name: TEST_PROVIDER_NAME,
         source: "manual",
-        status: "archived",
+        status: "inactive",
         phone_number: TEST_NUMBER,
       })
       .select("id")
       .single();
-    if (error || !created?.id) {
+    if (insertErr || !created?.id) {
       return NextResponse.json(
-        { ok: false, error: "Failed to create test provider" },
+        {
+          ok: false,
+          error: "Failed to create test provider",
+          details: insertErr?.message || "no row returned",
+          code: insertErr?.code,
+          hint: insertErr?.hint,
+        },
         { status: 500 }
       );
     }
