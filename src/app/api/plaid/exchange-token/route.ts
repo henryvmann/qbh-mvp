@@ -1,9 +1,5 @@
 export const dynamic = 'force-dynamic';
-// Bumped so the after() retry loop has room — Plaid PRODUCT_NOT_READY can
-// persist 60-180s on credit cards, then discovery itself takes ~70s on a
-// real bank year. Total worst case ~4 minutes.
-export const maxDuration = 300;
-import { NextRequest, NextResponse, after } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { plaidClient } from "../../../../lib/plaid";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
@@ -121,47 +117,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Server-side discovery trigger. The client used to be the only thing
-    // driving /api/discovery/run, but in practice the polling tick was
-    // unreliable — users navigated away, browser fetch quirks on long
-    // requests, etc. — and we'd see plaid_transactions = 0 forever.
-    // after() keeps this Vercel function alive past the response so we
-    // can retry until Plaid's PRODUCT_NOT_READY clears and discovery
-    // actually completes. The function's maxDuration above bounds it.
-    const discoveryAppUserId = appUserId;
-    const baseUrl = req.nextUrl.origin;
-    after(async () => {
-      const MAX_ROUNDS = 30; // ~5 minute total budget
-      for (let i = 0; i < MAX_ROUNDS; i++) {
-        try {
-          const res = await fetch(`${baseUrl}/api/discovery/run`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ app_user_id: discoveryAppUserId }),
-          });
-          const data = await res.json().catch(() => ({}));
-          if (data?.ok && !data.pending) {
-            console.log("[exchange-token after()] discovery complete", {
-              appUserId: discoveryAppUserId,
-              providers: data.provider_count,
-              transactions: data.transaction_count,
-              attempt: i + 1,
-            });
-            return;
-          }
-        } catch (err) {
-          console.warn("[exchange-token after()] discovery call failed", {
-            appUserId: discoveryAppUserId,
-            attempt: i + 1,
-            error: err instanceof Error ? err.message : String(err),
-          });
-        }
-        await new Promise((r) => setTimeout(r, 8000));
-      }
-      console.warn("[exchange-token after()] discovery never completed within budget", {
-        appUserId: discoveryAppUserId,
-      });
-    });
+    // Discovery is now driven exclusively by the synchronous client
+    // poll in onboarding's runBankDiscovery. The previous after() retry
+    // loop here was racing with that polling and inserting duplicate
+    // provider rows past the per-call dedup checks. With one driver
+    // there's no race.
 
     return NextResponse.json({
       ok: true,

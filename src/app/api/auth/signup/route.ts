@@ -85,6 +85,13 @@ export async function POST(req: NextRequest) {
         if (pi.insurance_provider) patientProfile.insurance_provider = pi.insurance_provider;
         if (pi.insurance_member_id) patientProfile.insurance_member_id = pi.insurance_member_id;
         if (pi.callback_phone) patientProfile.callback_phone = pi.callback_phone;
+        if (pi.zip_code) patientProfile.zip_code = pi.zip_code;
+        if (pi.medical_context) patientProfile.medical_context = pi.medical_context;
+        // Kate behavior preferences captured during onboarding so the
+        // relationship is calibrated from day one.
+        if (pi.kate_communication_style) patientProfile.kate_communication_style = pi.kate_communication_style;
+        if (pi.kate_proactivity) patientProfile.kate_proactivity = pi.kate_proactivity;
+        if (pi.calendar_flexibility) patientProfile.calendar_flexibility = pi.calendar_flexibility;
       }
 
       const { error: upsertError } = await supabaseAdmin

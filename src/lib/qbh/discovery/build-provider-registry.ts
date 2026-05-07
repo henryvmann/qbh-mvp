@@ -220,10 +220,10 @@ export async function buildProviderRegistry(
   /** When set, applies per-user feedback filter — drops merchants this
    *  user has previously dismissed (unless on the immune allowlist). */
   appUserId?: string,
-  /** User's state (from zip → state). Scopes Places searches so we
-   *  return the right local practice instead of a same-named one in
-   *  another state. */
-  userState?: string | null
+  /** User's state (from zip → state). Validates result location. */
+  userState?: string | null,
+  /** User's zip. Scopes Places search query for local results. */
+  userZip?: string | null
 ): Promise<DiscoveredProvider[]> {
   // Step 1: Group transactions by normalized merchant name
   const grouped = new Map<
@@ -660,7 +660,7 @@ export async function buildProviderRegistry(
       const results = await Promise.all(
         batch.map(async (c) => ({
           key: c.normalized_name,
-          candidates: await lookupPlaceCandidates(c.provider_name, userState || null, 5).catch(() => []),
+          candidates: await lookupPlaceCandidates(c.provider_name, userState || null, 5, userZip || null).catch(() => []),
         }))
       );
       for (const { key, candidates } of results) {

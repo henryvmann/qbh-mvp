@@ -94,11 +94,11 @@ export async function POST(req: NextRequest) {
       .eq("id", appUserId)
       .maybeSingle();
     const profile = (userRow?.patient_profile || {}) as Record<string, unknown>;
-    const zip =
+    const userZip =
       (profile.zip_code as string | undefined) ||
       (profile.zip as string | undefined) ||
       null;
-    const userState = stateFromZip(zip);
+    const userState = stateFromZip(userZip);
 
     // Insert new providers with source="calendar" and status="active".
     // Phone resolution: 1 confident Places match → write phone_number;
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
         | null = null;
       let address: string | null = null;
       try {
-        const candidates = await lookupPlaceCandidates(match.name, userState, 5);
+        const candidates = await lookupPlaceCandidates(match.name, userState, 5, userZip);
         if (candidates.length === 1) {
           phoneNumber = candidates[0].phone;
           address = candidates[0].address;

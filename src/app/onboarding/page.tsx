@@ -151,6 +151,12 @@ export default function OnboardingPage() {
   // appropriate cadence reminders, and tailor in-call language.
   // Saved to patient_profile.medical_context.
   const [medicalContext, setMedicalContext] = useState<string>("");
+  // Kate behavior preferences captured during onboarding so the
+  // relationship is calibrated from day one. Defaults match the
+  // current prod defaults if the user accepts as-is.
+  const [kateTone, setKateTone] = useState<string>("warm");
+  const [kateProactivity, setKateProactivity] = useState<string>("balanced");
+  const [calendarFlex, setCalendarFlex] = useState<string>("flexible");
   const [connectBank, setConnectBank] = useState(true);
   const [connectCalendar, setConnectCalendar] = useState(true);
   const [connectManual, setConnectManual] = useState(true);
@@ -438,11 +444,22 @@ export default function OnboardingPage() {
           : "Got it \u2014 share whenever you're ready. Until then I'll keep things broad.";
       addKateMessages([
         empathic,
+        "One more thing before we pull in your doctors \u2014 tell me how you'd like me to operate. Takes ten seconds.",
+      ], 800, 1100);
+      setTimeout(() => setPhase("kate-prefs"), 2400);
+    }, 400);
+  }
+
+  function handleKatePrefsDone() {
+    setResponded(true);
+    addUserMessage("Got it");
+    setTimeout(() => {
+      addKateMessages([
         "Now let's pull in your doctors. Three ways \u2014 pick whichever feels easiest, or all three. I'll handle the rest.",
         "Bank scan is the fastest: I look at your card statements for healthcare charges and find every doctor you've paid. Read-only, encrypted, never stored, never sold. Bank-grade secure \u2014 same Plaid integration Venmo and Robinhood use.",
-        "If that's not your thing, your calendar works too \u2014 I'll grab any doctor visits past or present. Or just type the names yourself."
+        "If that's not your thing, your calendar works too \u2014 I'll grab any doctor visits past or present. Or just type the names yourself.",
       ], 800, 1100);
-      setTimeout(() => setPhase("discovery-method"), 4800);
+      setTimeout(() => setPhase("discovery-method"), 3600);
     }, 400);
   }
 
@@ -568,6 +585,9 @@ export default function OnboardingPage() {
             callback_phone: patientPhone.trim() || undefined,
             zip_code: zipCode.trim() || undefined,
             medical_context: medicalContext || undefined,
+            kate_communication_style: kateTone || undefined,
+            kate_proactivity: kateProactivity || undefined,
+            calendar_flexibility: calendarFlex || undefined,
           },
           consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
         }),
@@ -1073,6 +1093,116 @@ export default function OnboardingPage() {
                 {opt.label}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Kate preferences — captured during onboarding so the
+            relationship is calibrated from day one rather than
+            relying on defaults the user never visits. */}
+        {phase === "kate-prefs" && !responded && (
+          <div className="space-y-4 animate-fadeIn">
+            <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
+                How should I talk to you?
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { v: "warm", label: "Warm but professional" },
+                  { v: "casual", label: "Casual" },
+                  { v: "professional", label: "Direct, get to the point" },
+                  { v: "cheerful", label: "Cheerful" },
+                ].map((opt) => {
+                  const selected = kateTone === opt.v;
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setKateTone(opt.v)}
+                      className="rounded-lg px-2.5 py-1 text-xs font-medium transition"
+                      style={{
+                        backgroundColor: selected ? "#1677FF" : "#F0F2F5",
+                        color: selected ? "#FFFFFF" : "#4F5F73",
+                        border: `1px solid ${selected ? "#1677FF" : "#E5EAF2"}`,
+                      }}
+                    >
+                      {selected ? "✓ " : ""}{opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
+                When something needs your attention?
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { v: "proactive", label: "Push me — I need the nudge" },
+                  { v: "balanced", label: "Mention it once, then let me decide" },
+                  { v: "minimal", label: "Only when it's truly time-sensitive" },
+                ].map((opt) => {
+                  const selected = kateProactivity === opt.v;
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setKateProactivity(opt.v)}
+                      className="rounded-lg px-2.5 py-1 text-xs font-medium transition"
+                      style={{
+                        backgroundColor: selected ? "#1677FF" : "#F0F2F5",
+                        color: selected ? "#FFFFFF" : "#4F5F73",
+                        border: `1px solid ${selected ? "#1677FF" : "#E5EAF2"}`,
+                      }}
+                    >
+                      {selected ? "✓ " : ""}{opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
+                How strict are you with your calendar?
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { v: "flexible", label: "Flexible — book what works" },
+                  { v: "respect_busy", label: "Respect existing busy blocks" },
+                  { v: "tight", label: "Tight — never book near other things" },
+                ].map((opt) => {
+                  const selected = calendarFlex === opt.v;
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setCalendarFlex(opt.v)}
+                      className="rounded-lg px-2.5 py-1 text-xs font-medium transition"
+                      style={{
+                        backgroundColor: selected ? "#1677FF" : "#F0F2F5",
+                        color: selected ? "#FFFFFF" : "#4F5F73",
+                        border: `1px solid ${selected ? "#1677FF" : "#E5EAF2"}`,
+                      }}
+                    >
+                      {selected ? "✓ " : ""}{opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <p className="text-[10px] text-[#4F5F73]">
+              You can change any of this later in Account.
+            </p>
+
+            <button
+              onClick={handleKatePrefsDone}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: ACCENT }}
+            >
+              That works
+            </button>
           </div>
         )}
 

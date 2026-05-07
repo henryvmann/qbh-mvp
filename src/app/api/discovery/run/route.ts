@@ -142,9 +142,10 @@ export async function POST(req: NextRequest) {
       category: tx.category ?? null,
     }));
 
-    // Pull user state (from zip on file) so Places searches can be
-    // scoped — avoids matching a same-named practice in another state.
+    // Pull user zip + state so Places searches return local results
+    // and out-of-state matches get rejected post-search.
     let userState: string | null = null;
+    let userZip: string | null = null;
     try {
       const { data: userRow } = await supabaseAdmin
         .from("app_users")
@@ -152,13 +153,13 @@ export async function POST(req: NextRequest) {
         .eq("id", appUserId)
         .maybeSingle();
       const profile = (userRow?.patient_profile || {}) as Record<string, unknown>;
-      const zip = (profile.zip_code as string | undefined) || (profile.zip as string | undefined) || null;
-      userState = stateFromZip(zip);
+      userZip = (profile.zip_code as string | undefined) || (profile.zip as string | undefined) || null;
+      userState = stateFromZip(userZip);
     } catch {
       // best-effort — fall back to unscoped lookup
     }
 
-    const providers = await buildProviderRegistry(normalizedTransactions, appUserId, userState);
+    const providers = await buildProviderRegistry(normalizedTransactions, appUserId, userState, userZip);
 
     const writeResult = await writeDiscoveredProviders({
       userId: appUserId, // internal helper still uses userId naming but maps to app_user_id
