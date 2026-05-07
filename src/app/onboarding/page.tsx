@@ -188,13 +188,10 @@ export default function OnboardingPage() {
   // the inline reveal must NOT pull the user back to discovery-reveal.
   // Tracked as a ref because we read it inside the running interval.
   const bankSkippedRef = useRef(false);
-  // Whether the deferred bank scan has actually completed since the
-  // user skipped — drives the "still scanning" indicator on the
-  // unified reveal page.
+  // Whether the user hit Skip on the bank step while it was still
+  // running. Drives the "bank still scanning" badge on later screens
+  // so the unified reveal can surface late-arriving providers.
   const [bankScanDeferred, setBankScanDeferred] = useState(false);
-  // Separate from bankScanDeferred: the safety cap on the score-reveal
-  // wait. We unblock the UI but keep polling so late providers still land.
-  const [scoreWaitTimedOut, setScoreWaitTimedOut] = useState(false);
 
   // Manual NPI search (third step in the discovery pipeline)
   const [manualSearchQuery, setManualSearchQuery] = useState("");
@@ -681,52 +678,38 @@ export default function OnboardingPage() {
     setDiscoveryActive(true);
     setTyping(true);
 
-    // Bank scan ALWAYS defers to background after a fixed beat. We
-    // never show an inline "found X" reveal for the bank step — Plaid
-    // can take 60-180s and even when it's fast, the reviewer wants the
-    // bank+calendar reveal unified at the end, not split across phases.
-    // bankSkippedRef is set immediately so finish() (whether it fires
-    // before or after the timeout) takes the silent path.
-    bankSkippedRef.current = true;
-    setBankScanDeferred(true);
-    const autoDefer = setTimeout(() => {
-      // Always advance after the fixed beat — even if finish() already
-      // ran (fast Plaid). The unified reveal on manual-search picks up
-      // whatever finish() stashed.
-      setDiscoveryActive(false);
-      setTyping(false);
-      addKateMessage("I'll keep scanning your bank in the background — let's keep going.");
-      setTimeout(() => setPhase(advanceAfter("bank")), 1000);
-    }, 5000);
+    // Synchronous flow: wait for Plaid to actually finish before moving
+    // on. Reviewer's call after testing the deferred flow — having no
+    // bank reveal at score-time was worse than waiting on the bank
+    // screen. Plaid PRODUCT_NOT_READY can persist 60-180s on credit
+    // cards, so we show progress text and a Skip-and-continue escape
+    // hatch (handled in the discovery-reveal UI). Skip flips
+    // bankSkippedRef.current=true, which switches finish() to the
+    // silent/deferred path so the unified reveal still picks it up.
 
-    // Drive discovery from inside the poll loop. /api/discovery/run is
-    // idempotent (upsert-based) and cheap when there's nothing new.
-    // PRODUCT_NOT_READY can persist for 60-180s on credit cards, so we
-    // need to keep retrying — the previous one-shot-at-30s retry was
-    // the bug that left users with zero providers. Each tick:
-    //   1. Hit /api/discovery/run; if it returns concrete results
-    //      (ok && !pending), we're done.
-    //   2. Otherwise wait the next interval and try again.
-    //   3. After 3 minutes of pending, give up and let the user
-    //      proceed (manual entry / next step).
+    // Progress messages so the screen doesn't feel frozen.
+    const progress30 = setTimeout(() => {
+      addKateMessage("Still pulling your statements — your bank's a touch slow.");
+    }, 30000);
+    const progress90 = setTimeout(() => {
+      addKateMessage("Bank's taking longer than usual. You can hit skip if you'd rather move on — I'll keep scanning in the background.");
+    }, 90000);
+
     let attempts = 0;
     let finished = false;
     const MAX_ATTEMPTS = 60; // 3 min @ 3s
     let pollTimer: ReturnType<typeof setTimeout> | null = null;
     const finish = (providers: DiscoveredProvider[]) => {
-      // Polled requests fired before finish() may still resolve later.
-      // When they call finish(); guard so we only reveal once.
       if (finished) return;
       finished = true;
       if (pollTimer) clearTimeout(pollTimer);
-      clearTimeout(autoDefer);
+      clearTimeout(progress30);
+      clearTimeout(progress90);
       setDiscoveryActive(false);
       setTyping(false);
       setDiscoveredProviders(providers);
-      // If the user already skipped, stash the providers silently and
-      // mark the deferred scan complete — the unified reveal page will
-      // surface them. Calling startReveal here would yank the user
-      // back to discovery-reveal mid-calendar/manual.
+      // If user hit Skip while we were polling, finish silently and
+      // let the unified reveal surface providers later.
       if (bankSkippedRef.current) {
         setBankScanDeferred(false);
         return;
@@ -933,20 +916,8 @@ export default function OnboardingPage() {
     addKateMessage("Last step — type a name and I'll find them. Doctor name, office name, even just part of it works. Add as many as you want, then tap done.");
   }, [phase]);
 
-  // Cap the bank-scan wait on score-reveal at 2 minutes. Discovery
-  // typically takes 60-90s; the cap is a safety so we unblock the user
-  // if Plaid's PRODUCT_NOT_READY drags. Polling keeps running.
-  useEffect(() => {
-    if (phase !== "score-reveal") return;
-    if (!bankScanDeferred) return;
-    if (scoreWaitTimedOut) return;
-    const t = setTimeout(() => {
-      setScoreWaitTimedOut(true);
-    }, 120000);
-    return () => clearTimeout(t);
-  }, [phase, bankScanDeferred, scoreWaitTimedOut]);
-
-  // When bank finishes (bankScanDeferred flips false), refetch the score
+  // If a deferred bank scan finishes while the user is on score-reveal
+  // (they hit Skip earlier and bank wrapped up later), refetch the score
   // so the number reflects the now-larger provider list.
   useEffect(() => {
     if (phase !== "score-reveal") return;
@@ -1624,35 +1595,10 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Bank-scan wait gate — score is held until the bank scan
-            finishes (or the 60s safety cap fires). The polling effect
-            keeps allDiscovered fresh while we wait. */}
-        {phase === "score-reveal" && bankScanDeferred && !scoreWaitTimedOut && (
-          <div className="animate-fadeIn space-y-3">
-            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5 flex items-start gap-3">
-              <div
-                className="mt-0.5 h-4 w-4 rounded-full border-2 border-[#1677FF] border-t-transparent animate-spin shrink-0"
-                aria-hidden
-              />
-              <div className="text-sm text-[#071832] leading-relaxed">
-                Pulling the last year of healthcare from your bank — usually quick, sometimes a beat longer.
-                <div className="mt-1 text-xs text-[#4F5F73]">
-                  Found {allDiscovered.length} so far · {allDiscovered.filter((p) => p.source === "calendar").length} from calendar
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setScoreWaitTimedOut(true)}
-              className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-2.5 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
-            >
-              Skip — show me my dashboard
-            </button>
-          </div>
-        )}
-
-        {/* Score + unified reveal */}
-        {phase === "score-reveal" && score !== null && (!bankScanDeferred || scoreWaitTimedOut) && (
+        {/* Score + unified reveal — bank reveal already happened inline
+            during the bank step, so no need to gate this on
+            bankScanDeferred anymore. */}
+        {phase === "score-reveal" && score !== null && (
           <div className="animate-fadeIn">
             {/* Big reveal — what Kate found */}
             <div className="text-center mb-6">
