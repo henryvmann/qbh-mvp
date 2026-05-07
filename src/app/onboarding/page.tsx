@@ -540,6 +540,7 @@ export default function OnboardingPage() {
   // ── Account creation ──
   async function handleCreateAccount() {
     if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 6 || !consentGiven) return;
+    if (!zipCode.trim() || !/^\d{5}(-\d{4})?$/.test(zipCode.trim())) return;
     setError(null);
     setCreatingAccount(true);
 
@@ -966,7 +967,15 @@ export default function OnboardingPage() {
     if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
     return age < 18;
   })();
-  const canCreate = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0 && password.length >= 6 && consentGiven && !isUnder18 && !creatingAccount;
+  const canCreate =
+    firstName.trim().length > 0 &&
+    lastName.trim().length > 0 &&
+    email.trim().length > 0 &&
+    password.length >= 6 &&
+    consentGiven &&
+    !isUnder18 &&
+    !creatingAccount &&
+    /^\d{5}(-\d{4})?$/.test(zipCode.trim());
 
   // ── Render ──
   return (
@@ -1220,8 +1229,9 @@ export default function OnboardingPage() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Zip code <span className="text-[#4F5F73]">(optional)</span></label>
-                <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="06880" maxLength={10} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Zip code</label>
+                <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="06880" maxLength={10} required className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
+                <p className="mt-1 text-[10px] text-[#4F5F73]">Helps me find the right local providers when there are multiple with the same name.</p>
               </div>
             </div>
             {/* Email confirmation (read-only) */}

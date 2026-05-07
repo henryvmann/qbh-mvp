@@ -163,6 +163,7 @@ export async function writeDiscoveredProviders({
       guessed_portal_brand: null,
       guessed_portal_confidence: null,
       phone_number: provider.phone_number || null,
+      phone_candidates: provider.phone_candidates || null,
       provider_type: provider.provider_type || null,
       npi,
       source: "plaid",

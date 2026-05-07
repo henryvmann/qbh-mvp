@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { scanCalendarForProviders } from "../../../../lib/google-calendar";
-import { lookupPlaceDetails } from "../../../../lib/google/places-lookup";
+import { lookupPlaceCandidates } from "../../../../lib/google/places-lookup";
+import { stateFromZip } from "../../../../lib/qbh/state-from-zip";
 
 export async function POST(req: NextRequest) {
   // Try session-based auth first (normal user requests)
@@ -84,17 +85,44 @@ export async function POST(req: NextRequest) {
       return true;
     });
 
-    // Insert new providers with source="calendar" and status="active"
-    // Auto-lookup phone numbers and addresses
+    // Pull user's state from zip so Places searches are scoped to
+    // the right state. Without this, "Modern Dermatology" matches
+    // any practice with that name across the country.
+    const { data: userRow } = await supabaseAdmin
+      .from("app_users")
+      .select("patient_profile")
+      .eq("id", appUserId)
+      .maybeSingle();
+    const profile = (userRow?.patient_profile || {}) as Record<string, unknown>;
+    const zip =
+      (profile.zip_code as string | undefined) ||
+      (profile.zip as string | undefined) ||
+      null;
+    const userState = stateFromZip(zip);
+
+    // Insert new providers with source="calendar" and status="active".
+    // Phone resolution: 1 confident Places match → write phone_number;
+    // 2+ → store as phone_candidates so the user picks the right one
+    // on the provider detail page; 0 → leave phone null.
     let insertedCount = 0;
     for (const match of newMatches) {
-      // Look up phone and address from Google Places
-      let phone: string | null = null;
+      let phoneNumber: string | null = null;
+      let phoneCandidates:
+        | Array<{ name: string; phone: string; address: string | null }>
+        | null = null;
       let address: string | null = null;
       try {
-        const placeInfo = await lookupPlaceDetails(match.name);
-        phone = placeInfo.phone;
-        address = placeInfo.address;
+        const candidates = await lookupPlaceCandidates(match.name, userState, 5);
+        if (candidates.length === 1) {
+          phoneNumber = candidates[0].phone;
+          address = candidates[0].address;
+        } else if (candidates.length > 1) {
+          phoneCandidates = candidates.map((c) => ({
+            name: c.name,
+            phone: c.phone,
+            address: c.address,
+          }));
+        }
       } catch {}
 
       const { error } = await supabaseAdmin.from("providers").insert({
@@ -102,7 +130,8 @@ export async function POST(req: NextRequest) {
         name: match.name,
         source: "calendar",
         status: "active",
-        phone_number: phone,
+        phone_number: phoneNumber,
+        phone_candidates: phoneCandidates,
         address: address,
       });
 

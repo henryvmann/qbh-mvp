@@ -2,7 +2,7 @@
 
 import { classifyTransactionsWithAI } from "../../openai/classify-transactions";
 import { batchNpiLookup } from "../../npi/lookup";
-import { lookupPlacePhone } from "../../google/places-lookup";
+import { lookupPlaceCandidates, lookupPlacePhone, type PlaceCandidate } from "../../google/places-lookup";
 import { supabaseAdmin } from "../../supabase-server";
 
 /**
@@ -49,6 +49,12 @@ export type DiscoveredProvider = {
   median_gap_days: number | null;
   source_transaction_ids: string[];
   phone_number: string | null;
+  /** When Places returns multiple confident name-matches in the user's
+   *  state, store all here as candidates so the user can pick one
+   *  later. phone_number stays null until they confirm. */
+  phone_candidates:
+    | Array<{ name: string; phone: string; address: string | null }>
+    | null;
   /** NPI from the registry when we resolved one during classification.
    *  Persisted to providers.npi by writeDiscoveredProviders. */
   npi: string | null;
@@ -213,7 +219,11 @@ export async function buildProviderRegistry(
   transactions: PlaidDiscoveryTransaction[],
   /** When set, applies per-user feedback filter — drops merchants this
    *  user has previously dismissed (unless on the immune allowlist). */
-  appUserId?: string
+  appUserId?: string,
+  /** User's state (from zip → state). Scopes Places searches so we
+   *  return the right local practice instead of a same-named one in
+   *  another state. */
+  userState?: string | null
 ): Promise<DiscoveredProvider[]> {
   // Step 1: Group transactions by normalized merchant name
   const grouped = new Map<
@@ -619,40 +629,50 @@ export async function buildProviderRegistry(
     }
   }
 
-  // Step 5: Google Places phone lookup for healthcare providers not found in NPI
-  const placesPhoneByName = new Map<string, string | null>();
-  const placesCandidates: Array<{ normalized_name: string; provider_name: string }> = [];
+  // Step 5: Google Places phone lookup for healthcare providers not
+  // found in NPI. Returns up to 5 confident candidates per provider —
+  // when there's only one, we'll write phone_number directly; when
+  // there are multiple, we'll stash them in phone_candidates so the
+  // user picks the right local practice on the provider detail page.
+  const placesCandidatesByName = new Map<string, PlaceCandidate[]>();
+  const placesLookupQueue: Array<{ normalized_name: string; provider_name: string }> = [];
 
   for (const input of merchantInputs) {
     const aiResult = aiClassifications.get(input.normalized_name);
     const npiResult = npiResults.get(input.normalized_name);
 
-    // If AI says healthcare but NPI didn't find them (or NPI found but no phone), try Google Places
+    // Fall back to Places when NPI didn't return a usable phone.
     if (aiResult?.is_healthcare && (!npiResult?.found || !npiResult?.phone_number)) {
-      placesCandidates.push({
+      placesLookupQueue.push({
         normalized_name: input.normalized_name,
         provider_name: input.name,
       });
     }
   }
 
-  if (placesCandidates.length > 0) {
-    console.log(`[buildProviderRegistry] Looking up ${placesCandidates.length} providers via Google Places...`);
+  if (placesLookupQueue.length > 0) {
+    console.log(
+      `[buildProviderRegistry] Looking up ${placesLookupQueue.length} providers via Google Places (state=${userState || "unscoped"})...`
+    );
     const PLACES_CONCURRENCY = 3;
-    for (let i = 0; i < placesCandidates.length; i += PLACES_CONCURRENCY) {
-      const batch = placesCandidates.slice(i, i + PLACES_CONCURRENCY);
+    for (let i = 0; i < placesLookupQueue.length; i += PLACES_CONCURRENCY) {
+      const batch = placesLookupQueue.slice(i, i + PLACES_CONCURRENCY);
       const results = await Promise.all(
         batch.map(async (c) => ({
           key: c.normalized_name,
-          phone: await lookupPlacePhone(c.provider_name).catch(() => null),
+          candidates: await lookupPlaceCandidates(c.provider_name, userState || null, 5).catch(() => []),
         }))
       );
-      for (const { key, phone } of results) {
-        placesPhoneByName.set(key, phone);
+      for (const { key, candidates } of results) {
+        placesCandidatesByName.set(key, candidates);
       }
     }
-    const placesHits = Array.from(placesPhoneByName.values()).filter(Boolean).length;
-    console.log(`[buildProviderRegistry] Google Places found ${placesHits} phone numbers`);
+    const totalCandidates = Array.from(placesCandidatesByName.values()).flat().length;
+    const oneMatch = Array.from(placesCandidatesByName.values()).filter((c) => c.length === 1).length;
+    const multiMatch = Array.from(placesCandidatesByName.values()).filter((c) => c.length > 1).length;
+    console.log(
+      `[buildProviderRegistry] Places: ${totalCandidates} total candidates · ${oneMatch} single matches · ${multiMatch} need user pick`
+    );
   }
 
   // Step 6: Build provider list using AI results + NPI verification
@@ -853,11 +873,28 @@ export async function buildProviderRegistry(
 
     if (bucket === "IGNORE") continue;
 
-    // Phone number: prefer NPI, then Google Places
-    const phoneNumber =
-      npiResult?.phone_number ||
-      placesPhoneByName.get(entry.normalized_name) ||
-      null;
+    // Phone resolution:
+    //   - NPI phone trumps everything (most reliable)
+    //   - Else if exactly 1 Places candidate → use it
+    //   - Else if 2+ Places candidates → leave phone null, store
+    //     them in phone_candidates so the user picks one
+    let phoneNumber: string | null = npiResult?.phone_number || null;
+    let phoneCandidates:
+      | Array<{ name: string; phone: string; address: string | null }>
+      | null = null;
+
+    if (!phoneNumber) {
+      const placesCands = placesCandidatesByName.get(entry.normalized_name) || [];
+      if (placesCands.length === 1) {
+        phoneNumber = placesCands[0].phone;
+      } else if (placesCands.length > 1) {
+        phoneCandidates = placesCands.map((c) => ({
+          name: c.name,
+          phone: c.phone,
+          address: c.address,
+        }));
+      }
+    }
 
     providers.push({
       provider_key: entry.normalized_name.toLowerCase().replace(/\s+/g, "_"),
@@ -872,6 +909,7 @@ export async function buildProviderRegistry(
       median_gap_days: median(gaps),
       source_transaction_ids: entry.transaction_ids,
       phone_number: phoneNumber,
+      phone_candidates: phoneCandidates,
       npi: (npiResult?.found && npiResult.npi) || null,
     });
   }

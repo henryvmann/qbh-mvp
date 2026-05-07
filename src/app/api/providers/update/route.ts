@@ -59,7 +59,13 @@ export async function POST(req: Request) {
   if (body.display_name !== undefined) updates.display_name = body.display_name;
   if (body.doctor_name !== undefined) updates.doctor_name = body.doctor_name;
   if (body.specialty !== undefined) updates.specialty = body.specialty;
-  if (body.phone_number !== undefined) updates.phone_number = body.phone_number;
+  if (body.phone_number !== undefined) {
+    updates.phone_number = body.phone_number;
+    // Once a phone number is confirmed, clear the candidate list so
+    // the picker doesn't keep prompting. Setting null phone leaves
+    // candidates alone (user is unsetting, not picking).
+    if (body.phone_number) updates.phone_candidates = null;
+  }
   if (body.notes !== undefined) updates.notes = body.notes;
   if (body.care_team !== undefined) updates.care_team = body.care_team;
   if (body.confirmed_status !== undefined) updates.confirmed_status = body.confirmed_status;

@@ -7,6 +7,7 @@ import { apiFetch } from "../../../lib/api";
 import { getSpecialtyColor } from "../../../lib/qbh/provider-utils";
 import PageShell from "../../../components/qbh/PageShell";
 import HandleItButton from "../../../components/qbh/HandleItButton";
+import PhonePicker from "../../../components/qbh/PhonePicker";
 import { ArrowLeft, Phone, MapPin, FileText, Calendar, Clock } from "lucide-react";
 
 type Provider = {
@@ -26,6 +27,11 @@ type Provider = {
   /** JSON-stringified array of care-recipient names this provider is for. */
   care_recipient?: string | null;
   is_primary?: boolean | null;
+  /** Up to 5 confident name-match candidates from Places when discovery
+   *  couldn't pin to a single one. User picks one to set phone_number. */
+  phone_candidates?:
+    | Array<{ name: string; phone: string; address: string | null }>
+    | null;
 };
 
 type CareRecipient = { id: string; name: string; relationship: string };
@@ -512,6 +518,32 @@ export default function ProviderDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Phone-candidates picker — appears when discovery found
+              multiple confident matches in the user's state and we
+              didn't write a single phone. User picks one and Kate
+              has the right office to call. */}
+          {!provider.phone_number &&
+            provider.phone_candidates &&
+            provider.phone_candidates.length > 0 && (
+              <div className="px-6 pb-4">
+                <PhonePicker
+                  candidates={provider.phone_candidates}
+                  providerName={provider.name}
+                  onPick={async (cand) => {
+                    await apiFetch("/api/providers/update", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        provider_id: provider.id,
+                        phone_number: cand.phone,
+                      }),
+                    });
+                    window.location.reload();
+                  }}
+                />
+              </div>
+            )}
 
           {/* Action bar — hide if pharmacy or has upcoming appointment */}
           {provider.provider_type !== "pharmacy" && upcoming.length === 0 && (

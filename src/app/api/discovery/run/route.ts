@@ -10,6 +10,7 @@ import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { buildProviderRegistry } from "../../../../lib/qbh/discovery/build-provider-registry";
 import { writeDiscoveredProviders } from "../../../../lib/qbh/discovery/write-discovered-providers";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
+import { stateFromZip } from "../../../../lib/qbh/state-from-zip";
 
 export async function POST(req: NextRequest) {
   try {
@@ -141,7 +142,23 @@ export async function POST(req: NextRequest) {
       category: tx.category ?? null,
     }));
 
-    const providers = await buildProviderRegistry(normalizedTransactions, appUserId);
+    // Pull user state (from zip on file) so Places searches can be
+    // scoped — avoids matching a same-named practice in another state.
+    let userState: string | null = null;
+    try {
+      const { data: userRow } = await supabaseAdmin
+        .from("app_users")
+        .select("patient_profile")
+        .eq("id", appUserId)
+        .maybeSingle();
+      const profile = (userRow?.patient_profile || {}) as Record<string, unknown>;
+      const zip = (profile.zip_code as string | undefined) || (profile.zip as string | undefined) || null;
+      userState = stateFromZip(zip);
+    } catch {
+      // best-effort — fall back to unscoped lookup
+    }
+
+    const providers = await buildProviderRegistry(normalizedTransactions, appUserId, userState);
 
     const writeResult = await writeDiscoveredProviders({
       userId: appUserId, // internal helper still uses userId naming but maps to app_user_id
