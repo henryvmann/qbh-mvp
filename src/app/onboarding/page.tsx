@@ -192,9 +192,9 @@ export default function OnboardingPage() {
   // user skipped — drives the "still scanning" indicator on the
   // unified reveal page.
   const [bankScanDeferred, setBankScanDeferred] = useState(false);
-  // Separate from bankScanDeferred: the 30s safety cap on the
-  // manual-search wait screen. We unblock the UI but keep polling.
-  const [manualWaitTimedOut, setManualWaitTimedOut] = useState(false);
+  // Separate from bankScanDeferred: the safety cap on the score-reveal
+  // wait. We unblock the UI but keep polling so late providers still land.
+  const [scoreWaitTimedOut, setScoreWaitTimedOut] = useState(false);
 
   // Manual NPI search (third step in the discovery pipeline)
   const [manualSearchQuery, setManualSearchQuery] = useState("");
@@ -926,25 +926,25 @@ export default function OnboardingPage() {
   const manualSearchAnnouncedRef = useRef(false);
   useEffect(() => {
     if (phase !== "manual-search") return;
-    if (bankScanDeferred && !manualWaitTimedOut) return;
     if (manualSearchAnnouncedRef.current) return;
     manualSearchAnnouncedRef.current = true;
     addKateMessage("Last step — type a name and I'll find them. Doctor name, office name, even just part of it works. Add as many as you want, then tap done.");
-  }, [phase, bankScanDeferred, manualWaitTimedOut]);
+  }, [phase]);
 
-  // Cap the bank-scan wait on manual-search at 30s. If Plaid is genuinely
-  // slow we unblock the manual input — but keep bankScanDeferred true so
-  // the dashboard/data poll keeps running and late providers still land.
+  // Cap the bank-scan wait on score-reveal at 60s. By the time the user
+  // reaches score-reveal the bank scan has typically been running for
+  // 60-90s already, so most flows will resolve naturally. The cap is
+  // a safety: if Plaid is genuinely slow we unblock and tell the user
+  // it'll surface on the dashboard. Polling keeps running.
   useEffect(() => {
-    if (phase !== "manual-search") return;
+    if (phase !== "score-reveal") return;
     if (!bankScanDeferred) return;
-    if (manualWaitTimedOut) return;
+    if (scoreWaitTimedOut) return;
     const t = setTimeout(() => {
-      setManualWaitTimedOut(true);
-      addKateMessage("Bank's still pulling — I'll keep it going in the background. Anyone else you want to add?");
-    }, 30000);
+      setScoreWaitTimedOut(true);
+    }, 60000);
     return () => clearTimeout(t);
-  }, [phase, bankScanDeferred, manualWaitTimedOut]);
+  }, [phase, bankScanDeferred, scoreWaitTimedOut]);
 
   // ── Manual-search debounce ──
   // Single source of truth for the NPI search query; cancels stale fetches.
@@ -1473,22 +1473,10 @@ export default function OnboardingPage() {
 
         {/* Manual NPI search — third step in the discovery pipeline.
             Opted into via "Enter providers yourself" on discovery-method.
-            Always renders after bank/calendar (if selected) and before score. */}
-        {phase === "manual-search" && !responded && bankScanDeferred && !manualWaitTimedOut && (
-          <div className="animate-fadeIn">
-            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5 flex items-center gap-3">
-              <div
-                className="h-4 w-4 rounded-full border-2 border-[#1677FF] border-t-transparent animate-spin shrink-0"
-                aria-hidden
-              />
-              <div className="text-sm text-[#071832]">
-                Finishing your bank scan — pulling in any providers from the last year. One sec.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {phase === "manual-search" && !responded && (!bankScanDeferred || manualWaitTimedOut) && (
+            Always renders after bank/calendar (if selected) and before score.
+            Bank scan continues in the background; the unified reveal at
+            score-reveal waits for it. */}
+        {phase === "manual-search" && !responded && (
           <div className="animate-fadeIn space-y-3">
             {/* Unified reveal — what bank + calendar pulled so far. The
                 reviewer asked for "here are the providers we found, here
@@ -1501,6 +1489,11 @@ export default function OnboardingPage() {
                 </div>
                 <div className="text-sm font-semibold text-[#071832] mb-3">
                   {allDiscovered.length} provider{allDiscovered.length === 1 ? "" : "s"} on your team
+                  {bankScanDeferred && (
+                    <span className="ml-1 text-[11px] text-[#4F5F73] font-normal">
+                      · bank still scanning
+                    </span>
+                  )}
                 </div>
                 <div className="space-y-1.5 max-h-44 overflow-y-auto">
                   {allDiscovered.map((p) => (
@@ -1620,8 +1613,28 @@ export default function OnboardingPage() {
           </div>
         )}
 
+        {/* Bank-scan wait gate — score is held until the bank scan
+            finishes (or the 60s safety cap fires). The polling effect
+            keeps allDiscovered fresh while we wait. */}
+        {phase === "score-reveal" && bankScanDeferred && !scoreWaitTimedOut && (
+          <div className="animate-fadeIn">
+            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5 flex items-start gap-3">
+              <div
+                className="mt-0.5 h-4 w-4 rounded-full border-2 border-[#1677FF] border-t-transparent animate-spin shrink-0"
+                aria-hidden
+              />
+              <div className="text-sm text-[#071832] leading-relaxed">
+                Pulling the last year of healthcare from your bank — usually quick, sometimes a beat longer.
+                <div className="mt-1 text-xs text-[#4F5F73]">
+                  Found {allDiscovered.length} so far · {allDiscovered.filter((p) => p.source === "calendar").length} from calendar
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Score + unified reveal */}
-        {phase === "score-reveal" && score !== null && (
+        {phase === "score-reveal" && score !== null && (!bankScanDeferred || scoreWaitTimedOut) && (
           <div className="animate-fadeIn">
             {/* Big reveal — what Kate found */}
             <div className="text-center mb-6">
@@ -1630,14 +1643,12 @@ export default function OnboardingPage() {
               </div>
               <div className="font-serif text-2xl text-[#071832]">
                 {allDiscovered.length === 0
-                  ? bankScanDeferred
-                    ? "Still scanning…"
-                    : "We'll start fresh."
+                  ? "We'll start fresh."
                   : `${allDiscovered.length} provider${allDiscovered.length === 1 ? "" : "s"} on your team`}
               </div>
               {bankScanDeferred && allDiscovered.length > 0 && (
                 <div className="mt-1 text-xs text-[#4F5F73]">
-                  Bank scan still finishing — more may show up.
+                  Bank still finishing — anything else will land on your dashboard.
                 </div>
               )}
             </div>
