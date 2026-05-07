@@ -712,13 +712,13 @@ export default function OnboardingPage() {
     let attempts = 0;
     let finished = false;
     const MAX_ATTEMPTS = 60; // 3 min @ 3s
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
     const finish = (providers: DiscoveredProvider[]) => {
-      // setInterval ticks fired before we cleared the interval may
-      // already have an /api/discovery/run await in flight. When those
-      // resolve they'll also call finish(); guard so we only reveal once.
+      // Polled requests fired before finish() may still resolve later.
+      // When they call finish(); guard so we only reveal once.
       if (finished) return;
       finished = true;
-      clearInterval(poll);
+      if (pollTimer) clearTimeout(pollTimer);
       clearTimeout(autoDefer);
       setDiscoveryActive(false);
       setTyping(false);
@@ -733,7 +733,12 @@ export default function OnboardingPage() {
       }
       startReveal(providers, "bank");
     };
-    const poll = setInterval(async () => {
+    // Sequential polling: each tick AWAITS the previous discovery call
+    // before scheduling the next. setInterval would fire concurrent
+    // requests every 3s — bad for a slow endpoint that can run 60+s on
+    // 300+ transactions, since we'd pile up parallel dying calls.
+    const tick = async () => {
+      if (finished) return;
       attempts++;
       try {
         const runRes = await apiFetch("/api/discovery/run", {
@@ -743,9 +748,6 @@ export default function OnboardingPage() {
         });
         const runData = await runRes.json().catch(() => ({}));
 
-        // ok && !pending means Plaid handed us transactions and the
-        // classifier ran. Even if provider_count is 0 (truly no
-        // healthcare in transactions), advance so the user isn't stuck.
         if (runData?.ok && !runData.pending) {
           const dashRes = await apiFetch("/api/dashboard/data");
           const dashData = await dashRes.json().catch(() => ({}));
@@ -767,12 +769,16 @@ export default function OnboardingPage() {
           finish(providers);
           return;
         }
-
-        if (attempts >= MAX_ATTEMPTS) finish([]);
       } catch {
-        if (attempts >= MAX_ATTEMPTS) finish([]);
+        // swallow — pending Plaid + Vercel-cut timeouts both end here
       }
-    }, 3000);
+      if (attempts >= MAX_ATTEMPTS) {
+        finish([]);
+        return;
+      }
+      if (!finished) pollTimer = setTimeout(tick, 3000);
+    };
+    pollTimer = setTimeout(tick, 0);
   }
 
   async function runCalendarDiscovery() {

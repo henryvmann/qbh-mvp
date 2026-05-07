@@ -1,4 +1,9 @@
 export const dynamic = 'force-dynamic';
+// Discovery on a real bank year (300+ transactions) runs the AI classifier
+// over many merchants. The default 60s Vercel timeout cuts it off mid-flight,
+// the client retries, and we pile up concurrent dying requests. Bump to the
+// Pro-plan max so a single call can finish.
+export const maxDuration = 300;
 import { NextRequest, NextResponse } from "next/server";
 import { plaidClient } from "../../../../lib/plaid";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
