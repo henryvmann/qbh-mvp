@@ -889,7 +889,9 @@ export default function OnboardingPage() {
 
     let cancelled = false;
     async function loadAll() {
-      const r = await apiFetch("/api/dashboard/data");
+      // cache: no-store so the 4s poll always sees fresh data when
+      // bank discovery lands new providers in the background.
+      const r = await apiFetch(`/api/dashboard/data?_=${Date.now()}`, { cache: "no-store" });
       const j = await r.json().catch(() => ({}));
       if (cancelled) return;
       if (j?.ok) {

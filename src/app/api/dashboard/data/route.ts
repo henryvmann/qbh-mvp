@@ -59,16 +59,25 @@ export async function GET(req: Request) {
 
   const sub = (subscriptionData.data || {}) as Record<string, unknown>;
 
-  return NextResponse.json({
-    ok: true,
-    appUserId,
-    userName: userInfo.displayName || null,
-    fullName: userInfo.fullName || null,
-    snapshots,
-    discoverySummary,
-    hasGoogleCalendarConnection,
-    subscription_status: sub.subscription_status || "free",
-    stripe_plan: sub.stripe_plan || null,
-    free_calls_used: sub.free_calls_used || 0,
-  });
+  return NextResponse.json(
+    {
+      ok: true,
+      appUserId,
+      userName: userInfo.displayName || null,
+      fullName: userInfo.fullName || null,
+      snapshots,
+      discoverySummary,
+      hasGoogleCalendarConnection,
+      subscription_status: sub.subscription_status || "free",
+      stripe_plan: sub.stripe_plan || null,
+      free_calls_used: sub.free_calls_used || 0,
+    },
+    {
+      // Onboarding polling re-fetches this every 4s while bank scan
+      // is still pending. Without no-store, browsers can return a
+      // stale snapshot and the user sees only calendar even after
+      // bank discovery has landed providers.
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    }
+  );
 }

@@ -291,7 +291,7 @@ export default function CoveragePage() {
             <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-6 text-center">
               <div className="text-sm font-medium text-[#071832]">No claims tracked yet</div>
               <p className="mt-1 text-xs text-[#4F5F73]">
-                Submitted a superbill or out-of-network claim? Log it here — Kate will remind
+                Submitted an out-of-network claim to insurance? Log it here — Kate will remind
                 you in 4 weeks if you haven&rsquo;t heard back.
               </p>
             </div>
