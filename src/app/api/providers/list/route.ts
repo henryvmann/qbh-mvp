@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("providers")
-    .select("id, name, display_name, specialty, doctor_name, phone_number, npi, provider_type, source, status, created_at")
+    .select("id, name, display_name, specialty, doctor_name, phone_number, npi, provider_type, source, status, created_at, care_recipient, care_team, is_primary")
     .eq("app_user_id", appUserId)
     .eq("status", status)
     .order("created_at", { ascending: false });
