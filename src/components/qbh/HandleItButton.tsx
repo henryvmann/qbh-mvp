@@ -12,6 +12,10 @@ type Props = {
   phoneNumber?: string | null;
   attemptId?: number | null;
   label?: string;
+  /** When true on mount, the form opens immediately. Used by the
+   *  dashboard StuckPrompt's "Book it now" → /providers/[id]?action=book
+   *  flow so the user lands on the form, not the closed button. */
+  autoOpen?: boolean;
 };
 
 type PatientProfile = {
@@ -37,6 +41,7 @@ export default function HandleItButton({
   phoneNumber,
   attemptId,
   label = "Handle It",
+  autoOpen,
 }: Props) {
   const [loading, setLoading] = React.useState(false);
   const [toast, setToast] = React.useState<{
@@ -75,6 +80,20 @@ export default function HandleItButton({
   const [careRecipients, setCareRecipients] = React.useState<CareRecipient[]>([]);
   const [bookingForName, setBookingForName] = React.useState<string | null>(null);
   const [providerCareRecipients, setProviderCareRecipients] = React.useState<string[]>([]);
+  // Existing appointment context — when there's already an upcoming
+  // visit with this provider, ask the user what THIS call is for so
+  // Kate doesn't ask the office. The user has all the context to
+  // decide; the receptionist doesn't.
+  const [existingAppointmentDate, setExistingAppointmentDate] = React.useState<string | null>(null);
+  type BookingIntent = "reschedule" | "additional" | null;
+  const [bookingIntent, setBookingIntent] = React.useState<BookingIntent>(null);
+
+  // autoOpen: arrival from dashboard "Book it now" should land directly
+  // on the form. Fire the same path the button would, once on mount.
+  React.useEffect(() => {
+    if (autoOpen) checkSubscriptionAndProceed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen]);
 
   async function checkSubscriptionAndProceed() {
     if (loading) return;
@@ -123,10 +142,11 @@ export default function HandleItButton({
       const recipients: CareRecipient[] = Array.isArray(profile.care_recipients) ? profile.care_recipients : [];
       setCareRecipients(recipients);
 
-      // Pull provider's care_recipient tagging so we can default the
-      // "Booking for" picker. Quick separate fetch — we already
-      // have the provider id.
+      // Pull provider detail: care_recipient tagging (for booking-for
+      // picker) AND any upcoming appointment (so we can ask the user
+      // up front whether this call is to reschedule or book additional).
       let providerTagged: string[] = [];
+      let existingApptDate: string | null = null;
       if (providerId) {
         try {
           const detailRes = await apiFetch(`/api/providers/detail?id=${encodeURIComponent(providerId)}`);
@@ -136,11 +156,17 @@ export default function HandleItButton({
             const arr = typeof raw === "string" ? JSON.parse(raw) : raw;
             if (Array.isArray(arr)) providerTagged = arr;
           }
+          const upcoming = detail?.upcomingEvents;
+          if (Array.isArray(upcoming) && upcoming.length > 0 && upcoming[0]?.start_at) {
+            existingApptDate = upcoming[0].start_at as string;
+          }
         } catch {
           // best effort
         }
       }
       setProviderCareRecipients(providerTagged);
+      setExistingAppointmentDate(existingApptDate);
+      setBookingIntent(null);
 
       // Default booking-for selection:
       //   • If the provider has exactly one tagged recipient → preselect it
@@ -187,6 +213,11 @@ export default function HandleItButton({
   }
 
   async function handleFormSubmit() {
+    // Gate: existing-appointment intent must be picked when one exists.
+    if (existingAppointmentDate && !bookingIntent) {
+      setToast({ kind: "error", text: "Pick whether this call reschedules or adds an appointment." });
+      return;
+    }
     setSaving(true);
 
     try {
@@ -269,6 +300,12 @@ export default function HandleItButton({
         ...(preferredTimeframe ? { preferred_timeframe: preferredTimeframe } : {}),
         ...(reasonForVisit ? { reason_for_visit: reasonForVisit } : {}),
         ...(bookingForName ? { booking_for_name: bookingForName } : {}),
+        // Booking intent — when there's an existing upcoming appointment
+        // with this provider, the user picked whether THIS call is to
+        // reschedule it or to add another. Drives mode + the existing-
+        // appointment note Kate gets in her prompt.
+        ...(bookingIntent ? { booking_intent: bookingIntent } : {}),
+        ...(bookingIntent === "reschedule" ? { mode: "ADJUST" } : {}),
         ...(isNonSelf
           ? {
               patient_name: selectedRecipient.name,
@@ -325,6 +362,54 @@ export default function HandleItButton({
           </div>
 
           <div className="mt-4 flex flex-col gap-3">
+            {/* Existing-appointment intent picker — when there's already
+                an upcoming visit with this provider, ask the user what
+                THIS call is for. Without this, Kate ends up asking the
+                receptionist "do you want to keep or reschedule?" — but
+                the receptionist doesn't make that decision. The user
+                does. */}
+            {existingAppointmentDate && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-[#4F5F73]">
+                  You already have an appointment on{" "}
+                  {new Date(existingAppointmentDate).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                  . What&rsquo;s this call for?
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { v: "reschedule" as const, label: "Reschedule that one" },
+                    { v: "additional" as const, label: "Book an additional appointment" },
+                  ].map((opt) => {
+                    const selected = bookingIntent === opt.v;
+                    return (
+                      <button
+                        key={opt.v}
+                        type="button"
+                        onClick={() => setBookingIntent(opt.v)}
+                        className="rounded-lg px-2.5 py-1 text-xs font-medium transition"
+                        style={{
+                          backgroundColor: selected ? "#1677FF" : "#F0F2F5",
+                          color: selected ? "#FFFFFF" : "#4F5F73",
+                          border: `1px solid ${selected ? "#1677FF" : "#E5EAF2"}`,
+                        }}
+                      >
+                        {selected ? "✓ " : ""}{opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!bookingIntent && (
+                  <div className="mt-1 text-[11px] text-[#E04030]">
+                    Pick one so Kate knows the goal of the call.
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Booking-for picker — required when the user manages
                 multiple people. Without this, Kate would call a
                 pediatrician and introduce herself as the parent
@@ -407,21 +492,22 @@ export default function HandleItButton({
               />
             </div>
 
-            {/* Reason / specifics — always shown. Helps Kate frame the
-                ask ("annual checkup" vs "follow-up on rash" vs "just
-                booking ahead, no urgent issues"). */}
+            {/* Reason / specifics — always shown. Kept GENERAL, not
+                clinical: receptionists handle scheduling, clinical
+                detail goes to the doctor in the visit. Kate is
+                instructed to keep this brief on the call. */}
             <div>
               <label className="mb-1 block text-xs font-medium text-[#4F5F73]">
-                What&apos;s this visit for? <span className="text-[#4F5F73]">(optional)</span>
+                Reason for visit <span className="text-[#4F5F73]">(optional)</span>
               </label>
               <textarea
                 value={bookingReason}
                 onChange={(e) => setBookingReason(e.target.value)}
-                placeholder="e.g. annual checkup, no urgent issues — booking ahead"
+                placeholder="e.g. annual checkup, follow-up, new-patient visit"
                 rows={2}
                 className={`${inputClass} resize-none`}
               />
-              <WhyWeAsk text="Kate uses this when introducing your reason to the office." />
+              <WhyWeAsk text="Keep it general — receptionists only need the visit type, not clinical details. Specifics stay for the doctor." />
             </div>
 
             {/* Profile fields below are only shown when missing — once

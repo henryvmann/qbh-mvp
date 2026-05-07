@@ -505,7 +505,15 @@ export async function POST(req: Request) {
     // Non-critical — default to unknown
   }
 
-  // Check for existing upcoming appointment with this provider
+  // Check for existing upcoming appointment with this provider. The
+  // user already told us in the booking form what to do about it
+  // (booking_intent: "reschedule" | "additional"), so we shape the
+  // note to match — Kate doesn't ask the receptionist to choose,
+  // because the receptionist doesn't decide.
+  const bookingIntent =
+    body?.booking_intent === "reschedule" || body?.booking_intent === "additional"
+      ? body.booking_intent
+      : null;
   let existingAppointmentInfo = "";
   try {
     const { data: existingEvents } = await supabaseAdmin
@@ -519,7 +527,16 @@ export async function POST(req: Request) {
       .limit(1);
     if (existingEvents && existingEvents.length > 0) {
       const apptDate = new Date(existingEvents[0].start_at).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" });
-      existingAppointmentInfo = `IMPORTANT: There is already an existing appointment with this provider on ${apptDate}. Before booking a new one, mention this to the office and ask if they'd like to keep it or reschedule.`;
+      if (bookingIntent === "reschedule") {
+        existingAppointmentInfo = `EXISTING APPOINTMENT: ${apptDate}. The patient wants to RESCHEDULE this one — they already decided. Tell the office you're calling to reschedule the existing appointment. Do NOT ask the office whether to keep or reschedule.`;
+      } else if (bookingIntent === "additional") {
+        existingAppointmentInfo = `EXISTING APPOINTMENT: ${apptDate}. The patient already has this on the books and wants an ADDITIONAL appointment — they already decided. Mention to the office that they have one on ${apptDate} and you're booking another. Do NOT ask the office whether to keep or reschedule.`;
+      } else {
+        // Defensive: no intent was passed (e.g., legacy clients). Surface
+        // the existing appointment so Kate doesn't accidentally
+        // double-book, but flag that no decision has been made yet.
+        existingAppointmentInfo = `EXISTING APPOINTMENT: ${apptDate}. No intent was passed — flag this to the patient through follow-up; do not commit to a new booking until clarified.`;
+      }
     }
   } catch {}
 
