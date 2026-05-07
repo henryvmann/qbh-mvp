@@ -57,7 +57,7 @@ const QUESTIONS: Question[] = [
   {
     id: "mh_therapist",
     bucket: "Mental health",
-    prompt: "Therapist or psychiatrist on file?",
+    prompt: "Do you have a current therapist and/or medication manager?",
     type: "chips",
     options: ["Yes — current", "Used to", "Curious about it", "Not for me"],
     notesPlaceholder: "Their name, or what you've been thinking about?",
@@ -65,7 +65,7 @@ const QUESTIONS: Question[] = [
   {
     id: "mh_stress_level",
     bucket: "Mental health",
-    prompt: "On a normal week, where's your stress?",
+    prompt: "On a normal week, how would you rank your stress?",
     helper: "1 = totally chill, 10 = barely holding it together",
     type: "scale",
     options: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
