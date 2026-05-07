@@ -33,6 +33,8 @@ type Question = {
   bucket: string;
   prompt: string;
   helper?: string;
+  /** One-line explanation from Kate about why she's asking. */
+  kateNote?: string;
   type: QuestionType;
   options: string[];
   /** Placeholder for the always-present notes textarea. */
@@ -50,14 +52,16 @@ const QUESTIONS: Question[] = [
     bucket: "Mental health",
     prompt: "Anything weighing on you mental-health-wise?",
     helper: "Pick all that apply. This is between us — I won't share with offices unless you ask.",
+    kateNote: "I don't share this with anyone unless you tell me to — it just helps me know what to surface and how to check in with you.",
     type: "multi-chips",
-    options: ["Anxiety", "Depression", "Stress", "Sleep trouble", "Burnout", "Grief", "ADHD / focus", "Trauma", "None right now"],
+    options: ["Anxiety", "Depression", "Stress", "Sleep trouble", "Burnout", "Grief", "ADHD / focus", "Trauma", "None right now", "Other"],
     notesPlaceholder: "Anything else you'd want me to know?",
   },
   {
     id: "mh_therapist",
     bucket: "Mental health",
     prompt: "Do you have a current therapist and/or medication manager?",
+    kateNote: "If you have one, I can keep their info ready for refills, intake forms, and new appointments.",
     type: "chips",
     options: ["Yes — current", "Used to", "Curious about it", "Not for me"],
     notesPlaceholder: "Their name, or what you've been thinking about?",
@@ -67,6 +71,7 @@ const QUESTIONS: Question[] = [
     bucket: "Mental health",
     prompt: "On a normal week, how would you rank your stress?",
     helper: "1 = totally chill, 10 = barely holding it together",
+    kateNote: "Helps me set tempo — when to nudge you and when to back off.",
     type: "scale",
     options: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
     notesPlaceholder: "What's driving it lately?",
@@ -77,6 +82,7 @@ const QUESTIONS: Question[] = [
     id: "ls_sleep",
     bucket: "Lifestyle",
     prompt: "How's sleep these days?",
+    kateNote: "Sleep colors most other care decisions. I'll factor it into how I prep visits and what I suggest.",
     type: "chips",
     options: ["Great", "OK most nights", "Hit or miss", "Bad — need to fix this"],
     notesPlaceholder: "Anything specific going on with sleep?",
@@ -85,16 +91,18 @@ const QUESTIONS: Question[] = [
     id: "ls_movement",
     bucket: "Lifestyle",
     prompt: "How are you moving these days?",
+    kateNote: "Comes up in checkups and primary care intake. Saves you typing it every time.",
     type: "multi-chips",
-    options: ["Walking", "Running", "Yoga / stretching", "Weights / strength", "Team sports", "Cycling / spin", "Swimming", "Not really moving"],
+    options: ["Walking", "Running", "Yoga / stretching", "Weights / strength", "Team sports", "Cycling / spin", "Swimming", "Not really moving", "Other"],
     notesPlaceholder: "Anything specific you're working on?",
   },
   {
     id: "ls_food",
     bucket: "Lifestyle",
     prompt: "How about food?",
+    kateNote: "Specialists ask about this in detail. I'll have it ready so you don't have to repeat yourself.",
     type: "multi-chips",
-    options: ["Eat what I want", "Trying to eat better", "Specific diet", "Food allergies / intolerances", "Tracking macros", "Pregnancy / postpartum needs"],
+    options: ["Eat what I want", "Trying to eat better", "Specific diet", "Food allergies / intolerances", "Tracking macros", "Pregnancy / postpartum needs", "Other"],
     notesPlaceholder: "Specific diet, restrictions, or goals?",
   },
   {
@@ -102,8 +110,9 @@ const QUESTIONS: Question[] = [
     bucket: "Lifestyle",
     prompt: "Smoke, drink, or use anything recreationally?",
     helper: "Helps Kate frame visit prep when offices ask.",
+    kateNote: "Comes up at every annual and your provider isn't judging — honest answer helps me prep your visits.",
     type: "multi-chips",
-    options: ["Smoke / vape", "Drink occasionally", "Drink regularly", "THC / cannabis", "Other recreational", "None of the above"],
+    options: ["Smoke / vape", "Drink occasionally", "Drink regularly", "THC / cannabis", "Other recreational", "None of the above", "Other"],
     notesPlaceholder: "Frequency or anything you're cutting back on?",
   },
 
@@ -113,16 +122,18 @@ const QUESTIONS: Question[] = [
     bucket: "Health history",
     prompt: "Any chronic conditions to keep on file?",
     helper: "Pick what applies — Kate uses these when prepping for appointments.",
+    kateNote: "I'll mention these to offices when relevant so you're not re-explaining at every visit.",
     type: "multi-chips",
-    options: ["High blood pressure", "Diabetes", "Asthma", "Autoimmune", "Heart condition", "Thyroid", "Migraine", "IBS / GI", "Chronic pain", "None of those"],
+    options: ["High blood pressure", "Diabetes", "Asthma", "Autoimmune", "Heart condition", "Thyroid", "Migraine", "IBS / GI", "Chronic pain", "None of those", "Other"],
     notesPlaceholder: "Specifics — controlled, severity, anything else?",
   },
   {
     id: "hx_surgeries",
     bucket: "Health history",
     prompt: "Past surgeries or hospitalizations worth flagging?",
+    kateNote: "Almost every new-patient form asks. I'll have your answer ready.",
     type: "multi-chips",
-    options: ["Cesarean / childbirth", "Appendix", "Gallbladder", "Tonsils / adenoids", "Knee / joint", "Other surgery", "Hospitalized (no surgery)", "None"],
+    options: ["Cesarean / childbirth", "Appendix", "Gallbladder", "Tonsils / adenoids", "Knee / joint", "Other surgery", "Hospitalized (no surgery)", "None", "Other"],
     notesPlaceholder: "Year, doctor, or any details to remember?",
   },
   {
@@ -130,24 +141,27 @@ const QUESTIONS: Question[] = [
     bucket: "Health history",
     prompt: "Any family history we should keep an eye on?",
     helper: "What close family deals with — parents, siblings, grandparents.",
+    kateNote: "Drives screening recommendations down the line — worth me knowing once.",
     type: "multi-chips",
-    options: ["Heart disease", "Cancer", "Diabetes", "Mental health", "Autoimmune", "Stroke", "High blood pressure", "Alzheimer's / dementia", "None I know of"],
+    options: ["Heart disease", "Cancer", "Diabetes", "Mental health", "Autoimmune", "Stroke", "High blood pressure", "Alzheimer's / dementia", "None I know of", "Other"],
     notesPlaceholder: "Who, and any specifics?",
   },
   {
     id: "hx_allergies",
     bucket: "Health history",
     prompt: "Allergies?",
+    kateNote: "Critical for offices to have on file before any prescription or procedure.",
     type: "multi-chips",
-    options: ["Medication allergy", "Food allergy", "Environmental / seasonal", "Pet allergy", "Latex", "None"],
+    options: ["Medication allergy", "Food allergy", "Environmental / seasonal", "Pet allergy", "Latex", "None", "Other"],
     notesPlaceholder: "Specifics — what, severity, what happens?",
   },
   {
     id: "hx_meds",
     bucket: "Health history",
     prompt: "What do you take regularly?",
+    kateNote: "Comes up at every appointment — I'll keep the list current and remind you about refills.",
     type: "multi-chips",
-    options: ["Birth control", "BP / heart meds", "Mental health meds", "Diabetes meds", "Thyroid", "Hormonal therapy", "Sleep aid", "Pain relief", "Vitamins / supplements", "Nothing regular"],
+    options: ["Birth control", "BP / heart meds", "Mental health meds", "Diabetes meds", "Thyroid", "Hormonal therapy", "Sleep aid", "Pain relief", "Vitamins / supplements", "Nothing regular", "Other"],
     notesPlaceholder: "Names + doses if you have them handy",
   },
 
@@ -156,14 +170,16 @@ const QUESTIONS: Question[] = [
     id: "dt_addressing",
     bucket: "Day-to-day",
     prompt: "Anything you've been meaning to address?",
+    kateNote: "Lets me prioritize what to schedule first.",
     type: "multi-chips",
-    options: ["Overdue checkup", "Dental cleaning", "Eye exam", "Skin / mole check", "Mental health support", "Specialist visit", "Bloodwork", "Nothing pressing"],
+    options: ["Overdue checkup", "Dental cleaning", "Eye exam", "Skin / mole check", "Mental health support", "Specialist visit", "Bloodwork", "Nothing pressing", "Other"],
     notesPlaceholder: "What's been on your mind?",
   },
   {
     id: "dt_repro",
     bucket: "Day-to-day",
     prompt: "Where are you on the family front?",
+    kateNote: "Affects which screenings, providers, and care timing I recommend.",
     type: "chips",
     options: ["Not relevant right now", "Trying to conceive", "Currently pregnant", "Postpartum", "Done having kids"],
     notesPlaceholder: "Anything I should know to help here?",
@@ -172,8 +188,9 @@ const QUESTIONS: Question[] = [
     id: "dt_goals",
     bucket: "Day-to-day",
     prompt: "Any health goals I should help you toward?",
+    kateNote: "I'll point providers, suggestions, and check-ins at these.",
     type: "multi-chips",
-    options: ["Weight", "Sleep", "Mental health", "Fertility", "Energy", "Strength / fitness", "Eating habits", "Just maintain"],
+    options: ["Weight", "Sleep", "Mental health", "Fertility", "Energy", "Strength / fitness", "Eating habits", "Just maintain", "Other"],
     notesPlaceholder: "Specifics — what would success look like?",
   },
 
@@ -182,6 +199,7 @@ const QUESTIONS: Question[] = [
     id: "cp_telehealth",
     bucket: "Care preferences",
     prompt: "Telehealth or in-person when you have a choice?",
+    kateNote: "I'll filter and recommend providers that match.",
     type: "chips",
     options: ["Telehealth always", "Telehealth when possible", "In-person preferred", "No preference"],
     notesPlaceholder: "Anything specific?",
@@ -190,6 +208,7 @@ const QUESTIONS: Question[] = [
     id: "cp_gender",
     bucket: "Care preferences",
     prompt: "Provider-gender preference?",
+    kateNote: "I'll respect this when suggesting providers.",
     type: "chips",
     options: ["Female", "Male", "No preference"],
     notesPlaceholder: "Any context?",
@@ -198,8 +217,9 @@ const QUESTIONS: Question[] = [
     id: "cp_accommodations",
     bucket: "Care preferences",
     prompt: "Anything offices should know to make visits easier?",
+    kateNote: "I can mention these when booking so the office is ready when you walk in.",
     type: "multi-chips",
-    options: ["Mobility help", "Language preference", "Sensory sensitivities", "Procedure / needle anxiety", "Need extra time", "Hearing accommodations", "None of those"],
+    options: ["Mobility help", "Language preference", "Sensory sensitivities", "Procedure / needle anxiety", "Need extra time", "Hearing accommodations", "None of those", "Other"],
     notesPlaceholder: "e.g. 'high white-coat anxiety, prefer slow blood draw'",
   },
 ];
@@ -432,9 +452,38 @@ export default function IntakePage() {
           {q.prompt}
         </h1>
         {q.helper && (
-          <p style={{ color: T.lightMuted, fontSize: 13.5, lineHeight: 1.5, marginBottom: 20 }}>
+          <p style={{ color: T.lightMuted, fontSize: 13.5, lineHeight: 1.5, marginBottom: 12 }}>
             {q.helper}
           </p>
+        )}
+        {q.kateNote && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              padding: "10px 12px",
+              background: "rgba(22,119,255,0.06)",
+              border: `1px solid rgba(22,119,255,0.18)`,
+              borderRadius: 12,
+              marginBottom: 20,
+            }}
+          >
+            <div
+              style={{
+                width: 6,
+                alignSelf: "stretch",
+                background: T.electric,
+                borderRadius: 999,
+                flexShrink: 0,
+              }}
+              aria-hidden
+            />
+            <div style={{ fontSize: 13, lineHeight: 1.5, color: T.lightText }}>
+              <span style={{ fontWeight: 600, color: T.electric }}>Kate · </span>
+              {q.kateNote}
+            </div>
+          </div>
         )}
 
         {q.type === "chips" && q.options && (
