@@ -153,7 +153,13 @@ export async function writeDiscoveredProviders({
       app_user_id: userId,
       name: cleanedName,
       specialty: detectedSpecialty || null,
-      status: provider.bucket === "HEALTHCARE" ? "active" : "review_needed",
+      // Pharmacies always need user confirmation — most CVS/Walgreens hits
+      // are random OTC purchases, not their actual pharmacy. Land them in
+      // review_needed even when the bucket is HEALTHCARE.
+      status:
+        provider.provider_type === "pharmacy" || provider.bucket !== "HEALTHCARE"
+          ? "review_needed"
+          : "active",
       guessed_portal_brand: null,
       guessed_portal_confidence: null,
       phone_number: provider.phone_number || null,
