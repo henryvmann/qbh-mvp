@@ -931,20 +931,29 @@ export default function OnboardingPage() {
     addKateMessage("Last step — type a name and I'll find them. Doctor name, office name, even just part of it works. Add as many as you want, then tap done.");
   }, [phase]);
 
-  // Cap the bank-scan wait on score-reveal at 60s. By the time the user
-  // reaches score-reveal the bank scan has typically been running for
-  // 60-90s already, so most flows will resolve naturally. The cap is
-  // a safety: if Plaid is genuinely slow we unblock and tell the user
-  // it'll surface on the dashboard. Polling keeps running.
+  // Cap the bank-scan wait on score-reveal at 2 minutes. Discovery
+  // typically takes 60-90s; the cap is a safety so we unblock the user
+  // if Plaid's PRODUCT_NOT_READY drags. Polling keeps running.
   useEffect(() => {
     if (phase !== "score-reveal") return;
     if (!bankScanDeferred) return;
     if (scoreWaitTimedOut) return;
     const t = setTimeout(() => {
       setScoreWaitTimedOut(true);
-    }, 60000);
+    }, 120000);
     return () => clearTimeout(t);
   }, [phase, bankScanDeferred, scoreWaitTimedOut]);
+
+  // When bank finishes (bankScanDeferred flips false), refetch the score
+  // so the number reflects the now-larger provider list.
+  useEffect(() => {
+    if (phase !== "score-reveal") return;
+    if (bankScanDeferred) return;
+    apiFetch("/api/health-score")
+      .then((r) => r.json())
+      .then((d) => { if (d.ok) setScore(d.score); })
+      .catch(() => {});
+  }, [phase, bankScanDeferred]);
 
   // ── Manual-search debounce ──
   // Single source of truth for the NPI search query; cancels stale fetches.
@@ -1617,7 +1626,7 @@ export default function OnboardingPage() {
             finishes (or the 60s safety cap fires). The polling effect
             keeps allDiscovered fresh while we wait. */}
         {phase === "score-reveal" && bankScanDeferred && !scoreWaitTimedOut && (
-          <div className="animate-fadeIn">
+          <div className="animate-fadeIn space-y-3">
             <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5 flex items-start gap-3">
               <div
                 className="mt-0.5 h-4 w-4 rounded-full border-2 border-[#1677FF] border-t-transparent animate-spin shrink-0"
@@ -1630,6 +1639,13 @@ export default function OnboardingPage() {
                 </div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setScoreWaitTimedOut(true)}
+              className="w-full rounded-xl border border-[#E5EAF2] bg-white px-4 py-2.5 text-sm font-medium text-[#4F5F73] hover:bg-[#F0F2F5]"
+            >
+              Skip — show me my dashboard
+            </button>
           </div>
         )}
 
