@@ -156,7 +156,9 @@ export default function OnboardingPage() {
   // current prod defaults if the user accepts as-is.
   const [kateTone, setKateTone] = useState<string>("warm");
   const [kateProactivity, setKateProactivity] = useState<string>("balanced");
-  const [calendarFlex, setCalendarFlex] = useState<string>("flexible");
+  // calendar_flexibility values must match /account: "flexible" |
+  // "balanced" | "strict". Don't reinvent here — round-trip would break.
+  const [calendarFlex, setCalendarFlex] = useState<string>("balanced");
   const [connectBank, setConnectBank] = useState(true);
   const [connectCalendar, setConnectCalendar] = useState(true);
   const [connectManual, setConnectManual] = useState(true);
@@ -1169,8 +1171,8 @@ export default function OnboardingPage() {
               <div className="flex flex-wrap gap-1.5">
                 {[
                   { v: "flexible", label: "Flexible — book what works" },
-                  { v: "respect_busy", label: "Respect existing busy blocks" },
-                  { v: "tight", label: "Tight — never book near other things" },
+                  { v: "balanced", label: "Don't double-book me unless it's more than a month out" },
+                  { v: "strict", label: "Don't book over anything in my calendar" },
                 ].map((opt) => {
                   const selected = calendarFlex === opt.v;
                   return (

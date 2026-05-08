@@ -847,9 +847,9 @@ export default function AccountPage() {
             </label>
             <div className="space-y-2">
               {([
-                { value: "flexible" as const, label: "I'm flexible", desc: "Book at the earliest time and I'll adjust" },
-                { value: "balanced" as const, label: "Usually up to date", desc: "Avoid conflicts, but take earliest if nothing in 2 weeks" },
-                { value: "strict" as const, label: "My calendar is set in stone", desc: "Never book over any event" },
+                { value: "flexible" as const, label: "Flexible — book what works", desc: "Book at the earliest time and I'll adjust" },
+                { value: "balanced" as const, label: "Don't double-book me unless it's more than a month out", desc: "Avoid conflicts within ~30 days; further-out slots can overlap soft commitments" },
+                { value: "strict" as const, label: "Don't book over anything in my calendar", desc: "Never book over any event, no matter how far out" },
               ]).map((option) => (
                 <button
                   key={option.value}
