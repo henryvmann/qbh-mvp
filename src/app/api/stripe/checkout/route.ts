@@ -6,6 +6,7 @@ import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { stripe, PRICES, PlanType } from "../../../../lib/stripe";
 
 export async function POST(req: NextRequest) {
+  try {
   const appUserId = await getSessionAppUserId(req);
   if (!appUserId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -15,7 +16,13 @@ export async function POST(req: NextRequest) {
   const plan = body?.plan as PlanType;
 
   if (!plan || !PRICES[plan]) {
-    return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "Invalid plan",
+        detail: `plan="${plan}", PRICES[plan]="${PRICES[plan] || "(missing)"}". Check STRIPE_PRICE_${(plan || "").toUpperCase()} env var.`,
+      },
+      { status: 400 }
+    );
   }
 
   // Get user email for Stripe customer
@@ -67,4 +74,22 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ url: session.url });
+  } catch (err: unknown) {
+    const e = err as { message?: string; code?: string; type?: string; statusCode?: number };
+    console.error("[stripe/checkout] error:", {
+      message: e?.message,
+      code: e?.code,
+      type: e?.type,
+      statusCode: e?.statusCode,
+    });
+    return NextResponse.json(
+      {
+        error: "Checkout failed",
+        message: e?.message || "Unknown error",
+        code: e?.code,
+        type: e?.type,
+      },
+      { status: 500 }
+    );
+  }
 }
