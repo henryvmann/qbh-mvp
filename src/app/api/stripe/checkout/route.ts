@@ -47,6 +47,27 @@ export async function POST(req: NextRequest) {
 
   let customerId = (profile as Record<string, unknown>)?.stripe_customer_id as string | undefined;
 
+  // Verify the stored customer still exists in the current Stripe
+  // mode. Users created during test mode have customer IDs the live
+  // secret can't see (and vice versa) — without this, they'd fail
+  // every checkout with "No such customer" until manually unstuck.
+  if (customerId) {
+    try {
+      const existing = await stripe.customers.retrieve(customerId);
+      if ((existing as { deleted?: boolean })?.deleted) {
+        customerId = undefined;
+      }
+    } catch (err: unknown) {
+      const e = err as { code?: string };
+      if (e?.code === "resource_missing") {
+        console.log("[stripe/checkout] stale customer id, recreating", { customerId });
+        customerId = undefined;
+      } else {
+        throw err;
+      }
+    }
+  }
+
   if (!customerId) {
     const customer = await stripe.customers.create({
       email,
