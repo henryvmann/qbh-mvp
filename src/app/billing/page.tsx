@@ -205,25 +205,41 @@ function BillingContent() {
                   ))}
                 </ul>
 
-                <button
-                  onClick={() => !isFree && handleCheckout(plan.id as "solo" | "family")}
-                  disabled={!!loading || isCurrent || isCurrentFree}
-                  className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold transition ${
-                    isCurrent || isCurrentFree
-                      ? "bg-[#E5EAF2] text-[#4F5F73] cursor-default"
-                      : isFree
-                      ? "bg-white border border-[#E5EAF2] text-[#071832] hover:bg-[#F4F5F7]"
-                      : "bg-[#1677FF] text-white hover:bg-[#006BFF]"
-                  }`}
-                >
-                  {isCurrent || isCurrentFree
-                    ? "Current Plan"
-                    : loading === plan.id
-                    ? "Redirecting..."
-                    : isFree
-                    ? "Your Current Plan"
-                    : `Get ${plan.name}`}
-                </button>
+                {/*
+                  Button states:
+                    - Card matches user's active paid plan → greyed-out "Current Plan"
+                    - User on Free, looking at Free card → greyed-out "Current Plan"
+                    - User on paid plan, looking at Free card → "Downgrade to Free" link to portal
+                    - Card is a paid plan the user isn't on → "Get [Plan]" → checkout
+                */}
+                {(isCurrent || isCurrentFree) ? (
+                  <button
+                    disabled
+                    className="mt-6 w-full rounded-xl py-3 text-sm font-semibold bg-[#E5EAF2] text-[#4F5F73] cursor-default"
+                  >
+                    Current Plan
+                  </button>
+                ) : isFree && isActive ? (
+                  <button
+                    onClick={handleManageSubscription}
+                    disabled={portalLoading}
+                    className="mt-6 w-full rounded-xl py-3 text-sm font-semibold bg-white border border-[#E5EAF2] text-[#071832] hover:bg-[#F4F5F7]"
+                  >
+                    {portalLoading ? "Loading..." : "Downgrade to Free"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => !isFree && handleCheckout(plan.id as "solo" | "family")}
+                    disabled={!!loading || isFree}
+                    className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold transition ${
+                      isFree
+                        ? "bg-white border border-[#E5EAF2] text-[#4F5F73] cursor-default"
+                        : "bg-[#1677FF] text-white hover:bg-[#006BFF]"
+                    }`}
+                  >
+                    {loading === plan.id ? "Redirecting..." : `Get ${plan.name}`}
+                  </button>
+                )}
               </div>
             );
           })}
