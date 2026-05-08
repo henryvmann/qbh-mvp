@@ -5,6 +5,7 @@ import CapacitorInit from "../components/CapacitorInit";
 import KateChatWrapper from "../components/qbh/KateChatWrapper";
 import SetupWizard from "../components/qbh/SetupWizard";
 import PageIntro from "../components/qbh/PageIntro";
+import LiveCallBar from "../components/qbh/LiveCallBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -72,6 +73,7 @@ export default function RootLayout({ children }) {
           }}
         />
         <CapacitorInit />
+        <LiveCallBar />
         {children}
         <KateChatWrapper />
         <SetupWizard />
