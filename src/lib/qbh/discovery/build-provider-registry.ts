@@ -34,6 +34,14 @@ export type PlaidDiscoveryTransaction = {
   amount: number | string | null;
   date: string;
   category: string[] | null;
+  /** Plaid's enriched merchant classification. When present and HIGH
+   *  confidence, we use this directly and skip AI classification —
+   *  Plaid has already done the work. */
+  personal_finance_category?: {
+    primary: string | null;
+    detailed: string | null;
+    confidence_level: string | null;
+  } | null;
 };
 
 export type DiscoveredProvider = {
@@ -235,6 +243,12 @@ export async function buildProviderRegistry(
       dates: string[];
       amounts: number[];
       categories: string[];
+      /** Plaid's PFC primary aggregated across this merchant's
+       *  transactions. Used to short-circuit AI for clearly-medical
+       *  and clearly-non-medical merchants. */
+      pfcPrimaries: string[];
+      pfcDetaileds: string[];
+      pfcConfidences: string[];
     }
   >();
 
@@ -244,6 +258,7 @@ export async function buildProviderRegistry(
     if (!normalizedName) continue;
 
     const txCategories = Array.isArray(tx.category) ? tx.category : [];
+    const pfc = tx.personal_finance_category;
     const existing = grouped.get(normalizedName);
 
     if (existing) {
@@ -251,6 +266,9 @@ export async function buildProviderRegistry(
       existing.dates.push(tx.date);
       existing.amounts.push(Math.abs(Number(tx.amount || 0)));
       existing.categories.push(...txCategories);
+      if (pfc?.primary) existing.pfcPrimaries.push(pfc.primary);
+      if (pfc?.detailed) existing.pfcDetaileds.push(pfc.detailed);
+      if (pfc?.confidence_level) existing.pfcConfidences.push(pfc.confidence_level);
       continue;
     }
 
@@ -261,6 +279,9 @@ export async function buildProviderRegistry(
       dates: [tx.date],
       amounts: [Math.abs(Number(tx.amount || 0))],
       categories: [...txCategories],
+      pfcPrimaries: pfc?.primary ? [pfc.primary] : [],
+      pfcDetaileds: pfc?.detailed ? [pfc.detailed] : [],
+      pfcConfidences: pfc?.confidence_level ? [pfc.confidence_level] : [],
     });
   }
 
@@ -520,10 +541,83 @@ export async function buildProviderRegistry(
   //      ["Shops","Pharmacy"], BEFORE the bare "SHOPS" non-healthcare
   //      category check kicks in and IGNOREs them.
   //   4) NON_HEALTHCARE category — sweeps everything else.
+  // PFC primary categories that are decisively non-healthcare.
+  // These short-circuit AI classification entirely.
+  const PFC_NOT_HEALTHCARE = new Set([
+    "FOOD_AND_DRINK",
+    "ENTERTAINMENT",
+    "GENERAL_MERCHANDISE",
+    "TRANSPORTATION",
+    "TRAVEL",
+    "BANK_FEES",
+    "TRANSFER_IN",
+    "TRANSFER_OUT",
+    "LOAN_PAYMENTS",
+    "INCOME",
+    "RENT_AND_UTILITIES",
+    "GOVERNMENT_AND_NON_PROFIT",
+    "HOME_IMPROVEMENT",
+    "PERSONAL_CARE",
+  ]);
+
+  // Map Plaid PFC detailed → our provider_type.
+  const PFC_DETAILED_TO_TYPE: Record<string, string> = {
+    MEDICAL_DENTAL_CARE: "dentist",
+    MEDICAL_EYE_CARE: "optometry",
+    MEDICAL_PHARMACIES_AND_SUPPLEMENTS: "pharmacy",
+    MEDICAL_PRIMARY_CARE: "doctor",
+    MEDICAL_VETERINARY_SERVICES: "veterinary",
+    MEDICAL_OTHER_MEDICAL_SERVICES: "specialist",
+    MEDICAL_NURSING_CARE: "nursing",
+  };
+
+  function modeOf(arr: string[]): string | null {
+    if (arr.length === 0) return null;
+    const counts: Record<string, number> = {};
+    for (const v of arr) counts[v] = (counts[v] || 0) + 1;
+    let best = arr[0];
+    let bestCount = 0;
+    for (const [k, c] of Object.entries(counts)) {
+      if (c > bestCount) {
+        bestCount = c;
+        best = k;
+      }
+    }
+    return best;
+  }
+
   for (const entry of grouped.values()) {
     const n = entry.normalized_name;
     const cats = entry.categories.join(" ").toUpperCase();
 
+    // First: trust Plaid's PFC for confident classifications.
+    // This skips AI for the vast majority of merchants — Plaid has
+    // already done the work and (per their docs) the HIGH confidence
+    // signal is reliable enough to trust without re-classification.
+    const pfcPrimary = modeOf(entry.pfcPrimaries);
+    const pfcDetailed = modeOf(entry.pfcDetaileds);
+    const pfcConfidence = modeOf(entry.pfcConfidences);
+    if (pfcPrimary === "MEDICAL" && (pfcConfidence === "HIGH" || pfcConfidence === "VERY_HIGH")) {
+      // Don't auto-veterinary — we only track human healthcare. Pet
+      // visits in MEDICAL_VETERINARY_SERVICES skip the bucket=HEALTHCARE
+      // path and fall through to IGNORE.
+      if (pfcDetailed === "MEDICAL_VETERINARY_SERVICES") {
+        preClassified.set(n, { bucket: "IGNORE", provider_type: null });
+        continue;
+      }
+      const provider_type =
+        (pfcDetailed && PFC_DETAILED_TO_TYPE[pfcDetailed]) || inferProviderType(n);
+      preClassified.set(n, { bucket: "HEALTHCARE", provider_type });
+      continue;
+    }
+    if (pfcPrimary && PFC_NOT_HEALTHCARE.has(pfcPrimary) &&
+        (pfcConfidence === "HIGH" || pfcConfidence === "VERY_HIGH")) {
+      preClassified.set(n, { bucket: "IGNORE", provider_type: null });
+      continue;
+    }
+
+    // Fallback name + legacy-category heuristics for merchants without
+    // confident PFC. Order matters here.
     if (OBVIOUS_NOT_HEALTHCARE.some((hint) => n.includes(hint))) {
       preClassified.set(n, { bucket: "IGNORE", provider_type: null });
       continue;

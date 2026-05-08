@@ -21,8 +21,38 @@ type MerchantInput = {
 /**
  * Uses OpenAI to classify a batch of merchants as healthcare or not.
  * Only sends merchant names and transaction metadata — no PII.
+ *
+ * Splits into parallel batches when the input is large — the LLM's
+ * generation time grows with output token count, so 3 batches of 30
+ * in parallel finish much faster than one batch of 90 sequentially.
  */
 export async function classifyTransactionsWithAI(
+  merchants: MerchantInput[]
+): Promise<Map<string, TransactionClassification>> {
+  if (merchants.length === 0) return new Map();
+
+  // Split into chunks of 30 and run in parallel. Single-batch was
+  // dominating onboarding latency (10-30s on accounts with many
+  // ambiguous merchants); parallel chunks bring it back to one batch's
+  // worth of time regardless of total count.
+  const CHUNK_SIZE = 30;
+  if (merchants.length > CHUNK_SIZE) {
+    const chunks: MerchantInput[][] = [];
+    for (let i = 0; i < merchants.length; i += CHUNK_SIZE) {
+      chunks.push(merchants.slice(i, i + CHUNK_SIZE));
+    }
+    const results = await Promise.all(chunks.map((c) => classifyChunk(c)));
+    const merged = new Map<string, TransactionClassification>();
+    for (const r of results) {
+      for (const [k, v] of r) merged.set(k, v);
+    }
+    return merged;
+  }
+
+  return classifyChunk(merchants);
+}
+
+async function classifyChunk(
   merchants: MerchantInput[]
 ): Promise<Map<string, TransactionClassification>> {
   if (merchants.length === 0) return new Map();

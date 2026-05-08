@@ -13,6 +13,10 @@ import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-i
 import { stateFromZip } from "../../../../lib/qbh/state-from-zip";
 
 export async function POST(req: NextRequest) {
+  const t0 = Date.now();
+  const stage = (label: string) => {
+    console.log(`[discovery/run] ${label} +${Date.now() - t0}ms`);
+  };
   try {
     // Session-first: authenticated users.
     // Onboarding fallback: pre-auth users supply a body UUID.
@@ -69,17 +73,30 @@ export async function POST(req: NextRequest) {
 
       transactions = firstPage.data.transactions;
       const total = firstPage.data.total_transactions;
+      stage(`plaid first page (${transactions.length}/${total})`);
 
-      while (transactions.length < total) {
-        const page = await plaidClient.transactionsGet({
-          access_token: item.access_token,
-          start_date: startDateStr,
-          end_date: endDateStr,
-          options: { count: pageSize, offset: transactions.length },
-        });
-        transactions.push(...page.data.transactions);
-        if (page.data.transactions.length === 0) break;
+      // Parallelize remaining pages — sequential paging on big accounts
+      // was adding ~3-5s per page on top of the first.
+      if (transactions.length < total) {
+        const offsets: number[] = [];
+        for (let off = transactions.length; off < total; off += pageSize) {
+          offsets.push(off);
+        }
+        const pages = await Promise.all(
+          offsets.map((offset) =>
+            plaidClient.transactionsGet({
+              access_token: item.access_token,
+              start_date: startDateStr,
+              end_date: endDateStr,
+              options: { count: pageSize, offset },
+            })
+          )
+        );
+        for (const page of pages) {
+          transactions.push(...page.data.transactions);
+        }
       }
+      stage(`plaid all pages (${transactions.length} txs)`);
     } catch (error: any) {
       const errorCode = error?.response?.data?.error_code;
 
@@ -140,6 +157,16 @@ export async function POST(req: NextRequest) {
       amount: tx.amount ?? null,
       date: tx.date,
       category: tx.category ?? null,
+      // Plaid's personal_finance_category is far more reliable than the
+      // legacy `category` array. Letting buildProviderRegistry use it
+      // short-circuits AI classification for the majority of merchants.
+      personal_finance_category: tx.personal_finance_category
+        ? {
+            primary: tx.personal_finance_category.primary ?? null,
+            detailed: tx.personal_finance_category.detailed ?? null,
+            confidence_level: tx.personal_finance_category.confidence_level ?? null,
+          }
+        : null,
     }));
 
     // Pull user zip + state so Places searches return local results
@@ -160,6 +187,7 @@ export async function POST(req: NextRequest) {
     }
 
     const providers = await buildProviderRegistry(normalizedTransactions, appUserId, userState, userZip);
+    stage(`buildProviderRegistry (${providers.length} providers)`);
 
     const writeResult = await writeDiscoveredProviders({
       userId: appUserId, // internal helper still uses userId naming but maps to app_user_id
