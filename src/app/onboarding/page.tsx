@@ -147,17 +147,29 @@ export default function OnboardingPage() {
   const [userId] = useState(() => typeof window !== "undefined" ? (localStorage.getItem("qbh_user_id") || crypto.randomUUID()) : crypto.randomUUID());
   const [careFor, setCareFor] = useState<string>("just-me");
   const [familyMembers, setFamilyMembers] = useState<string[]>([]);
+  // Per-recipient name + DOB collected in the new "family-details" phase
+  // after family-select. DOB matters for pediatric scheduling especially —
+  // many practices won't book without it. Initialized from familyMembers
+  // when the user advances past family-select.
+  type FamilyDetail = {
+    id: string;
+    kind: "partner" | "children" | "parents" | "other";
+    name: string;
+    dob: string;
+  };
+  const [familyDetails, setFamilyDetails] = useState<FamilyDetail[]>([]);
   // Captured at onboarding so Kate can prioritize specialists, set
   // appropriate cadence reminders, and tailor in-call language.
   // Saved to patient_profile.medical_context.
   const [medicalContext, setMedicalContext] = useState<string>("");
   // Kate behavior preferences captured during onboarding so the
   // relationship is calibrated from day one. Defaults match the
-  // current prod defaults if the user accepts as-is.
+  // current prod defaults if user skips.
   const [kateTone, setKateTone] = useState<string>("warm");
   const [kateProactivity, setKateProactivity] = useState<string>("balanced");
   // calendar_flexibility values must match /account: "flexible" |
-  // "balanced" | "strict". Don't reinvent here — round-trip would break.
+  // "balanced" | "strict". Don't reinvent here — the round-trip
+  // would break.
   const [calendarFlex, setCalendarFlex] = useState<string>("balanced");
   const [connectBank, setConnectBank] = useState(true);
   const [connectCalendar, setConnectCalendar] = useState(true);
@@ -337,13 +349,13 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (phase !== "intro") return;
     const t1 = setTimeout(() => {
-      setMessages([{ id: "k1", sender: "kate", content: "Hey \u2014 I'm Kate. I take healthcare off your plate." }]);
+      setMessages([{ id: "k1", sender: "kate", content: "Hey, I'm Kate. I run point on your healthcare \u2014 calls, scheduling, follow-ups, paperwork." }]);
     }, 600);
     const t2 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Some people have a few doctors and barely think about it. Others are in and out of appointments constantly \u2014 specialists, scans, refills, follow-ups." }]);
+      setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Some people have a few doctors and don't think about it much. Others are juggling specialists, scans, refills, follow-ups." }]);
     }, 2000);
     const t3 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you are on that spectrum, I'll meet you there. Where do you fall?" }]);
+      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you sit on that, I'll meet you there. Where are you?" }]);
       setTyping(false);
     }, 3400);
     setTyping(true);
@@ -358,16 +370,16 @@ export default function OnboardingPage() {
     // streamed into the chat like every other message so there's no
     // out-of-flow component to flicker on transition.
     const valueProps: React.ReactNode[] = [
-      <><strong>I&rsquo;ll find your doctors.</strong> I scan your co-pays so you don&rsquo;t have to remember every name and date.</>,
-      <><strong>I&rsquo;ll book your appointments.</strong> I call the office, navigate the phone tree, and schedule. You don&rsquo;t have to pick up the phone.</>,
-      <><strong>I&rsquo;ll connect the dots.</strong> I track what&rsquo;s overdue, prep you before visits, and follow up after &mdash; so you can show up informed instead of being your own health historian.</>,
+      <><strong>I&rsquo;ll find your doctors.</strong> I scan your co-pays so every name and date lives in one place.</>,
+      <><strong>I&rsquo;ll book your appointments.</strong> I call the office and schedule. You don&rsquo;t pick up the phone.</>,
+      <><strong>I&rsquo;ll connect the dots.</strong> I track what&rsquo;s pending, prep you before visits, and follow up after.</>,
     ];
     if (value === "simple") {
       addUserMessage("A few doctors, mostly simple");
       setTimeout(() => {
         addKateMessages([
-          "Easy mode. I'll keep things light \u2014 nudge you when something's overdue, handle booking calls, stay out of the way otherwise.",
-          "Here's what you can look forward to:",
+          "Got it. I'll keep things light \u2014 handle booking calls, surface what's pending, stay out of the way otherwise.",
+          "Here's how it works:",
           ...valueProps,
         ]);
         setTimeout(() => setPhase("value-props"), 3600);
@@ -376,8 +388,8 @@ export default function OnboardingPage() {
       addUserMessage("I see a lot of specialists");
       setTimeout(() => {
         addKateMessages([
-          "Then I'll be useful. I'll keep your specialists in sync, handle the scheduling and follow-ups, and prep you so each visit isn't starting from scratch.",
-          "Here's what you can look forward to:",
+          "Good \u2014 that's where I'm most useful. I'll keep your specialists in sync, handle the scheduling and follow-ups, and prep you so each visit isn't starting from scratch.",
+          "Here's how it works:",
           ...valueProps,
         ]);
         setTimeout(() => setPhase("value-props"), 3600);
@@ -468,12 +480,43 @@ export default function OnboardingPage() {
   function handleFamilyDone() {
     setResponded(true);
     addUserMessage(`Me${familyMembers.length > 0 ? ", " + familyMembers.join(", ") : ""}`);
+
+    // Seed one detail row per selected kind so the family-details phase
+    // has something to render. The user can add more (e.g. "+ Add another
+    // child") if they have multiple.
+    const seed: FamilyDetail[] = [];
+    for (const kind of familyMembers) {
+      if (kind === "partner" || kind === "children" || kind === "parents" || kind === "other") {
+        seed.push({ id: crypto.randomUUID(), kind, name: "", dob: "" });
+      }
+    }
+    setFamilyDetails(seed);
+
     setTimeout(() => {
+      if (seed.length === 0) {
+        // Edge case \u2014 no recipients picked, skip details and go straight on
+        addKateMessage("One more question \u2014 anything big going on health-wise I should know about? It helps me tailor what to track.");
+        setTimeout(() => setPhase("medical-context"), 1200);
+        return;
+      }
       addKateMessages([
-        "I'll set up a separate hub for each person. Everyone's providers, appointments, and history \u2014 organized individually but managed by you.",
-        "One more question \u2014 anything big going on health-wise I should know about? It helps me tailor what to track and how to talk to your providers.",
+        "I'll set up a separate hub for each person. Everyone's providers, appointments, and history \u2014 organized individually, all run by you.",
+        "Names and dates of birth \u2014 pediatric and specialist offices ask for these every time, so I'll keep them on file.",
       ]);
-      setTimeout(() => setPhase("medical-context"), 2400);
+      setTimeout(() => setPhase("family-details"), 2400);
+    }, 400);
+  }
+
+  function handleFamilyDetailsDone() {
+    setResponded(true);
+    const summary = familyDetails
+      .filter((d) => d.name.trim())
+      .map((d) => d.name.trim())
+      .join(", ");
+    addUserMessage(summary || "Skipping for now");
+    setTimeout(() => {
+      addKateMessage("One more question \u2014 anything big going on health-wise I should know about? It helps me tailor what to track.");
+      setTimeout(() => setPhase("medical-context"), 1200);
     }, 400);
   }
 
@@ -567,11 +610,48 @@ export default function OnboardingPage() {
       const name = `${firstName.trim()} ${lastName.trim()}`;
       const surveyStep3 = careFor === "just-me" ? ["Myself"] : ["Myself", ...familyMembers.map((m) => m === "partner" ? "My partner / spouse" : m === "children" ? "My child(ren)" : m === "parents" ? "My parent(s)" : "Someone else")];
 
-      const careRecipients: Array<{ id: string; name: string; relationship: string }> = [];
-      careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self" });
-      if (familyMembers.includes("partner")) careRecipients.push({ id: crypto.randomUUID(), name: "My Partner", relationship: "Partner" });
-      if (familyMembers.includes("children")) careRecipients.push({ id: crypto.randomUUID(), name: "My Child", relationship: "Child" });
-      if (familyMembers.includes("parents")) careRecipients.push({ id: crypto.randomUUID(), name: "My Parent", relationship: "Parent" });
+      const careRecipients: Array<{ id: string; name: string; relationship: string; dob?: string | null }> = [];
+      careRecipients.push({ id: crypto.randomUUID(), name: firstName.trim(), relationship: "Self", dob: patientDob || null });
+
+      // Use the structured familyDetails captured in the family-details
+      // phase (real names + DOBs). Fall back to placeholder names only
+      // if the user somehow skipped past without filling — keeps the
+      // existing rows so the dashboard scope chips still work.
+      const relByKind = {
+        partner: "Partner",
+        children: "Child",
+        parents: "Parent",
+        other: "Other",
+      } as const;
+      const placeholderByKind = {
+        partner: "My Partner",
+        children: "My Child",
+        parents: "My Parent",
+        other: "Someone",
+      } as const;
+
+      for (const d of familyDetails) {
+        const name = d.name.trim() || placeholderByKind[d.kind];
+        careRecipients.push({
+          id: d.id,
+          name,
+          relationship: relByKind[d.kind],
+          dob: d.dob || null,
+        });
+      }
+      // Edge case: family-select selected a kind but no familyDetails row
+      // for it (shouldn't happen, but guard so we don't drop the chip).
+      for (const kind of familyMembers) {
+        const haveOne = familyDetails.some((d) => d.kind === kind);
+        if (!haveOne && (kind === "partner" || kind === "children" || kind === "parents" || kind === "other")) {
+          careRecipients.push({
+            id: crypto.randomUUID(),
+            name: placeholderByKind[kind],
+            relationship: relByKind[kind],
+            dob: null,
+          });
+        }
+      }
 
       const signupRes = await apiFetch("/api/auth/signup", {
         method: "POST",
@@ -852,7 +932,11 @@ export default function OnboardingPage() {
           setTimeout(() => {
             const overdueCount = providers.filter((p) => p.overdue).length;
             const onTrack = providers.length - overdueCount;
-            addKateMessage(`Found ${providers.length} on your team. ${onTrack} on track, ${overdueCount} might be overdue — I'll get those scheduled.`);
+            addKateMessage(
+              overdueCount > 0
+                ? `Found ${providers.length} on your team. ${overdueCount} could use a follow-up — I'll handle those.`
+                : `Found ${providers.length} on your team. Everyone's caught up.`
+            );
             setRevealDone(true);
             const next = advanceAfter(justCompleted);
             if (next === "calendar-connect") {
@@ -1103,6 +1187,7 @@ export default function OnboardingPage() {
             relying on defaults the user never visits. */}
         {phase === "kate-prefs" && !responded && (
           <div className="space-y-4 animate-fadeIn">
+            {/* Tone */}
             <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
                 How should I talk to you?
@@ -1134,6 +1219,7 @@ export default function OnboardingPage() {
               </div>
             </div>
 
+            {/* Proactivity / persistence */}
             <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
                 When something needs your attention?
@@ -1164,6 +1250,7 @@ export default function OnboardingPage() {
               </div>
             </div>
 
+            {/* Calendar strictness */}
             <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
               <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
                 How strict are you with your calendar?
@@ -1234,6 +1321,95 @@ export default function OnboardingPage() {
               style={{ backgroundColor: ACCENT }}
             >
               That's everyone
+            </button>
+          </div>
+        )}
+
+        {/* Family details — name + DOB per recipient. Only fires when
+            the user picked at least one non-self recipient. Plural kinds
+            (children / parents / other) get a "+ Add another" link so
+            multi-person families don't have to use a separate flow. */}
+        {phase === "family-details" && !responded && (
+          <div className="space-y-3 animate-fadeIn">
+            <p className="text-xs text-[#4F5F73] mb-1">Name and date of birth for each — DOB matters most for kids and specialist visits.</p>
+            {familyDetails.map((d, idx) => {
+              const labelByKind = {
+                partner: "Partner / spouse",
+                children: "Child",
+                parents: "Parent",
+                other: "Person",
+              } as const;
+              const placeholderByKind = {
+                partner: "First name",
+                children: "First name (e.g. Wyatt)",
+                parents: "First name (e.g. Mom, Dad)",
+                other: "First name",
+              } as const;
+              return (
+                <div
+                  key={d.id}
+                  className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2"
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
+                    {labelByKind[d.kind]}
+                  </div>
+                  <input
+                    type="text"
+                    value={d.name}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFamilyDetails((prev) => prev.map((x) => x.id === d.id ? { ...x, name: v } : x));
+                    }}
+                    placeholder={placeholderByKind[d.kind]}
+                    className="w-full rounded-lg border border-[#E5EAF2] bg-[#F8F9FB] px-3 py-2 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+                  />
+                  <input
+                    type="date"
+                    value={d.dob}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setFamilyDetails((prev) => prev.map((x) => x.id === d.id ? { ...x, dob: v } : x));
+                    }}
+                    className="w-full rounded-lg border border-[#E5EAF2] bg-[#F8F9FB] px-3 py-2 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+                  />
+                  {familyDetails.filter((x) => x.kind === d.kind).length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setFamilyDetails((prev) => prev.filter((x) => x.id !== d.id))}
+                      className="text-[11px] text-[#4F5F73] hover:underline"
+                    >
+                      Remove
+                    </button>
+                  )}
+                  {idx === familyDetails.length - 1 ||
+                  familyDetails[idx + 1]?.kind !== d.kind ? null : null}
+                </div>
+              );
+            })}
+            {/* Add-another links for plural kinds. Partner caps at 1. */}
+            {(["children", "parents", "other"] as const).map((kind) =>
+              familyMembers.includes(kind) ? (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() =>
+                    setFamilyDetails((prev) => [
+                      ...prev,
+                      { id: crypto.randomUUID(), kind, name: "", dob: "" },
+                    ])
+                  }
+                  className="text-xs font-medium text-[#1677FF] hover:underline"
+                >
+                  + Add another {kind === "children" ? "child" : kind === "parents" ? "parent" : "person"}
+                </button>
+              ) : null
+            )}
+            <button
+              onClick={handleFamilyDetailsDone}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white mt-2"
+              style={{ backgroundColor: ACCENT }}
+            >
+              That&rsquo;s everyone
             </button>
           </div>
         )}
@@ -1820,12 +1996,12 @@ export default function OnboardingPage() {
                     "great starting place" and what Kate's about to do. */}
                 <KateBubble>
                   {score >= 85
-                    ? `${score} — strong. I'll keep it there.`
+                    ? `${score}. I have most of what I need to run point on your care without bothering you much.`
                     : score >= 60
-                    ? `${score} — on track. I'll keep it there.`
+                    ? `${score}. Enough to start running point — I'll fill in the rest as we go.`
                     : score >= 30
-                    ? `${score} today. Solid foundation. I'll handle the rest from here.`
-                    : `${score} today. Great starting place. I'll handle the rest from here — by next week we'll be moving.`}
+                    ? `${score} today. I have the basics. The rest builds as we work together.`
+                    : `${score} today. Plenty to start with. We'll add the rest naturally as it comes up.`}
                 </KateBubble>
               </div>
               <button
