@@ -27,6 +27,7 @@ import HandleItButton from "../../components/qbh/HandleItButton";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import HealthScoreRing from "../../components/qbh/HealthScoreRing";
+import StuckPrompt from "../../components/qbh/StuckPrompt";
 import BrandShell from "../../components/brand/BrandShell";
 import {
   GlassCard,
@@ -88,6 +89,12 @@ function DashboardInner() {
   const [careRecipients, setCareRecipients] = useState<
     Array<{ id: string; name: string; relationship: string }>
   >([]);
+  // Provider-level pause map for the "feeling stuck?" prompt. Read
+  // from patient_profile.paused_providers. Refetched whenever the user
+  // taps a snooze option so the prompt clears immediately.
+  const [pausedProviders, setPausedProviders] = useState<
+    Record<string, { until: string; kind: string }>
+  >({});
   // Scope filter — null = "All". Otherwise filters provider count,
   // overdue, upcoming, and the care-team list to providers attached
   // to that recipient. Stored only client-side; the dashboard query
@@ -116,16 +123,21 @@ function DashboardInner() {
     }
     load().catch(() => setLoading(false));
 
-    // Care recipients drive the scope chips. Best-effort — if the
-    // fetch fails we just don't render the toggle.
-    apiFetch("/api/patient-profile")
-      .then((r) => r.json())
-      .then((p) => {
-        const list = p?.profile?.care_recipients;
-        if (Array.isArray(list)) setCareRecipients(list);
-      })
-      .catch(() => {});
+    refreshProfile();
   }, [router]);
+
+  async function refreshProfile() {
+    try {
+      const r = await apiFetch("/api/patient-profile");
+      const p = await r.json();
+      const list = p?.profile?.care_recipients;
+      if (Array.isArray(list)) setCareRecipients(list);
+      const paused = p?.profile?.paused_providers;
+      if (paused && typeof paused === "object") setPausedProviders(paused);
+    } catch {
+      /* best-effort */
+    }
+  }
 
   if (loading) {
     return (
@@ -256,6 +268,19 @@ function DashboardInner() {
             + Add another
           </Link>
         </div>
+      )}
+
+      {/* Soft Kate prompt for providers waiting on follow-up. Renders
+          above the score so it's the first thing the user sees if
+          something's been on their list — no shame language, no urgency,
+          and four snooze cadences matching different psychological
+          states (depleted, capable, "I'll get to it," forever). */}
+      {data?.snapshots && (
+        <StuckPrompt
+          snapshots={data.snapshots}
+          pausedProviders={pausedProviders}
+          onChange={refreshProfile}
+        />
       )}
 
       {/* Health Coordination Score */}
