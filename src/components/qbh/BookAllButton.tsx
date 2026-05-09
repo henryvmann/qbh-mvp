@@ -191,15 +191,18 @@ export default function BookAllButton({ followUps, onStarted }: Props) {
 
                 <div>
                   <label className="mb-1 block text-xs font-medium text-[#4F5F73]">
-                    Reason (applies to all) <span className="text-[#4F5F73]">— optional</span>
+                    Reason for visit (applies to all) <span className="text-[#4F5F73]">— optional</span>
                   </label>
                   <textarea
                     value={bookingReason}
                     onChange={(e) => setBookingReason(e.target.value)}
-                    placeholder="e.g. annual checkup, no urgent issues"
+                    placeholder="e.g. annual checkup, follow-up, new-patient visit"
                     rows={2}
                     className="w-full rounded-xl border border-[#E5EAF2] bg-[#F8F9FB] px-3 py-2 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF] resize-none"
                   />
+                  <p className="mt-1 text-[10px] text-[#4F5F73]">
+                    Keep it general — receptionists only need the visit type, not clinical details.
+                  </p>
                 </div>
 
                 {progress && (
