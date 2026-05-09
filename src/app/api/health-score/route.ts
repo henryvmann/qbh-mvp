@@ -80,18 +80,14 @@ export async function GET(req: Request) {
     factors.push({ label: `${confirmedCount} provider${confirmedCount !== 1 ? "s" : ""} confirmed`, points: confirmedPoints, earned: confirmedPoints > 0 });
     earned += confirmedPoints;
 
-    // Overdue penalty (-5 per overdue provider)
+    // Score never punishes the user. Compute overdue count for the
+    // all-caught-up bonus only — no -5 penalty.
     const overdueCount = nonPharmacy.filter((s) =>
       s.followUpNeeded &&
       s.booking_state?.status !== "BOOKED" &&
       s.booking_state?.status !== "IN_PROGRESS" &&
       s.provider.confirmed_status !== "recurring"
     ).length;
-    const overduePenalty = overdueCount * -5;
-    if (overdueCount > 0) {
-      factors.push({ label: `${overdueCount} provider${overdueCount !== 1 ? "s" : ""} overdue`, points: overduePenalty, earned: false });
-      earned += overduePenalty;
-    }
 
     // Booked appointments bonus (10 per booked, max 20)
     const bookedCount = nonPharmacy.filter((s) => s.booking_state?.status === "BOOKED").length;
@@ -101,10 +97,10 @@ export async function GET(req: Request) {
       earned += bookedPoints;
     }
 
-    // Zero overdue bonus (15 points)
+    // All-caught-up bonus (15 points)
     const zeroOverdue = overdueCount === 0 && nonPharmacy.length > 0;
     if (zeroOverdue) {
-      factors.push({ label: "All providers on track", points: 15, earned: true });
+      factors.push({ label: "All providers caught up", points: 15, earned: true });
       earned += 15;
     }
 

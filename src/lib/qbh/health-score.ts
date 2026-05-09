@@ -58,7 +58,9 @@ export async function computeReadinessScore(appUserId: string): Promise<number |
     ).length;
     earned += Math.min(confirmedCount * 3, 15);
 
-    // Overdue penalty
+    // No more overdue penalty — score never punishes the user for
+    // falling behind. "Waiting on a follow-up" is data, not a deficit.
+    // Compute the count for the "all caught up" bonus only.
     const overdueCount = nonPharmacy.filter(
       (s) =>
         s.followUpNeeded &&
@@ -66,13 +68,12 @@ export async function computeReadinessScore(appUserId: string): Promise<number |
         s.booking_state?.status !== "IN_PROGRESS" &&
         s.provider.confirmed_status !== "recurring"
     ).length;
-    earned += overdueCount * -5;
 
     // Booked bonus (10 per, max 20)
     const bookedCount = nonPharmacy.filter((s) => s.booking_state?.status === "BOOKED").length;
     earned += Math.min(bookedCount * 10, 20);
 
-    // Zero overdue bonus
+    // All-caught-up bonus
     if (overdueCount === 0 && nonPharmacy.length > 0) earned += 15;
 
     // Care recipients (3 per, max 9)
