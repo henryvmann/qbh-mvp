@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../../lib/api";
 import { getSpecialtyColor } from "../../../lib/qbh/provider-utils";
@@ -59,7 +59,12 @@ function formatDateTime(iso: string): string {
 export default function ProviderDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const providerId = params.id as string;
+  // Auto-open the booking form when arriving from "Book it now" on the
+  // dashboard StuckPrompt: ?action=book → HandleItButton mounts with
+  // its form already expanded. Saves a tap.
+  const autoOpenBooking = searchParams?.get("action") === "book";
 
   const [provider, setProvider] = useState<Provider | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -539,6 +544,8 @@ export default function ProviderDetailPage() {
                         phone_number: cand.phone,
                       }),
                     });
+                    // Refresh to drop the picker and surface the
+                    // confirmed phone in the action bar.
                     window.location.reload();
                   }}
                 />
@@ -553,6 +560,7 @@ export default function ProviderDetailPage() {
                 providerName={provider.name}
                 phoneNumber={provider.phone_number}
                 label="Have Kate book an appointment"
+                autoOpen={autoOpenBooking}
               />
             </div>
           )}
