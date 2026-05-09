@@ -68,6 +68,10 @@ export async function GET(req: Request) {
         failure_class: (classification?.failure_class as string | null) || null,
         call_summary: (classification?.call_summary as string | null) || null,
         reason_summary: (classification?.reason_summary as string | null) || null,
+        retry_policy_hint: (classification?.retry_policy_hint as string | null) || null,
+        user_input_required: !!classification?.user_input_required,
+        callback_requested: !!classification?.callback_requested,
+        suggested_retry_after_iso: (classification?.suggested_retry_after_iso as string | null) || null,
       },
     },
     { headers: { "Cache-Control": "no-store, max-age=0" } }

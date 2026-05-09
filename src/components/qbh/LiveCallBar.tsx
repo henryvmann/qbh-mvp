@@ -17,6 +17,10 @@ type Attempt = {
   failure_class: string | null;
   call_summary: string | null;
   reason_summary: string | null;
+  retry_policy_hint: string | null;
+  user_input_required: boolean;
+  callback_requested: boolean;
+  suggested_retry_after_iso: string | null;
 };
 
 const DISMISSED_KEY = "qbh_dismissed_call_attempt_id";
@@ -89,6 +93,7 @@ export default function LiveCallBar() {
     : { bg: "#E08A1F", text: "#FFFFFF", accent: "#FFFFFF" };
 
   const message = renderMessage(attempt);
+  const nextStep = renderNextStep(attempt);
 
   function dismiss() {
     if (typeof window === "undefined") return;
@@ -116,7 +121,14 @@ export default function LiveCallBar() {
       }}
     >
       {inProgress && <PulsingDot />}
-      <div style={{ flex: 1, lineHeight: 1.4 }}>{message}</div>
+      <div style={{ flex: 1, lineHeight: 1.4 }}>
+        <div>{message}</div>
+        {nextStep && (
+          <div style={{ marginTop: 2, fontSize: 12, opacity: 0.92, fontWeight: 400 }}>
+            {nextStep}
+          </div>
+        )}
+      </div>
       {isTerminal && (
         <button
           type="button"
@@ -198,6 +210,47 @@ function renderMessage(a: Attempt): React.ReactNode {
   }
   if (a.call_summary) return <>{a.call_summary}</>;
   return <>Kate&rsquo;s call to <strong>{provider}</strong> didn&rsquo;t complete. We&rsquo;ll try again.</>;
+}
+
+// Translates retry_policy_hint + user_input_required into a friendly
+// "what happens next" sentence so the user knows whether Kate is on
+// it or whether they need to do something. Returns null when there's
+// no useful next step to surface (e.g. on success).
+function renderNextStep(a: Attempt): React.ReactNode | null {
+  if (isInProgress(a)) return null;
+  if (isSuccess(a)) return null;
+
+  if (a.user_input_required) {
+    return <>I need a bit more from you to keep going — open this provider to see what.</>;
+  }
+
+  const hint = (a.retry_policy_hint || "").toUpperCase();
+  switch (hint) {
+    case "RETRY_NEXT_BUSINESS_HOURS":
+      return <>I&rsquo;ll try again at the next business hours, no action needed.</>;
+    case "RETRY_LATER":
+      return <>I&rsquo;ll try again shortly. No action needed.</>;
+    case "RETRY_TOMORROW":
+      return <>I&rsquo;ll try again tomorrow morning. No action needed.</>;
+    case "USER_INPUT_REQUIRED":
+      return <>I need a bit more from you to keep going.</>;
+    case "DO_NOT_RETRY":
+      return <>I won&rsquo;t try this one again on my own — open the provider when you want to revisit.</>;
+    default: {
+      // Failure with no explicit hint — fall back based on failure class.
+      const fc = (a.failure_class || "").toUpperCase();
+      if (fc === "OFFICE_CLOSED" || fc === "NO_ANSWER" || fc === "BUSY") {
+        return <>I&rsquo;ll try again at the next business hours, no action needed.</>;
+      }
+      if (fc === "WRONG_NUMBER") {
+        return <>Worth checking the contact info on this provider before we try again.</>;
+      }
+      if (fc === "NEW_PATIENT_NOT_ACCEPTED" || fc === "INSURANCE_NOT_ACCEPTED" || fc === "REQUIRES_REFERRAL") {
+        return <>This one needs a decision from you before I try again.</>;
+      }
+      return null;
+    }
+  }
 }
 
 function humanizeFailure(cls: string): string {
