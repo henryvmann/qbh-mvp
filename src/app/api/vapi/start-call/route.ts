@@ -6,7 +6,7 @@ import { logAudit } from "../../../../lib/audit";
 
 type JsonRecord = Record<string, unknown>;
 
-type StartCallMode = "BOOK" | "ADJUST";
+type StartCallMode = "BOOK" | "ADJUST" | "REFILL";
 
 type BookedAppointmentSummary = {
   status: "BOOKED_CONFIRMED";
@@ -214,9 +214,10 @@ function formatMemberIdForSpeech(id: string | null | undefined): string | null {
 }
 
 function getStartCallMode(value: unknown): StartCallMode {
-  return String(value || "").trim().toUpperCase() === "ADJUST"
-    ? "ADJUST"
-    : "BOOK";
+  const v = String(value || "").trim().toUpperCase();
+  if (v === "ADJUST") return "ADJUST";
+  if (v === "REFILL") return "REFILL";
+  return "BOOK";
 }
 
 function buildAvailabilityWindow() {
@@ -690,6 +691,10 @@ export async function POST(req: Request) {
   // rescheduling — confusing the receptionist.
   const speechName = formatNameForSpeech(resolvedPatientName);
   const speechProvider = cleanProviderNameForSpeech(provider_name);
+  const refillMedName =
+    typeof body?.refill_medication_name === "string" && body.refill_medication_name.trim()
+      ? body.refill_medication_name.trim()
+      : null;
   const firstMessageByMode: Record<string, string> = {
     BOOK: speechProvider
       ? `Hi, this is Kate — calling to schedule an appointment for ${speechName} with ${speechProvider}.`
@@ -700,6 +705,9 @@ export async function POST(req: Request) {
     INQUIRY: speechProvider
       ? `Hi, this is Kate, ${speechName}'s care coordinator — I had a quick question about ${speechProvider}.`
       : `Hi, this is Kate, ${speechName}'s care coordinator — I had a quick question.`,
+    REFILL: refillMedName
+      ? `Hi, this is Kate, ${speechName}'s care coordinator — calling about a refill for ${refillMedName}.`
+      : `Hi, this is Kate, ${speechName}'s care coordinator — calling about a prescription refill.`,
   };
   const firstMessage = firstMessageByMode[mode] || firstMessageByMode.BOOK;
 
@@ -727,6 +735,16 @@ export async function POST(req: Request) {
           is_manual_provider: isManualProvider,
           patient_status: patientStatus,
           existing_appointment_note: existingAppointmentInfo || "none",
+          // Refill-only context. "none" sentinel keeps the variable
+          // present so the prompt template doesn't error referencing
+          // it on non-refill calls.
+          refill_medication_name: refillMedName || "none",
+          refill_dosage:
+            (typeof body?.refill_dosage === "string" && body.refill_dosage.trim()) || "not specified",
+          refill_pharmacy_name:
+            (typeof body?.refill_pharmacy_name === "string" && body.refill_pharmacy_name.trim()) || "not specified",
+          refill_rx_number:
+            (typeof body?.refill_rx_number === "string" && body.refill_rx_number.trim()) || "not on file",
           doctor_name: doctorName ? (doctorName.match(/^(Dr\.?|Doctor)\s/i) ? doctorName : `Dr. ${doctorName}`) : "not specified",
           patient_date_of_birth:
             (typeof body?.patient_date_of_birth === "string" && formatDobForSpeech(body.patient_date_of_birth)) ||

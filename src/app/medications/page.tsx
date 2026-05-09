@@ -54,6 +54,8 @@ export default function MedicationsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [refillMessage, setRefillMessage] = useState<string | null>(null);
+  const [refillModalMed, setRefillModalMed] = useState<Medication | null>(null);
+  const [refillBusy, setRefillBusy] = useState(false);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -136,9 +138,56 @@ export default function MedicationsPage() {
   }
 
   function handleRefill(med: Medication) {
-    // Coming soon — will wire up VAPI REFILL mode later
-    setRefillMessage(`Refill request for ${med.name} — coming soon! Kate will be able to call your pharmacy to request refills.`);
-    setTimeout(() => setRefillMessage(null), 4000);
+    setRefillModalMed(med);
+  }
+
+  // Fires the actual REFILL call to either the pharmacy (default for
+  // most refills) or the prescribing doctor (when the pharmacy says no
+  // refills left, or the med is a controlled substance). Reuses the
+  // start-call route with mode=REFILL.
+  async function fireRefillCall(med: Medication, target: "pharmacy" | "doctor") {
+    if (refillBusy) return;
+    const targetProviderId = target === "pharmacy" ? med.pharmacy_id : med.provider_id;
+    if (!targetProviderId) return;
+
+    const targetProvider = providers.find((p) => p.id === targetProviderId);
+    const targetName = targetProvider?.display_name || targetProvider?.name || null;
+    const pharmacyProvider = providers.find((p) => p.id === med.pharmacy_id);
+    const pharmacyName = pharmacyProvider?.display_name || pharmacyProvider?.name || null;
+
+    setRefillBusy(true);
+    try {
+      const res = await apiFetch("/api/vapi/start-call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider_id: targetProviderId,
+          provider_name: targetName,
+          mode: "REFILL",
+          refill_medication_name: med.name,
+          refill_dosage: med.dosage || undefined,
+          refill_pharmacy_name: pharmacyName || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setRefillModalMed(null);
+        setRefillMessage(
+          target === "pharmacy"
+            ? `Kate is calling ${pharmacyName || "your pharmacy"} to refill ${med.name}.`
+            : `Kate is calling ${targetName || "your doctor"} about a new prescription for ${med.name}.`
+        );
+        setTimeout(() => setRefillMessage(null), 4000);
+      } else {
+        setRefillMessage(`Couldn't start call: ${data?.message || data?.error || "unknown error"}`);
+        setTimeout(() => setRefillMessage(null), 5000);
+      }
+    } catch (err) {
+      setRefillMessage(`Couldn't start call: ${err instanceof Error ? err.message : "network error"}`);
+      setTimeout(() => setRefillMessage(null), 5000);
+    } finally {
+      setRefillBusy(false);
+    }
   }
 
   function getProviderName(providerId: string | null): string | null {
@@ -176,6 +225,97 @@ export default function MedicationsPage() {
             {refillMessage}
           </div>
         )}
+
+        {/* Refill modal — opens when handleRefill is called. Two-button
+            decision: pharmacy (default for most refills) or doctor
+            (when pharmacy says no refills, or controlled substance). */}
+        {refillModalMed && (() => {
+          const pharm = providers.find((p) => p.id === refillModalMed.pharmacy_id);
+          const doc = providers.find((p) => p.id === refillModalMed.provider_id);
+          const pharmName = pharm?.display_name || pharm?.name || null;
+          const docName = doc?.display_name || doc?.name || null;
+          return (
+            <div
+              role="dialog"
+              aria-modal="true"
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(7,24,50,0.45)",
+                zIndex: 300,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 16,
+              }}
+              onClick={() => !refillBusy && setRefillModalMed(null)}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: "100%",
+                  maxWidth: 420,
+                  background: "white",
+                  borderRadius: 16,
+                  padding: 20,
+                  boxShadow: "0 20px 60px rgba(7,24,50,0.25)",
+                }}
+              >
+                <div className="text-base font-semibold text-[#071832]">
+                  Refill {refillModalMed.name}
+                </div>
+                <div className="mt-1 text-xs text-[#4F5F73] mb-4">
+                  Where should I call?
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {pharmName ? (
+                    <button
+                      type="button"
+                      disabled={refillBusy}
+                      onClick={() => fireRefillCall(refillModalMed, "pharmacy")}
+                      className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white text-left"
+                      style={{ backgroundColor: "#1677FF" }}
+                    >
+                      <div>Call your pharmacy</div>
+                      <div className="text-xs font-normal opacity-90 mt-0.5">{pharmName}</div>
+                    </button>
+                  ) : (
+                    <div className="rounded-xl px-4 py-3 text-xs text-[#4F5F73] bg-[#F0F2F5] border border-[#E5EAF2]">
+                      No pharmacy on file for this medication.
+                    </div>
+                  )}
+
+                  {docName && (
+                    <button
+                      type="button"
+                      disabled={refillBusy}
+                      onClick={() => fireRefillCall(refillModalMed, "doctor")}
+                      className="w-full rounded-xl px-4 py-3 text-sm font-medium border border-[#E5EAF2] bg-white text-[#071832] text-left"
+                    >
+                      <div>Call your doctor for a renewal</div>
+                      <div className="text-xs font-normal text-[#4F5F73] mt-0.5">
+                        {docName} · use this if the pharmacy says no refills left
+                      </div>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={refillBusy}
+                    onClick={() => setRefillModalMed(null)}
+                    className="text-xs text-[#4F5F73] mt-1 self-start"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {refillBusy && (
+                  <div className="mt-3 text-xs text-[#4F5F73]">Starting call…</div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Add Medication Form */}
         {showForm && (
@@ -296,7 +436,7 @@ export default function MedicationsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {med.pharmacy_id && (
+                      {(med.pharmacy_id || med.provider_id) && (
                         <button
                           type="button"
                           onClick={() => handleRefill(med)}
