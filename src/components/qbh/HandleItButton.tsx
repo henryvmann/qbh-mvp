@@ -52,6 +52,11 @@ export default function HandleItButton({
 
   // Pre-call info collection
   const [showForm, setShowForm] = React.useState(false);
+  // Lightweight first step: "go now" vs "more details" — only shown
+  // when the profile + booking-for are already resolved and there's
+  // no existing-appointment intent to disambiguate. Otherwise we
+  // skip straight to the form because we need data anyway.
+  const [showQuickChoice, setShowQuickChoice] = React.useState(false);
   const [fullName, setFullName] = React.useState("");
   const [dob, setDob] = React.useState("");
   const [insuranceProvider, setInsuranceProvider] = React.useState("");
@@ -194,7 +199,19 @@ export default function HandleItButton({
       setBookingTimeframePreset("");
       setBookingReason("");
       setPatientStatus(null);
-      setShowForm(true);
+
+      // Decide between quick-choice and the full form. Quick path is
+      // available only when we have everything needed to dial right
+      // now without further user input.
+      const eligibleForQuickPath =
+        !profileIncomplete &&
+        !!initialFor &&
+        !existingApptDate;
+      if (eligibleForQuickPath) {
+        setShowQuickChoice(true);
+      } else {
+        setShowForm(true);
+      }
       setLoading(false);
     } catch {
       // Profile fetch failed — still open the form (with profile
@@ -351,6 +368,53 @@ export default function HandleItButton({
 
   return (
     <div className="mt-4">
+      {/* Quick choice — appears when the profile + booking-for are
+          already resolved and there's no existing-appointment intent
+          to pick. Two buttons: dial right now with sensible defaults,
+          or open the full questionnaire. */}
+      {showQuickChoice && (
+        <div className="mb-4 rounded-2xl border border-[#E5EAF2] bg-white p-5 shadow-sm">
+          <div className="text-sm font-semibold text-[#071832]">
+            Ready when you are
+          </div>
+          <div className="mt-1 text-xs text-[#4F5F73] mb-4">
+            I have what I need to call. Want me to go ahead, or do you want to give me a heads-up first?
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              disabled={!!loading || saving}
+              onClick={async () => {
+                setShowQuickChoice(false);
+                await handleFormSubmit();
+              }}
+              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+              style={{ backgroundColor: "#1677FF" }}
+            >
+              {saving ? "Calling…" : "Have Kate call now"}
+            </button>
+            <button
+              type="button"
+              disabled={!!loading || saving}
+              onClick={() => {
+                setShowQuickChoice(false);
+                setShowForm(true);
+              }}
+              className="w-full rounded-xl px-4 py-3 text-sm font-medium border border-[#E5EAF2] bg-white text-[#071832]"
+            >
+              Give Kate more details first
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowQuickChoice(false)}
+              className="text-xs text-[#4F5F73] mt-1"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Pre-call info form */}
       {showForm && (
         <div className="mb-4 rounded-2xl border border-[#E5EAF2] bg-white p-5 shadow-sm">
@@ -674,7 +738,7 @@ export default function HandleItButton({
       )}
 
       {/* Main call button */}
-      {!showForm && !showUpgradePrompt && (
+      {!showForm && !showUpgradePrompt && !showQuickChoice && (
         <button
           type="button"
           onClick={checkSubscriptionAndProceed}
