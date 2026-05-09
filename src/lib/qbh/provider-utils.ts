@@ -40,23 +40,55 @@ export function getSpecialtyColor(provider: { name?: string; specialty?: string 
 
   if (type === "pharmacy") return SPECIALTY_COLORS.pharmacy;
 
-  // Check explicit specialty label first (set by user via Provider Type picker)
+  // Direct lookup against the structured provider_type set by
+  // discovery. Catches "dermatology", "cardiology", etc. without
+  // depending on name regex.
+  const TYPE_TO_KEY: Record<string, keyof typeof SPECIALTY_COLORS> = {
+    dentist: "dentist",
+    pediatric: "pediatric",
+    pediatrics: "pediatric",
+    pcp: "pcp",
+    primary_care: "pcp",
+    doctor: "pcp",
+    mental_health: "therapist",
+    therapist: "therapist",
+    eye: "eye",
+    vision: "eye",
+    optometry: "eye",
+    dermatology: "dermatology",
+    obgyn: "obgyn",
+    gynecology: "obgyn",
+    cardiology: "specialist",
+    gastroenterology: "specialist",
+    neurology: "specialist",
+    endocrinology: "specialist",
+    pulmonology: "specialist",
+    oncology: "specialist",
+    urology: "specialist",
+    rheumatology: "specialist",
+    orthopedic: "specialist",
+    allergy: "specialist",
+    ent: "specialist",
+    specialist: "specialist",
+  };
+  if (type && TYPE_TO_KEY[type]) return SPECIALTY_COLORS[TYPE_TO_KEY[type]];
+
+  // Check explicit specialty label (set by user via Provider Type picker)
   const explicitMatch = LABEL_MAP[specialty];
   if (explicitMatch) return SPECIALTY_COLORS[explicitMatch];
 
-  // Keyword detection. Order matters — more-specific matches first.
-  // Pediatrics has to come before "primary care" since pediatricians
-  // are technically primary-care providers but get their own bucket
-  // for usability ("Willows Pediatric" should land in Pediatric Care,
-  // not the family-PCP bucket).
+  // Keyword fallback for providers without a typed provider_type.
+  // \w* on stems so "dermatology" matches "derm", "cardiology"
+  // matches "cardio", etc. — the previous \b(derm)\b only matched
+  // "derm" as a standalone word.
   const haystack = specialty + " " + name;
-  if (/\b(pediatric|peds|pediatrician|child|children)\b/.test(haystack)) return SPECIALTY_COLORS.pediatric;
-  if (/\b(therap|psych|counsel|mental|behav|lcsw|lmft|lpc)\b/.test(haystack)) return SPECIALTY_COLORS.therapist;
-  if (/\b(dent|dds|dmd|oral|orthodont)\b/.test(haystack)) return SPECIALTY_COLORS.dentist;
-  if (/\b(eye|vision|ophthal|optom)\b/.test(haystack)) return SPECIALTY_COLORS.eye;
-  if (/\b(derm|skin)\b/.test(haystack)) return SPECIALTY_COLORS.dermatology;
-  if (/\b(obgyn|ob\/gyn|gynec|obstet)\b/.test(haystack)) return SPECIALTY_COLORS.obgyn;
+  if (/\b(pediatric\w*|peds|child|children)\b/.test(haystack)) return SPECIALTY_COLORS.pediatric;
+  if (/\b(therap\w*|psych\w*|counsel\w*|mental|behav\w*|lcsw|lmft|lpc)\b/.test(haystack)) return SPECIALTY_COLORS.therapist;
+  if (/\b(dent\w*|dds|dmd|oral|orthodont\w*)\b/.test(haystack)) return SPECIALTY_COLORS.dentist;
+  if (/\b(eye|vision|ophthal\w*|optom\w*)\b/.test(haystack)) return SPECIALTY_COLORS.eye;
+  if (/\b(derm\w*|skin)\b/.test(haystack)) return SPECIALTY_COLORS.dermatology;
+  if (/\b(obgyn|ob\/gyn|gynec\w*|obstet\w*)\b/.test(haystack)) return SPECIALTY_COLORS.obgyn;
   if (/\b(primary|family|internal|general|pcp)\b/.test(haystack)) return SPECIALTY_COLORS.pcp;
-  if (/\b(cardio|neuro|gastro|endo|pulmon|oncol|urol|nephro|orthopaedic|orthopedic|chiropract|podiatr|allergy|rheumat|hematol)\b/.test(haystack)) return SPECIALTY_COLORS.specialist;
+  if (/\b(cardio\w*|neuro\w*|gastro\w*|endo\w*|pulmon\w*|oncol\w*|urol\w*|nephro\w*|orthopaedic|orthopedic|chiropract\w*|podiatr\w*|allerg\w*|rheumat\w*|hematol\w*)\b/.test(haystack)) return SPECIALTY_COLORS.specialist;
   return SPECIALTY_COLORS.default;
 }

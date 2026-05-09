@@ -507,7 +507,27 @@ export async function buildProviderRegistry(
   const URGENT_CARE_HINTS = ["URGENT CARE", "CITYMD"];
   const MENTAL_HEALTH_HINTS = ["MENTAL HEALTH", "PSYCHIATR", "PSYCHOLOG", "THERAPY", "COUNSEL", "BEHAVIORAL HEALTH"];
   const PT_HINTS = ["PHYSICAL THERAPY", "PHYSICAL THERAP", "DPT ", " DPT", "REHABILITATION"];
-  const SPECIALTY_HINTS = ["DERMATOLOG", "CARDIOLOG", "GASTROENTEROLOG", "NEUROLOG", "ORTHOPEDIC", "GYNECOLOG", "OBGYN", "ONCOLOG", "UROLOG", "ENDOCRINOLOG", "RHEUMATOLOG", "PULMONOLOG"];
+  // Specific specialty hints → distinct provider_type strings so the
+  // UI can group providers by specialty rather than collapsing them
+  // all into a generic "specialist" bucket.
+  const SPECIALTY_HINTS_TYPED: Array<[string, string]> = [
+    ["DERMATOLOG", "dermatology"],
+    ["CARDIOLOG", "cardiology"],
+    ["GASTROENTEROLOG", "gastroenterology"],
+    ["NEUROLOG", "neurology"],
+    ["ORTHOPEDIC", "orthopedic"],
+    ["OBGYN", "gynecology"],
+    ["GYNECOLOG", "gynecology"],
+    ["ONCOLOG", "oncology"],
+    ["UROLOG", "urology"],
+    ["ENDOCRINOLOG", "endocrinology"],
+    ["RHEUMATOLOG", "rheumatology"],
+    ["PULMONOLOG", "pulmonology"],
+    ["ALLERGIST", "allergy"],
+    ["ALLERGY", "allergy"],
+    ["ENT ", "ent"],
+    ["OTOLARYNG", "ent"],
+  ];
   const PEDIATRIC_HINTS = ["PEDIATRIC", "WILLOWS PEDIATRIC"];
 
   /** Pick the most specific provider_type a name implies, or null. */
@@ -520,7 +540,9 @@ export async function buildProviderRegistry(
     if (HOSPITAL_HINTS.some((h) => n.includes(h))) return "hospital";
     if (MENTAL_HEALTH_HINTS.some((h) => n.includes(h))) return "mental_health";
     if (PT_HINTS.some((h) => n.includes(h))) return "pt";
-    if (SPECIALTY_HINTS.some((h) => n.includes(h))) return "specialist";
+    for (const [hint, type] of SPECIALTY_HINTS_TYPED) {
+      if (n.includes(hint)) return type;
+    }
     if (PEDIATRIC_HINTS.some((h) => n.includes(h))) return "doctor";
     if (n.includes("ONE MEDICAL")) return "doctor";
     // Generic credential markers as last resort — credentialed names
