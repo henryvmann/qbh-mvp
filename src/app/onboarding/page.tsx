@@ -355,7 +355,7 @@ export default function OnboardingPage() {
       setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Some people have a few doctors and don't think about it much. Others are juggling specialists, scans, refills, follow-ups." }]);
     }, 2000);
     const t3 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you sit on that, I'll meet you there. Where are you?" }]);
+      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you fall on that spectrum, I'll meet you there. Just let me know:" }]);
       setTyping(false);
     }, 3400);
     setTyping(true);
