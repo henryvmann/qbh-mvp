@@ -605,6 +605,10 @@ export default function OnboardingPage() {
     if (!zipCode.trim() || !/^\d{5}(-\d{4})?$/.test(zipCode.trim())) return;
     setError(null);
     setCreatingAccount(true);
+    // Show the typing indicator immediately while the signup API call
+    // is in flight (1-3s). Otherwise the user clicks 'Create account'
+    // and stares at a frozen screen until Kate's first lead-in lands.
+    setTyping(true);
 
     try {
       const name = `${firstName.trim()} ${lastName.trim()}`;
@@ -706,21 +710,20 @@ export default function OnboardingPage() {
               "Just type a name — the doctor's, the office's, even just part of it. I'll find them as long as they have an NPI (basically every licensed provider in the US).",
             ]
           : ["Account's saved. Let's head to your dashboard — you can hand me a provider anytime."];
-      setTimeout(() => {
-        const baseDelay = 400;
-        const gap = 1100;
-        const postPause = 350;
-        addKateMessages(leadIn, baseDelay, gap);
-        // Hold until the typed-out lead-in is fully shown. Mirrors
-        // the addKateMessages timing math: first message at baseDelay,
-        // each subsequent at gap + postPause, then a small buffer.
-        const holdMs =
-          baseDelay +
-          gap +
-          Math.max(0, leadIn.length - 1) * (gap + postPause) +
-          800;
-        setTimeout(() => setPhase(next), holdMs);
-      }, 400);
+      // Use the same typing duration (gap) for the FIRST message as
+      // for subsequent ones, so all three feel consistently paced.
+      // Previously baseDelay=400 made msg 0 appear in a flash, which
+      // read as 'all 3 popped at once' even though msgs 1-2 were
+      // properly spaced behind it.
+      const baseDelay = 1100;
+      const gap = 1100;
+      const postPause = 350;
+      addKateMessages(leadIn, baseDelay, gap);
+      const holdMs =
+        baseDelay +
+        Math.max(0, leadIn.length - 1) * (gap + postPause) +
+        800;
+      setTimeout(() => setPhase(next), holdMs);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
     } finally {
