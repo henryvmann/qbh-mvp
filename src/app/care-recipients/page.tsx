@@ -17,6 +17,14 @@ type CareRecipient = {
   dob?: string | null;
 };
 
+// Managing additional people is a Family-tier feature. The first recipient
+// (typically Self) is always allowed so Solo/Free users can still set up
+// their own profile.
+function familyTierActive(status: string | null, plan: string | null) {
+  if (plan !== "family") return false;
+  return status === "active" || status === "trialing";
+}
+
 type ProviderSnapshot = {
   provider: {
     id: string;
@@ -41,6 +49,9 @@ export default function CareRecipientsPage() {
   const [newName, setNewName] = useState("");
   const [newRelationship, setNewRelationship] = useState("Other");
   const [newDob, setNewDob] = useState("");
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [stripePlan, setStripePlan] = useState<string | null>(null);
 
   useEffect(() => {
     // /api/providers/list returns the raw active rows including
@@ -50,9 +61,14 @@ export default function CareRecipientsPage() {
     Promise.all([
       apiFetch("/api/patient-profile").then((r) => r.json()),
       apiFetch("/api/providers/list?status=active").then((r) => r.json()),
-    ]).then(([profileData, listData]) => {
+      apiFetch("/api/dashboard/data").then((r) => r.json()).catch(() => ({})),
+    ]).then(([profileData, listData, dashboardData]) => {
       if (profileData?.profile?.care_recipients) {
         setRecipients(profileData.profile.care_recipients);
+      }
+      if (dashboardData?.subscription_status) {
+        setSubscriptionStatus(dashboardData.subscription_status);
+        setStripePlan(dashboardData.stripe_plan || null);
       }
       if (listData?.ok) {
         setProviders(
@@ -124,13 +140,53 @@ export default function CareRecipientsPage() {
           </div>
           <button
             type="button"
-            onClick={() => setShowAdd(true)}
+            onClick={() => {
+              const canAdd = familyTierActive(subscriptionStatus, stripePlan) || recipients.length === 0;
+              if (canAdd) setShowAdd(true);
+              else setShowPaywall(true);
+            }}
             className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white"
             style={{ backgroundColor: "#1677FF" }}
           >
             <Plus size={14} /> Add Person
           </button>
         </div>
+
+        {showPaywall && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => setShowPaywall(false)}
+          >
+            <div
+              className="max-w-md w-full rounded-2xl bg-white shadow-xl p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-serif text-2xl text-[#071832]">Add more people with QB Family</h2>
+              <p className="mt-3 text-sm text-[#3A3F4B] leading-relaxed">
+                Managing healthcare for family members or anyone else under your care is part of QB Family.
+                You&rsquo;ll get per-person provider tracking, shared scheduling, and Kate handling calls for
+                everyone on your list.
+              </p>
+              <div className="mt-5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push("/billing")}
+                  className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                  style={{ backgroundColor: "#1677FF" }}
+                >
+                  See Family plan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPaywall(false)}
+                  className="rounded-xl px-4 py-2.5 text-sm text-[#4F5F73]"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Add new recipient */}
         {showAdd && (

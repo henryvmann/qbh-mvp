@@ -28,6 +28,7 @@ import BestNextStep from "../../components/qbh/BestNextStep";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import HealthScoreRing from "../../components/qbh/HealthScoreRing";
 import StuckPrompt from "../../components/qbh/StuckPrompt";
+import NewProviderWalkthrough from "../../components/qbh/NewProviderWalkthrough";
 import BrandShell from "../../components/brand/BrandShell";
 import {
   GlassCard,
@@ -52,6 +53,9 @@ type Snapshot = {
   provider: Provider;
   followUpNeeded?: boolean;
   booking_state?: BookingState;
+  lastVisitDate?: string | null;
+  lastVisitCategory?: "just_visited" | "on_track" | "coming_due" | "overdue" | "needs_scheduling" | null;
+  lastVisitLabel?: string | null;
 };
 type DashboardData = {
   appUserId: string;
@@ -95,6 +99,7 @@ function DashboardInner() {
   const [pausedProviders, setPausedProviders] = useState<
     Record<string, { until: string; kind: string }>
   >({});
+  const [introducedIds, setIntroducedIds] = useState<string[]>([]);
   // Scope filter — null = "All". Otherwise filters provider count,
   // overdue, upcoming, and the care-team list to providers attached
   // to that recipient. Stored only client-side; the dashboard query
@@ -134,6 +139,8 @@ function DashboardInner() {
       if (Array.isArray(list)) setCareRecipients(list);
       const paused = p?.profile?.paused_providers;
       if (paused && typeof paused === "object") setPausedProviders(paused);
+      const ids = p?.profile?.introduced_provider_ids;
+      setIntroducedIds(Array.isArray(ids) ? ids.filter((x) => typeof x === "string") : []);
     } catch {
       /* best-effort */
     }
@@ -270,15 +277,28 @@ function DashboardInner() {
         </div>
       )}
 
-      {/* Soft Kate prompt for providers waiting on follow-up. Renders
-          above the score so it's the first thing the user sees if
-          something's been on their list — no shame language, no urgency,
-          and four snooze cadences matching different psychological
-          states (depleted, capable, "I'll get to it," forever). */}
+      {/* New-provider walkthrough: surfaces any provider the user hasn't
+          been introduced to yet, one at a time, with date-aware framing
+          ("It's been X months since you saw Y" vs "You're good for now").
+          Hides the StuckPrompt while it's active so we don't double-prompt
+          on the same provider. Goes away on its own once the queue empties. */}
+      {data?.snapshots && (
+        <NewProviderWalkthrough
+          snapshots={data.snapshots}
+          introducedIds={introducedIds}
+          onChange={refreshProfile}
+        />
+      )}
+
+      {/* Soft Kate prompt for providers waiting on follow-up. Excludes
+          providers the user just walked through via NewProviderWalkthrough
+          — they already got their one nudge there. No shame language, no
+          urgency, and four snooze cadences. */}
       {data?.snapshots && (
         <StuckPrompt
           snapshots={data.snapshots}
           pausedProviders={pausedProviders}
+          introducedIds={introducedIds}
           onChange={refreshProfile}
         />
       )}

@@ -47,6 +47,7 @@ type PausedMap = Record<string, { until: string; kind: string }>;
 type Props = {
   snapshots: Snapshot[];
   pausedProviders: PausedMap;
+  introducedIds?: string[];
   onChange: () => void;
 };
 
@@ -58,22 +59,27 @@ type Props = {
 //   - Not today (24h pause)
 //   - I've got it (30 day pause)
 // No shame language, no urgency, no "overdue" framing.
-export default function StuckPrompt({ snapshots, pausedProviders, onChange }: Props) {
+export default function StuckPrompt({ snapshots, pausedProviders, introducedIds, onChange }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
-  // Stuck = follow-up needed AND not booked AND not paused (or pause expired).
+  // Stuck = follow-up needed AND not booked AND not paused AND not just
+  // introduced via the walkthrough. The walkthrough is the one nudge a
+  // provider gets — if the user tapped "skip for now" there, we don't
+  // immediately re-prompt with the same provider in stuck framing.
   const stuck = useMemo(() => {
     const now = Date.now();
+    const introducedSet = new Set(introducedIds || []);
     return snapshots.filter((s) => {
       if (!s.followUpNeeded) return false;
       const status = s.booking_state?.status;
       if (status === "BOOKED" || status === "IN_PROGRESS") return false;
       const paused = pausedProviders[s.provider.id];
       if (paused && Date.parse(paused.until) > now) return false;
+      if (introducedSet.has(s.provider.id)) return false;
       return true;
     });
-  }, [snapshots, pausedProviders]);
+  }, [snapshots, pausedProviders, introducedIds]);
 
   if (stuck.length === 0) return null;
 
@@ -146,10 +152,6 @@ export default function StuckPrompt({ snapshots, pausedProviders, onChange }: Pr
             <strong>{lead.provider.name}</strong> has been on your list for a bit
             {others > 0 ? ` (and ${others} other${others > 1 ? "s" : ""})` : ""}. Anything getting in the way?
           </div>
-          {/* Primary actions, in order of directness:
-                Book now (just do the thing)
-                Let's break it down (collaborative if user is stuck)
-                Tell me what would help (open-ended) */}
           <div
             style={{
               marginTop: 12,
@@ -176,44 +178,24 @@ export default function StuckPrompt({ snapshots, pausedProviders, onChange }: Pr
             >
               Book it now
             </button>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => openKate("stuck")}
-                disabled={busy}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: 10,
-                  background: "white",
-                  color: T.lightText,
-                  border: `1px solid ${T.lightBorder}`,
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                Let&rsquo;s break it down
-              </button>
-              <button
-                type="button"
-                onClick={() => openKate("help")}
-                disabled={busy}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: 10,
-                  background: "white",
-                  color: T.lightText,
-                  border: `1px solid ${T.lightBorder}`,
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                Tell me what would help
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => openKate("help")}
+              disabled={busy}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 10,
+                background: "white",
+                color: T.lightText,
+                border: `1px solid ${T.lightBorder}`,
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              Tell me what would help
+            </button>
           </div>
 
           {/* Snooze options — quieter, secondary actions. The user picks
