@@ -1,11 +1,15 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 export const maxDuration = 60;
 
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { createRequire } from "module";
 import { getSessionAppUserId } from "../../../lib/auth/get-session-app-user-id";
 import { supabaseAdmin } from "../../../lib/supabase-server";
 import { storeHealthDocument } from "../../../lib/aws/s3";
+
+const nodeRequire = createRequire(import.meta.url);
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -104,11 +108,11 @@ async function summarizeText(documentText: string, providerName: string | null):
 type PdfParseFn = (data: Buffer) => Promise<{ text: string }>;
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  // pdf-parse ships a debug harness at the top of its index that runs
-  // when NODE_ENV is "test" and bombs in serverless. Importing the
-  // implementation file directly skips that harness.
-  const mod = (await import("pdf-parse/lib/pdf-parse.js" as string)) as unknown as { default?: PdfParseFn } & PdfParseFn;
-  const pdfParse: PdfParseFn = mod.default ?? (mod as unknown as PdfParseFn);
+  // pdf-parse's index runs a debug harness only when invoked with no
+  // parent module (i.e., via `node index.js` directly). When required
+  // from another module, that branch is skipped. Going through
+  // createRequire avoids Turbopack's static analysis of the path.
+  const pdfParse = nodeRequire("pdf-parse") as PdfParseFn;
   const result = await pdfParse(buffer);
   return result.text || "";
 }
