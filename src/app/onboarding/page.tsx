@@ -76,6 +76,28 @@ function UserBubble({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Centered confirmation card for milestone moments (e.g. "Account created").
+// Reads as a system event rather than a user reply or Kate message — so the
+// post-signup transition feels solidified instead of dropping the user back
+// into the chat with no acknowledgement.
+function SystemBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex justify-center animate-fadeIn py-1">
+      <div
+        className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold"
+        style={{
+          background: "rgba(34,197,94,0.10)",
+          border: "1px solid rgba(34,197,94,0.28)",
+          color: "#15803D",
+        }}
+      >
+        <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>✓</span>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function OptionButtons({ options, onSelect }: { options: Array<{ label: string; value: string }>; onSelect: (value: string) => void }) {
   return (
     <div className="flex flex-wrap gap-2 justify-end animate-fadeIn">
@@ -162,6 +184,12 @@ export default function OnboardingPage() {
   // appropriate cadence reminders, and tailor in-call language.
   // Saved to patient_profile.medical_context.
   const [medicalContext, setMedicalContext] = useState<string>("");
+  // Two-step sub-flow when user picks "Something else" on medical
+  // context: ask whether they want to share now or later, then either
+  // surface a text input or accept the defer. Null = root choice still
+  // visible.
+  const [otherSubStep, setOtherSubStep] = useState<"ask" | "input" | null>(null);
+  const [otherText, setOtherText] = useState<string>("");
   // Kate behavior preferences captured during onboarding so the
   // relationship is calibrated from day one. Defaults match the
   // current prod defaults if user skips.
@@ -171,9 +199,14 @@ export default function OnboardingPage() {
   // "balanced" | "strict". Don't reinvent here — the round-trip
   // would break.
   const [calendarFlex, setCalendarFlex] = useState<string>("balanced");
+  // Bank + Calendar pre-checked because both being on gives the most
+  // comprehensive provider picture (see Kate's intro copy), and because
+  // off-by-default on Calendar previously let reviewers skip past it
+  // without realizing (commit bb3f733). Manual stays off — it's an
+  // explicit user action, not something to assume.
   const [connectBank, setConnectBank] = useState(true);
   const [connectCalendar, setConnectCalendar] = useState(true);
-  const [connectManual, setConnectManual] = useState(true);
+  const [connectManual, setConnectManual] = useState(false);
 
   // Account fields
   const [firstName, setFirstName] = useState("");
@@ -216,6 +249,7 @@ export default function OnboardingPage() {
   // Manual NPI search (third step in the discovery pipeline)
   const [manualSearchQuery, setManualSearchQuery] = useState("");
   const [manualSearchResults, setManualSearchResults] = useState<Array<{ name: string; npi: string; specialty?: string; phone?: string; address?: string }>>([]);
+  const manualSearchInputRef = useRef<HTMLInputElement>(null);
   const [manualSearching, setManualSearching] = useState(false);
   const [manualAdding, setManualAdding] = useState<string | null>(null);
   const [manualAdded, setManualAdded] = useState<Set<string>>(new Set());
@@ -338,6 +372,10 @@ export default function OnboardingPage() {
     setMessages((prev) => [...prev, { id: `user-${Date.now()}`, sender: "user", content }]);
   }
 
+  function addSystemMessage(content: React.ReactNode) {
+    setMessages((prev) => [...prev, { id: `system-${Date.now()}`, sender: "system", content }]);
+  }
+
   // Reset the "user has tapped an option" flag whenever phase
   // advances — the new phase's button block should appear (after
   // its lead-in messages stream in).
@@ -425,20 +463,23 @@ export default function OnboardingPage() {
     }
   }
 
-  function handleMedicalContext(value: string) {
+  function handleMedicalContext(value: string, customText?: string) {
     setResponded(true);
     const labels: Record<string, string> = {
       none: "Nothing major",
       chronic: "Chronic illness",
-      cancer: "Cancer treatment",
-      surgery: "Recovering from surgery / major event",
-      mental: "Mental health treatment",
+      cancer: "Cancer",
+      surgery: "Surgery",
+      mental: "Mental health",
       pregnancy: "Pregnancy",
-      caregiving: "Caregiving for someone else",
-      other: "Something else \u2014 I'll tell you later",
+      caregiving: "Caregiving",
+      other_now: customText?.trim() || "Something else",
+      other_later: "Something else \u2014 I'll share when I'm ready",
     };
     addUserMessage(labels[value] ?? value);
-    setMedicalContext(value);
+    // Persist the typed text on "other_now" so Kate has it to work
+    // from; defer (no text yet) on "other_later".
+    setMedicalContext(value === "other_now" ? (customText?.trim() || "other") : value);
     setTimeout(() => {
       const empathic =
         value === "none"
@@ -446,15 +487,17 @@ export default function OnboardingPage() {
           : value === "chronic"
           ? "Thanks for telling me. I'll keep your specialists tightly tracked and flag anything that looks off-cadence."
           : value === "cancer"
-          ? "I'm with you on this. I'll prioritize your oncology team, treatment dates, and follow-ups, and keep everything else from getting in the way."
+          ? "I'm with you on this. I'll prioritize your oncology team and follow-ups, and keep everything else from getting in the way."
           : value === "surgery"
-          ? "Recovery is full of follow-ups. I'll watch for them and keep the post-op timeline organized."
+          ? "Recovery is full of follow-ups. I'll watch for them and keep the timeline organized."
           : value === "mental"
           ? "Thanks for sharing. I'll handle the scheduling and refills with care so you can focus on the work itself."
           : value === "pregnancy"
           ? "Congrats. I'll keep your prenatal cadence and any specialists tightly synced."
           : value === "caregiving"
           ? "That's a lot of people to track. I can hold each person's care separately so nothing crosses wires."
+          : value === "other_now"
+          ? "Thanks for telling me. I'll keep that in mind as I help you."
           : "Got it \u2014 share whenever you're ready. Until then I'll keep things broad.";
       addKateMessages([
         empathic,
@@ -469,11 +512,12 @@ export default function OnboardingPage() {
     addUserMessage("Got it");
     setTimeout(() => {
       addKateMessages([
-        "Now let's pull in your doctors. Three ways \u2014 pick whichever feels easiest, or all three. I'll handle the rest.",
-        "Bank scan is the fastest: I look at your card statements for healthcare charges and find every doctor you've paid. Read-only, encrypted, never stored, never sold. Bank-grade secure \u2014 same Plaid integration Venmo and Robinhood use.",
-        "If that's not your thing, your calendar works too \u2014 I'll grab any doctor visits past or present. Or just type the names yourself.",
+        "Now let's pull in your doctors. Putting in both your bank and your calendar gives me the fullest picture \u2014 but if you'd rather just go with one, pick whichever carries the most information so I can get as much done for you up front.",
+        "Bank scan looks at your card statements for healthcare charges and finds every doctor you've paid. Read-only, encrypted, never stored, never sold.",
+        "Calendar grabs any past or upcoming doctor visits I can spot. Depending on how much you put in there, this can be the most comprehensive view of your care team.",
+        "Or just type the names yourself \u2014 I'll find them.",
       ], 800, 1100);
-      setTimeout(() => setPhase("discovery-method"), 3600);
+      setTimeout(() => setPhase("discovery-method"), 4800);
     }, 400);
   }
 
@@ -483,10 +527,13 @@ export default function OnboardingPage() {
 
     // Seed one detail row per selected kind so the family-details phase
     // has something to render. The user can add more (e.g. "+ Add another
-    // child") if they have multiple.
+    // child") if they have multiple. Seed in canonical order (parents →
+    // partner → children → other) so the grouped UI reads top-down in the
+    // same order regardless of which option the user tapped first.
+    const KIND_ORDER = ["parents", "partner", "children", "other"] as const;
     const seed: FamilyDetail[] = [];
-    for (const kind of familyMembers) {
-      if (kind === "partner" || kind === "children" || kind === "parents" || kind === "other") {
+    for (const kind of KIND_ORDER) {
+      if (familyMembers.includes(kind)) {
         seed.push({ id: crypto.randomUUID(), kind, name: "", dob: "" });
       }
     }
@@ -514,9 +561,23 @@ export default function OnboardingPage() {
       .map((d) => d.name.trim())
       .join(", ");
     addUserMessage(summary || "Skipping for now");
+    // When the user has named family members (not just self), frame the
+    // sequence so they know their own setup comes first. Otherwise the
+    // dashboard's "Want to add providers for Jamie?" prompt feels like
+    // it appeared out of nowhere. Single line \u2014 Jenny didn't want a
+    // separate phase here, just orientation.
+    const hasFamily = familyDetails.some((d) => d.name.trim());
     setTimeout(() => {
-      addKateMessage("One more question \u2014 anything big going on health-wise I should know about? It helps me tailor what to track.");
-      setTimeout(() => setPhase("medical-context"), 1200);
+      if (hasFamily) {
+        addKateMessages([
+          "I'll set up your own care first. Once we're done, you can add their providers from your dashboard whenever you're ready.",
+          "One more question \u2014 anything big going on health-wise I should know about? It helps me tailor what to track.",
+        ], 800, 1100);
+        setTimeout(() => setPhase("medical-context"), 2400);
+      } else {
+        addKateMessage("One more question \u2014 anything big going on health-wise I should know about? It helps me tailor what to track.");
+        setTimeout(() => setPhase("medical-context"), 1200);
+      }
     }, 400);
   }
 
@@ -542,7 +603,7 @@ export default function OnboardingPage() {
   // the review-team step if any ambiguous providers (pharmacies, classifier-
   // flagged review_needed) need user confirmation before they hit the
   // dashboard. advanceAfter is the raw helper used by the manual/skip paths.
-  async function advanceWithReview(completed: "bank" | "calendar"): Promise<void> {
+async function advanceWithReview(completed: "bank" | "calendar", foundCount: number = 0, silentOnEmpty: boolean = false): Promise<void> {
     const next = advanceAfter(completed);
     // Only interject review-team if discovery is done (we're heading to manual
     // or score). Skip if next is another discovery step (e.g., calendar still
@@ -572,6 +633,22 @@ export default function OnboardingPage() {
           setPostReviewPhase(next);
           setPhase("review-team");
           return;
+        }
+        // Nothing active AND nothing ambiguous — only NOW is it
+        // accurate to tell the user we didn't find anything. Emitting
+        // this earlier (in startReveal or runCalendarDiscovery) caused
+        // a contradiction when ambiguous providers existed: "nothing
+        // found" followed seconds later by "I picked up a few."
+        // silentOnEmpty lets error paths (e.g. calendar scan failed)
+        // skip this since they emitted their own "couldn't scan"
+        // message and don't want a redundant empty-state follow-up.
+        if (foundCount === 0 && !silentOnEmpty) {
+          addKateMessage(
+            completed === "bank"
+              ? "Nothing healthcare-related in your transactions yet — could be a different bank, or insurance covers it."
+              : "Nothing healthcare-related on your calendar yet. No worries — you can give me a name from the dashboard anytime."
+          );
+          await new Promise((r) => setTimeout(r, 800));
         }
       } catch {
         // If review-fetch fails, just continue without the review step.
@@ -684,7 +761,7 @@ export default function OnboardingPage() {
       const supabase = createClient();
       await supabase.auth.signInWithPassword({ email: email.trim(), password });
 
-      addUserMessage("Account created");
+      addSystemMessage("Account created — welcome aboard.");
 
       // Sequenced pipeline: bank → calendar → manual → score, executed
       // only for the steps the user opted into on the discovery-method screen.
@@ -692,24 +769,33 @@ export default function OnboardingPage() {
       // Lead-in messages explain what's about to happen so the user
       // isn't dropped on a "Connect" button without context. Bank in
       // particular gets the security + copay-card framing every time.
+      // Lead-in acknowledges this is a continuation of the setup we
+      // started — no more re-pitching bank vs calendar from scratch like
+      // it's a new conversation. The connect UI then surfaces every
+      // opted-in source at once so the user can see the sequence.
+      const bothOptedIn = connectBank && connectCalendar;
       const leadIn: React.ReactNode[] =
         next === "plaid-connect"
-          ? [
-              "Account's saved. One last setup step before your dashboard.",
-              "Pick whatever account you use for copays — debit, credit, or FSA/HSA. FSA/HSA is gold for me because every charge is healthcare-only, no noise.",
-              "If you'd rather not connect a bank, no pressure — tap skip and I'll grab your calendar instead, or you can type names manually.",
-            ]
+          ? bothOptedIn
+            ? [
+                "Now let's get your providers in. We'll do your bank first, then your calendar — both buttons will show below so you can see what's coming.",
+                "Pick the card you use for copays — debit, credit, or FSA/HSA. FSA/HSA is gold for me because every charge is healthcare-only.",
+              ]
+            : [
+                "Now let's get your providers in.",
+                "Pick the card you use for copays — debit, credit, or FSA/HSA. FSA/HSA is gold for me because every charge is healthcare-only.",
+              ]
           : next === "calendar-connect"
           ? [
-              "Account's saved. Let me peek at your calendar — I'll grab any doctor visits past or present and add them to your timeline.",
+              "Now let's peek at your calendar — I'll grab any doctor visits past or present and add them to your timeline.",
               "Google or Outlook, both work. Read-only, only events that look healthcare-related. I never touch the rest of your calendar.",
             ]
           : next === "manual-search"
           ? [
-              "Account's saved. Let's add the doctors you already know about.",
+              "Let's add the doctors you already know about.",
               "Just type a name — the doctor's, the office's, even just part of it. I'll find them as long as they have an NPI (basically every licensed provider in the US).",
             ]
-          : ["Account's saved. Let's head to your dashboard — you can hand me a provider anytime."];
+          : ["Let's head to your dashboard — you can hand me a provider anytime."];
       // Use the same typing duration (gap) for the FIRST message as
       // for subsequent ones, so all three feel consistently paced.
       // Previously baseDelay=400 made msg 0 appear in a flash, which
@@ -899,31 +985,34 @@ export default function OnboardingPage() {
         setDiscoveredProviders(providers);
         startReveal(providers, "calendar");
       } else {
-        addKateMessage("Nothing healthcare-related on your calendar yet. No worries — you can give me a name from the dashboard anytime.");
-        setTimeout(() => { advanceWithReview("calendar"); }, 1500);
+        // No active providers from calendar — but there may be ambiguous
+        // ones flagged for review. Let advanceWithReview decide whether
+        // to say "nothing found" or surface the review queue. Emitting
+        // both is the contradiction Jenny called out in the May 11 review.
+        setTimeout(() => { advanceWithReview("calendar", 0); }, 800);
       }
     } catch {
       clearTimeout(progress15);
       setDiscoveryActive(false);
       setTyping(false);
       addKateMessage("Couldn't scan your calendar right now. No worries — you can connect it later from settings.");
-      setTimeout(() => { advanceWithReview("calendar"); }, 1500);
+      // silentOnEmpty: we already told the user the scan failed; advanceWithReview
+      // shouldn't follow that with "nothing found" — it'd read as contradictory.
+      setTimeout(() => { advanceWithReview("calendar", 0, true); }, 1500);
     }
   }
 
   function startReveal(providers: DiscoveredProvider[], justCompleted: "bank" | "calendar") {
     setRevealIndex(0);
     setRevealDone(false);
-    // 0 providers: skip the per-item reveal animation but still announce
-    // the empty result and advance to the next selected step.
+    // 0 providers: skip the per-item reveal animation. Don't announce
+    // "nothing found" here — advanceWithReview decides that after it
+    // knows whether the review queue has ambiguous items. Emitting both
+    // creates the "nothing found / I picked up a few" contradiction
+    // from the May 11 review.
     if (providers.length === 0) {
-      addKateMessage(
-        justCompleted === "bank"
-          ? "Nothing healthcare-related in your transactions yet — could be a different bank, or insurance covers it."
-          : "Nothing healthcare-related on your calendar yet."
-      );
       setRevealDone(true);
-      setTimeout(() => { advanceWithReview(justCompleted); }, 1500);
+      setTimeout(() => { advanceWithReview(justCompleted, 0); }, 600);
       return;
     }
     // Faster, more responsive reveal: first card lands immediately so the
@@ -951,7 +1040,7 @@ export default function OnboardingPage() {
             } else {
               // Bank or calendar finished and there's no further discovery —
               // route through review-team if any ambiguous providers exist.
-              setTimeout(() => { advanceWithReview(justCompleted); }, 1500);
+              setTimeout(() => { advanceWithReview(justCompleted, providers.length); }, 1500);
             }
           }, 600);
         }
@@ -1117,6 +1206,8 @@ export default function OnboardingPage() {
             <KateBubble key={msg.id}>{msg.content}</KateBubble>
           ) : msg.sender === "user" ? (
             <UserBubble key={msg.id}>{msg.content}</UserBubble>
+          ) : msg.sender === "system" ? (
+            <SystemBanner key={msg.id}>{msg.content}</SystemBanner>
           ) : null
         ))}
 
@@ -1156,22 +1247,31 @@ export default function OnboardingPage() {
 
         {/* Medical context — captured early so Kate can tailor
             cadence, in-call language, and which specialists she
-            prioritizes. Saved to patient_profile.medical_context. */}
-        {phase === "medical-context" && !responded && (
+            prioritizes. Saved to patient_profile.medical_context.
+            Labels kept as neutral nouns (not "Cancer treatment" or
+            "Recovering from surgery") so people whose situation is
+            past, ongoing, or recurring all see themselves on the list. */}
+        {phase === "medical-context" && !responded && otherSubStep === null && (
           <div className="flex flex-wrap gap-2 justify-end animate-fadeIn">
             {[
               { label: "Nothing major", value: "none" },
               { label: "Chronic illness", value: "chronic" },
-              { label: "Cancer treatment", value: "cancer" },
-              { label: "Recovering from surgery", value: "surgery" },
-              { label: "Mental health treatment", value: "mental" },
+              { label: "Cancer", value: "cancer" },
+              { label: "Surgery", value: "surgery" },
+              { label: "Mental health", value: "mental" },
               { label: "Pregnancy", value: "pregnancy" },
-              { label: "Caregiving for someone", value: "caregiving" },
+              { label: "Caregiving", value: "caregiving" },
               { label: "Something else", value: "other" },
             ].map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => handleMedicalContext(opt.value)}
+                onClick={() => {
+                  if (opt.value === "other") {
+                    setOtherSubStep("ask");
+                  } else {
+                    handleMedicalContext(opt.value);
+                  }
+                }}
                 className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
                 style={{
                   backgroundColor: "#1677FF",
@@ -1185,127 +1285,175 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Kate preferences — captured during onboarding so the
-            relationship is calibrated from day one rather than
-            relying on defaults the user never visits. */}
-        {phase === "kate-prefs" && !responded && (
-          <div className="space-y-4 animate-fadeIn">
-            {/* Tone */}
-            <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
-                How should I talk to you?
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { v: "warm", label: "Warm but professional" },
-                  { v: "casual", label: "Casual" },
-                  { v: "professional", label: "Direct, get to the point" },
-                  { v: "cheerful", label: "Cheerful" },
-                ].map((opt) => {
-                  const selected = kateTone === opt.v;
-                  return (
-                    <button
-                      key={opt.v}
-                      type="button"
-                      onClick={() => setKateTone(opt.v)}
-                      className="rounded-lg px-2.5 py-1 text-xs font-medium transition"
-                      style={{
-                        backgroundColor: selected ? "#1677FF" : "#F0F2F5",
-                        color: selected ? "#FFFFFF" : "#4F5F73",
-                        border: `1px solid ${selected ? "#1677FF" : "#E5EAF2"}`,
-                      }}
-                    >
-                      {selected ? "✓ " : ""}{opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Proactivity / persistence */}
-            <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
-                When something needs your attention?
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { v: "proactive", label: "Push me — I need the nudge" },
-                  { v: "balanced", label: "Mention it once, then let me decide" },
-                  { v: "minimal", label: "Only when it's truly time-sensitive" },
-                ].map((opt) => {
-                  const selected = kateProactivity === opt.v;
-                  return (
-                    <button
-                      key={opt.v}
-                      type="button"
-                      onClick={() => setKateProactivity(opt.v)}
-                      className="rounded-lg px-2.5 py-1 text-xs font-medium transition"
-                      style={{
-                        backgroundColor: selected ? "#1677FF" : "#F0F2F5",
-                        color: selected ? "#FFFFFF" : "#4F5F73",
-                        border: `1px solid ${selected ? "#1677FF" : "#E5EAF2"}`,
-                      }}
-                    >
-                      {selected ? "✓ " : ""}{opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Calendar strictness */}
-            <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
-                How strict are you with your calendar?
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { v: "flexible", label: "Flexible — book what works" },
-                  { v: "balanced", label: "Don't double-book me unless it's more than a month out" },
-                  { v: "strict", label: "Don't book over anything in my calendar" },
-                ].map((opt) => {
-                  const selected = calendarFlex === opt.v;
-                  return (
-                    <button
-                      key={opt.v}
-                      type="button"
-                      onClick={() => setCalendarFlex(opt.v)}
-                      className="rounded-lg px-2.5 py-1 text-xs font-medium transition"
-                      style={{
-                        backgroundColor: selected ? "#1677FF" : "#F0F2F5",
-                        color: selected ? "#FFFFFF" : "#4F5F73",
-                        border: `1px solid ${selected ? "#1677FF" : "#E5EAF2"}`,
-                      }}
-                    >
-                      {selected ? "✓ " : ""}{opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <p className="text-[10px] text-[#4F5F73]">
-              You can change any of this later in Account.
-            </p>
-
+        {/* "Something else" sub-flow: ask whether to share now or later.
+            Tapping Now reveals a text input so the user can answer in
+            the same screen instead of being deferred to a future moment
+            they may never return to. */}
+        {phase === "medical-context" && !responded && otherSubStep === "ask" && (
+          <div className="flex flex-wrap gap-2 justify-end animate-fadeIn">
             <button
-              onClick={handleKatePrefsDone}
-              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
-              style={{ backgroundColor: ACCENT }}
+              onClick={() => setOtherSubStep("input")}
+              className="rounded-xl px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98]"
+              style={{ backgroundColor: "#1677FF", border: "1px solid #1677FF" }}
             >
-              That works
+              I&rsquo;ll tell you now
+            </button>
+            <button
+              onClick={() => handleMedicalContext("other_later")}
+              className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
+              style={{
+                backgroundColor: "white",
+                border: "1px solid #E5EAF2",
+                color: "#4F5F73",
+              }}
+            >
+              Share when I&rsquo;m ready
             </button>
           </div>
         )}
+
+        {phase === "medical-context" && !responded && otherSubStep === "input" && (
+          <div className="space-y-2 animate-fadeIn">
+            <textarea
+              autoFocus
+              value={otherText}
+              onChange={(e) => setOtherText(e.target.value)}
+              placeholder="Whatever&rsquo;s on your mind — a few words is plenty."
+              rows={3}
+              className="w-full rounded-xl border border-[#E5EAF2] bg-white px-3 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => { setOtherSubStep("ask"); setOtherText(""); }}
+                className="rounded-xl px-3 py-2 text-xs font-medium text-[#4F5F73]"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={!otherText.trim()}
+                onClick={() => handleMedicalContext("other_now", otherText)}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                style={{ backgroundColor: "#1677FF" }}
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Kate preferences — captured during onboarding so the
+            relationship is calibrated from day one rather than
+            relying on defaults the user never visits. Each option
+            includes a one-line description of what the choice
+            actually changes — the tone selection is plumbed into
+            Kate's chat system prompt so picking one isn't decorative. */}
+        {phase === "kate-prefs" && !responded && (() => {
+          const TONE_OPTS = [
+            { v: "warm", label: "Warm but professional", desc: "Friendly but focused. Like a helpful friend who knows healthcare." },
+            { v: "casual", label: "Casual", desc: "Relaxed and conversational. Contractions, light tone, easy to talk to." },
+            { v: "professional", label: "Direct, get to the point", desc: "Brief and structured. No fluff — just what you need." },
+          ] as const;
+          const PROACTIVITY_OPTS = [
+            { v: "proactive", label: "Push me", desc: "Multiple notifications. I'll surface anything I notice — care gaps, overdue visits, follow-ups." },
+            { v: "balanced", label: "Mention it once", desc: "I'll surface things once on your dashboard and leave them there for you." },
+            { v: "minimal", label: "Only when it's time-sensitive", desc: "I'll stay quiet unless something really can't wait." },
+          ] as const;
+          const CALENDAR_OPTS = [
+            { v: "flexible", label: "Flexible", desc: "Book what works — Kate decides based on availability." },
+            { v: "balanced", label: "Don't double-book me unless it's more than a month out", desc: "Kate avoids conflicts for anything in the next month." },
+            { v: "strict", label: "Don't book over anything in my calendar", desc: "Kate treats your calendar as set in stone." },
+          ] as const;
+
+          type Opt = { v: string; label: string; desc: string };
+          const renderOptionCard = (opt: Opt, selected: boolean, onSelect: () => void) => (
+            <button
+              key={opt.v}
+              type="button"
+              onClick={onSelect}
+              className="w-full text-left rounded-lg px-3 py-2.5 transition"
+              style={{
+                backgroundColor: selected ? "rgba(22,119,255,0.08)" : "#F8F9FB",
+                border: `1px solid ${selected ? "#1677FF" : "#E5EAF2"}`,
+              }}
+            >
+              <div
+                className="text-[13px] font-semibold"
+                style={{ color: selected ? "#1677FF" : "#071832" }}
+              >
+                {selected ? "✓ " : ""}{opt.label}
+              </div>
+              <div className="text-[11.5px] text-[#4F5F73] mt-0.5 leading-snug">
+                {opt.desc}
+              </div>
+            </button>
+          );
+
+          return (
+            <div className="space-y-4 animate-fadeIn">
+              {/* Tone */}
+              <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
+                  How should I talk to you?
+                </div>
+                <div className="space-y-1.5">
+                  {TONE_OPTS.map((opt) =>
+                    renderOptionCard(opt, kateTone === opt.v, () => setKateTone(opt.v))
+                  )}
+                </div>
+              </div>
+
+              {/* Proactivity / persistence */}
+              <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
+                  When something needs your attention?
+                </div>
+                <div className="space-y-1.5">
+                  {PROACTIVITY_OPTS.map((opt) =>
+                    renderOptionCard(opt, kateProactivity === opt.v, () => setKateProactivity(opt.v))
+                  )}
+                </div>
+              </div>
+
+              {/* Calendar — framed as a booking-preference question, not
+                  a "strictness" rating. At this point in onboarding the
+                  user doesn't yet know how booking works, so the framing
+                  needs to be neutral. */}
+              <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
+                  Generally, how should I book your appointments?
+                </div>
+                <div className="space-y-1.5">
+                  {CALENDAR_OPTS.map((opt) =>
+                    renderOptionCard(opt, calendarFlex === opt.v, () => setCalendarFlex(opt.v))
+                  )}
+                </div>
+              </div>
+
+              <p className="text-xs text-[#4F5F73]">
+                You can change any of this later in Account.
+              </p>
+
+              <button
+                onClick={handleKatePrefsDone}
+                className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                style={{ backgroundColor: ACCENT }}
+              >
+                That works
+              </button>
+            </div>
+          );
+        })()}
 
         {/* Family select */}
         {phase === "family-select" && !responded && (
           <div className="space-y-2 animate-fadeIn">
             <p className="text-xs text-[#4F5F73] mb-1">Select as many as you need</p>
             {[
+              { label: "My parent(s)", value: "parents" },
               { label: "My partner/spouse", value: "partner" },
               { label: "My kid(s)", value: "children" },
-              { label: "My parent(s)", value: "parents" },
               { label: "Someone else", value: "other" },
             ].map((opt) => (
               <button
@@ -1329,93 +1477,104 @@ export default function OnboardingPage() {
         )}
 
         {/* Family details — name + DOB per recipient. Only fires when
-            the user picked at least one non-self recipient. Plural kinds
-            (children / parents / other) get a "+ Add another" link so
-            multi-person families don't have to use a separate flow. */}
-        {phase === "family-details" && !responded && (
-          <div className="space-y-3 animate-fadeIn">
-            <p className="text-xs text-[#4F5F73] mb-1">Name and date of birth for each — DOB matters most for kids and specialist visits.</p>
-            {familyDetails.map((d, idx) => {
-              const labelByKind = {
-                partner: "Partner / spouse",
-                children: "Child",
-                parents: "Parent",
-                other: "Person",
-              } as const;
-              const placeholderByKind = {
-                partner: "First name",
-                children: "First name (e.g. Wyatt)",
-                parents: "First name (e.g. Mom, Dad)",
-                other: "First name",
-              } as const;
-              return (
-                <div
-                  key={d.id}
-                  className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2"
-                >
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
-                    {labelByKind[d.kind]}
+            the user picked at least one non-self recipient. Grouped by
+            kind in canonical order (parents → partner → children → other)
+            so each "+ Add another" sits directly under its own group
+            instead of in a generic row at the bottom. Partner caps at 1. */}
+        {phase === "family-details" && !responded && (() => {
+          const KIND_RENDER_ORDER = ["parents", "partner", "children", "other"] as const;
+          const labelByKind = {
+            partner: "Partner / spouse",
+            children: "Child",
+            parents: "Parent",
+            other: "Person",
+          } as const;
+          const placeholderByKind = {
+            partner: "First name",
+            children: "First name (e.g. Wyatt)",
+            parents: "First name (e.g. Mom, Dad)",
+            other: "First name",
+          } as const;
+          const addLabelByKind = {
+            children: "child",
+            parents: "parent",
+            other: "person",
+          } as const;
+
+          return (
+            <div className="space-y-4 animate-fadeIn">
+              <p className="text-xs text-[#4F5F73] mb-1">Name and date of birth for each — DOB matters most for kids and specialist visits.</p>
+              {KIND_RENDER_ORDER.map((kind) => {
+                const rows = familyDetails.filter((d) => d.kind === kind);
+                if (rows.length === 0) return null;
+                const isPlural = kind !== "partner";
+                return (
+                  <div key={kind} className="space-y-2">
+                    {rows.map((d) => (
+                      <div
+                        key={d.id}
+                        className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2"
+                      >
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
+                          {labelByKind[d.kind]}
+                        </div>
+                        <input
+                          type="text"
+                          value={d.name}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setFamilyDetails((prev) => prev.map((x) => x.id === d.id ? { ...x, name: v } : x));
+                          }}
+                          placeholder={placeholderByKind[d.kind]}
+                          className="w-full rounded-lg border border-[#E5EAF2] bg-[#F8F9FB] px-3 py-2 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+                        />
+                        <input
+                          type="date"
+                          value={d.dob}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setFamilyDetails((prev) => prev.map((x) => x.id === d.id ? { ...x, dob: v } : x));
+                          }}
+                          className="w-full rounded-lg border border-[#E5EAF2] bg-[#F8F9FB] px-3 py-2 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+                        />
+                        {rows.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setFamilyDetails((prev) => prev.filter((x) => x.id !== d.id))}
+                            className="text-[11px] text-[#4F5F73] hover:underline"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {isPlural && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFamilyDetails((prev) => [
+                            ...prev,
+                            { id: crypto.randomUUID(), kind, name: "", dob: "" },
+                          ])
+                        }
+                        className="text-xs font-medium text-[#1677FF] hover:underline"
+                      >
+                        + Add another {addLabelByKind[kind as "children" | "parents" | "other"]}
+                      </button>
+                    )}
                   </div>
-                  <input
-                    type="text"
-                    value={d.name}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setFamilyDetails((prev) => prev.map((x) => x.id === d.id ? { ...x, name: v } : x));
-                    }}
-                    placeholder={placeholderByKind[d.kind]}
-                    className="w-full rounded-lg border border-[#E5EAF2] bg-[#F8F9FB] px-3 py-2 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
-                  />
-                  <input
-                    type="date"
-                    value={d.dob}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setFamilyDetails((prev) => prev.map((x) => x.id === d.id ? { ...x, dob: v } : x));
-                    }}
-                    className="w-full rounded-lg border border-[#E5EAF2] bg-[#F8F9FB] px-3 py-2 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
-                  />
-                  {familyDetails.filter((x) => x.kind === d.kind).length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setFamilyDetails((prev) => prev.filter((x) => x.id !== d.id))}
-                      className="text-[11px] text-[#4F5F73] hover:underline"
-                    >
-                      Remove
-                    </button>
-                  )}
-                  {idx === familyDetails.length - 1 ||
-                  familyDetails[idx + 1]?.kind !== d.kind ? null : null}
-                </div>
-              );
-            })}
-            {/* Add-another links for plural kinds. Partner caps at 1. */}
-            {(["children", "parents", "other"] as const).map((kind) =>
-              familyMembers.includes(kind) ? (
-                <button
-                  key={kind}
-                  type="button"
-                  onClick={() =>
-                    setFamilyDetails((prev) => [
-                      ...prev,
-                      { id: crypto.randomUUID(), kind, name: "", dob: "" },
-                    ])
-                  }
-                  className="text-xs font-medium text-[#1677FF] hover:underline"
-                >
-                  + Add another {kind === "children" ? "child" : kind === "parents" ? "parent" : "person"}
-                </button>
-              ) : null
-            )}
-            <button
-              onClick={handleFamilyDetailsDone}
-              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white mt-2"
-              style={{ backgroundColor: ACCENT }}
-            >
-              That&rsquo;s everyone
-            </button>
-          </div>
-        )}
+                );
+              })}
+              <button
+                onClick={handleFamilyDetailsDone}
+                className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white mt-2"
+                style={{ backgroundColor: ACCENT }}
+              >
+                That&rsquo;s everyone
+              </button>
+            </div>
+          );
+        })()}
 
         {/* Discovery method */}
         {phase === "discovery-method" && !responded && (
@@ -1457,22 +1616,25 @@ export default function OnboardingPage() {
         {/* Account creation */}
         {phase === "account-create" && !responded && (
           <div className="animate-fadeIn rounded-2xl backdrop-blur-sm p-5 space-y-3" style={{ background: theme.glass, border: `1px solid ${theme.glassBorder}`, boxShadow: theme.cardShadow }}>
+            <p className="text-[10px] text-[#4F5F73]">
+              <span className="text-red-500">*</span> Required
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">First name</label>
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">First name <span className="text-red-500">*</span></label>
                 <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Last name</label>
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Last name <span className="text-red-500">*</span></label>
                 <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Email</label>
+              <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Email <span className="text-red-500">*</span></label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Password</label>
+              <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Password <span className="text-red-500">*</span></label>
               <div className="relative">
                 <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] pr-10 focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4F5F73]">
@@ -1509,11 +1671,24 @@ export default function OnboardingPage() {
             <div className="relative">
               <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Insurance provider</label>
               <input type="text" value={patientInsurance} onChange={(e) => setPatientInsurance(e.target.value)} placeholder="Start typing..." className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
-              {filteredInsurance.length > 0 && patientInsurance.length >= 2 && !KNOWN_INSURANCE.includes(patientInsurance) && (
-                <div className="absolute z-10 mt-1 w-full rounded-xl border border-[#E5EAF2] bg-white shadow-lg max-h-40 overflow-y-auto">
+              <p className="mt-1 text-[10px] text-[#4F5F73]">
+                Don&rsquo;t see yours? Just type it in — I&rsquo;ll save what you write.
+              </p>
+              {patientInsurance.length >= 2 && !KNOWN_INSURANCE.includes(patientInsurance) && (
+                <div className="absolute z-10 mt-1 w-full rounded-xl border border-[#E5EAF2] bg-white shadow-lg max-h-44 overflow-y-auto">
                   {filteredInsurance.map((ins) => (
                     <button key={ins} onClick={() => setPatientInsurance(ins)} className="w-full px-3 py-2 text-left text-sm text-[#071832] hover:bg-[#F0F2F5]">{ins}</button>
                   ))}
+                  {/* Always offer the typed value as a "use this" option so
+                      carriers we don't have in KNOWN_INSURANCE aren't a
+                      dead-end. Footer-styled to distinguish from matches. */}
+                  <button
+                    onClick={() => { /* leave value as-is; just dismiss list */ }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="w-full px-3 py-2 text-left text-sm text-[#1677FF] font-semibold border-t border-[#E5EAF2] hover:bg-[#F0F4FF]"
+                  >
+                    Use &ldquo;{patientInsurance}&rdquo;
+                  </button>
                 </div>
               )}
             </div>
@@ -1540,7 +1715,7 @@ export default function OnboardingPage() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Zip code</label>
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Zip code <span className="text-red-500">*</span></label>
                 <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="06880" maxLength={10} required className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
                 <p className="mt-1 text-[10px] text-[#4F5F73]">Helps me find the right local providers when there are multiple with the same name.</p>
               </div>
@@ -1576,66 +1751,153 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Plaid connect */}
-        {phase === "plaid-connect" && !responded && (
-          <div className="animate-fadeIn space-y-3">
-            <button
-              onClick={openPlaidLink}
-              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
-              style={{ backgroundColor: ACCENT }}
-            >
-              Connect your bank
-            </button>
-            <button
-              onClick={() => {
-                addKateMessage("No problem — moving on.");
-                // Pretend bank step is done so advanceAfter routes to
-                // the next opted-in step (calendar / manual / score).
-                setTimeout(() => setPhase(advanceAfter("bank")), 800);
-              }}
-              className="w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73]"
-            >
-              Skip for now
-            </button>
-            <div className="mt-2 flex items-center justify-center gap-3 text-[10px] text-[#4F5F73]">
-              <ShieldCheck size={12} /> Encrypted &middot; Read-only &middot; Powered by Plaid
-            </div>
-          </div>
-        )}
+        {/* Connect-provider phases (plaid-connect / calendar-connect)
+            share a stacked layout that surfaces both buttons whenever
+            the user opted into both at discovery-method. The active
+            button is full-color; the one that hasn't happened yet shows
+            as a preview tile with "next" framing, and completed steps
+            show with a ✓ pill. So the user always knows where they are
+            in the sequence and what's coming, even though under the hood
+            each connect step still triggers its own flow. */}
+        {(phase === "plaid-connect" || phase === "calendar-connect") && !responded && (() => {
+          const onPlaid = () => openPlaidLink();
+          const onCalendar = async () => {
+            try {
+              const res = await apiFetch("/api/google-calendar/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ app_user_id: userId, return_to: "onboarding" }),
+              });
+              const data = await res.json();
+              if (data?.ok && data?.authorize_url) {
+                window.location.href = data.authorize_url;
+              }
+            } catch {}
+          };
 
-        {/* Calendar connect */}
-        {phase === "calendar-connect" && !responded && (
-          <div className="animate-fadeIn space-y-3">
-            <button
-              onClick={async () => {
-                try {
-                  const res = await apiFetch("/api/google-calendar/connect", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ app_user_id: userId, return_to: "onboarding" }),
-                  });
-                  const data = await res.json();
-                  if (data?.ok && data?.authorize_url) {
-                    window.location.href = data.authorize_url;
-                  }
-                } catch {}
-              }}
-              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
-              style={{ backgroundColor: ACCENT }}
-            >
-              Connect Google Calendar
-            </button>
-            <button
-              onClick={() => {
-                addKateMessage("No problem — we'll move on.");
-                setTimeout(() => setPhase(advanceAfter("calendar")), 1000);
-              }}
-              className="w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73]"
-            >
-              Skip for now
-            </button>
-          </div>
-        )}
+          // Status for each source: "active" (current button), "next"
+          // (will be next in sequence — preview only), "done" (already
+          // completed in this session), "skipped" (user opted into the
+          // source but skipped it), or "off" (not selected at all).
+          type Status = "active" | "next" | "done" | "skipped" | "off";
+          const bankStatus: Status = !connectBank
+            ? "off"
+            : phase === "plaid-connect"
+            ? "active"
+            : plaidConnected ? "done" : "skipped";
+          const calendarStatus: Status = !connectCalendar
+            ? "off"
+            : phase === "calendar-connect"
+            ? "active"
+            : "next";
+
+          const renderTile = (opts: {
+            status: Status;
+            label: string;
+            doneLabel: string;
+            skippedLabel: string;
+            nextHint: string;
+            onClick: () => void;
+          }) => {
+            if (opts.status === "off") return null;
+            if (opts.status === "done") {
+              return (
+                <div
+                  className="w-full rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2"
+                  style={{
+                    background: "rgba(34,197,94,0.10)",
+                    border: "1px solid rgba(34,197,94,0.28)",
+                    color: "#15803D",
+                  }}
+                >
+                  <span aria-hidden style={{ fontSize: 14 }}>✓</span>
+                  {opts.doneLabel}
+                </div>
+              );
+            }
+            if (opts.status === "skipped") {
+              return (
+                <div
+                  className="w-full rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2"
+                  style={{
+                    background: "#F0F2F5",
+                    border: "1px solid #E5EAF2",
+                    color: "#4F5F73",
+                  }}
+                >
+                  <span aria-hidden>↷</span>
+                  {opts.skippedLabel}
+                </div>
+              );
+            }
+            if (opts.status === "next") {
+              return (
+                <div
+                  className="w-full rounded-xl px-4 py-3 text-sm font-medium"
+                  style={{
+                    background: "#F8F9FB",
+                    border: "1px dashed #C9D1DC",
+                    color: "#4F5F73",
+                  }}
+                >
+                  <div className="font-semibold">{opts.label}</div>
+                  <div className="text-[11px] text-[#4F5F73] mt-0.5">{opts.nextHint}</div>
+                </div>
+              );
+            }
+            return (
+              <button
+                onClick={opts.onClick}
+                className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                style={{ backgroundColor: ACCENT }}
+              >
+                {opts.label}
+              </button>
+            );
+          };
+
+          const handleSkip = () => {
+            if (phase === "plaid-connect") {
+              addKateMessage("No problem — moving on.");
+              setTimeout(() => setPhase(advanceAfter("bank")), 800);
+            } else {
+              addKateMessage("No problem — we'll move on.");
+              setTimeout(() => setPhase(advanceAfter("calendar")), 1000);
+            }
+          };
+
+          return (
+            <div className="animate-fadeIn space-y-2">
+              {renderTile({
+                status: bankStatus,
+                label: "Connect your bank",
+                doneLabel: "Bank connected",
+                skippedLabel: "Bank skipped",
+                nextHint: "Up next after calendar",
+                onClick: onPlaid,
+              })}
+              {renderTile({
+                status: calendarStatus,
+                label: "Connect Google Calendar",
+                doneLabel: "Calendar connected",
+                skippedLabel: "Calendar skipped",
+                nextHint: "Up next after bank",
+                onClick: onCalendar,
+              })}
+              <button
+                onClick={handleSkip}
+                className="w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73] pt-1"
+              >
+                Skip this step
+              </button>
+              {phase === "plaid-connect" && (
+                <div className="mt-2 flex items-center justify-center gap-3 text-[10px] text-[#4F5F73]">
+                  <ShieldCheck size={12} /> Encrypted &middot; Read-only &middot; Powered by Plaid
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Discovery reveal */}
         {phase === "discovery-reveal" && (
@@ -1716,7 +1978,7 @@ export default function OnboardingPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-[#071832] truncate">{p.name}</div>
                       <div className="text-[10px] text-[#4F5F73]">
-                        {isPharmacy ? "Pharmacy" : "Possible provider"}
+                        Possible provider{isPharmacy ? " · Pharmacy" : ""}
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -1769,7 +2031,7 @@ export default function OnboardingPage() {
               style={{ backgroundColor: ACCENT }}
               disabled={ambiguousProviders.length > 0}
             >
-              {ambiguousProviders.length > 0 ? `Decide on ${ambiguousProviders.length} more` : "Done"}
+              {ambiguousProviders.length > 0 ? `${ambiguousProviders.length} more to review` : "Done"}
             </button>
           </div>
         )}
@@ -1832,6 +2094,7 @@ export default function OnboardingPage() {
               </label>
               <p className="text-[11px] text-[#4F5F73] mb-2">Type a name, specialty (e.g. "dermatologist"), or "doctor [city]". Tap Add on any match.</p>
               <input
+                ref={manualSearchInputRef}
                 type="text"
                 placeholder="e.g. Dr. Smith, dentist, cardiologist NYC"
                 value={manualSearchQuery}
@@ -1872,6 +2135,15 @@ export default function OnboardingPage() {
                               const data = await res.json();
                               if (data?.ok) {
                                 setManualAdded((prev) => new Set([...prev, key]));
+                                // Clear the search input so the user can type
+                                // the next name without backspacing the old
+                                // one — Jenny's "search needs help" complaint
+                                // in the May 11 review. Effect at line ~1120
+                                // also clears manualSearchResults when the
+                                // query goes empty. Re-focus the input so the
+                                // keyboard stays open for back-to-back adds.
+                                setManualSearchQuery("");
+                                setTimeout(() => manualSearchInputRef.current?.focus(), 0);
                               }
                             } finally {
                               setManualAdding(null);
@@ -1904,15 +2176,21 @@ export default function OnboardingPage() {
             >
               {manualAdded.size > 0 ? `Done — ${manualAdded.size} added` : "Done"}
             </button>
-            <button
-              onClick={() => {
-                addKateMessage("No problem — moving on.");
-                setTimeout(() => setPhase(advanceAfter("manual")), 800);
-              }}
-              className="w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73]"
-            >
-              Skip for now
-            </button>
+            {/* Skip-for-now only makes sense when the user hasn't added
+                anyone. Once at least one provider's been added, "skip"
+                reads as if they did nothing — hide it and let the
+                primary "Done" button carry the action. */}
+            {manualAdded.size === 0 && (
+              <button
+                onClick={() => {
+                  addKateMessage("No problem — moving on.");
+                  setTimeout(() => setPhase(advanceAfter("manual")), 800);
+                }}
+                className="w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73]"
+              >
+                Skip for now
+              </button>
+            )}
           </div>
         )}
 
@@ -1972,6 +2250,9 @@ export default function OnboardingPage() {
 
             {/* Score circle */}
             <div className="text-center">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-2">
+                Care Coordination Score
+              </div>
               <div className="relative mx-auto" style={{ width: 140, height: 140 }}>
                 <svg width={140} height={140} viewBox="0 0 140 140" className="transform -rotate-90">
                   <circle cx={70} cy={70} r={58} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={7} />

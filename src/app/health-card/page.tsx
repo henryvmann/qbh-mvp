@@ -93,7 +93,7 @@ export default function HealthCardPage() {
                   <span className="text-sm font-light text-[#27C46B]">{data.upcomingCount}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#4F5F73]">Overdue</span>
+                  <span className="text-xs text-[#4F5F73]">To schedule</span>
                   <span className="text-sm font-light" style={{ color: data.overdueCount > 0 ? "#E04030" : "#27C46B" }}>{data.overdueCount}</span>
                 </div>
               </div>

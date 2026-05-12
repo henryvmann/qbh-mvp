@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
-import { getStoredGoogleCalendarConnection, getValidGoogleCalendarAccessToken } from "../../../../lib/google-calendar";
+import { getStoredGoogleCalendarConnection, getValidGoogleCalendarAccessToken, HEALTHCARE_PATTERN } from "../../../../lib/google-calendar";
 
 type TimelineVisit = {
   id: string;
@@ -50,6 +50,39 @@ export async function GET(req: Request) {
       { status: 401 }
     );
   }
+
+  // User-dismissed timeline events — events the keyword filter let
+  // through but the user manually marked "not relevant." Stored on the
+  // patient_profile so they survive across sessions and devices.
+  const { data: userProfile } = await supabaseAdmin
+    .from("app_users")
+    .select("patient_profile")
+    .eq("id", appUserId)
+    .maybeSingle();
+  const dismissedIdsRaw = userProfile?.patient_profile?.dismissed_calendar_event_ids;
+  const dismissedEventIds = new Set<string>(
+    Array.isArray(dismissedIdsRaw)
+      ? dismissedIdsRaw.filter((x: unknown): x is string => typeof x === "string")
+      : []
+  );
+  // User-added custom timeline items — surfaced in the year-ahead view
+  // so users can hand-add goals (GLP-1 start, cancer annual, etc.) that
+  // aren't derivable from providers or guidelines. Stored on
+  // patient_profile.custom_timeline_items.
+  const customRaw = userProfile?.patient_profile?.custom_timeline_items;
+  const customTimelineItems = Array.isArray(customRaw)
+    ? customRaw.filter((x: unknown): x is {
+        id: string;
+        title: string;
+        description?: string | null;
+        target_month?: string | null;
+        created_at: string;
+      } => {
+        return typeof x === "object" && x !== null
+          && typeof (x as { id?: unknown }).id === "string"
+          && typeof (x as { title?: unknown }).title === "string";
+      })
+    : [];
 
   // Get all active providers
   const { data: providers } = await supabaseAdmin
@@ -174,11 +207,17 @@ export async function GET(req: Request) {
 
       if (gcalRes.ok) {
         const gcalData = await gcalRes.json();
-        const HEALTH_PATTERN = /doctor|dr\.|dr |dentist|dental|medical|clinic|hospital|health|therapy|physical therapy|chiropractic|optom|eye exam|eye doctor|derma|cardio|ortho|urgent care|checkup|check-?up|appointment|annual exam|wellness visit|psychiatr|psycholog|nutrit/i;
-
+        // Use the shared HEALTHCARE_PATTERN (from lib/google-calendar.ts)
+        // instead of an inline regex. The previous inline pattern matched
+        // bare "appointment" / "annual exam" / "checkup" / "health", which
+        // let through obvious non-healthcare events ("Wayfair Home Services
+        // appointment", "United Health Group meeting", etc). The shared
+        // pattern is tighter — requires specific specialty / credential /
+        // place terms.
         for (const event of gcalData.items || []) {
           const summary = event.summary || "";
-          if (!HEALTH_PATTERN.test(summary)) continue;
+          if (!HEALTHCARE_PATTERN.test(summary)) continue;
+          if (dismissedEventIds.has(event.id)) continue;
 
           const startAt = event.start?.dateTime || event.start?.date || "";
           if (!startAt) continue;
@@ -314,5 +353,42 @@ export async function GET(req: Request) {
     upcoming,
     years: finalYears,
     providerCount: providerRows.length,
+    customTimelineItems,
   });
+}
+
+/**
+ * Dismiss a timeline calendar event the user says isn't healthcare-
+ * related. Persists the event ID in patient_profile.dismissed_calendar_event_ids
+ * so the next GET filters it out. Cheap escape hatch for events that
+ * slip past the keyword filter.
+ */
+export async function POST(req: Request) {
+  const appUserId = await getSessionAppUserId(req);
+  if (!appUserId) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+  let body: { dismissed_event_id?: string } = {};
+  try { body = await req.json(); } catch {}
+  const eventId = body.dismissed_event_id;
+  if (typeof eventId !== "string" || !eventId.trim()) {
+    return NextResponse.json({ ok: false, error: "Missing dismissed_event_id" }, { status: 400 });
+  }
+
+  const { data: existing } = await supabaseAdmin
+    .from("app_users")
+    .select("patient_profile")
+    .eq("id", appUserId)
+    .single();
+  const profile = (existing?.patient_profile || {}) as Record<string, unknown>;
+  const currentList = Array.isArray(profile.dismissed_calendar_event_ids)
+    ? (profile.dismissed_calendar_event_ids as unknown[]).filter((x): x is string => typeof x === "string")
+    : [];
+  const next = Array.from(new Set([...currentList, eventId]));
+  await supabaseAdmin
+    .from("app_users")
+    .update({ patient_profile: { ...profile, dismissed_calendar_event_ids: next } })
+    .eq("id", appUserId);
+
+  return NextResponse.json({ ok: true });
 }

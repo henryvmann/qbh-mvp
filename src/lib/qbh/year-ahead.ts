@@ -90,6 +90,7 @@ function monthLabel(d: Date): string {
 export async function buildYearAhead(appUserId: string): Promise<{
   months: YearAheadMonth[];
   overdue: YearAheadItem[];
+  recommendations: YearAheadItem[];
 }> {
   const now = new Date();
   const horizon = addMonths(now.toISOString(), 12);
@@ -121,7 +122,7 @@ export async function buildYearAhead(appUserId: string): Promise<{
 
   // If no providers AND no profile data, nothing to show.
   if (providerIds.length === 0 && !dob && !sex) {
-    return { months: [], overdue: [] };
+    return { months: [], overdue: [], recommendations: [] };
   }
 
   // Latest visit per provider
@@ -349,23 +350,25 @@ export async function buildYearAhead(appUserId: string): Promise<{
     },
   ];
 
+  // Phantom recommendations: keep OFF the month calendar. Their
+  // previous monthOffset was arbitrary — slotting a colonoscopy into
+  // "September" or a mammogram into "October" gave users false
+  // certainty about timing the system has no way to know. Surface
+  // them as a separate "recommendations" list with no month assigned;
+  // the user decides when (or whether) to schedule.
+  const recommendations: YearAheadItem[] = [];
   for (const def of phantomDefs) {
     if (!def.appliesIf()) continue;
-    const target = new Date(now.getFullYear(), now.getMonth() + def.monthOffset, 15);
-    const item: YearAheadItem = {
+    recommendations.push({
       providerId: null,
       providerName: "Find a provider",
       providerType: def.type,
       title: def.title,
       rationale: def.rationale,
       status: "due",
-      date: target.toISOString(),
+      date: now.toISOString(),
       isPhantom: true,
-    };
-    const key = monthKey(target);
-    const arr = monthBuckets.get(key) ?? [];
-    arr.push(item);
-    monthBuckets.set(key, arr);
+    });
   }
 
   // Build the month list — every month from current through +12, even
@@ -386,5 +389,5 @@ export async function buildYearAhead(appUserId: string): Promise<{
     m.items.sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  return { months, overdue: overdueItems };
+  return { months, overdue: overdueItems, recommendations };
 }

@@ -111,8 +111,8 @@ const categoryConfig: Record<
   { label: string; sectionTitle: string; color: string }
 > = {
   overdue: {
-    label: "Overdue",
-    sectionTitle: "Overdue Care",
+    label: "To schedule",
+    sectionTitle: "Ready to schedule",
     color: "#E04030",
   },
   preventive: {

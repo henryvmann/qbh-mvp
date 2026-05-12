@@ -94,6 +94,24 @@ export async function POST(req: NextRequest) {
 
   const merged = { ...(existing?.patient_profile || {}), ...incoming };
 
+  // introduced_provider_ids is an additive set — the dashboard's
+  // walkthrough taps each post a "here are the new ones" payload. If
+  // we plain-replaced it, a race between dashboard mount (which fetches
+  // the existing list into React state) and an early walkthrough tap
+  // could write a short list back and silently drop previously-
+  // introduced IDs. Always union with what's already on file.
+  if (Array.isArray(incoming.introduced_provider_ids)) {
+    const existingIds = Array.isArray(existing?.patient_profile?.introduced_provider_ids)
+      ? (existing!.patient_profile.introduced_provider_ids as unknown[]).filter(
+          (x): x is string => typeof x === "string"
+        )
+      : [];
+    const incomingIds = (incoming.introduced_provider_ids as unknown[]).filter(
+      (x): x is string => typeof x === "string"
+    );
+    merged.introduced_provider_ids = Array.from(new Set([...existingIds, ...incomingIds]));
+  }
+
   // If this update renamed any care recipients (same id, new name), the
   // providers.care_recipient column for that user still holds the old
   // name. Carry the rename through so providers stay attached to their

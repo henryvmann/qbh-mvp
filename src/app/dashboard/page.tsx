@@ -100,6 +100,12 @@ function DashboardInner() {
     Record<string, { until: string; kind: string }>
   >({});
   const [introducedIds, setIntroducedIds] = useState<string[]>([]);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  // Kate's inference-driven greeting. Populated from /api/kate/state
+  // (signals → rules → voice → optional LLM phrasing). Falls back to
+  // the static checkIn line if the fetch fails or returns nothing.
+  const [kateGreeting, setKateGreeting] = useState<string | null>(null);
+  const [kateTone, setKateTone] = useState<string | null>(null);
   // Scope filter — null = "All". Otherwise filters provider count,
   // overdue, upcoming, and the care-team list to providers attached
   // to that recipient. Stored only client-side; the dashboard query
@@ -129,6 +135,24 @@ function DashboardInner() {
     load().catch(() => setLoading(false));
 
     refreshProfile();
+
+    // Pull Kate's inference-layer state so the dashboard greeting reads
+    // her actual read of the situation (calm / proactive / supportive /
+    // celebratory tone, message anchored to real signals) instead of a
+    // hardcoded "Found N things." Best-effort — fall back silently on
+    // any failure so the dashboard still loads.
+    apiFetch("/api/kate/state")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const msg = json?.state?.message;
+        if (typeof msg === "string" && msg.trim()) {
+          setKateGreeting(msg.trim());
+          if (typeof json?.state?.tone === "string") setKateTone(json.state.tone);
+        }
+      })
+      .catch(() => {
+        /* best-effort */
+      });
   }, [router]);
 
   async function refreshProfile() {
@@ -143,6 +167,11 @@ function DashboardInner() {
       setIntroducedIds(Array.isArray(ids) ? ids.filter((x) => typeof x === "string") : []);
     } catch {
       /* best-effort */
+    } finally {
+      // Mark profile loaded even on error so the rest of the dashboard
+      // (StuckPrompt, etc.) doesn't hang waiting for a fetch that won't
+      // come. introducedIds will just be [] in the failure case.
+      setProfileLoaded(true);
     }
   }
 
@@ -206,7 +235,12 @@ function DashboardInner() {
   // Weekly check-in framing: lead with what Kate's surfaced rather
   // than a static "Today." Matches the typeform signal — users want
   // relief, not a wall of tiles.
-  const checkIn =
+  //
+  // Kate's inference-layer greeting takes precedence when present — it
+  // reads from the same signals/rules/voice pipeline tested in the
+  // sandbox. Falls back to the static computed line if /api/kate/state
+  // hasn't returned yet or didn't produce a message.
+  const fallbackCheckIn =
     actionCount === 0 && upcomingCount === 0
       ? "All clear this week."
       : actionCount === 0
@@ -214,6 +248,17 @@ function DashboardInner() {
       : actionCount === 1
       ? "Found 1 thing for you this week."
       : `Found ${actionCount} things for you this week.`;
+  const checkIn = kateGreeting || fallbackCheckIn;
+
+  // Tone → accent color for the greeting underline. Subtle — leans
+  // into the bucket Kate chose without making the dashboard look
+  // alarming on a "needs-attention" day.
+  const toneAccent =
+    kateTone === "warm" ? "#27C46B"
+    : kateTone === "supportive" ? "#9078C8"
+    : kateTone === "proactive" ? T.electric
+    : kateTone === "celebratory" ? "#E08A1F"
+    : null;
 
   return (
     <BrandShell topRight={<UserAvatar />}>
@@ -223,6 +268,18 @@ function DashboardInner() {
           Hi, {userName || "there"}
         </div>
         <AustinHeading size={32}>{checkIn}</AustinHeading>
+        {toneAccent && (
+          <div
+            aria-hidden
+            style={{
+              marginTop: 8,
+              height: 3,
+              width: 36,
+              background: toneAccent,
+              borderRadius: 999,
+            }}
+          />
+        )}
       </div>
 
       {/* Scope chips — All / Self / Partner / Child / etc.
@@ -293,8 +350,10 @@ function DashboardInner() {
       {/* Soft Kate prompt for providers waiting on follow-up. Excludes
           providers the user just walked through via NewProviderWalkthrough
           — they already got their one nudge there. No shame language, no
-          urgency, and four snooze cadences. */}
-      {data?.snapshots && (
+          urgency, and four snooze cadences. Gate on profileLoaded so the
+          first render doesn't flash a stale "stuck" card before introducedIds
+          has been fetched from /api/patient-profile. */}
+      {data?.snapshots && profileLoaded && (
         <StuckPrompt
           snapshots={data.snapshots}
           pausedProviders={pausedProviders}
@@ -382,7 +441,7 @@ function DashboardInner() {
           <StatTile
             href="/visits"
             value={overdueCount}
-            label="Overdue"
+            label="To schedule"
             color={T.red}
           />
         )}
@@ -411,7 +470,7 @@ function DashboardInner() {
                 padding: "12px 0",
               }}
             >
-              Add your first provider →
+              {scope ? `Add ${scope}'s first provider →` : "Add your first provider →"}
             </Link>
           </GlassCard>
         ) : (
@@ -524,12 +583,12 @@ function DashboardInner() {
           }}
         >
           {[
-            { href: "/providers", title: "Providers", desc: "Your care team", icon: <StethoscopeIcon color={T.electric} /> },
-            { href: "/visits", title: "Visits", desc: "Upcoming & past", icon: <CalendarIcon color={T.electric} /> },
-            { href: "/coverage", title: "Coverage", desc: "EOBs & claims", icon: <DocumentIcon color={T.electric} size={18} /> },
-            { href: "/caregivers", title: "Caregivers", desc: "People who help", icon: <UsersIcon color={T.electric} size={18} /> },
-            { href: "/insights", title: "Insights", desc: "Kate's read on your week", icon: <InsightsIcon color={T.electric} size={18} /> },
-            { href: "/goals", title: "Goals", desc: "Track progress", icon: <SparkleIcon color={T.electric} size={18} /> },
+            { href: "/providers", title: "View your care team", desc: "Doctors, dentists, specialists", icon: <StethoscopeIcon color={T.electric} /> },
+            { href: "/visits", title: "Check your visits", desc: "Upcoming & past", icon: <CalendarIcon color={T.electric} /> },
+            { href: "/coverage", title: "Review your coverage", desc: "EOBs & claims", icon: <DocumentIcon color={T.electric} size={18} /> },
+            { href: "/caregivers", title: "Manage caregivers", desc: "People who help", icon: <UsersIcon color={T.electric} size={18} /> },
+            { href: "/insights", title: "See Kate's insights", desc: "Her read on your week", icon: <InsightsIcon color={T.electric} size={18} /> },
+            { href: "/goals", title: "Track your goals", desc: "Progress and follow-ups", icon: <SparkleIcon color={T.electric} size={18} /> },
           ].map((item) => (
             <GlassCard key={item.href} href={item.href} padding={14}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

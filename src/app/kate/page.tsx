@@ -28,10 +28,10 @@ type Message = { role: "user" | "assistant"; content: string };
 
 const QUICK_PROMPTS = [
   { label: "What should I focus on?", prompt: "What are the most important things I should do for my health right now?", icon: HelpCircle },
-  { label: "Anything overdue?", prompt: "What appointments or follow-ups am I overdue for?", icon: CalendarPlus },
+  { label: "What's due next?", prompt: "What appointments or follow-ups are coming due or ready to schedule?", icon: CalendarPlus },
   { label: "Prep for my next visit", prompt: "Help me prepare for my next upcoming appointment.", icon: Stethoscope },
   { label: "Summarize my care", prompt: "Give me a quick summary of my providers, recent visits, and what's coming up.", icon: FileText },
-  { label: "What's missing?", prompt: "Based on my age and history, what preventive care am I missing? Be specific.", icon: Sparkles },
+  { label: "What's missing from my care?", prompt: "Based on my age and history, what preventive care am I missing? Be specific.", icon: Sparkles },
   { label: "How is my health trending?", prompt: "How am I doing overall? What's my health score and what's driving it?", icon: Sparkles },
 ];
 
@@ -42,12 +42,40 @@ export default function KatePage() {
   const [hasOpened, setHasOpened] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // Inference-layer state: contextual opener + chips driven by the
+  // user's current situation. Falls back to QUICK_PROMPTS when the
+  // call fails or returns nothing.
+  type InferredChip = { id: string; label: string; intent: string };
+  const [inferredGreeting, setInferredGreeting] = useState<string | null>(null);
+  const [inferredChips, setInferredChips] = useState<InferredChip[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   // No proactive opener — Kate waits for the user to ask. Quick
   // prompts above the message box give the user a one-tap entry.
   useEffect(() => {
     if (hasOpened) return;
     setHasOpened(true);
+    apiFetch("/api/kate/state")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const msg = json?.state?.message;
+        if (typeof msg === "string" && msg.trim()) setInferredGreeting(msg.trim());
+        if (typeof json?.conversationId === "string") setConversationId(json.conversationId);
+        const chips = json?.state?.chips;
+        if (Array.isArray(chips)) {
+          setInferredChips(
+            chips
+              .filter((c: unknown): c is InferredChip =>
+                typeof c === "object" && c !== null
+                && typeof (c as { id?: unknown }).id === "string"
+                && typeof (c as { label?: unknown }).label === "string"
+                && typeof (c as { intent?: unknown }).intent === "string"
+              )
+              .slice(0, 6)
+          );
+        }
+      })
+      .catch(() => {});
   }, [hasOpened]);
 
   useEffect(() => {
@@ -89,6 +117,61 @@ export default function KatePage() {
     }
   }, [messages, streaming]);
 
+  // Inference chip → structured /respond turn. Tapping a chip routes
+  // through the rule layer with conversation history as context, gets
+  // back Kate's next message + a refreshed chip set. Free-form typing
+  // continues to use `send` above (streaming /chat).
+  const sendChipIntent = useCallback(
+    async (chip: InferredChip) => {
+      if (streaming) return;
+      const userMsg: Message = { role: "user", content: chip.label };
+      const baseline: Message[] = inferredGreeting
+        ? [{ role: "assistant", content: inferredGreeting }]
+        : [];
+      const after = [...baseline, ...messages, userMsg];
+      setMessages(after);
+      setStreaming(true);
+      try {
+        const res = await apiFetch("/api/kate/respond", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId,
+            chipIntent: chip.intent,
+            chipLabel: chip.label,
+          }),
+        });
+        const data = await res.json();
+        if (!data?.ok || !data?.state?.message) {
+          setMessages([...after, { role: "assistant", content: "Sorry, something went wrong. Try again." }]);
+          return;
+        }
+        if (typeof data.conversationId === "string") setConversationId(data.conversationId);
+        setMessages([...after, { role: "assistant", content: data.state.message }]);
+        const nextChips = data.state?.chips;
+        if (Array.isArray(nextChips)) {
+          setInferredChips(
+            nextChips
+              .filter((c: unknown): c is InferredChip =>
+                typeof c === "object" && c !== null
+                && typeof (c as { id?: unknown }).id === "string"
+                && typeof (c as { label?: unknown }).label === "string"
+                && typeof (c as { intent?: unknown }).intent === "string"
+              )
+              .slice(0, 6)
+          );
+        } else {
+          setInferredChips([]);
+        }
+      } catch {
+        setMessages([...after, { role: "assistant", content: "Sorry, I couldn't connect. Try again." }]);
+      } finally {
+        setStreaming(false);
+      }
+    },
+    [streaming, inferredGreeting, conversationId, messages]
+  );
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     send(input);
@@ -115,10 +198,61 @@ export default function KatePage() {
         </h1>
       </div>
 
+      {/* Inference-layer opener — shows Kate's contextual read of the
+          current situation before the user asks anything. Only renders
+          before the first message exchange, same as QUICK_PROMPTS. */}
+      {inferredGreeting && messages.length === 0 && !streaming && (
+        <div
+          style={{
+            background: "rgba(22,119,255,0.06)",
+            border: `1px solid rgba(22,119,255,0.18)`,
+            borderRadius: 14,
+            padding: "14px 16px",
+            marginBottom: 16,
+            fontSize: 14,
+            lineHeight: 1.5,
+            color: T.lightText,
+          }}
+        >
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: T.electric, marginBottom: 6 }}>
+            Kate&rsquo;s read
+          </div>
+          {inferredGreeting}
+        </div>
+      )}
+
+      {/* Inference-driven chips when the state layer produced any —
+          they reflect what Kate actually sees, not just generic prompts.
+          When empty, fall back to the static QUICK_PROMPTS below. */}
+      {inferredChips.length > 0 && messages.length <= 1 && !streaming && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+          {inferredChips.map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => sendChipIntent(chip)}
+              disabled={streaming}
+              style={{
+                background: T.white,
+                border: `1px solid ${T.lightBorder}`,
+                borderRadius: 999,
+                padding: "8px 14px",
+                fontSize: 13,
+                fontWeight: 600,
+                color: T.lightText,
+                cursor: streaming ? "default" : "pointer",
+              }}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Quick-prompt grid — only shows before the user has sent
           their first message, gives Kate's "ideas" without burning
           tokens. Disappears once the conversation is underway. */}
-      {messages.length <= 1 && !streaming && (
+      {inferredChips.length === 0 && messages.length <= 1 && !streaming && (
         <div
           style={{
             display: "grid",

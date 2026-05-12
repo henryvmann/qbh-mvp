@@ -6,7 +6,7 @@ import { apiFetch } from "../../lib/api";
 import PageShell from "../../components/qbh/PageShell";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import NextSteps from "../../components/qbh/NextSteps";
-import { Calendar, ChevronDown, ChevronRight } from "lucide-react";
+import { Calendar, ChevronDown, ChevronRight, Plus, X } from "lucide-react";
 import InlineProviderSearch from "../../components/qbh/InlineProviderSearch";
 
 type Visit = { id: string; date: string; amount: number | null; source: string };
@@ -49,6 +49,33 @@ export default function TimelinePage() {
   const [addedProviders, setAddedProviders] = useState<Set<string>>(new Set());
   const [yearAheadMonths, setYearAheadMonths] = useState<YearAheadMonth[]>([]);
   const [yearAheadOverdue, setYearAheadOverdue] = useState<YearAheadItem[]>([]);
+  const [yearAheadRecommendations, setYearAheadRecommendations] = useState<YearAheadItem[]>([]);
+  type CustomTimelineItem = { id: string; title: string; description?: string | null; target_month?: string | null; created_at: string };
+  const [customItems, setCustomItems] = useState<CustomTimelineItem[]>([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [formTitle, setFormTitle] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formTargetMonth, setFormTargetMonth] = useState("");
+  const [savingItem, setSavingItem] = useState(false);
+
+  const TIMELINE_PRESETS = [
+    "Annual physical",
+    "Mammogram",
+    "Colonoscopy",
+    "Dermatology (skin check)",
+    "Eye exam",
+    "Dental cleaning",
+    "OB/GYN annual",
+    "Lipid + metabolic panel",
+    "A1C / diabetes screening",
+    "Bone density (DEXA) scan",
+    "Flu shot",
+    "Shingles vaccine",
+    "GLP-1 follow-up",
+    "Cancer follow-up / surveillance",
+    "Therapy check-in",
+    "Medication review",
+  ];
 
   useEffect(() => {
     apiFetch("/api/timeline/data")
@@ -61,6 +88,7 @@ export default function TimelinePage() {
           setYears(json.years ?? []);
           setUpcoming(json.upcoming ?? []);
           setProviderCount(json.providerCount ?? 0);
+          setCustomItems(json.customTimelineItems ?? []);
         }
       })
       .finally(() => setLoading(false));
@@ -70,6 +98,7 @@ export default function TimelinePage() {
         if (json?.ok) {
           setYearAheadMonths(json.months ?? []);
           setYearAheadOverdue(json.overdue ?? []);
+          setYearAheadRecommendations(json.recommendations ?? []);
         }
       })
       .catch(() => {});
@@ -120,7 +149,7 @@ export default function TimelinePage() {
         {/* Year Ahead — preventive-care calendar inferred from
             provider history + cadence. Empty months are still shown
             so the timeline reads as a calendar, not just a list. */}
-        {(yearAheadMonths.length > 0 || yearAheadOverdue.length > 0) && (
+        {(yearAheadMonths.length > 0 || yearAheadOverdue.length > 0 || yearAheadRecommendations.length > 0) && (
           <div className="mt-10">
             <div className="mb-3 flex items-center gap-2">
               <span className="text-sm font-bold text-[#1677FF]">Year ahead</span>
@@ -131,10 +160,208 @@ export default function TimelinePage() {
               cleanings, follow-ups. Inferred from your provider history.
             </p>
 
+            {/* Recommendations — guideline-based items (mammograms, colonoscopy,
+                etc.) with no specific month assigned. Surfaced separately from
+                the month calendar because we don't actually know when these
+                should happen for the user — only that they're worth scheduling
+                this year. Splitting them out keeps the calendar honest. */}
+            {yearAheadRecommendations.length > 0 && (
+              <div className="mb-5 rounded-2xl bg-white border border-[#1677FF]/20 shadow-sm p-4">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#1677FF] mb-1">
+                  Recommended this year
+                </div>
+                <p className="text-[11px] text-[#4F5F73] mb-3">
+                  Based on age and care history. No specific month — schedule when it works for you.
+                </p>
+                <div className="space-y-3">
+                  {yearAheadRecommendations.map((item) => (
+                    <div
+                      key={`rec-${item.title}`}
+                      className="flex items-start justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold text-[#071832]">{item.title}</div>
+                        {item.rationale && (
+                          <div className="text-xs text-[#4F5F73] mt-1 leading-snug">{item.rationale}</div>
+                        )}
+                        <a
+                          href="/providers?add=true"
+                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#1677FF] hover:underline underline-offset-4"
+                        >
+                          Find a provider
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </a>
+                      </div>
+                      <span className="rounded-full bg-[#1677FF]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#1677FF] shrink-0">
+                        Recommended
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Your goals — user-added timeline items. Surfaces things
+                that aren't derivable from providers or guidelines (GLP-1
+                start, cancer surveillance, weight check, etc.). Always
+                rendered so the Add button is reachable even when there
+                are no items yet. */}
+            <div className="mb-5 rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#4F5F73]">
+                    Your goals
+                  </div>
+                  <p className="text-[11px] text-[#4F5F73] mt-0.5">
+                    Anything else you&rsquo;re tracking — appointments, screenings, goals.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(true)}
+                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white"
+                  style={{ backgroundColor: "#1677FF" }}
+                >
+                  <Plus size={12} /> Add
+                </button>
+              </div>
+
+              {showAddForm && (
+                <div className="mt-3 mb-3 rounded-xl bg-[#F8F9FB] border border-[#E5EAF2] p-3 space-y-2">
+                  <div>
+                    <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">
+                      What are you tracking?
+                    </label>
+                    <input
+                      type="text"
+                      value={formTitle}
+                      onChange={(e) => setFormTitle(e.target.value)}
+                      placeholder="e.g. GLP-1 follow-up, cancer surveillance, weight check"
+                      list="timeline-presets"
+                      className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+                    />
+                    <datalist id="timeline-presets">
+                      {TIMELINE_PRESETS.map((p) => (
+                        <option key={p} value={p} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">
+                      Notes <span className="text-[#4F5F73] font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formDescription}
+                      onChange={(e) => setFormDescription(e.target.value)}
+                      placeholder="Anything Kate should know"
+                      className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">
+                      Target month <span className="text-[#4F5F73] font-normal">(optional — leave blank for &ldquo;anytime&rdquo;)</span>
+                    </label>
+                    <input
+                      type="month"
+                      value={formTargetMonth}
+                      onChange={(e) => setFormTargetMonth(e.target.value)}
+                      className="w-full rounded-lg border border-[#E5EAF2] bg-white px-3 py-2 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => { setShowAddForm(false); setFormTitle(""); setFormDescription(""); setFormTargetMonth(""); }}
+                      className="rounded-lg px-3 py-1.5 text-xs text-[#4F5F73] hover:bg-[#F0F2F5]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!formTitle.trim() || savingItem}
+                      onClick={async () => {
+                        setSavingItem(true);
+                        try {
+                          const res = await apiFetch("/api/timeline/items", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              title: formTitle.trim(),
+                              description: formDescription.trim() || undefined,
+                              target_month: formTargetMonth || undefined,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data?.ok && data.item) {
+                            setCustomItems((prev) => [data.item, ...prev]);
+                            setFormTitle("");
+                            setFormDescription("");
+                            setFormTargetMonth("");
+                            setShowAddForm(false);
+                          }
+                        } finally {
+                          setSavingItem(false);
+                        }
+                      }}
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                      style={{ backgroundColor: "#1677FF" }}
+                    >
+                      {savingItem ? "Saving…" : "Add"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {customItems.length === 0 && !showAddForm && (
+                <div className="mt-2 text-xs text-[#4F5F73]">
+                  Nothing yet. Tap Add to track something on your own — a screening, a check-in, a follow-up.
+                </div>
+              )}
+
+              {customItems.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  {customItems.map((item) => {
+                    const monthLabel = item.target_month
+                      ? new Date(item.target_month + "-15").toLocaleDateString("en-US", { month: "short", year: "numeric" })
+                      : "Anytime";
+                    return (
+                      <div key={item.id} className="flex items-start justify-between gap-3 rounded-xl bg-[#F8F9FB] px-3 py-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-[#071832]">{item.title}</div>
+                          {item.description && (
+                            <div className="text-[11px] text-[#4F5F73] mt-0.5 leading-snug">{item.description}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="rounded-full bg-white border border-[#E5EAF2] px-2.5 py-0.5 text-[10px] font-semibold text-[#4F5F73]">
+                            {monthLabel}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await apiFetch(`/api/timeline/items?id=${item.id}`, { method: "DELETE" });
+                              setCustomItems((prev) => prev.filter((x) => x.id !== item.id));
+                            }}
+                            aria-label="Remove"
+                            className="text-[#4F5F73] hover:text-red-500"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {yearAheadOverdue.length > 0 && (
               <div className="mb-5 rounded-2xl bg-white border border-[#E04030]/30 shadow-sm p-4">
                 <div className="text-xs font-bold uppercase tracking-wider text-[#E04030] mb-2">
-                  Overdue
+                  Ready to schedule
                 </div>
                 <div className="space-y-2">
                   {yearAheadOverdue.map((item) => (
@@ -142,11 +369,11 @@ export default function TimelinePage() {
                       <div className="min-w-0">
                         <div className="text-sm font-semibold text-[#071832]">{item.title}</div>
                         <div className="text-xs text-[#4F5F73] mt-0.5">
-                          {item.providerName} · was due {formatDate(item.date)}
+                          {item.providerName} · due since {formatDate(item.date)}
                         </div>
                       </div>
                       <span className="rounded-full bg-[#E04030]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#E04030] shrink-0">
-                        Overdue
+                        Due
                       </span>
                     </div>
                   ))}
@@ -362,15 +589,61 @@ export default function TimelinePage() {
                           {isExpanded && (
                             <div className="border-t border-[#E5EAF2] px-5 py-3 bg-[#F8F9FA]">
                               <div className="space-y-2">
-                                {prov.visits.map((v) => (
-                                  <div key={v.id} className="flex items-center justify-between text-xs">
-                                    <span className="text-[#4F5F73]">{formatDate(v.date)}</span>
-                                    {v.amount != null && (
-                                      <span className="text-[#4F5F73]">${v.amount.toFixed(2)}</span>
-                                    )}
-                                  </div>
-                                ))}
+                                {prov.visits.map((v) => {
+                                  const isGcal = v.id.startsWith("gcal-");
+                                  return (
+                                    <div key={v.id} className="flex items-center justify-between text-xs">
+                                      <span className="text-[#4F5F73]">{formatDate(v.date)}</span>
+                                      <div className="flex items-center gap-3">
+                                        {v.amount != null && (
+                                          <span className="text-[#4F5F73]">${v.amount.toFixed(2)}</span>
+                                        )}
+                                        {isGcal && (
+                                          <button
+                                            type="button"
+                                            aria-label="Not healthcare-related, remove from timeline"
+                                            onClick={async () => {
+                                              const eventId = v.id.replace(/^gcal-/, "");
+                                              await apiFetch("/api/timeline/data", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ dismissed_event_id: eventId }),
+                                              });
+                                              // Optimistic: drop this visit from local state without
+                                              // a full refetch. If it was the only visit under this
+                                              // gcal- provider, drop the provider row too.
+                                              setYears((prev) =>
+                                                prev
+                                                  .map((y) => ({
+                                                    ...y,
+                                                    providers: y.providers
+                                                      .map((p) => ({
+                                                        ...p,
+                                                        visits: p.visits.filter((x) => x.id !== v.id),
+                                                      }))
+                                                      .filter((p) => p.visits.length > 0),
+                                                    totalVisits: y.providers.reduce(
+                                                      (sum, p) => sum + p.visits.filter((x) => x.id !== v.id).length,
+                                                      0
+                                                    ),
+                                                  }))
+                                                  .filter((y) => y.totalVisits > 0)
+                                              );
+                                            }}
+                                            className="text-[#4F5F73] hover:text-red-500 transition"
+                                            title="Not healthcare-related"
+                                          >
+                                            ✕
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
+                              <p className="mt-3 text-[10px] text-[#4F5F73]">
+                                Something here that isn&rsquo;t healthcare-related? Tap ✕ to drop it from your timeline.
+                              </p>
                             </div>
                           )}
                         </div>

@@ -61,6 +61,9 @@ export default function NotesPage() {
   const [formProviderId, setFormProviderId] = useState("");
   const [formNoteType, setFormNoteType] = useState<string>("general");
   const [saving, setSaving] = useState(false);
+  // Save confirmation — keeps the user oriented on where the note
+  // landed after the form closes. Auto-clears after a few seconds.
+  const [savedConfirmation, setSavedConfirmation] = useState<{ providerName: string | null; noteId: string } | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -97,6 +100,17 @@ export default function NotesPage() {
       const data = await res.json();
       if (data?.ok && data.note) {
         setNotes((prev) => [data.note, ...prev]);
+        const providerName = formProviderId
+          ? providers.find((p) => p.id === formProviderId)?.name || null
+          : null;
+        // If the note was tagged to a provider, open that provider's
+        // accordion so the user sees the note land in its home — and
+        // show a confirmation banner that tells them where it went.
+        if (formProviderId) {
+          setExpandedProviders((prev) => new Set(prev).add(formProviderId));
+        }
+        setSavedConfirmation({ providerName, noteId: data.note.id });
+        setTimeout(() => setSavedConfirmation(null), 5000);
         setFormTitle("");
         setFormBody("");
         setFormProviderId("");
@@ -197,6 +211,22 @@ export default function NotesPage() {
               Add Note
             </button>
           </div>
+
+          {savedConfirmation && (
+            <div
+              className="mt-4 flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium"
+              style={{
+                background: "rgba(34,197,94,0.10)",
+                border: "1px solid rgba(34,197,94,0.28)",
+                color: "#15803D",
+              }}
+            >
+              <span aria-hidden style={{ fontSize: 14 }}>✓</span>
+              Saved {savedConfirmation.providerName
+                ? `to ${savedConfirmation.providerName}'s profile`
+                : "to your notes"}.
+            </div>
+          )}
 
           {/* Add Note Form */}
           {showForm && (

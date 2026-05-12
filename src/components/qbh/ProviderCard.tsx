@@ -465,6 +465,18 @@ export default function ProviderCard({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Inline Book it — always visible for non-pharmacy providers
+              so the user can book without clicking into the detail page.
+              May 11 review #T5. */}
+          {!isPharmacy && (
+            <a
+              href={`/providers/${provider.id}?action=book`}
+              className="rounded-lg px-2.5 py-1 text-xs font-semibold text-white hover:brightness-95 transition"
+              style={{ backgroundColor: "#1677FF" }}
+            >
+              Book it
+            </a>
+          )}
           <button
             type="button"
             onClick={() => setShowDetails(!showDetails)}

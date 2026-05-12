@@ -6,6 +6,7 @@ import { supabaseAdmin } from "../../../../lib/supabase-server";
 import { scanCalendarForProviders } from "../../../../lib/google-calendar";
 import { lookupPlaceCandidates } from "../../../../lib/google/places-lookup";
 import { stateFromZip } from "../../../../lib/qbh/state-from-zip";
+import { getPrimaryRecipientName } from "../../../../lib/qbh/primary-recipient";
 
 export async function POST(req: NextRequest) {
   // Try session-based auth first (normal user requests)
@@ -100,6 +101,12 @@ export async function POST(req: NextRequest) {
       null;
     const userState = stateFromZip(userZip);
 
+    // Default-assign calendar-discovered providers to the primary user
+    // (account holder). Same rule as Plaid + manual paths so newly-added
+    // providers don't land as "no one yet." May 11 review #T3 extension.
+    const primaryRecipientName = await getPrimaryRecipientName(appUserId);
+    const defaultRecipientJson = primaryRecipientName ? JSON.stringify([primaryRecipientName]) : null;
+
     // Insert new providers with source="calendar" and status="active".
     // Phone resolution: 1 confident Places match → write phone_number;
     // 2+ → store as phone_candidates so the user picks the right one
@@ -133,6 +140,7 @@ export async function POST(req: NextRequest) {
         phone_number: phoneNumber,
         phone_candidates: phoneCandidates,
         address: address,
+        care_recipient: defaultRecipientJson,
       });
 
       if (!error) {

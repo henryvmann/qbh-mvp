@@ -38,6 +38,7 @@ type PatientProfile = {
   insurance_provider?: string | null;
   callback_phone?: string | null;
   kate_proactivity?: string | null;
+  introduced_provider_ids?: string[] | null;
 };
 
 /* ── Context type ── */
@@ -94,6 +95,15 @@ function buildSuggestions(
 ): Suggestion[] {
   const suggestions: Suggestion[] = [];
   const now = Date.now();
+  // Providers the user has gone through in the new-provider walkthrough.
+  // "Overdue" framing should only fire for providers the user has been
+  // introduced to — otherwise we shame them about something they didn't
+  // even know was in their care team yet.
+  const introducedIds = new Set(
+    Array.isArray(profile.introduced_provider_ids)
+      ? profile.introduced_provider_ids.filter((x): x is string => typeof x === "string")
+      : []
+  );
 
   // HIGHEST PRIORITY: Appointment within 24 hours
   for (const s of dashboard.snapshots) {
@@ -162,19 +172,29 @@ function buildSuggestions(
     });
   }
 
-  // 2. Overdue providers needing booking
-  const overdueSnapshots = dashboard.snapshots.filter(
-    (s) =>
-      s.provider?.provider_type !== "pharmacy" &&
-      s.followUpNeeded &&
-      s.booking_state?.status !== "BOOKED" &&
-      s.booking_state?.status !== "IN_PROGRESS"
-  );
+  // 2. Overdue providers needing booking. Gated on introducedIds so a
+  // brand-new account doesn't see "X is overdue" the first time the
+  // dashboard loads — they get the walkthrough first, then this surface.
+  // Also gated on recency: followUpNeeded fires from booking_state, not
+  // actual visit recency, so we additionally require no visit on file
+  // or a visit at least 3 months old. Otherwise the prompt fires
+  // shortly after a real visit (May 11 review #N5).
+  const RECENCY_THRESHOLD_MS = 90 * 24 * 60 * 60 * 1000;
+  const overdueSnapshots = dashboard.snapshots.filter((s) => {
+    if (s.provider?.provider_type === "pharmacy") return false;
+    if (!s.followUpNeeded) return false;
+    if (s.booking_state?.status === "BOOKED" || s.booking_state?.status === "IN_PROGRESS") return false;
+    if (!introducedIds.has(s.provider.id)) return false;
+    const lastVisit = (s as { lastVisitDate?: string | null }).lastVisitDate;
+    if (!lastVisit) return true;
+    const elapsed = Date.now() - new Date(lastVisit).getTime();
+    return elapsed >= RECENCY_THRESHOLD_MS;
+  });
   if (overdueSnapshots.length > 0) {
     const first = overdueSnapshots[0];
     suggestions.push({
       id: `book-overdue-${first.provider.id}`,
-      text: `${first.provider.name} is overdue for a visit.`,
+      text: `${first.provider.name} is ready for a visit.`,
       actionLabel: "Let Kate book",
       actionType: "vapi-call",
       providerId: first.provider.id,
@@ -237,8 +257,8 @@ function buildSuggestions(
         if (!hasProviders) {
           suggestions.push({
             id: `add-providers-${r.name}`,
-            text: `Want to add providers for ${r.name}? Kate can help you search.`,
-            actionLabel: "Add providers",
+            text: `You're set up with your own care. Want to add ${r.name}'s providers now, or come back to it later?`,
+            actionLabel: `Add ${r.name}'s providers`,
             actionType: "link",
             actionHref: "/providers?add=true",
           });

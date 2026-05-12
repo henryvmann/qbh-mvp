@@ -2,6 +2,7 @@ import { supabaseAdmin } from "../../supabase-server";
 import { lookupPlaceDetails } from "../../google/places-lookup";
 import { batchNpiLookup } from "../../npi/lookup";
 import { normalizeProviderName } from "../provider-name";
+import { getPrimaryRecipientName } from "../primary-recipient";
 import type {
   DiscoveredProvider,
   PlaidDiscoveryTransaction,
@@ -146,6 +147,14 @@ export async function writeDiscoveredProviders({
     }
   }
 
+  // Default-assign Plaid-discovered providers to the primary user
+  // (account holder). Without this they land as "no one yet" and the
+  // user has to manually retag every one. User can still reassign to
+  // a different recipient from the provider detail UI. May 11 review
+  // #T3 extension.
+  const primaryRecipientName = await getPrimaryRecipientName(userId);
+  const defaultRecipientJson = primaryRecipientName ? JSON.stringify([primaryRecipientName]) : null;
+
   const providersToInsert = filteredForInsert.map((provider) => {
     const { cleanedName, detectedSpecialty } = normalizeProviderName(provider.provider_name.trim());
     const npi = provider.npi || npiBackfill.get(provider.normalized_name)?.npi || null;
@@ -167,6 +176,7 @@ export async function writeDiscoveredProviders({
       provider_type: provider.provider_type || null,
       npi,
       source: "plaid",
+      care_recipient: defaultRecipientJson,
     };
   });
 

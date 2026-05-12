@@ -26,6 +26,18 @@ export default function KateChatButton() {
   const [hasGreeted, setHasGreeted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Kate inference-layer state: contextual opening message + chips that
+  // reflect what she actually sees in the user's situation. Pulled once
+  // when the panel opens, replaces the generic "Anything I can help
+  // you with today?" line with something anchored to signals.
+  // Tapping a chip routes through /api/kate/respond with the chip's
+  // intent (handle/elaborate/defer/thanks/custom) so conversation
+  // persistence + tone tracking get exercised on the structured path.
+  // Free-form typed messages still stream through /api/kate/chat.
+  type KateInferredChip = { id: string; label: string; intent: string };
+  const [inferredGreeting, setInferredGreeting] = useState<string | null>(null);
+  const [inferredChips, setInferredChips] = useState<KateInferredChip[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,6 +61,91 @@ export default function KateChatButton() {
       setHasGreeted(true);
     }
   }, [open, hasGreeted, messages.length]);
+
+  // Fetch Kate's inference state when the panel first opens. Best-effort
+  // — if the call fails or returns nothing, we fall back to the generic
+  // greeting line and the static QUICK_ACTIONS below.
+  useEffect(() => {
+    if (!open || inferredGreeting !== null) return;
+    apiFetch("/api/kate/state")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const msg = json?.state?.message;
+        if (typeof msg === "string" && msg.trim()) setInferredGreeting(msg.trim());
+        if (typeof json?.conversationId === "string") setConversationId(json.conversationId);
+        const chips = json?.state?.chips;
+        if (Array.isArray(chips)) {
+          setInferredChips(
+            chips
+              .filter((c: unknown): c is KateInferredChip =>
+                typeof c === "object" && c !== null
+                && typeof (c as { id?: unknown }).id === "string"
+                && typeof (c as { label?: unknown }).label === "string"
+                && typeof (c as { intent?: unknown }).intent === "string"
+              )
+              .slice(0, 4)
+          );
+        }
+      })
+      .catch(() => {});
+  }, [open, inferredGreeting]);
+
+  // Tap an inferred chip → /api/kate/respond. Records the user's chip
+  // tap on the conversation, computes Kate's next turn from the rule
+  // layer (with intent + history as context), returns her new message
+  // and a fresh chip set. Falls back to the free-form /chat path if the
+  // structured call fails.
+  const sendChipIntent = useCallback(
+    async (chip: KateInferredChip) => {
+      if (streaming) return;
+      const userMsg: Message = { role: "user", content: chip.label };
+      const baseline = inferredGreeting
+        ? [{ role: "assistant" as const, content: inferredGreeting }]
+        : [];
+      const after = [...baseline, userMsg];
+      setMessages(after);
+      setStreaming(true);
+      try {
+        const res = await apiFetch("/api/kate/respond", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId,
+            chipIntent: chip.intent,
+            chipLabel: chip.label,
+          }),
+        });
+        const data = await res.json();
+        if (!data?.ok || !data?.state?.message) {
+          setMessages([...after, { role: "assistant", content: "Sorry, something went wrong. Try again." }]);
+          return;
+        }
+        if (typeof data.conversationId === "string") setConversationId(data.conversationId);
+        setMessages([...after, { role: "assistant", content: data.state.message }]);
+        // Refresh the chip set with whatever the reply layer surfaced
+        const nextChips = data.state?.chips;
+        if (Array.isArray(nextChips)) {
+          setInferredChips(
+            nextChips
+              .filter((c: unknown): c is KateInferredChip =>
+                typeof c === "object" && c !== null
+                && typeof (c as { id?: unknown }).id === "string"
+                && typeof (c as { label?: unknown }).label === "string"
+                && typeof (c as { intent?: unknown }).intent === "string"
+              )
+              .slice(0, 4)
+          );
+        } else {
+          setInferredChips([]);
+        }
+      } catch {
+        setMessages([...after, { role: "assistant", content: "Sorry, I couldn't connect. Try again." }]);
+      } finally {
+        setStreaming(false);
+      }
+    },
+    [streaming, inferredGreeting, conversationId]
+  );
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
@@ -197,24 +294,38 @@ export default function KateChatButton() {
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ maxHeight: 360 }}>
           {messages.length === 0 && (
             <div className="py-4">
-              <div className="text-sm text-[#071832] font-medium">
-                Anything I can help you with today?
+              {/* Inference-layer greeting takes precedence — when /api/kate/state
+                  returned a contextual message, render that instead of the
+                  generic "Anything I can help you with today?" line. */}
+              <div className="text-sm text-[#071832] font-medium leading-relaxed">
+                {inferredGreeting || "Anything I can help you with today?"}
               </div>
               <div className="mt-1 text-xs text-[#4F5F73]">
-                Ask me anything, or try one of these:
+                Ask me anything{inferredChips.length > 0 ? "" : ", or try one of these"}:
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                {QUICK_ACTIONS.map((action) => (
-                  <button
-                    key={action.label}
-                    onClick={() => sendQuickAction(action.prompt)}
-                    disabled={streaming}
-                    className="flex items-center gap-1.5 rounded-lg border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#071832] hover:bg-[#E8EBF0] transition disabled:opacity-50"
-                  >
-                    <action.icon size={13} strokeWidth={1.5} color="#1677FF" />
-                    {action.label}
-                  </button>
-                ))}
+                {inferredChips.length > 0
+                  ? inferredChips.map((chip) => (
+                      <button
+                        key={chip.id}
+                        onClick={() => sendChipIntent(chip)}
+                        disabled={streaming}
+                        className="rounded-lg border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#071832] hover:bg-[#E8EBF0] transition disabled:opacity-50"
+                      >
+                        {chip.label}
+                      </button>
+                    ))
+                  : QUICK_ACTIONS.map((action) => (
+                      <button
+                        key={action.label}
+                        onClick={() => sendQuickAction(action.prompt)}
+                        disabled={streaming}
+                        className="flex items-center gap-1.5 rounded-lg border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-1.5 text-xs text-[#071832] hover:bg-[#E8EBF0] transition disabled:opacity-50"
+                      >
+                        <action.icon size={13} strokeWidth={1.5} color="#1677FF" />
+                        {action.label}
+                      </button>
+                    ))}
               </div>
             </div>
           )}

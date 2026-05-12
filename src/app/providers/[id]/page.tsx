@@ -335,15 +335,19 @@ export default function ProviderDetailPage() {
                     setEditAssignedTo(assigned);
                     setEditing(true);
                   }}
-                  className="text-xs font-medium underline underline-offset-2 transition"
-                  style={{ color: colors.accent }}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold border transition"
+                  style={{ color: colors.accent, borderColor: colors.accent, background: "white" }}
                 >
                   Edit details
                 </button>
                 <button
                   onClick={togglePrimary}
-                  className="text-xs font-medium underline underline-offset-2 transition"
-                  style={{ color: provider.is_primary ? "#E08A1F" : colors.accent }}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold border transition"
+                  style={{
+                    color: provider.is_primary ? "#E08A1F" : colors.accent,
+                    borderColor: provider.is_primary ? "#E08A1F" : colors.accent,
+                    background: "white",
+                  }}
                 >
                   {provider.is_primary ? "★ Primary — unset" : "Set as primary"}
                 </button>

@@ -214,10 +214,16 @@ export async function POST(req: NextRequest) {
 
   const locationContext = userLocation ? `\nUser's approximate location: ${userLocation}` : "";
 
-  // Build tone instruction based on communication style
-  const toneInstruction = commStyle === "professional"
-    ? "Communication style: Be clear, organized, and to-the-point. Use complete sentences, avoid slang or casual language. Structure information with bullet points when listing multiple items. Think of yourself as a sharp executive assistant."
-    : "Communication style: Be warm, casual, and conversational — like a helpful friend who happens to know a lot about healthcare. Use contractions, be encouraging, and keep things light.";
+  // Build tone instruction based on communication style. The onboarding
+  // surfaces three distinct tones (warm / casual / professional) so each
+  // gets its own system instruction — picking a tone has to actually
+  // change Kate's voice or the option is just decoration.
+  const toneInstruction =
+    commStyle === "professional"
+      ? "Communication style: Be clear, organized, and to-the-point. Use complete sentences, avoid slang or casual language. Structure information with bullet points when listing multiple items. Think of yourself as a sharp executive assistant."
+      : commStyle === "casual"
+      ? "Communication style: Be relaxed and friendly. Use contractions, plain language, and a light tone. Skip formality and corporate-speak. Talk like you're texting a friend who happens to know healthcare really well."
+      : "Communication style: Be warm and competent. Conversational without being overly familiar — use contractions, be encouraging, but stay focused and decisive. Strike a balance between trusted friend and capable operator.";
 
   // Build proactivity instruction
   const proactivityInstruction = proactivity === "proactive"

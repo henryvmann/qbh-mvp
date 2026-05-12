@@ -608,7 +608,7 @@ const HEALTHCARE_CREDENTIALS = [
   "np", "n.p.", "pa-c", "od", "o.d.", "rn", "lmhc", "lcsw", "lpc",
 ];
 
-const HEALTHCARE_PATTERN = new RegExp(
+export const HEALTHCARE_PATTERN = new RegExp(
   [
     HEALTHCARE_KEYWORDS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
     "\\b(" + HEALTHCARE_CREDENTIALS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b",

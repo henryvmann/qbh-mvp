@@ -13,7 +13,7 @@ type LastVisitCategory =
   | "needs_scheduling";
 
 type Snapshot = {
-  provider: { id: string; name: string };
+  provider: { id: string; name: string; provider_type?: string | null };
   lastVisitDate?: string | null;
   lastVisitCategory?: LastVisitCategory | null;
   lastVisitLabel?: string | null;
@@ -47,8 +47,23 @@ function buildPrompt(snap: Snapshot) {
   const name = snap.provider.name;
   const cat = snap.lastVisitCategory || "needs_scheduling";
   const ago = snap.lastVisitDate ? timeAgo(snap.lastVisitDate) : null;
+  const isPharmacy = (snap.provider.provider_type || "").toLowerCase() === "pharmacy";
 
-  if (cat === "needs_scheduling" || !ago) {
+  // Pharmacies don't get booked the same way doctors do — frame them
+  // as stored on file, with Kate available to call about refills.
+  if (isPharmacy) {
+    return {
+      headline: `${name}`,
+      body: `I've saved this as your pharmacy. I can call them about refills or transfers whenever you need.`,
+      tone: "pharmacy" as const,
+    };
+  }
+
+  // "yesterday" is already a relative phrase — don't append "ago" to it.
+  // Other durations (e.g. "3 days") need the suffix to read naturally.
+  const seenPhrase = ago === "yesterday" ? "yesterday" : ago ? `${ago} ago` : null;
+
+  if (cat === "needs_scheduling" || !seenPhrase) {
     return {
       headline: `${name}`,
       body: `I don't see a recent visit on file. Want me to set something up?`,
@@ -58,7 +73,7 @@ function buildPrompt(snap: Snapshot) {
   if (cat === "just_visited" || cat === "on_track") {
     return {
       headline: `${name}`,
-      body: `You saw them ${ago} ago — you're probably good for now. Let me know if you want to book anyway.`,
+      body: `You saw them ${seenPhrase} — you're probably good for now. Let me know if you want to book anyway.`,
       tone: "ok" as const,
     };
   }
@@ -130,10 +145,14 @@ export default function NewProviderWalkthrough({ snapshots, introducedIds, onCha
     }
   }
 
-  const primaryLabel = prompt.tone === "action" ? "Book it now" : "Got it";
-  const secondaryLabel = prompt.tone === "action" ? "Skip for now" : "Actually, book";
-  const primaryAction = prompt.tone === "action" ? "book" : "skip";
-  const secondaryAction = prompt.tone === "action" ? "skip" : "book";
+  // Pharmacies don't have a booking action — single "Got it" continues
+  // the walkthrough. Doctors get the action/ok button pair based on
+  // whether a visit's likely overdue.
+  const isPharmacy = prompt.tone === "pharmacy";
+  const primaryLabel = isPharmacy ? "Got it" : prompt.tone === "action" ? "Book it now" : "Got it";
+  const secondaryLabel = isPharmacy ? null : prompt.tone === "action" ? "Skip for now" : "Actually, book";
+  const primaryAction = isPharmacy ? "skip" : prompt.tone === "action" ? "book" : "skip";
+  const secondaryAction = isPharmacy ? null : prompt.tone === "action" ? "skip" : "book";
 
   return (
     <div
@@ -175,7 +194,7 @@ export default function NewProviderWalkthrough({ snapshots, introducedIds, onCha
             style={{
               marginTop: 12,
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: secondaryLabel ? "1fr 1fr" : "1fr",
               gap: 8,
             }}
           >
@@ -196,23 +215,25 @@ export default function NewProviderWalkthrough({ snapshots, introducedIds, onCha
             >
               {primaryLabel}
             </button>
-            <button
-              type="button"
-              onClick={() => handleAction(secondaryAction)}
-              disabled={busy}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                background: "white",
-                color: T.lightText,
-                border: `1px solid ${T.lightBorder}`,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {secondaryLabel}
-            </button>
+            {secondaryLabel && secondaryAction && (
+              <button
+                type="button"
+                onClick={() => handleAction(secondaryAction)}
+                disabled={busy}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  background: "white",
+                  color: T.lightText,
+                  border: `1px solid ${T.lightBorder}`,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {secondaryLabel}
+              </button>
+            )}
           </div>
         </div>
       </div>

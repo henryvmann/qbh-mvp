@@ -225,6 +225,36 @@ export default function DocumentsPage() {
           )}
         </div>
 
+        {/* Portal-connection teaser. We don't ship the document-fetch
+            pipeline yet (Epic FHIR is gated on distribution), so this
+            is just future-state framing — sets the user's expectation
+            that records from MyChart / Epic / etc. will land here once
+            we connect. The real connect-portal entry point will live
+            in this card when the backend ships. */}
+        <div className="mt-6 rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-1">
+                Connect a portal &mdash; coming soon
+              </div>
+              <p className="text-sm text-[#3A3F4B] leading-relaxed">
+                Soon you&rsquo;ll be able to pull records straight from your provider portals
+                (MyChart, Epic, Athena, etc.) so visit summaries, lab results, and after-visit
+                instructions land here automatically &mdash; no manual upload needed.
+              </p>
+            </div>
+            <span
+              className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+              style={{
+                background: "rgba(22,119,255,0.10)",
+                color: "#1677FF",
+              }}
+            >
+              Coming soon
+            </span>
+          </div>
+        </div>
+
         {/* Document Summaries */}
         <div className="mt-8">
           <h2 className="text-xs font-bold uppercase tracking-widest text-[#4F5F73] mb-4">

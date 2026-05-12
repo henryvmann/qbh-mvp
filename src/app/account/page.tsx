@@ -594,7 +594,7 @@ export default function AccountPage() {
             Your data is yours.
           </div>
           <div className="text-sm text-[#5A6675] leading-relaxed">
-            QBH works for you. Nothing leaves without your say-so.
+            QBH works for you. We never sell your data, and you can export or delete it any time.
           </div>
         </div>
 
@@ -743,31 +743,40 @@ export default function AccountPage() {
             />
           </div>
 
-          {/* Communication style */}
+          {/* Communication style. Values match the onboarding kate-prefs
+              phase (warm / casual / professional) so a user's onboarding
+              selection shows here as already-selected. Legacy "friend"
+              from older accounts is treated as equivalent to "warm" for
+              highlighting only — next time the user taps a chip we
+              persist the new value. */}
           <div className="border-t border-[#E5EAF2] pt-5 mb-5">
             <label className="block text-xs font-medium text-[#4F5F73] mb-2">How should Kate talk to you?</label>
             <div className="flex gap-2">
               {[
-                { value: "friend", label: "Like a friend", desc: "Warm, casual" },
-                { value: "professional", label: "Professional", desc: "Direct, efficient" },
-                { value: "minimal", label: "Just the facts", desc: "Short and to the point" },
-              ].map((style) => (
-                <button
-                  key={style.value}
-                  onClick={() => {
-                    setCommStyle(style.value);
-                    saveKateSettings({ kate_communication_style: style.value });
-                  }}
-                  className={`flex-1 rounded-xl p-3 text-left transition ${
-                    commStyle === style.value
-                      ? "bg-[#1677FF]/10 border border-[#1677FF]"
-                      : "bg-[#F0F2F5] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
-                  }`}
-                >
-                  <div className="text-sm font-medium text-[#071832]">{style.label}</div>
-                  <div className="text-xs text-[#4F5F73]">{style.desc}</div>
-                </button>
-              ))}
+                { value: "warm", label: "Warm but professional", desc: "Friendly but focused" },
+                { value: "casual", label: "Casual", desc: "Relaxed and conversational" },
+                { value: "professional", label: "Direct", desc: "Brief — just what you need" },
+              ].map((style) => {
+                const effective = commStyle === "friend" ? "warm" : commStyle;
+                const isSelected = effective === style.value;
+                return (
+                  <button
+                    key={style.value}
+                    onClick={() => {
+                      setCommStyle(style.value);
+                      saveKateSettings({ kate_communication_style: style.value });
+                    }}
+                    className={`flex-1 rounded-xl p-3 text-left transition ${
+                      isSelected
+                        ? "bg-[#1677FF]/10 border border-[#1677FF]"
+                        : "bg-[#F0F2F5] border border-[#E5EAF2] hover:bg-[#E8EBF0]"
+                    }`}
+                  >
+                    <div className="text-sm font-medium text-[#071832]">{style.label}</div>
+                    <div className="text-xs text-[#4F5F73]">{style.desc}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -819,7 +828,7 @@ export default function AccountPage() {
                 { value: "reminders", label: "Reminders" },
                 { value: "prep", label: "Visit prep" },
                 { value: "claims", label: "Claims & EOBs" },
-                { value: "mental_health", label: "Mental health" },
+                { value: "mental_health", label: "Mental wellness" },
                 { value: "family", label: "Family care" },
               ].map((area) => {
                 const selected = focusAreas.includes(area.value);

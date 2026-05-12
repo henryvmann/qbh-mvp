@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/api";
 import { T } from "../brand";
+import InlineKatePanel from "./InlineKatePanel";
 
 function SnoozeChip({
   label,
@@ -20,15 +21,16 @@ function SnoozeChip({
       onClick={onClick}
       disabled={disabled}
       style={{
-        padding: "4px 10px",
+        padding: "6px 12px",
         borderRadius: 999,
-        background: "transparent",
-        color: T.lightMuted,
+        background: "white",
+        color: T.lightText,
         border: `1px solid ${T.lightBorder}`,
-        fontSize: 11.5,
-        fontWeight: 500,
+        fontSize: 12,
+        fontWeight: 600,
         cursor: "pointer",
         whiteSpace: "nowrap",
+        boxShadow: "0 1px 2px rgba(7,24,50,0.04)",
       }}
     >
       {label}
@@ -40,6 +42,7 @@ type Snapshot = {
   provider: { id: string; name: string };
   followUpNeeded?: boolean;
   booking_state?: { status?: string };
+  lastVisitLabel?: string | null;
 };
 
 type PausedMap = Record<string, { until: string; kind: string }>;
@@ -52,16 +55,15 @@ type Props = {
 };
 
 // Surfaces a soft Kate-styled card when one or more providers have been
-// waiting on a follow-up and aren't currently paused. Four buttons that
-// match the user's actual psychological states:
-//   - Help me break it down (collaborative)
-//   - Tell me what would help (open ended, user-led)
-//   - Not today (24h pause)
-//   - I've got it (30 day pause)
-// No shame language, no urgency, no "overdue" framing.
+// waiting on a follow-up. Two same-weight actions (Book / Talk to Kate)
+// instead of one oversized primary, and snooze chips redesigned as
+// clearly tappable controls rather than text links. "Tell me what would
+// help" now opens an inline Kate panel right inside this card so the
+// user stays on the dashboard.
 export default function StuckPrompt({ snapshots, pausedProviders, introducedIds, onChange }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [katePanelOpen, setKatePanelOpen] = useState(false);
 
   // Stuck = follow-up needed AND not booked AND not paused AND not just
   // introduced via the walkthrough. The walkthrough is the one nudge a
@@ -92,8 +94,6 @@ export default function StuckPrompt({ snapshots, pausedProviders, introducedIds,
     if (busy) return;
     setBusy(true);
     try {
-      // Pause every stuck provider so the prompt clears as a whole,
-      // not just for one. The user can re-engage individually later.
       await Promise.all(
         stuck.map((s) =>
           apiFetch("/api/providers/pause", {
@@ -109,20 +109,7 @@ export default function StuckPrompt({ snapshots, pausedProviders, introducedIds,
     }
   }
 
-  function openKate(prompt: "stuck" | "help") {
-    // Navigate to Kate chat with context. Kate's system prompt knows
-    // how to handle these prefill keys.
-    const qs = new URLSearchParams();
-    qs.set("prefill", prompt);
-    qs.set("provider_id", lead.provider.id);
-    qs.set("provider_name", lead.provider.name);
-    router.push(`/kate?${qs.toString()}`);
-  }
-
   function bookNow() {
-    // Drop the user on the provider's detail page where the Handle It
-    // button + timing/reason form already lives. ?action=book opens
-    // the form on mount so it's one tap from "yes book it" to ringing.
     router.push(`/providers/${lead.provider.id}?action=book`);
   }
 
@@ -152,62 +139,80 @@ export default function StuckPrompt({ snapshots, pausedProviders, introducedIds,
             <strong>{lead.provider.name}</strong> has been on your list for a bit
             {others > 0 ? ` (and ${others} other${others > 1 ? "s" : ""})` : ""}. Anything getting in the way?
           </div>
-          <div
-            style={{
-              marginTop: 12,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <button
-              type="button"
-              onClick={bookNow}
-              disabled={busy}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 10,
-                background: T.electric,
-                color: T.white,
-                border: "none",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-            >
-              Book it now
-            </button>
-            <button
-              type="button"
-              onClick={() => openKate("help")}
-              disabled={busy}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 10,
-                background: "white",
-                color: T.lightText,
-                border: `1px solid ${T.lightBorder}`,
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-            >
-              Tell me what would help
-            </button>
-          </div>
 
-          {/* Snooze options — quieter, secondary actions. The user picks
-              the cadence that matches their state without primary visual
-              weight. */}
-          <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
-            <span style={{ fontSize: 11, color: T.lightMuted, marginRight: 4 }}>or</span>
-            <SnoozeChip label="not today" onClick={() => pause("not_today")} disabled={busy} />
-            <SnoozeChip label="remind me in a few days" onClick={() => pause("few_days")} disabled={busy} />
-            <SnoozeChip label="I&rsquo;ve got it" onClick={() => pause("until_done")} disabled={busy} />
-            <SnoozeChip label="don&rsquo;t remind me about this again" onClick={() => pause("forever")} disabled={busy} />
-          </div>
+          {/* Two-up action row: same weight on both so neither dominates
+              visually. The earlier full-width primary + secondary stack
+              made Book feel like the only "real" choice. */}
+          {!katePanelOpen && (
+            <div
+              style={{
+                marginTop: 12,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+              }}
+            >
+              <button
+                type="button"
+                onClick={bookNow}
+                disabled={busy}
+                style={{
+                  padding: "9px 12px",
+                  borderRadius: 10,
+                  background: T.electric,
+                  color: T.white,
+                  border: "none",
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Book it now
+              </button>
+              <button
+                type="button"
+                onClick={() => setKatePanelOpen(true)}
+                disabled={busy}
+                style={{
+                  padding: "9px 12px",
+                  borderRadius: 10,
+                  background: "white",
+                  color: T.lightText,
+                  border: `1px solid ${T.lightBorder}`,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Tell me what would help
+              </button>
+            </div>
+          )}
+
+          {/* Inline Kate panel — replaces the action row while open so the
+              user gets full focus on the conversation. Closing returns to
+              the action row. */}
+          {katePanelOpen && (
+            <InlineKatePanel
+              provider={lead.provider}
+              recencyHint={lead.lastVisitLabel || null}
+              onClose={() => setKatePanelOpen(false)}
+            />
+          )}
+
+          {/* Snooze options — now styled as clearly-tappable pill buttons
+              with white background and shadow, not transparent borderless
+              links. The user picks the cadence that matches their state
+              without having to wonder whether the option is interactive. */}
+          {!katePanelOpen && (
+            <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: T.lightMuted, marginRight: 2 }}>or</span>
+              <SnoozeChip label="Not today" onClick={() => pause("not_today")} disabled={busy} />
+              <SnoozeChip label="Remind me in a few days" onClick={() => pause("few_days")} disabled={busy} />
+              <SnoozeChip label="I&rsquo;ve got it" onClick={() => pause("until_done")} disabled={busy} />
+              <SnoozeChip label="Don&rsquo;t remind me again" onClick={() => pause("forever")} disabled={busy} />
+            </div>
+          )}
         </div>
       </div>
     </div>
