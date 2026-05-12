@@ -517,10 +517,82 @@ async function handleOne(
       // and let the month+day branch below handle it. The month+day form is more
       // specific — "Monday, May 5" should resolve to May 5 even if May 5 isn't a
       // Monday in the current year (offices misspeak; the calendar date wins).
+      //
+      // ALSO: when the offer contains both a day-of-week AND a day-of-month
+      // ("Thursday the twenty eighth at 2:30"), day-of-month wins. Without
+      // this check we used to compute "next Thursday" and silently drop the
+      // 28 — booking May 14 when the office offered May 28. Real call from
+      // May 12, 2026.
+      const dayOfMonthRegex = /\b(\d{1,2})(?:st|nd|rd|th)?\b(?!\s*(?::\d{2}|\s*[ap]\.?m\.?|\s*o'?clock))/i;
+      const dayOfMonthMatch = officeOfferRawText.match(dayOfMonthRegex);
+      const wordDayOfMonthMatch = officeOfferRawText.match(/\b(twenty[- ]?first|twenty[- ]?second|twenty[- ]?third|twenty[- ]?fourth|twenty[- ]?fifth|twenty[- ]?sixth|twenty[- ]?seventh|twenty[- ]?eighth|twenty[- ]?ninth|thirtieth|thirty[- ]?first)\b/i);
+      const hasExplicitDayOfMonth = !!dayOfMonthMatch || !!wordDayOfMonthMatch;
+
       if (!parsedStart && !hasMonthName) {
         const timeMatch = parsableText.match(/\b(noon|midnight|(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)\b/i);
 
-        if (dayMatch) {
+        if (dayMatch && hasExplicitDayOfMonth) {
+          // Both day-of-week AND day-of-month present. Use day-of-month
+          // as authoritative; day-of-week is just confirmation. Apply
+          // time afterwards if present; otherwise ask for it.
+          let dayNum: number | null = null;
+          if (dayOfMonthMatch) {
+            dayNum = parseInt(dayOfMonthMatch[1]);
+          } else if (wordDayOfMonthMatch) {
+            const wordToNum: Record<string, number> = {
+              first:1,second:2,third:3,fourth:4,fifth:5,sixth:6,seventh:7,eighth:8,ninth:9,tenth:10,
+            };
+            const w = wordDayOfMonthMatch[1].toLowerCase().replace(/[- ]/g, " ").trim();
+            if (w.startsWith("twenty")) {
+              const suffix = w.replace("twenty", "").trim();
+              dayNum = 20 + (wordToNum[suffix] || 0);
+            } else if (w === "thirtieth") {
+              dayNum = 30;
+            } else if (w.startsWith("thirty")) {
+              const suffix = w.replace("thirty", "").trim();
+              dayNum = 30 + (wordToNum[suffix] || 0);
+            }
+          }
+          if (dayNum && dayNum >= 1 && dayNum <= 31) {
+            let month = now.getMonth();
+            let year = now.getFullYear();
+            // If the day has already passed this month, advance to next month.
+            if (dayNum < now.getDate()) {
+              month++;
+              if (month > 11) { month = 0; year++; }
+            }
+            parsedStart = new Date(Date.UTC(year, month, dayNum, 9 - ET_OFFSET_HOURS, 0, 0));
+            if (timeMatch) {
+              let lh = 9;
+              let lm = 0;
+              if (timeMatch[1].toLowerCase() === "noon") {
+                lh = 12;
+              } else if (timeMatch[1].toLowerCase() === "midnight") {
+                lh = 0;
+              } else {
+                lh = parseInt(timeMatch[2] || "9");
+                lm = parseInt(timeMatch[3] || "0");
+                const ap = (timeMatch[4] || "").toLowerCase();
+                if (ap === "pm" && lh < 12) lh += 12;
+                if (ap === "am" && lh === 12) lh = 0;
+                if (!ap && lh < 8) lh += 12; // assume PM for small numbers
+              }
+              parsedStart.setUTCHours(lh - ET_OFFSET_HOURS, lm, 0, 0);
+            } else {
+              // No time — ask
+              const spokenDay = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][parsedStart.getDay()];
+              return {
+                toolCallId,
+                result: JSON.stringify({
+                  status: "OK",
+                  code: "NEED_TIME",
+                  message_to_say: `Got it — what time on ${spokenDay} the ${ordinal(dayNum)} works best?`,
+                  next_action: "WAIT_FOR_OFFICE_TIME",
+                }),
+              };
+            }
+          }
+        } else if (dayMatch) {
           const dayNames = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
           const targetDay = dayNames.indexOf(dayMatch[1].toLowerCase());
           const currentDay = now.getDay();

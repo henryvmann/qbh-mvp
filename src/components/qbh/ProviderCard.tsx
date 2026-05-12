@@ -462,6 +462,20 @@ export default function ProviderCard({
               No phone number — add one in Details to enable booking
             </div>
           )}
+          {!isPharmacy && (
+            <div className="mt-2">
+              <a
+                href="/portals"
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#4F5F73] hover:text-[#1677FF] transition"
+              >
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ background: "#9CA3AF" }}
+                />
+                Portal: not connected · Connect
+              </a>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

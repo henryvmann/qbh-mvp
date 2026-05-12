@@ -9,9 +9,10 @@
  *   3. Claims tracker (manual; user logs submissions, Kate watches)
  *   4. "Help me prep for an insurance call" Kate quick-prompt
  *
- * Phase 1 swaps in Stedi/Flexpa for live eligibility and claim
- * status; until then everything here runs on what we already have
- * (GPT-4o vision, Plaid healthcare classification, Kate chat).
+ * Phase 1 will swap in a real insurance-data integration for live
+ * eligibility and claim status; until then everything here runs on
+ * what we already have (GPT-4o vision, Plaid healthcare classification,
+ * Kate chat) plus a demo preview at the top of the page.
  */
 
 import { useEffect, useState, useCallback } from "react";
@@ -19,7 +20,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
 import PageShell from "../../components/qbh/PageShell";
-import { Upload, FileText, DollarSign, MessageSquare, Loader2 } from "lucide-react";
+import { Upload, FileText, DollarSign, MessageSquare, Loader2, Sparkles, ShieldCheck } from "lucide-react";
 
 type EOB = {
   id: string;
@@ -162,6 +163,12 @@ export default function CoveragePage() {
         <p className="mt-1 text-sm text-[#4F5F73]">
           EOBs, claims, FSA-eligible spend — Kate keeps track so you don&rsquo;t have to.
         </p>
+
+        {/* Insurance integration preview — Screens 4 + 5 from the spec.
+            All sample data; no live integration yet. Surfaced ABOVE the
+            existing Phase-0 EOB/claims/FSA sections so the future
+            experience is the first thing the user sees here. */}
+        <InsurancePreview />
 
         {/* FSA-eligible spend */}
         <section className="mt-8">
@@ -459,3 +466,277 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const inputCls =
   "w-full rounded-xl border border-[#E5EAF2] bg-white px-3 py-2 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]";
+
+/* ─────────────────────────────────────────────────────────────
+ * Insurance preview — demo data only. Screens 4 + 5 from the
+ * integration spec. Renders ABOVE the existing /coverage
+ * sections so the future experience reads first.
+ * ────────────────────────────────────────────────────────── */
+
+type DemoClaim = {
+  id: string;
+  service: string;
+  date: string;
+  billed: number;
+  allowed: number;
+  insurance_paid: number;
+  patient_responsibility: number;
+  status: "applied_to_deductible" | "processed" | "needs_review" | "denied";
+  reason?: string;
+};
+
+const DEMO_CLAIMS: DemoClaim[] = [
+  {
+    id: "demo-claim-1",
+    service: "Therapy visit",
+    date: "March 12, 2026",
+    billed: 250,
+    allowed: 180,
+    insurance_paid: 0,
+    patient_responsibility: 180,
+    status: "applied_to_deductible",
+    reason: "Applied to deductible / out-of-network benefit",
+  },
+  {
+    id: "demo-claim-2",
+    service: "Dermatology visit",
+    date: "April 20, 2026",
+    billed: 425,
+    allowed: 290,
+    insurance_paid: 210,
+    patient_responsibility: 80,
+    status: "processed",
+  },
+  {
+    id: "demo-claim-3",
+    service: "Lab work",
+    date: "April 18, 2026",
+    billed: 310,
+    allowed: 95,
+    insurance_paid: 0,
+    patient_responsibility: 95,
+    status: "needs_review",
+  },
+];
+
+function claimStatusPill(status: DemoClaim["status"]) {
+  const map = {
+    applied_to_deductible: { label: "Applied to deductible", bg: "rgba(22,119,255,0.10)", fg: "#1677FF" },
+    processed: { label: "Processed", bg: "rgba(39,196,107,0.14)", fg: "#27C46B" },
+    needs_review: { label: "Needs review", bg: "rgba(224,138,31,0.14)", fg: "#E08A1F" },
+    denied: { label: "Denied", bg: "rgba(224,64,48,0.10)", fg: "#E04030" },
+  } as const;
+  const s = map[status];
+  return (
+    <span
+      className="rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold whitespace-nowrap"
+      style={{ background: s.bg, color: s.fg }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
+function InsurancePreview() {
+  const [openClaimId, setOpenClaimId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  function demoAction(label: string) {
+    setToast(`${label} — demo only. This action will be supported once the integration is live.`);
+    setTimeout(() => setToast(null), 4000);
+  }
+
+  const openClaim = DEMO_CLAIMS.find((c) => c.id === openClaimId);
+
+  return (
+    <section className="mt-8">
+      <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-6">
+        <div className="flex items-center gap-2 flex-wrap mb-3">
+          <span className="inline-flex items-center rounded-full bg-[#1677FF]/10 text-[#1677FF] border border-[#1677FF]/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+            Demo data · Future integration preview
+          </span>
+          <span className="text-[10px] text-[#4F5F73] uppercase tracking-wider font-semibold">
+            Insurance integration
+          </span>
+        </div>
+        <h2 className="font-serif text-2xl tracking-tight font-medium text-[#071832]">
+          Insurance and claims explained by Kate.
+        </h2>
+        <p className="mt-2 text-sm text-[#4F5F73] leading-relaxed">
+          Once this integration is live, QBH will help organize claims, plan details, EOBs,
+          reimbursement opportunities, and appeal preparation.
+        </p>
+
+        {/* Plan card */}
+        <div className="mt-5 rounded-xl bg-[#F8F9FB] border border-[#E5EAF2] px-4 py-3">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">Plan</div>
+          <div className="mt-1 text-sm font-semibold text-[#071832]">Aetna PPO</div>
+          <div className="text-xs text-[#4F5F73]">Out-of-network benefits available</div>
+        </div>
+
+        {/* Claims list */}
+        <div className="mt-5">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-2">
+            Recent claims
+          </div>
+          <div className="space-y-2">
+            {DEMO_CLAIMS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setOpenClaimId(openClaimId === c.id ? null : c.id)}
+                className="w-full flex items-start justify-between gap-3 rounded-xl border border-[#E5EAF2] bg-white px-4 py-3 text-left hover:bg-[#F8F9FB] transition"
+              >
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-[#071832]">{c.service}</div>
+                  <div className="text-[11px] text-[#4F5F73] mt-0.5">{c.date}</div>
+                  <div className="mt-1 text-[11.5px] text-[#4F5F73]">
+                    Billed {fmtMoney(c.billed)} · Allowed {fmtMoney(c.allowed)} · You owe {fmtMoney(c.patient_responsibility)}
+                  </div>
+                </div>
+                {claimStatusPill(c.status)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Kate insight */}
+        <div className="mt-5 rounded-xl bg-[#1677FF]/5 border border-[#1677FF]/18 p-4">
+          <div className="flex items-start gap-3">
+            <Sparkles size={18} className="text-[#1677FF] mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-[#071832]">Kate reviewed your therapy claim</div>
+              <p className="mt-1 text-[13.5px] text-[#071832] leading-relaxed">
+                This does not appear to be a full denial. It looks like your plan recognized the
+                claim but applied the allowed amount to your deductible. You may still want to
+                submit a superbill or check your out-of-network reimbursement status.
+              </p>
+              <button
+                type="button"
+                onClick={() => setOpenClaimId("demo-claim-1")}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white bg-[#1677FF] hover:brightness-95"
+              >
+                Create reimbursement packet
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Screen 5 — Claim / Appeal Prep panel */}
+        {openClaim && (
+          <div className="mt-5 rounded-xl border border-[#E5EAF2] bg-[#F8F9FB] p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-[#1677FF]">
+                Prepare an insurance next step
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenClaimId(null)}
+                className="text-[#4F5F73] text-sm"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-2 rounded-lg bg-white border border-[#E5EAF2] px-3 py-2 italic text-sm text-[#071832]">
+              &ldquo;Why did I get this bill?&rdquo;
+            </div>
+
+            <div className="mt-3 text-sm font-semibold text-[#071832]">
+              Kate reviewed the claim.
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[12.5px] text-[#4F5F73]">
+              <div><span className="font-semibold text-[#071832]">Service:</span> {openClaim.service}</div>
+              <div><span className="font-semibold text-[#071832]">Date:</span> {openClaim.date}</div>
+              <div><span className="font-semibold text-[#071832]">Billed:</span> {fmtMoney(openClaim.billed)}</div>
+              <div><span className="font-semibold text-[#071832]">Allowed:</span> {fmtMoney(openClaim.allowed)}</div>
+              <div><span className="font-semibold text-[#071832]">Insurance paid:</span> {fmtMoney(openClaim.insurance_paid)}</div>
+              <div><span className="font-semibold text-[#071832]">Patient responsibility:</span> {fmtMoney(openClaim.patient_responsibility)}</div>
+              {openClaim.reason && (
+                <div className="col-span-2"><span className="font-semibold text-[#071832]">Reason:</span> {openClaim.reason}</div>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-lg bg-white border border-[#E5EAF2] px-3 py-2 text-[13px] text-[#071832] leading-relaxed">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#4F5F73] mb-1">Plain-English explanation</div>
+              {openClaim.status === "applied_to_deductible"
+                ? "This does not appear to be a full denial. It looks like your plan recognized the claim but applied the allowed amount to your deductible. You may still want to submit a superbill or check your out-of-network reimbursement status."
+                : openClaim.status === "denied"
+                ? "Reason: Prior authorization missing / medical necessity not established. Kate can help gather records, draft appeal language, ask the provider for a letter of medical necessity, and track the submission deadline."
+                : openClaim.status === "needs_review"
+                ? "This claim needs a closer look. Kate can compare the billed and allowed amounts to your plan rules and surface anything worth questioning."
+                : "Claim processed — patient responsibility shown above. Confirm with your EOB."}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {["Create reimbursement packet", "Draft insurer message", "Ask provider for missing information", "Track this claim", "Add deadline"].map((label, i) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => demoAction(label)}
+                  className="rounded-lg px-3 py-2 text-[12.5px] font-semibold text-left"
+                  style={{
+                    background: i === 0 ? "#1677FF" : "white",
+                    color: i === 0 ? "white" : "#071832",
+                    border: `1px solid ${i === 0 ? "#1677FF" : "#E5EAF2"}`,
+                    gridColumn: i === 4 ? "1 / -1" : "auto",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-3 text-[11.5px] text-[#4F5F73] leading-relaxed">
+              QBH/Kate can organize, explain, draft, and track appeal or reimbursement steps.
+              Submission still happens through the insurer portal, fax, phone, mail, or provider
+              office. <strong>User review is required before anything is sent.</strong>
+              Not medical or legal advice — confirm with your insurer.
+            </p>
+          </div>
+        )}
+
+        <p className="mt-4 text-[11.5px] text-[#4F5F73] leading-relaxed">
+          This demo uses sample data to preview the intended experience once integrations are live.
+          The underlying integration is not yet active.
+        </p>
+      </div>
+
+      {/* Insurance capabilities summary */}
+      <div className="mt-5 rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-5">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73] mb-2">
+          What this integration unlocks
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <ShieldCheck size={18} className="text-[#1677FF]" />
+          <div className="text-sm font-semibold text-[#071832]">
+            Connected insurance data
+          </div>
+        </div>
+        <ul className="ml-5 list-disc text-[13.5px] text-[#4F5F73] leading-relaxed space-y-1">
+          <li>Pull insurance and claims data</li>
+          <li>Explain EOBs and patient responsibility</li>
+          <li>Identify possible reimbursement or appeal opportunities</li>
+          <li>Prepare claim packets, draft insurer messages, and track next steps</li>
+        </ul>
+        <p className="mt-3 text-[12.5px] text-[#071832] leading-relaxed">
+          <strong>Once live, this provides the data foundation.</strong> QBH turns that data into organized,
+          user-friendly next steps. Medical records previews live on the{" "}
+          <Link href="/portals" className="text-[#1677FF] font-semibold">
+            Portals page →
+          </Link>
+        </p>
+      </div>
+
+      {toast && (
+        <div
+          role="status"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-sm rounded-full bg-[#071832] text-white text-xs font-medium px-4 py-2.5 shadow-lg text-center"
+        >
+          {toast}
+        </div>
+      )}
+    </section>
+  );
+}

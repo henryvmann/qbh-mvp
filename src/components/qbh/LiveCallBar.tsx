@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "../../lib/api";
 
 type Attempt = {
@@ -121,7 +122,7 @@ export default function LiveCallBar() {
       }}
     >
       {inProgress && <PulsingDot />}
-      <div style={{ flex: 1, lineHeight: 1.4 }}>
+      <div style={{ flex: 1, lineHeight: 1.4, minWidth: 0 }}>
         <div>{message}</div>
         {nextStep && (
           <div style={{ marginTop: 2, fontSize: 12, opacity: 0.92, fontWeight: 400 }}>
@@ -129,6 +130,32 @@ export default function LiveCallBar() {
           </div>
         )}
       </div>
+      {/* Open-provider link on the right when this attempt is tied to a
+          provider. Gives the user a one-tap path from the bar into the
+          provider detail page — the prior "open this provider to see
+          what" copy was instructive but not actionable. */}
+      {attempt.provider_id && !inProgress && (
+        <Link
+          href={`/providers/${attempt.provider_id}`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            background: "rgba(255,255,255,0.18)",
+            color: tone.accent,
+            border: "1px solid rgba(255,255,255,0.35)",
+            padding: "6px 12px",
+            borderRadius: 999,
+            fontSize: 12.5,
+            fontWeight: 700,
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          Open →
+        </Link>
+      )}
       {isTerminal && (
         <button
           type="button"
@@ -221,7 +248,7 @@ function renderNextStep(a: Attempt): React.ReactNode | null {
   if (isSuccess(a)) return null;
 
   if (a.user_input_required) {
-    return <>I need a bit more from you to keep going — open this provider to see what.</>;
+    return <>I need a bit more from you to keep going.</>;
   }
 
   const hint = (a.retry_policy_hint || "").toUpperCase();
@@ -235,7 +262,7 @@ function renderNextStep(a: Attempt): React.ReactNode | null {
     case "USER_INPUT_REQUIRED":
       return <>I need a bit more from you to keep going.</>;
     case "DO_NOT_RETRY":
-      return <>I won&rsquo;t try this one again on my own — open the provider when you want to revisit.</>;
+      return <>I won&rsquo;t try this one again on my own — open the provider when you want to revisit it.</>;
     default: {
       // Failure with no explicit hint — fall back based on failure class.
       const fc = (a.failure_class || "").toUpperCase();

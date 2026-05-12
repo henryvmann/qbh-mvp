@@ -298,13 +298,13 @@ function DashboardInner() {
         />
       )}
 
-      {/* Soft Kate prompt for providers waiting on follow-up. Excludes
-          providers the user just walked through via NewProviderWalkthrough
-          — they already got their one nudge there. No shame language, no
-          urgency, and four snooze cadences. Gate on profileLoaded so the
-          first render doesn't flash a stale "stuck" card before introducedIds
-          has been fetched from /api/patient-profile. */}
-      {data?.snapshots && profileLoaded && (
+      {/* Soft Kate prompt for providers waiting on follow-up. Hidden
+          entirely while the walkthrough has any provider in its queue
+          — otherwise both surfaces target the same un-introduced
+          provider and we get the double-card bug Jenny saw on May 12.
+          Gate on profileLoaded so the first render doesn't flash a
+          stale "stuck" card before introducedIds has been fetched. */}
+      {data?.snapshots && profileLoaded && data.snapshots.every((s) => introducedIds.includes(s.provider.id)) && (
         <StuckPrompt
           snapshots={data.snapshots}
           pausedProviders={pausedProviders}
