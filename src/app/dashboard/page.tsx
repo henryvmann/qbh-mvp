@@ -101,11 +101,6 @@ function DashboardInner() {
   >({});
   const [introducedIds, setIntroducedIds] = useState<string[]>([]);
   const [profileLoaded, setProfileLoaded] = useState(false);
-  // Kate's inference-driven greeting. Populated from /api/kate/state
-  // (signals → rules → voice → optional LLM phrasing). Falls back to
-  // the static checkIn line if the fetch fails or returns nothing.
-  const [kateGreeting, setKateGreeting] = useState<string | null>(null);
-  const [kateTone, setKateTone] = useState<string | null>(null);
   // Scope filter — null = "All". Otherwise filters provider count,
   // overdue, upcoming, and the care-team list to providers attached
   // to that recipient. Stored only client-side; the dashboard query
@@ -135,24 +130,6 @@ function DashboardInner() {
     load().catch(() => setLoading(false));
 
     refreshProfile();
-
-    // Pull Kate's inference-layer state so the dashboard greeting reads
-    // her actual read of the situation (calm / proactive / supportive /
-    // celebratory tone, message anchored to real signals) instead of a
-    // hardcoded "Found N things." Best-effort — fall back silently on
-    // any failure so the dashboard still loads.
-    apiFetch("/api/kate/state")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        const msg = json?.state?.message;
-        if (typeof msg === "string" && msg.trim()) {
-          setKateGreeting(msg.trim());
-          if (typeof json?.state?.tone === "string") setKateTone(json.state.tone);
-        }
-      })
-      .catch(() => {
-        /* best-effort */
-      });
   }, [router]);
 
   async function refreshProfile() {
@@ -233,32 +210,18 @@ function DashboardInner() {
   const weekDays = getWeekDays();
 
   // Weekly check-in framing: lead with what Kate's surfaced rather
-  // than a static "Today." Matches the typeform signal — users want
-  // relief, not a wall of tiles.
-  //
-  // Kate's inference-layer greeting takes precedence when present — it
-  // reads from the same signals/rules/voice pipeline tested in the
-  // sandbox. Falls back to the static computed line if /api/kate/state
-  // hasn't returned yet or didn't produce a message.
-  const fallbackCheckIn =
+  // than a static "Today." First-person from Kate so the dashboard
+  // reads as her speaking, not a system count. The richer inference-
+  // layer copy lives in Kate's chat surfaces (floating panel + /kate)
+  // — this dashboard title stays a one-line summary.
+  const checkIn =
     actionCount === 0 && upcomingCount === 0
       ? "All clear this week."
       : actionCount === 0
       ? `${upcomingCount} appointment${upcomingCount === 1 ? "" : "s"} coming up. Nothing else needs you.`
       : actionCount === 1
-      ? "Found 1 thing for you this week."
-      : `Found ${actionCount} things for you this week.`;
-  const checkIn = kateGreeting || fallbackCheckIn;
-
-  // Tone → accent color for the greeting underline. Subtle — leans
-  // into the bucket Kate chose without making the dashboard look
-  // alarming on a "needs-attention" day.
-  const toneAccent =
-    kateTone === "warm" ? "#27C46B"
-    : kateTone === "supportive" ? "#9078C8"
-    : kateTone === "proactive" ? T.electric
-    : kateTone === "celebratory" ? "#E08A1F"
-    : null;
+      ? "I found 1 thing this week."
+      : `I found ${actionCount} things this week.`;
 
   return (
     <BrandShell topRight={<UserAvatar />}>
@@ -268,18 +231,6 @@ function DashboardInner() {
           Hi, {userName || "there"}
         </div>
         <AustinHeading size={32}>{checkIn}</AustinHeading>
-        {toneAccent && (
-          <div
-            aria-hidden
-            style={{
-              marginTop: 8,
-              height: 3,
-              width: 36,
-              background: toneAccent,
-              borderRadius: 999,
-            }}
-          />
-        )}
       </div>
 
       {/* Scope chips — All / Self / Partner / Child / etc.
