@@ -355,6 +355,17 @@ export default function HandleItButton({
         (payload && (payload.message || payload.status)) ||
         "Queued — Kate is placing the call.";
       setToast({ kind: "ok", text: String(msg) });
+      // Tell the LiveCallBar to flip into the "Kate is calling X..."
+      // optimistic state immediately, instead of waiting up to 30s
+      // for its next poll. The real attempt row replaces the optimistic
+      // one as soon as /api/calls/active reflects it.
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("qbh:call-initiated", {
+            detail: { providerName: providerName || "the office" },
+          })
+        );
+      }
     } catch (e: any) {
       setToast({ kind: "error", text: e?.message || "Network error" });
     } finally {

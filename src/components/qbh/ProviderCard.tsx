@@ -444,12 +444,16 @@ export default function ProviderCard({
 
   return (
     <article className="rounded-2xl bg-white p-5 border border-[#E5EAF2] shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold text-[#071832]">
+      {/* Header — name + state badge on the same row; meta on its own
+          line; action row (Book it · Details · Portal chip) at the
+          bottom so nothing wraps awkwardly. The earlier "everything
+          on one row" layout collapsed badly on narrow widths (May 12
+          screenshot from Jenny). */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-semibold text-[#071832] leading-tight break-words">
             {provider.name}
           </h3>
-
           <div className="mt-1 text-sm text-[#4F5F73]">
             {isPharmacy
               ? "Pharmacy"
@@ -457,53 +461,50 @@ export default function ProviderCard({
                 ? `Dr. ${provider.doctor_name}${provider.specialty ? ` · ${provider.specialty}` : ""}`
                 : provider.specialty || "Provider"}
           </div>
-          {!isPharmacy && !provider.phone && (
-            <div className="mt-1 text-xs text-amber-600">
-              No phone number — add one in Details to enable booking
-            </div>
-          )}
-          {!isPharmacy && (
-            <div className="mt-2">
-              <a
-                href="/portals"
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#4F5F73] hover:text-[#1677FF] transition"
-              >
-                <span
-                  className="inline-block h-1.5 w-1.5 rounded-full"
-                  style={{ background: "#9CA3AF" }}
-                />
-                Portal: not connected · Connect
-              </a>
-            </div>
-          )}
         </div>
+        <div
+          className={`shrink-0 inline-flex rounded-full px-3 py-1 text-[11px] font-semibold whitespace-nowrap ${state.badgeClassName}`}
+        >
+          {state.label}
+        </div>
+      </div>
 
-        <div className="flex items-center gap-2">
-          {/* Inline Book it — always visible for non-pharmacy providers
-              so the user can book without clicking into the detail page.
-              May 11 review #T5. */}
-          {!isPharmacy && (
-            <a
-              href={`/providers/${provider.id}?action=book`}
-              className="rounded-lg px-2.5 py-1 text-xs font-semibold text-white hover:brightness-95 transition"
-              style={{ backgroundColor: "#1677FF" }}
-            >
-              Book it
-            </a>
-          )}
-          <button
-            type="button"
-            onClick={() => setShowDetails(!showDetails)}
-            className="rounded-lg px-2.5 py-1 text-xs font-medium text-[#4F5F73] hover:bg-[#F0F2F5] transition"
-          >
-            {showDetails ? "Close" : "Details"}
-          </button>
-          <div
-            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${state.badgeClassName}`}
-          >
-            {state.label}
-          </div>
+      {!isPharmacy && !provider.phone && (
+        <div className="mt-2 text-xs text-amber-600">
+          No phone number — add one in Details to enable booking
         </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {!isPharmacy && (
+          <a
+            href={`/providers/${provider.id}?action=book`}
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white hover:brightness-95 transition whitespace-nowrap"
+            style={{ backgroundColor: "#1677FF" }}
+          >
+            Book it
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={() => setShowDetails(!showDetails)}
+          className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#4F5F73] hover:bg-[#F0F2F5] transition whitespace-nowrap"
+        >
+          {showDetails ? "Close" : "Details"}
+        </button>
+        {!isPharmacy && (
+          <a
+            href="/portals"
+            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#4F5F73] hover:text-[#1677FF] transition whitespace-nowrap"
+          >
+            <span
+              aria-hidden
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{ background: "#9CA3AF" }}
+            />
+            Portal: not connected
+          </a>
+        )}
       </div>
 
       {showDetails && (

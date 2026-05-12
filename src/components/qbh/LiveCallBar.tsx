@@ -37,6 +37,12 @@ const DISMISSED_KEY = "qbh_dismissed_call_attempt_id";
 export default function LiveCallBar() {
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [dismissedId, setDismissedId] = useState<number | null>(null);
+  // Optimistic placeholder shown the instant the user taps Book it /
+  // Have Kate book. Renders the in-progress bar immediately with the
+  // provider name while the real attempt row makes its way through
+  // start-call + the /api/calls/active poll. Cleared once the real
+  // attempt arrives.
+  const [optimisticProvider, setOptimisticProvider] = useState<string | null>(null);
 
   // Prime dismissed-id from localStorage on mount.
   useEffect(() => {
@@ -60,13 +66,15 @@ export default function LiveCallBar() {
         const data = await res.json().catch(() => ({}));
         if (data?.ok) {
           setAttempt(data.attempt || null);
+          // Once we have a real attempt row, drop the optimistic one.
+          if (data.attempt) setOptimisticProvider(null);
         }
       } catch {
         /* swallow */
       }
       if (cancelled) return;
       // Active calls: poll fast. Otherwise slow.
-      const inProgress = isInProgress(attempt);
+      const inProgress = isInProgress(attempt) || optimisticProvider !== null;
       timer = setTimeout(tick, inProgress ? 5000 : 30000);
     }
     tick();
@@ -76,6 +84,60 @@ export default function LiveCallBar() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Listen for HandleItButton's "call-initiated" event so the bar
+  // appears the moment the user taps Book it. Force an immediate
+  // refresh of /api/calls/active as well so the optimistic state
+  // gets replaced by the real attempt as fast as possible.
+  useEffect(() => {
+    function onInitiated(e: Event) {
+      const detail = (e as CustomEvent).detail || {};
+      const name = typeof detail.providerName === "string" && detail.providerName.trim()
+        ? detail.providerName.trim()
+        : "the office";
+      setOptimisticProvider(name);
+      apiFetch("/api/calls/active")
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (data?.ok && data.attempt) {
+            setAttempt(data.attempt);
+            setOptimisticProvider(null);
+          }
+        })
+        .catch(() => {});
+    }
+    window.addEventListener("qbh:call-initiated", onInitiated);
+    return () => window.removeEventListener("qbh:call-initiated", onInitiated);
+  }, []);
+
+  // Render the optimistic in-progress bar when no real attempt yet.
+  if (!attempt && optimisticProvider) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 200,
+          background: "#1677FF",
+          color: "#FFFFFF",
+          fontSize: 13,
+          fontWeight: 500,
+          padding: "10px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          boxShadow: "0 2px 8px rgba(7,24,50,0.10)",
+        }}
+      >
+        <PulsingDot />
+        <div style={{ flex: 1, lineHeight: 1.4 }}>
+          Kate is starting a call with <strong>{optimisticProvider}</strong>…
+        </div>
+      </div>
+    );
+  }
 
   if (!attempt) return null;
 
