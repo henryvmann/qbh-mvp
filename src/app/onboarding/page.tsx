@@ -645,8 +645,8 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
         if (foundCount === 0 && !silentOnEmpty) {
           addKateMessage(
             completed === "bank"
-              ? "Nothing healthcare-related in your transactions yet — could be a different bank, or insurance covers it."
-              : "Nothing healthcare-related on your calendar yet. No worries — you can give me a name from the dashboard anytime."
+              ? "Quiet scan — your card statements didn't surface any providers. Sometimes copays come from a different card or insurance covers everything. Type a doctor's name in the next step and I'll build from there."
+              : "Quiet scan — your calendar didn't surface any providers. Could be your visits aren't on this calendar. Type a doctor's name in the next step and I'll build from there."
           );
           await new Promise((r) => setTimeout(r, 800));
         }
@@ -1015,20 +1015,76 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
       setTimeout(() => { advanceWithReview(justCompleted, 0); }, 600);
       return;
     }
+
+    // Per-provider Kate narration so the reveal feels like Kate
+    // recognizing the user's life, not a system dump. Top 5 providers
+    // get individual mentions; anything beyond that gets rolled into
+    // "and N more I'll add to your team." Followed by a magnitude
+    // callout that names the savings ("0 forms to fill — I just
+    // pulled all of this from your {source}.") to make the wow
+    // explicit. May 13 ask.
+    const NARRATION_CAP = 5;
+    const named = providers.slice(0, NARRATION_CAP);
+    const overflow = Math.max(0, providers.length - NARRATION_CAP);
+    const sourceLabel = justCompleted === "bank" ? "your card statements" : "your calendar";
+    const narrationMessages: React.ReactNode[] = named.map((p) => {
+      const visits = p.visit_count || 0;
+      if (visits >= 3) {
+        return (
+          <>
+            Found <strong>{p.name}</strong> — you&rsquo;ve seen them {visits} times.
+          </>
+        );
+      }
+      if (visits === 2) {
+        return (
+          <>
+            Found <strong>{p.name}</strong> — you&rsquo;ve been twice.
+          </>
+        );
+      }
+      if (visits === 1) {
+        return (
+          <>
+            Found <strong>{p.name}</strong> — your last visit is on file.
+          </>
+        );
+      }
+      return (
+        <>
+          Found <strong>{p.name}</strong> — adding them to your team.
+        </>
+      );
+    });
+    if (overflow > 0) {
+      narrationMessages.push(
+        <>
+          ...and {overflow} more I&rsquo;ll add to your team.
+        </>
+      );
+    }
+    const totalVisits = providers.reduce((sum, p) => sum + (p.visit_count || 0), 0);
+    const overdueCount = providers.filter((p) => p.overdue).length;
+    const closer: React.ReactNode = overdueCount > 0 ? (
+      <>
+        {providers.length} provider{providers.length === 1 ? "" : "s"} and {totalVisits} visit{totalVisits === 1 ? "" : "s"} — pulled straight from {sourceLabel}. The mental load of remembering it all, handled. {overdueCount} could use a follow-up; I&rsquo;ll take care of those too.
+      </>
+    ) : (
+      <>
+        {providers.length} provider{providers.length === 1 ? "" : "s"} and {totalVisits} visit{totalVisits === 1 ? "" : "s"} — pulled straight from {sourceLabel}. The mental load of remembering your healthcare year, handled.
+      </>
+    );
+
     // Faster, more responsive reveal: first card lands immediately so the
     // panel doesn't sit blank while the chat message is still being shown.
+    // The visual card animation runs in parallel with the Kate narration.
     providers.forEach((_, i) => {
       setTimeout(() => {
         setRevealIndex(i + 1);
         if (i === providers.length - 1) {
           setTimeout(() => {
-            const overdueCount = providers.filter((p) => p.overdue).length;
-            const onTrack = providers.length - overdueCount;
-            addKateMessage(
-              overdueCount > 0
-                ? `Found ${providers.length} on your team. ${overdueCount} could use a follow-up — I'll handle those.`
-                : `Found ${providers.length} on your team. Everyone's caught up.`
-            );
+            addKateMessages([...narrationMessages, closer], 600, 900);
+            const totalNarrationTimeMs = 600 + (narrationMessages.length + 1) * 900;
             setRevealDone(true);
             const next = advanceAfter(justCompleted);
             if (next === "calendar-connect") {
@@ -1036,11 +1092,11 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
               setTimeout(() => {
                 addKateMessage("Now let's grab your calendar too — I'll scan for doctor appointments.");
                 setTimeout(() => setPhase(next), 1200);
-              }, 1500);
+              }, totalNarrationTimeMs + 600);
             } else {
               // Bank or calendar finished and there's no further discovery —
               // route through review-team if any ambiguous providers exist.
-              setTimeout(() => { advanceWithReview(justCompleted, providers.length); }, 1500);
+              setTimeout(() => { advanceWithReview(justCompleted, providers.length); }, totalNarrationTimeMs + 600);
             }
           }, 600);
         }

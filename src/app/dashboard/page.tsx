@@ -29,6 +29,8 @@ import ProviderLink from "../../components/qbh/ProviderLink";
 import HealthScoreRing from "../../components/qbh/HealthScoreRing";
 import StuckPrompt from "../../components/qbh/StuckPrompt";
 import NewProviderWalkthrough from "../../components/qbh/NewProviderWalkthrough";
+import DashboardWelcomeCard from "../../components/qbh/DashboardWelcomeCard";
+import KateCapabilitiesChip from "../../components/qbh/KateCapabilitiesChip";
 import BrandShell from "../../components/brand/BrandShell";
 import {
   GlassCard,
@@ -225,13 +227,23 @@ function DashboardInner() {
 
   return (
     <BrandShell topRight={<UserAvatar />}>
-      {/* Greeting + Kate's weekly check-in */}
+      {/* Greeting + Kate's weekly check-in. Capabilities chip sits
+          inline with the greeting line so the "what can Kate do?"
+          entry is discoverable but not pushy. */}
       <div style={{ paddingTop: 8, marginBottom: 16 }}>
-        <div style={{ fontSize: 13, color: T.lightMuted, marginBottom: 6 }}>
-          Hi, {userName || "there"}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
+          <div style={{ fontSize: 13, color: T.lightMuted }}>
+            Hi, {userName || "there"}
+          </div>
+          <KateCapabilitiesChip />
         </div>
         <AustinHeading size={32}>{checkIn}</AustinHeading>
       </div>
+
+      {/* Personalized starter card — shows once on the user's first
+          dashboard visit with 3-4 concrete actions drawn from their
+          data. Dismissible; never returns. */}
+      <DashboardWelcomeCard />
 
       {/* Scope chips — All / Self / Partner / Child / etc.
           Provider count + overdue + upcoming + the care-team list all
