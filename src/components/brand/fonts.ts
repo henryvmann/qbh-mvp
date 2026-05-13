@@ -17,7 +17,7 @@ export const inter = Inter({
 // get a more conventional serif while keeping Fraunces' overall shape.
 export const austin = Fraunces({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "variable",
   axes: ["SOFT", "WONK"],
 });
 
