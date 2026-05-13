@@ -18,6 +18,7 @@ type Snapshot = {
   lastVisitCategory?: LastVisitCategory | null;
   lastVisitLabel?: string | null;
   booking_state?: { status?: string };
+  futureConfirmedEvent?: { start_at: string } | null;
 };
 
 type Props = {
@@ -43,6 +44,17 @@ function timeAgo(iso: string): string {
   return `${years} year${years === 1 ? "" : "s"}`;
 }
 
+function formatUpcomingDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "soon";
+  const month = d.toLocaleString("en-US", { month: "short" });
+  const day = d.getDate();
+  const time = d
+    .toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
+    .replace(/\s/g, "");
+  return `${month} ${day} at ${time}`;
+}
+
 function buildPrompt(snap: Snapshot) {
   const name = snap.provider.name;
   const cat = snap.lastVisitCategory || "needs_scheduling";
@@ -56,6 +68,17 @@ function buildPrompt(snap: Snapshot) {
       headline: `${name}`,
       body: `I've saved this as your pharmacy. I can call them about refills or transfers whenever you need.`,
       tone: "pharmacy" as const,
+    };
+  }
+
+  // If there's a confirmed upcoming visit, surface it instead of asking
+  // to book. Otherwise the card contradicts the care-team status.
+  const upcoming = snap.futureConfirmedEvent?.start_at;
+  if (upcoming && new Date(upcoming).getTime() > Date.now()) {
+    return {
+      headline: `${name}`,
+      body: `You're booked for ${formatUpcomingDate(upcoming)}. I'll keep an eye on it.`,
+      tone: "ok" as const,
     };
   }
 
@@ -73,7 +96,7 @@ function buildPrompt(snap: Snapshot) {
   if (cat === "just_visited" || cat === "on_track") {
     return {
       headline: `${name}`,
-      body: `You saw them ${seenPhrase} — you're probably good for now. Let me know if you want to book anyway.`,
+      body: `You saw them ${seenPhrase} — you're good for now. I'll flag this when it's time to book again.`,
       tone: "ok" as const,
     };
   }
@@ -145,14 +168,16 @@ export default function NewProviderWalkthrough({ snapshots, introducedIds, onCha
     }
   }
 
-  // Pharmacies don't have a booking action — single "Got it" continues
-  // the walkthrough. Doctors get the action/ok button pair based on
-  // whether a visit's likely overdue.
+  // Pharmacies and on-track providers don't need a booking CTA —
+  // single "Got it" continues the walkthrough. Only providers in
+  // genuine "action" state (overdue / needs scheduling / coming due)
+  // get the action/skip pair.
   const isPharmacy = prompt.tone === "pharmacy";
-  const primaryLabel = isPharmacy ? "Got it" : prompt.tone === "action" ? "Book it now" : "Got it";
-  const secondaryLabel = isPharmacy ? null : prompt.tone === "action" ? "Skip for now" : "Actually, book";
-  const primaryAction = isPharmacy ? "skip" : prompt.tone === "action" ? "book" : "skip";
-  const secondaryAction = isPharmacy ? null : prompt.tone === "action" ? "skip" : "book";
+  const isOk = prompt.tone === "ok";
+  const primaryLabel = isPharmacy || isOk ? "Got it" : "Book it now";
+  const secondaryLabel = isPharmacy || isOk ? null : "Skip for now";
+  const primaryAction: "book" | "skip" = isPharmacy || isOk ? "skip" : "book";
+  const secondaryAction: "book" | "skip" | null = isPharmacy || isOk ? null : "skip";
 
   return (
     <div
