@@ -273,7 +273,11 @@ function DashboardInner() {
           data. Dismissible; never returns. Suppressed entirely when
           the walkthrough or stuck-prompt is active so only one Kate-
           suggestion card is on screen at a time. */}
-      {showWelcome && <DashboardWelcomeCard onDismiss={() => setWelcomeDismissed(true)} />}
+      {showWelcome && (
+        <div data-wizard="best-next-step">
+          <DashboardWelcomeCard onDismiss={() => setWelcomeDismissed(true)} />
+        </div>
+      )}
 
       {/* Scope chips — All / Self / Partner / Child / etc.
           Provider count + overdue + upcoming + the care-team list all
@@ -332,23 +336,27 @@ function DashboardInner() {
           it has a queue. Goes away on its own once every provider has
           been walked through. */}
       {showWalkthrough && data?.snapshots && (
-        <NewProviderWalkthrough
-          snapshots={data.snapshots}
-          introducedIds={introducedIds}
-          onChange={refreshProfile}
-        />
+        <div data-wizard="best-next-step">
+          <NewProviderWalkthrough
+            snapshots={data.snapshots}
+            introducedIds={introducedIds}
+            onChange={refreshProfile}
+          />
+        </div>
       )}
 
       {/* Stuck-prompt — second priority. Renders only when walkthrough
           has nothing left and at least one provider is in real follow-up
           state. */}
       {showStuck && data?.snapshots && (
-        <StuckPrompt
-          snapshots={data.snapshots}
-          pausedProviders={pausedProviders}
-          introducedIds={introducedIds}
-          onChange={refreshProfile}
-        />
+        <div data-wizard="best-next-step">
+          <StuckPrompt
+            snapshots={data.snapshots}
+            pausedProviders={pausedProviders}
+            introducedIds={introducedIds}
+            onChange={refreshProfile}
+          />
+        </div>
       )}
 
       {/* Health Coordination Score */}
