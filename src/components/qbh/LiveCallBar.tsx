@@ -301,6 +301,27 @@ function renderMessage(a: Attempt): React.ReactNode {
   return <>Kate&rsquo;s call to <strong>{provider}</strong> didn&rsquo;t complete. We&rsquo;ll try again.</>;
 }
 
+// Friendly "in 2 hours" / "tomorrow at 9 AM" string from an ISO time
+// in the future. Returns null if the iso is missing or in the past.
+function humanizeRetryAt(iso: string | null): string | null {
+  if (!iso) return null;
+  const target = new Date(iso).getTime();
+  if (Number.isNaN(target)) return null;
+  const delta = target - Date.now();
+  if (delta <= 0) return null;
+  const minutes = Math.round(delta / 60000);
+  if (minutes < 60) return `in ${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `in ${hours} hour${hours === 1 ? "" : "s"}`;
+  // For longer waits, give a clock time so the user gets a real anchor.
+  const d = new Date(iso);
+  const sameDay = new Date().toDateString() === d.toDateString();
+  const timeStr = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  if (sameDay) return `at ${timeStr}`;
+  const dayStr = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  return `${dayStr} at ${timeStr}`;
+}
+
 // Translates retry_policy_hint + user_input_required into a friendly
 // "what happens next" sentence so the user knows whether Kate is on
 // it or whether they need to do something. Returns null when there's
@@ -313,14 +334,21 @@ function renderNextStep(a: Attempt): React.ReactNode | null {
     return <>I need a bit more from you to keep going.</>;
   }
 
+  // Concrete countdown when we have a real retry time.
+  const provider = a.provider_name || "the office";
+  const retryHuman = humanizeRetryAt(a.suggested_retry_after_iso);
+  if (retryHuman) {
+    return <>I&rsquo;ll call <strong>{provider}</strong> back {retryHuman}.</>;
+  }
+
   const hint = (a.retry_policy_hint || "").toUpperCase();
   switch (hint) {
     case "RETRY_NEXT_BUSINESS_HOURS":
-      return <>I&rsquo;ll try again at the next business hours, no action needed.</>;
+      return <>I&rsquo;ll call <strong>{provider}</strong> back during their next business hours.</>;
     case "RETRY_LATER":
-      return <>I&rsquo;ll try again shortly. No action needed.</>;
+      return <>I&rsquo;ll call <strong>{provider}</strong> back shortly.</>;
     case "RETRY_TOMORROW":
-      return <>I&rsquo;ll try again tomorrow morning. No action needed.</>;
+      return <>I&rsquo;ll call <strong>{provider}</strong> back tomorrow morning.</>;
     case "USER_INPUT_REQUIRED":
       return <>I need a bit more from you to keep going.</>;
     case "DO_NOT_RETRY":

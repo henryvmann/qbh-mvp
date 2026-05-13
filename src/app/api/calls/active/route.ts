@@ -47,9 +47,22 @@ export async function GET(req: Request) {
 
   // Bar shows for ~10 minutes after a terminal status — long enough for
   // a user to see and dismiss, short enough to not leave stale chrome.
+  // EXCEPT: when a retry is scheduled (suggested_retry_after_iso is in
+  // the future), keep the bar visible until that retry fires so the
+  // user can see "Kate will call back in X hours" persistently and
+  // doesn't lose context after 10 minutes.
   const updatedAt = (attempt.updated_at || attempt.created_at) as string;
   const ageMs = Date.now() - new Date(updatedAt).getTime();
   const TERMINAL_VISIBILITY_MS = 10 * 60 * 1000;
+  const baselineRemaining = Math.max(0, TERMINAL_VISIBILITY_MS - ageMs);
+  let visibilityRemaining = baselineRemaining;
+  const retryIso = classification?.suggested_retry_after_iso as string | null | undefined;
+  if (retryIso) {
+    const retryDelta = new Date(retryIso).getTime() - Date.now();
+    if (retryDelta > 0) {
+      visibilityRemaining = Math.max(visibilityRemaining, retryDelta);
+    }
+  }
 
   return NextResponse.json(
     {
@@ -63,7 +76,7 @@ export async function GET(req: Request) {
         created_at: attempt.created_at,
         updated_at: updatedAt,
         age_ms: ageMs,
-        terminal_visibility_remaining_ms: Math.max(0, TERMINAL_VISIBILITY_MS - ageMs),
+        terminal_visibility_remaining_ms: visibilityRemaining,
         outcome_type: (classification?.outcome_type as string | null) || null,
         failure_class: (classification?.failure_class as string | null) || null,
         call_summary: (classification?.call_summary as string | null) || null,
