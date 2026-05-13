@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { austin } from "./fonts";
+import { austin, austinNormalAxes } from "./fonts";
 import { brandTheme, T, type BrandMode } from "./index";
 
 /**
@@ -164,6 +164,7 @@ export function AustinHeading({
         lineHeight: 1.05,
         margin: 0,
         color: t.text,
+        fontVariationSettings: austinNormalAxes,
         ...style,
       }}
     >

@@ -456,6 +456,22 @@ export async function buildProviderRegistry(
     "NATIONAL GRID", "DOMINION ENERGY", "OPTIMUM", "VERIZON", "AT&T",
     "T-MOBILE", "TMOBILE", "COMCAST", "XFINITY", "SPECTRUM",
     "WEB_PAY", "WEBPAY", "AUTOPAY", "AUTO-PAY",
+    // Software / SaaS / cloud subscriptions — Big Tech billing
+    // descriptors ("GOOGLE *CALENDAR", "APPLE.COM/BILL", "MSFT *365")
+    // are NOT providers but the LLM occasionally guesses healthcare
+    // because the billing line includes a calendar/health-adjacent
+    // word. Hard-exclude any line that starts with the parent brand.
+    "GOOGLE ", "GOOGLE*", "GOOGLE.", "GOOGLE,",
+    "APPLE.COM", "APPLE *", "APPLE,", "ITUNES", "APPLE PAY",
+    "MICROSOFT", "MSFT ", "MSFT*", "OFFICE 365", "OFFICE365",
+    "AMAZON.COM", "AMZN ", "AMZN.COM", "AMAZON PRIME", "AWS ", "AWS,",
+    "NETFLIX", "SPOTIFY", "HULU", "DISNEY+", "DISNEY PLUS",
+    "HBO MAX", "MAX SUBSCRIPTION", "PARAMOUNT+", "PEACOCK ",
+    "YOUTUBE PREMIUM", "YOUTUBE TV", "TWITCH ",
+    "ADOBE ", "ADOBE,", "ADOBE*", "DROPBOX", "ZOOM.US", "ZOOM VIDEO",
+    "SLACK ", "NOTION ", "FIGMA ", "GITHUB ", "OPENAI ", "ANTHROPIC ",
+    "LINKEDIN ", "META ", "META,", "META PLATFORMS",
+    "CLOUDFLARE", "VERCEL ", "STRIPE.COM", "STRIPE *",
   ];
 
   const OBVIOUS_HEALTHCARE = [

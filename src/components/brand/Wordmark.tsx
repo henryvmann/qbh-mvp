@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { austin } from "./fonts";
+import { austin, austinNormalAxes } from "./fonts";
 import { T, type BrandMode } from "./index";
 
 /**
@@ -23,6 +23,7 @@ export default function Wordmark({
         fontWeight: 500,
         letterSpacing: -0.2,
         lineHeight: 1,
+        fontVariationSettings: austinNormalAxes,
       }}
     >
       <span style={{ color: mode === "light" ? T.lightText : T.darkText }}>

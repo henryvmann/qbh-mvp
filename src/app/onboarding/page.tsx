@@ -217,6 +217,7 @@ export default function OnboardingPage() {
   const [patientDob, setPatientDob] = useState("");
   const [patientGender, setPatientGender] = useState("");
   const [patientInsurance, setPatientInsurance] = useState("");
+  const [insuranceConfirmed, setInsuranceConfirmed] = useState(false);
   const [patientMemberId, setPatientMemberId] = useState("");
   const [patientPhone, setPatientPhone] = useState("");
   const [zipCode, setZipCode] = useState("");
@@ -1726,21 +1727,49 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
             </div>
             <div className="relative">
               <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Insurance provider</label>
-              <input type="text" value={patientInsurance} onChange={(e) => setPatientInsurance(e.target.value)} placeholder="Start typing..." className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
+              <input
+                type="text"
+                value={patientInsurance}
+                onChange={(e) => {
+                  setPatientInsurance(e.target.value);
+                  setInsuranceConfirmed(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    setInsuranceConfirmed(true);
+                    (e.currentTarget as HTMLInputElement).blur();
+                  } else if (e.key === "Escape") {
+                    setInsuranceConfirmed(true);
+                  }
+                }}
+                placeholder="Start typing..."
+                className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
+              />
               <p className="mt-1 text-[10px] text-[#4F5F73]">
                 Don&rsquo;t see yours? Just type it in — I&rsquo;ll save what you write.
               </p>
-              {patientInsurance.length >= 2 && !KNOWN_INSURANCE.includes(patientInsurance) && (
+              {patientInsurance.length >= 2 && !KNOWN_INSURANCE.includes(patientInsurance) && !insuranceConfirmed && (
                 <div className="absolute z-10 mt-1 w-full rounded-xl border border-[#E5EAF2] bg-white shadow-lg max-h-44 overflow-y-auto">
                   {filteredInsurance.map((ins) => (
-                    <button key={ins} onClick={() => setPatientInsurance(ins)} className="w-full px-3 py-2 text-left text-sm text-[#071832] hover:bg-[#F0F2F5]">{ins}</button>
+                    <button
+                      key={ins}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setPatientInsurance(ins);
+                        setInsuranceConfirmed(true);
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm text-[#071832] hover:bg-[#F0F2F5]"
+                    >
+                      {ins}
+                    </button>
                   ))}
                   {/* Always offer the typed value as a "use this" option so
                       carriers we don't have in KNOWN_INSURANCE aren't a
                       dead-end. Footer-styled to distinguish from matches. */}
                   <button
-                    onClick={() => { /* leave value as-is; just dismiss list */ }}
                     onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setInsuranceConfirmed(true)}
                     className="w-full px-3 py-2 text-left text-sm text-[#1677FF] font-semibold border-t border-[#E5EAF2] hover:bg-[#F0F4FF]"
                   >
                     Use &ldquo;{patientInsurance}&rdquo;
@@ -2369,7 +2398,18 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                     {!connectBank && (
                       <Link
                         href="/account"
-                        className="text-xs font-semibold text-[#1677FF] underline underline-offset-2"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "6px 12px",
+                          borderRadius: 10,
+                          background: "rgba(22,119,255,0.10)",
+                          color: "#1677FF",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          textDecoration: "none",
+                          border: "1px solid rgba(22,119,255,0.25)",
+                        }}
                       >
                         Connect bank →
                       </Link>
@@ -2377,19 +2417,42 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                     {!connectCalendar && (
                       <Link
                         href="/calendar-connect"
-                        className="text-xs font-semibold text-[#1677FF] underline underline-offset-2"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "6px 12px",
+                          borderRadius: 10,
+                          background: "rgba(22,119,255,0.10)",
+                          color: "#1677FF",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          textDecoration: "none",
+                          border: "1px solid rgba(22,119,255,0.25)",
+                        }}
                       >
                         Connect calendar →
                       </Link>
                     )}
-                    {!connectManual && (
-                      <Link
-                        href="/providers?add=true"
-                        className="text-xs font-semibold text-[#1677FF] underline underline-offset-2"
-                      >
-                        Add a provider →
-                      </Link>
-                    )}
+                    {/* Always show "Add a provider" — manual is the
+                        catch-all and was previously gated on
+                        connectManual, which is rarely set, so the
+                        chip rendered with stale styling. */}
+                    <Link
+                      href="/providers?add=true"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "6px 12px",
+                        borderRadius: 10,
+                        background: "#1677FF",
+                        color: "white",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        textDecoration: "none",
+                      }}
+                    >
+                      Add a provider →
+                    </Link>
                   </div>
                 </div>
               )}

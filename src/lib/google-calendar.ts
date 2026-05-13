@@ -602,16 +602,51 @@ const HEALTHCARE_KEYWORDS = [
   "wellness visit", "well-woman", "well-child",
 ];
 
-// Credentials need word boundaries so "MD" doesn't match "MDF" / "made" etc.
+// Credentials only count when they're written name-suffix style
+// ("Eric Echelman, DDS" or "Dr. Smith — MD") — otherwise short codes
+// like "do", "od", "rn" match ordinary English in event descriptions
+// and turn 1:1 social meetings into "providers". We require either a
+// comma + space before the credential, OR an em/en dash + space,
+// OR end-of-string after a single space.
 const HEALTHCARE_CREDENTIALS = [
   "md", "m.d.", "dds", "d.d.s.", "dmd", "do", "d.o.",
   "np", "n.p.", "pa-c", "od", "o.d.", "rn", "lmhc", "lcsw", "lpc",
 ];
 
+const CRED_ALT = HEALTHCARE_CREDENTIALS
+  .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  .join("|");
+
 export const HEALTHCARE_PATTERN = new RegExp(
   [
     HEALTHCARE_KEYWORDS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
-    "\\b(" + HEALTHCARE_CREDENTIALS.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")\\b",
+    // Credential as a name-suffix: ", DDS" or " — MD" or end of string after space
+    "(?:,\\s*|\\s[—–-]\\s*)(" + CRED_ALT + ")\\b",
+  ].join("|"),
+  "i"
+);
+
+// Strong "this is NOT a healthcare visit" signals. Checked before the
+// healthcare regex; if any match, we drop the event. Catches 1:1
+// meetings with friends/colleagues that share a name pattern with
+// "Dr. Smith"-style provider entries.
+const NON_HEALTHCARE_PATTERN = new RegExp(
+  [
+    // Bridgewater-style 1:1 notation: "Person A <> Person B"
+    "\\s<>\\s",
+    // Common 1:1 markers
+    "\\b1[:\\-]1\\b",
+    "\\bone[\\s-]on[\\s-]one\\b",
+    // Social meetings
+    "\\bcoffee\\b",
+    "\\blunch\\b",
+    "\\bdinner\\b",
+    "\\bdrinks\\b",
+    "\\bhappy hour\\b",
+    "\\bcatch[\\s-]?up\\b",
+    "\\bsync\\b",
+    "\\bstandup\\b",
+    "\\bstand[\\s-]up\\b",
   ].join("|"),
   "i"
 );
@@ -692,10 +727,13 @@ export async function scanCalendarForProviders(
 
     for (const event of data.items || []) {
       const summary = event.summary || "";
-      const description = event.description || "";
-      const text = `${summary} ${description}`;
 
-      if (!HEALTHCARE_PATTERN.test(text)) continue;
+      // Run signal detection on the summary only. Descriptions contain
+      // ordinary English ("what do we want to talk about", "ok, rn
+      // we're behind") that produces false positives against short
+      // credential codes.
+      if (NON_HEALTHCARE_PATTERN.test(summary)) continue;
+      if (!HEALTHCARE_PATTERN.test(summary)) continue;
 
       const eventDate =
         event.start?.dateTime || event.start?.date || "";
