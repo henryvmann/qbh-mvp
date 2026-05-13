@@ -26,6 +26,7 @@ import {
   DocumentIcon,
   SparkleIcon,
   PersonIcon,
+  CalendarIcon,
 } from "./icons";
 import HamburgerMenu from "../qbh/HamburgerMenu";
 import {
@@ -43,6 +44,7 @@ const NAV_ICONS: Record<NavKey, React.ComponentType<{ color?: string; size?: num
   documents: DocumentIcon,
   kate: SparkleIcon,
   you: PersonIcon,
+  visits: CalendarIcon,
 };
 
 export default function BrandShell({

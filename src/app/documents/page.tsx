@@ -193,6 +193,14 @@ export default function DocumentsPage() {
               PDF, Word (.docx), text, images (.png, .jpg) — lab results, visit summaries, medical records.
               <br />
               You can drop or select multiple at once.
+              <br />
+              <span className="text-[11px]">
+                Uploading an EOB? Use the{" "}
+                <a href="/coverage" className="text-[#1677FF] font-semibold no-underline hover:underline">
+                  Coverage page
+                </a>{" "}
+                for better insurance breakdown.
+              </span>
             </div>
           </div>
 

@@ -8,6 +8,7 @@ import PageShell from "../../components/qbh/PageShell";
 import BestNextStep from "../../components/qbh/BestNextStep";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import NextSteps from "../../components/qbh/NextSteps";
+import KateInsightsList from "../../components/qbh/KateInsightsList";
 
 /* ---------- helpers ---------- */
 
@@ -376,6 +377,8 @@ export default function GoalsPage() {
         <h1 className="font-serif text-3xl tracking-tighter font-medium text-[#071832] mb-4">
           Goals
         </h1>
+
+        <KateInsightsList />
 
         <div className="mt-4" />
 

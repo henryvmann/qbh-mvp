@@ -45,7 +45,7 @@ export function brandTheme(mode: BrandMode) {
   };
 }
 
-export type NavKey = "home" | "timeline" | "documents" | "kate" | "you";
+export type NavKey = "home" | "timeline" | "documents" | "kate" | "you" | "visits";
 
 export type NavItem = {
   key: NavKey;
@@ -56,14 +56,13 @@ export type NavItem = {
 // Default 5-tab bottom nav. Pages can override per-screen but most
 // authed surfaces just use this set.
 //
-// Documents replaced Insights in the bottom slot per the reviewer:
-// medical records / labs / EOBs is a primary navigation surface, and
-// the Insights tile (which routed to /goals) was a misnomer that
-// will be replaced by a proper Insights view in a follow-up.
+// Visits replaced Documents in the bottom slot — appointments are a
+// daily-use surface, document uploads are not. Documents stays
+// reachable via the hamburger menu.
 export const DEFAULT_NAV: NavItem[] = [
   { key: "home", label: "Home", href: "/dashboard" },
   { key: "timeline", label: "Timeline", href: "/timeline" },
-  { key: "documents", label: "Documents", href: "/documents" },
+  { key: "visits", label: "Visits", href: "/visits" },
   { key: "kate", label: "Kate", href: "/kate" },
   { key: "you", label: "You", href: "/account" },
 ];

@@ -94,7 +94,15 @@ function VisitsInner() {
       .then((json) => {
         if (json?.ok) {
           setUpcoming(json.upcoming ?? []);
-          setPast(json.past ?? []);
+          // /visits is the active-care view: only the last 30 days of
+          // past visits land here. Full history lives on /timeline.
+          const RECENT_DAYS = 30;
+          const cutoff = Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000;
+          const recent = (json.past ?? []).filter((v: PastVisit) => {
+            if (!v.visitDate) return false;
+            return new Date(v.visitDate).getTime() >= cutoff;
+          });
+          setPast(recent);
           setFollowUps(json.followUps ?? []);
         }
       })
@@ -114,7 +122,10 @@ function VisitsInner() {
             Visits
           </h1>
           <p className="mt-1 text-sm text-[#4F5F73]">
-            Upcoming appointments and past visits
+            What&rsquo;s coming up and what&rsquo;s active right now.{" "}
+            <a href="/timeline" className="text-[#1677FF] font-semibold hover:underline underline-offset-2">
+              See full history →
+            </a>
           </p>
         </div>
 
@@ -276,19 +287,23 @@ function VisitsInner() {
             )}
           </div>
 
-          {/* Past visits */}
+          {/* Recent visits — last 30 days only on /visits. Older history
+              lives on /timeline. */}
           <div className="rounded-2xl bg-white shadow-sm p-6 border border-[#E5EAF2]">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-serif text-xl text-[#071832]">
-                  Past visits
+                  Recent visits
                 </h2>
                 <p className="mt-2 text-sm text-[#4F5F73]">
-                  Visits found from your financial data analysis.
+                  The last 30 days.{" "}
+                  <a href="/timeline" className="text-[#1677FF] font-semibold hover:underline underline-offset-2">
+                    Full history →
+                  </a>
                 </p>
               </div>
               <span className="text-sm font-medium text-[#4F5F73]">
-                {past.length} visits
+                {past.length} visit{past.length === 1 ? "" : "s"}
               </span>
             </div>
 
@@ -386,10 +401,14 @@ function VisitsInner() {
             ) : (
               <div className="mt-6 rounded-2xl bg-[#F0F2F5] p-5 border border-[#E5EAF2]">
                 <div className="font-semibold text-[#071832]">
-                  No past visits found yet
+                  Nothing in the last 30 days
                 </div>
                 <p className="mt-2 text-sm text-[#4F5F73]">
-                  Past visits will appear once QBH analyzes your financial data.
+                  Older visits live on your{" "}
+                  <a href="/timeline" className="text-[#1677FF] font-semibold no-underline hover:underline">
+                    timeline
+                  </a>
+                  . As new visits land they&rsquo;ll show up here.
                 </p>
               </div>
             )}

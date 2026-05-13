@@ -200,17 +200,15 @@ export default function StuckPrompt({ snapshots, pausedProviders, introducedIds,
             />
           )}
 
-          {/* Snooze options — now styled as clearly-tappable pill buttons
-              with white background and shadow, not transparent borderless
-              links. The user picks the cadence that matches their state
-              without having to wonder whether the option is interactive. */}
+          {/* Snooze options. Collapsed to two cadences: "Not now"
+              (24h pause) and "Don't remind me" (forever). The earlier
+              four-chip set asked the user to reason about cadence
+              gradations they don't actually care about. */}
           {!katePanelOpen && (
             <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
               <span style={{ fontSize: 11, color: T.lightMuted, marginRight: 2 }}>or</span>
-              <SnoozeChip label="Not today" onClick={() => pause("not_today")} disabled={busy} />
-              <SnoozeChip label="Remind me in a few days" onClick={() => pause("few_days")} disabled={busy} />
-              <SnoozeChip label="I&rsquo;ve got it" onClick={() => pause("until_done")} disabled={busy} />
-              <SnoozeChip label="Don&rsquo;t remind me again" onClick={() => pause("forever")} disabled={busy} />
+              <SnoozeChip label="Not now" onClick={() => pause("not_today")} disabled={busy} />
+              <SnoozeChip label="Don&rsquo;t remind me" onClick={() => pause("forever")} disabled={busy} />
             </div>
           )}
         </div>

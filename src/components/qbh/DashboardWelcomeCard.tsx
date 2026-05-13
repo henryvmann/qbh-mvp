@@ -38,7 +38,7 @@ function monthsSince(iso: string): number {
   return Math.round((Date.now() - then) / (1000 * 60 * 60 * 24 * 30));
 }
 
-export default function DashboardWelcomeCard() {
+export default function DashboardWelcomeCard({ onDismiss }: { onDismiss?: () => void } = {}) {
   const [dismissed, setDismissed] = useState<boolean | null>(null);
   const [snapshots, setSnapshots] = useState<DashboardSnapshot[]>([]);
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
@@ -181,6 +181,7 @@ export default function DashboardWelcomeCard() {
       window.localStorage.setItem(DISMISSED_KEY, "1");
     }
     setDismissed(true);
+    onDismiss?.();
   }
 
   if (dismissed || dismissed === null) return null;

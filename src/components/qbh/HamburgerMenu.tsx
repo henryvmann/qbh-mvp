@@ -43,8 +43,7 @@ const NAV_GROUPS: Group[] = [
     // Things Kate produces or the user observes — second tier.
     label: "Tracking",
     items: [
-      { label: "Insights", href: "/insights", description: "Kate's read on your week" },
-      { label: "Goals", href: "/goals", description: "Track progress" },
+      { label: "Goals", href: "/goals", description: "Kate's read on your week + what to work on" },
       { label: "Notes", href: "/notes", description: "Visit notes and reminders" },
       { label: "Recordings", href: "/recordings", description: "Appointment recordings and summaries" },
     ],

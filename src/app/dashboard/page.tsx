@@ -43,7 +43,6 @@ import {
   CalendarIcon,
   PersonIcon,
   DocumentIcon,
-  InsightsIcon,
   UsersIcon,
   SparkleIcon,
 } from "../../components/brand/icons";
@@ -103,6 +102,15 @@ function DashboardInner() {
   >({});
   const [introducedIds, setIntroducedIds] = useState<string[]>([]);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  // Welcome-card dismissed flag — lifted to dashboard so we can gate
+  // the other Kate-suggestion cards on it. Only one of
+  // walkthrough / stuck / welcome / best-next-step renders at a time
+  // (priority order, top to bottom).
+  const [welcomeDismissed, setWelcomeDismissed] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setWelcomeDismissed(window.localStorage.getItem("qbh_dashboard_welcome_dismissed") === "1");
+  }, []);
   // Scope filter — null = "All". Otherwise filters provider count,
   // overdue, upcoming, and the care-team list to providers attached
   // to that recipient. Stored only client-side; the dashboard query
@@ -211,6 +219,26 @@ function DashboardInner() {
   const actionCount = overdueCount;
   const weekDays = getWeekDays();
 
+  // Priority for the "what should I do next?" slot. Exactly one of
+  // walkthrough / stuck / welcome / best-next-step renders. The dashboard
+  // used to stack all four, which read as a wall of notifications.
+  const walkthroughHasQueue = !!data?.snapshots && !data.snapshots.every((s) =>
+    introducedIds.includes(s.provider.id)
+  );
+  const stuckHasItems = !!data?.snapshots && profileLoaded && data.snapshots.some((s) => {
+    if (!s.followUpNeeded) return false;
+    const status = (s as { booking_state?: { status?: string } }).booking_state?.status;
+    if (status === "BOOKED" || status === "IN_PROGRESS") return false;
+    const paused = pausedProviders[s.provider.id];
+    if (paused && Date.parse(paused.until) > Date.now()) return false;
+    if (!introducedIds.includes(s.provider.id)) return false;
+    return true;
+  });
+  const showWalkthrough = walkthroughHasQueue;
+  const showStuck = !showWalkthrough && stuckHasItems;
+  const showWelcome = !showWalkthrough && !showStuck && welcomeDismissed === false;
+  const showBestNextStep = !showWalkthrough && !showStuck && !showWelcome;
+
   // Weekly check-in framing: lead with what Kate's surfaced rather
   // than a static "Today." First-person from Kate so the dashboard
   // reads as her speaking, not a system count. The richer inference-
@@ -242,8 +270,10 @@ function DashboardInner() {
 
       {/* Personalized starter card — shows once on the user's first
           dashboard visit with 3-4 concrete actions drawn from their
-          data. Dismissible; never returns. */}
-      <DashboardWelcomeCard />
+          data. Dismissible; never returns. Suppressed entirely when
+          the walkthrough or stuck-prompt is active so only one Kate-
+          suggestion card is on screen at a time. */}
+      {showWelcome && <DashboardWelcomeCard onDismiss={() => setWelcomeDismissed(true)} />}
 
       {/* Scope chips — All / Self / Partner / Child / etc.
           Provider count + overdue + upcoming + the care-team list all
@@ -297,12 +327,11 @@ function DashboardInner() {
         </div>
       )}
 
-      {/* New-provider walkthrough: surfaces any provider the user hasn't
-          been introduced to yet, one at a time, with date-aware framing
-          ("It's been X months since you saw Y" vs "You're good for now").
-          Hides the StuckPrompt while it's active so we don't double-prompt
-          on the same provider. Goes away on its own once the queue empties. */}
-      {data?.snapshots && (
+      {/* New-provider walkthrough — top priority Kate-suggestion slot.
+          Hides everything else (stuck, welcome, best-next-step) while
+          it has a queue. Goes away on its own once every provider has
+          been walked through. */}
+      {showWalkthrough && data?.snapshots && (
         <NewProviderWalkthrough
           snapshots={data.snapshots}
           introducedIds={introducedIds}
@@ -310,13 +339,10 @@ function DashboardInner() {
         />
       )}
 
-      {/* Soft Kate prompt for providers waiting on follow-up. Hidden
-          entirely while the walkthrough has any provider in its queue
-          — otherwise both surfaces target the same un-introduced
-          provider and we get the double-card bug Jenny saw on May 12.
-          Gate on profileLoaded so the first render doesn't flash a
-          stale "stuck" card before introducedIds has been fetched. */}
-      {data?.snapshots && profileLoaded && data.snapshots.every((s) => introducedIds.includes(s.provider.id)) && (
+      {/* Stuck-prompt — second priority. Renders only when walkthrough
+          has nothing left and at least one provider is in real follow-up
+          state. */}
+      {showStuck && data?.snapshots && (
         <StuckPrompt
           snapshots={data.snapshots}
           pausedProviders={pausedProviders}
@@ -341,10 +367,14 @@ function DashboardInner() {
           dismissal. */}
       <IntakeCTA />
 
-      {/* Kate's #1 Suggestion */}
-      <div style={{ marginBottom: 18 }} data-wizard="best-next-step">
-        <BestNextStep />
-      </div>
+      {/* Kate's #1 Suggestion — fallback Kate-suggestion slot. Only
+          renders when none of walkthrough / stuck / welcome are active,
+          so the dashboard always shows at most one suggestion card. */}
+      {showBestNextStep && (
+        <div style={{ marginBottom: 18 }} data-wizard="best-next-step">
+          <BestNextStep />
+        </div>
+      )}
 
       {/* Week strip */}
       <Link
@@ -550,8 +580,7 @@ function DashboardInner() {
             { href: "/visits", title: "Check your visits", desc: "Upcoming & past", icon: <CalendarIcon color={T.electric} /> },
             { href: "/coverage", title: "Review your coverage", desc: "EOBs & claims", icon: <DocumentIcon color={T.electric} size={18} /> },
             { href: "/caregivers", title: "Manage caregivers", desc: "People who help", icon: <UsersIcon color={T.electric} size={18} /> },
-            { href: "/insights", title: "See Kate's insights", desc: "Her read on your week", icon: <InsightsIcon color={T.electric} size={18} /> },
-            { href: "/goals", title: "Track your goals", desc: "Progress and follow-ups", icon: <SparkleIcon color={T.electric} size={18} /> },
+            { href: "/goals", title: "Kate's read + your goals", desc: "Her week notes and what to work on", icon: <SparkleIcon color={T.electric} size={18} /> },
           ].map((item) => (
             <GlassCard key={item.href} href={item.href} padding={14}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
