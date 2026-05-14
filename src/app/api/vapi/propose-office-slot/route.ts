@@ -162,6 +162,18 @@ function formatForSpeechFromIso(iso: string) {
   const d = new Date(iso);
   const tz = "America/New_York";
 
+  // Include the COMPUTED day-of-week so message_to_say surfaces it
+  // back to the receptionist. If the office asserted a wrong
+  // day-of-week (e.g. "Thursday the 27th" when May 27 is a
+  // Wednesday), reading "Wednesday, May 27th" back to them makes
+  // the mismatch obvious and gives both sides a chance to catch
+  // it. Without this, Kate parrots back whatever day-of-week she
+  // heard and the wrong day silently makes it into the calendar.
+  const weekday = d.toLocaleDateString("en-US", {
+    weekday: "long",
+    timeZone: tz,
+  });
+
   const month = d.toLocaleDateString("en-US", {
     month: "long",
     timeZone: tz,
@@ -182,7 +194,7 @@ function formatForSpeechFromIso(iso: string) {
     })
     .replace(":00 ", " ");
 
-  return `${month} ${ordinal(dayNum)} at ${time}`;
+  return `${weekday}, ${month} ${ordinal(dayNum)} at ${time}`;
 }
 
 // Normalize spoken time phrases ("three forty five PM", "two thirty", "noon")
