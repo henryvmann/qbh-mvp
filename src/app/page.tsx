@@ -215,7 +215,7 @@ function Hero() {
             }}
           >
             Kate is your AI care coordinator. She tracks your providers, books
-            your appointments, and follows up on the details — so you don&rsquo;t
+            your appointments, and follows up on the details. So you don’t
             have to.
           </p>
           <div
@@ -567,7 +567,7 @@ function PhoneMock() {
               Everything else is on track
             </div>
             <div style={{ fontSize: 11, color: T.lightMuted, marginTop: 1 }}>
-              You&rsquo;re doing great.
+              You’re doing great.
             </div>
           </div>
         </div>
@@ -659,15 +659,15 @@ function WhatWeDo() {
           <p style={{ margin: 0 }}>
             Quarterback Health helps patients and caregivers manage the invisible work of healthcare.
             One secure hub for providers, appointments, records, lab results, portal messages, and
-            next steps — for yourself and the people you care for.
+            next steps. For yourself and the people you care for.
           </p>
           <p style={{ margin: 0 }}>
             At the center is Kate, your AI care coordinator. She connects the dots across fragmented
-            care, surfaces what matters, and helps you understand your health as a whole person —
-            mind and body, not disconnected symptoms or siloed provider notes.
+            care, surfaces what matters, and helps you understand your health as a whole person.
+            Mind and body, not disconnected symptoms or siloed provider notes.
           </p>
           <p style={{ margin: 0 }}>
-            Built from the inside out by a therapist who knows what it&rsquo;s like to navigate this
+            Built from the inside out by a therapist who knows what it’s like to navigate this
             for a family. QBH helps people carry less of the mental load and stay ahead of their care
             with clarity, support, and control.
           </p>
@@ -686,19 +686,19 @@ function HowItWorks() {
     {
       num: "01",
       title: "Connect once.",
-      body: "Kate learns your care team from your booked appointments and copay history — no forms, no manual entry. She&rsquo;s working on day one.",
+      body: "Kate learns your care team from your booked appointments and copay history. No forms, no manual entry. She’s working on day one.",
       icon: <BankIcon color={T.electric} />,
     },
     {
       num: "02",
       title: "Kate handles it.",
-      body: "She calls offices, books appointments, chases prescriptions, confirms insurance. You approve the action — she does the work.",
+      body: "She calls offices, books appointments, chases prescriptions, confirms insurance. You approve the action. She does the work.",
       icon: <SparkleIcon color={T.electric} />,
     },
     {
       num: "03",
       title: "Stay on track.",
-      body: "Your dashboard shows what&rsquo;s done, what&rsquo;s next, and your care coordination score — so you always know what&rsquo;s coming up and what&rsquo;s already taken care of.",
+      body: "Your dashboard shows what’s done, what’s next, and your care coordination score. So you always know what’s coming up and what’s already taken care of.",
       icon: <ChartIcon color={T.electric} />,
     },
   ];
@@ -835,7 +835,7 @@ function TrustBand() {
     {
       icon: <StethoscopeIcon color={T.electric} />,
       title: "Therapist-founded.",
-      body: "Built by a clinician who&rsquo;s lived this — for herself and her family.",
+      body: "Built by a clinician who’s lived this. For herself and her family.",
     },
     {
       icon: <SparkleIcon color={T.electric} />,
@@ -920,7 +920,7 @@ function PrivacyStrip() {
     },
     {
       title: "Vendor agreements in place.",
-      body: "Every vendor handling your health data has signed a Business Associate Agreement — OpenAI, Anthropic, VAPI, Twilio, and AWS.",
+      body: "Every vendor handling your health data has signed a Business Associate Agreement: OpenAI, Anthropic, VAPI, Twilio, and AWS.",
     },
     {
       title: "Two-factor authentication.",
@@ -1064,7 +1064,7 @@ function Pricing() {
           }}
         >
           Try Kate with your real providers and appointments. No card required.
-          When you&rsquo;re ready, plans start at $24/mo.
+          When you’re ready, plans start at $24/mo.
         </p>
         <Link
           href="/onboarding"
