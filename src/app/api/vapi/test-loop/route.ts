@@ -591,8 +591,35 @@ export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  // If this is a cron trigger, start a test call
+  // If this is a cron trigger, start a test call.
   if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    // Soft cap: stop firing once the current "run" has produced
+    // TEST_RUN_CAP oracle rows. Counts oracle rows since the
+    // TEST_RUN_START_ISO env var (set when launching a fresh run).
+    // Without this gate, the */5 * * * * cron fires forever; with it
+    // we get a known-size batch then quiet.
+    const cap = parseInt(process.env.TEST_RUN_CAP || "50", 10);
+    const runStartIso = process.env.TEST_RUN_START_ISO;
+    if (runStartIso) {
+      try {
+        const { count } = await supabaseAdmin
+          .from("call_test_oracles")
+          .select("vapi_call_id", { count: "exact", head: true })
+          .gte("created_at", runStartIso);
+        if (typeof count === "number" && count >= cap) {
+          return NextResponse.json({
+            ok: true,
+            skipped: true,
+            reason: `cap reached (${count}/${cap})`,
+            cap,
+            since: runStartIso,
+          });
+        }
+      } catch (capErr) {
+        console.error("[test-loop cron cap] count failed:", capErr);
+      }
+    }
+
     // Reuse POST logic — call ourselves
     const baseUrl = process.env.QBH_BASE_URL || process.env.PUBLIC_BASE_URL || "https://getquarterback.com";
     try {
