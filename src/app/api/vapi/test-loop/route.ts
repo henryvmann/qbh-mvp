@@ -18,7 +18,19 @@ const REGRESSION_INTERVAL = 10;
  * fixed cycle — so we don't see the same combo five calls in a row.
  */
 
-const COMMON_END_RULE = `\nAfter saying goodbye, IMMEDIATELY call the endCall tool. Do not say another word. Do not respond to the caller's reply. The call is over.`;
+// endCall is gated on completing the scenario. Without the gate,
+// gpt-class models read "say goodbye → endCall" and bail at the
+// caller's intro before they ever run the scripted scenario, which
+// produces 3-line transcripts and useless test data.
+const COMMON_END_RULE = `\nENDING THE CALL — STRICT:
+You may ONLY call the endCall tool AFTER you have fully run the scenario above. Specifically:
+- You must hear and acknowledge who the patient is.
+- You must say what your scenario tells you to say (offer the slot, state the policy, surface the edge case, etc.) — that is the entire point of this call.
+- You must respond to the caller's reply at least once after your scenario line lands.
+
+Do NOT end the call after only the intro exchange. Do NOT say "goodbye" before the scenario has run. If the caller has only just introduced themselves, you have NOT yet earned the goodbye.
+
+Once the scenario IS resolved (either you booked, you stated the policy and the caller acknowledged, or it's truly nowhere to go), then say a brief goodbye and IMMEDIATELY call the endCall tool. Do not say another word.`;
 
 const COMMON_SLOTS = `\nAVAILABLE APPOINTMENTS (default — the EDGE CASE may override these):
 - Monday May 4 at 3:45 PM
@@ -355,21 +367,25 @@ function composePersona(
 If the caller asks for an alternative, say there's nothing else this week and re-offer the same slot. Do NOT silently change phrasing. The exact wording is the test.`
     : COMMON_SLOTS;
 
-  const prompt = `You are Sandra, a receptionist at a doctor's office. You answer calls to schedule appointments. You schedule for ANY doctor — when the caller mentions a provider name, just check availability.
+  const prompt = `You are Sandra, a receptionist at a doctor's office. You answer calls about appointments. You are NOT here to be helpful — you are here to play out a specific scenario realistically.
 
-${base.personality}
-${slotBlock}
-
-EDGE CASE FOR THIS CALL (this OVERRIDES the general flow whenever they conflict):
+THE SCENARIO YOU MUST RUN ON THIS CALL (this is the entire reason you're here):
 ${edgeCase.situation}
 
-GENERAL FLOW (only when the edge case doesn't say otherwise):
-- Ask if the patient is new or existing
-- Ask what the appointment is for
-- Offer the slot (above) using the exact wording
-- Confirm the booking
+You must actually say or do what the scenario instructs, regardless of how the caller behaves. If you skip the scenario, the call is wasted. Run the scenario before doing anything else conversational.
 
-YOUR JOB IS TO BE REALISTIC, not helpful. The edge case ALWAYS wins. If the edge case says "do not offer times", do NOT offer times — even if the conversation drags. Stay in character. The correct outcome is whatever the edge case dictates.
+${slotBlock}
+
+PERSONALITY (the voice you say it in — does NOT override what you say):
+${base.personality}
+
+CONVERSATION FLOW (after the scenario has been delivered):
+- Acknowledge who the patient is (ask if not given).
+- If the scenario calls for offering times: offer the slot above using the EXACT wording.
+- If the scenario calls for refusing / redirecting / a policy: state it clearly and let the caller respond.
+- Stay in character. The scenario wins over the general flow whenever they conflict.
+
+DO NOT abandon the scenario to be polite. DO NOT end the call immediately after the caller's intro. The scenario is the point.
 ${COMMON_END_RULE}`;
 
   return {
@@ -471,7 +487,10 @@ export async function POST() {
           firstMessage: persona.firstMessage,
           model: {
             provider: "openai",
-            model: "gpt-4o-mini",
+            // gpt-4o-mini was too literal — it would say "Goodbye" at
+            // the caller's intro because COMMON_END_RULE primed it to
+            // do so. gpt-4o follows the scenario-must-run gate.
+            model: "gpt-4o",
             messages: [{ role: "system", content: persona.prompt }],
           },
         }),
