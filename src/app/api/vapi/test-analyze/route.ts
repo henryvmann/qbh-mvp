@@ -92,7 +92,7 @@ export async function POST(req: Request) {
       const { data } = await supabaseAdmin
         .from("calendar_events")
         .select("start_at")
-        .eq("schedule_attempt_id", oracle.attempt_id)
+        .eq("attempt_id", Number(oracle.attempt_id))
         .eq("status", "confirmed")
         .order("created_at", { ascending: false })
         .limit(1)
