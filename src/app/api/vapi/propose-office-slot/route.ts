@@ -218,10 +218,16 @@ function normalizeTimeWords(text: string): string {
   ];
 
   // "<hour-word> <minute-phrase> [am|pm]" → "H:MM AM/PM"
+  // Note: the trailing AM/PM group requires an explicit \s+ so we don't
+  // eat the whitespace before "in" / "this" / "today" etc. The old
+  // form (\s*(am|pm)?\b) consumed the space and produced strings like
+  // "2:30in the afternoon", which then made the downstream time regex
+  // unable to find a \b between "30" and "in" — so it matched only
+  // "2" and dropped the minutes. Caroline-Andrew-family bug.
   for (const [hw, hd] of Object.entries(hourWords)) {
     for (const [mw, md] of compoundMinutes) {
       const re = new RegExp(
-        `\\b${hw}\\s+${mw}\\s*(a\\.?m\\.?|p\\.?m\\.?)?\\b`,
+        `\\b${hw}\\s+${mw}(?:\\s+(a\\.?m\\.?|p\\.?m\\.?))?\\b`,
         "gi",
       );
       s = s.replace(re, (_full, ap) => `${hd}:${md}${ap ? ` ${ap}` : ""}`);
