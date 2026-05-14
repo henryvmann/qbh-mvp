@@ -110,16 +110,35 @@ export async function POST(req: Request) {
     return new Date(a).toISOString().slice(0, 10) ===
       new Date(b).toISOString().slice(0, 10);
   }
+  // For "refusal" patterns, the IDEAL outcome is that Kate does NOT
+  // book. So "no booking landed" is a PASS, not a fail. Patterns where
+  // Kate should push back (past date, wrong-day-of-week assertion) are
+  // listed here; everything else expects a matching booking.
+  const REFUSAL_PATTERNS = new Set(["passed_date", "dow_dom_mismatch"]);
+  const expectsRefusal = oracle?.date_pattern
+    ? REFUSAL_PATTERNS.has(oracle.date_pattern)
+    : false;
+
   const dateAccuracyComputed: { pass: boolean; note: string } | null = oracle
-    ? bookedIso
-      ? {
-          pass: sameDay(bookedIso, oracle.intended_iso),
-          note: `Intended: ${oracle.intended_iso?.slice(0, 10) ?? "?"} | Booked: ${bookedIso.slice(0, 10)} | Phrase: "${oracle.intended_phrase ?? ""}"`,
-        }
-      : {
-          pass: false,
-          note: `No confirmed booking landed; intended ${oracle.intended_iso?.slice(0, 10) ?? "?"} from phrase "${oracle.intended_phrase ?? ""}". Either Kate didn't book, or the booking didn't reach calendar_events.`,
-        }
+    ? expectsRefusal
+      ? bookedIso
+        ? {
+            pass: false,
+            note: `Refusal scenario "${oracle.date_pattern}" — Kate should have pushed back, but a booking landed at ${bookedIso.slice(0, 10)}. Phrase: "${oracle.intended_phrase ?? ""}"`,
+          }
+        : {
+            pass: true,
+            note: `Refusal scenario "${oracle.date_pattern}" — Kate correctly declined to book. Phrase: "${oracle.intended_phrase ?? ""}"`,
+          }
+      : bookedIso
+        ? {
+            pass: sameDay(bookedIso, oracle.intended_iso),
+            note: `Intended: ${oracle.intended_iso?.slice(0, 10) ?? "?"} | Booked: ${bookedIso.slice(0, 10)} | Phrase: "${oracle.intended_phrase ?? ""}"`,
+          }
+        : {
+            pass: false,
+            note: `No confirmed booking landed; intended ${oracle.intended_iso?.slice(0, 10) ?? "?"} from phrase "${oracle.intended_phrase ?? ""}". Either Kate didn't book, or the booking didn't reach calendar_events.`,
+          }
     : null;
 
   try {

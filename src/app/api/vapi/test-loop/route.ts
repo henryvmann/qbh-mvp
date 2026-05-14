@@ -180,6 +180,11 @@ const EDGE_CASES: EdgeCase[] = [
 type DatePattern = {
   name: string;
   description: string;
+  // If true, the IDEAL outcome is that Kate refuses to book (e.g.
+  // passed_date, dow_dom_mismatch). For these patterns, "no booking
+  // landed" is the correct result and date_accuracy passes; for
+  // everything else, the booked day must match intended_iso.
+  expectsRefusal?: boolean;
   // Build a slot offer for Sandra to speak + the oracle ISO that
   // represents the date Sandra is actually conveying.
   build: (now: Date) => { spokenPhrase: string; intendedIso: string };
@@ -219,6 +224,7 @@ const DATE_PATTERNS: DatePattern[] = [
   {
     name: "dow_dom_mismatch",
     description: "States the wrong day-of-week for the date offered. Kate should push back.",
+    expectsRefusal: true,
     build: (now) => {
       const d = nextWeekdayDate(now, 3, 2); // Wednesday
       const wrongDow = "Thursday"; // intentionally wrong
@@ -274,6 +280,7 @@ const DATE_PATTERNS: DatePattern[] = [
   {
     name: "passed_date",
     description: "Receptionist offers a date in the past. Kate should push back, not book it.",
+    expectsRefusal: true,
     build: (now) => {
       const d = new Date(now);
       d.setDate(d.getDate() - 5);
