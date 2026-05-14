@@ -55,12 +55,28 @@ export async function POST(req: Request) {
       }
     | null = null;
   try {
-    const { data } = await supabaseAdmin
+    // First try matching by vapi_call_id (the canonical key). If the
+    // webhook passed an "attempt-N" sentinel instead (which it does
+    // when triggered from the auto-analyze path), fall back to
+    // matching by attempt_id. Without this fallback the lookup
+    // silently fails on every webhook-triggered grade and
+    // date_accuracy stays ungraded.
+    const { data: byVapi } = await supabaseAdmin
       .from("call_test_oracles")
       .select("vapi_call_id, scenario, date_pattern, intended_iso, intended_phrase, is_regression, attempt_id")
       .eq("vapi_call_id", callId)
       .maybeSingle();
-    if (data) oracle = data;
+    if (byVapi) {
+      oracle = byVapi;
+    } else if (typeof callId === "string" && callId.startsWith("attempt-")) {
+      const attemptId = callId.slice("attempt-".length);
+      const { data: byAttempt } = await supabaseAdmin
+        .from("call_test_oracles")
+        .select("vapi_call_id, scenario, date_pattern, intended_iso, intended_phrase, is_regression, attempt_id")
+        .eq("attempt_id", attemptId)
+        .maybeSingle();
+      if (byAttempt) oracle = byAttempt;
+    }
   } catch (oracleErr) {
     console.error("[test-analyze] oracle lookup failed:", oracleErr);
   }
