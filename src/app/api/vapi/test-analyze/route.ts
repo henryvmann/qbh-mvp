@@ -119,8 +119,47 @@ export async function POST(req: Request) {
     ? REFUSAL_PATTERNS.has(oracle.date_pattern)
     : false;
 
-  const dateAccuracyComputed: { pass: boolean; note: string } | null = oracle
-    ? expectsRefusal
+  // Did Sandra actually speak the scripted date phrase? Edge cases
+  // (frustrated_repeat_caller, outstanding_balance, wrong_specialty,
+  // walk_in_only, restricted_slots, etc.) frequently override the
+  // date pattern entirely — Sandra runs the edge case instead of
+  // offering the scripted slot, so the date pattern never gets
+  // tested. We detect this by scanning the transcript for fragments
+  // of the intended phrase. If none appear, the date pattern didn't
+  // run and date_accuracy is N/A (skip the deterministic check;
+  // grade behavior only).
+  function patternRanInTranscript(): boolean {
+    if (!oracle?.intended_iso || !transcript) return false;
+    const d = new Date(oracle.intended_iso);
+    if (Number.isNaN(d.getTime())) return false;
+    const dayNum = d.getDate();
+    const month = d.toLocaleString("en-US", { month: "long", timeZone: "America/New_York" });
+    const shortMonth = d.toLocaleString("en-US", { month: "short", timeZone: "America/New_York" });
+    const ordinalWords = ["", "first","second","third","fourth","fifth","sixth","seventh","eighth","ninth","tenth","eleventh","twelfth","thirteenth","fourteenth","fifteenth","sixteenth","seventeenth","eighteenth","nineteenth","twentieth","twenty[- ]?first","twenty[- ]?second","twenty[- ]?third","twenty[- ]?fourth","twenty[- ]?fifth","twenty[- ]?sixth","twenty[- ]?seventh","twenty[- ]?eighth","twenty[- ]?ninth","thirtieth","thirty[- ]?first"];
+    const anchors: string[] = [
+      `\\b${dayNum}(st|nd|rd|th)?\\b`,
+      `\\b${month}\\b`,
+      `\\b${shortMonth}\\b`,
+    ];
+    if (ordinalWords[dayNum]) anchors.push(`\\b${ordinalWords[dayNum]}\\b`);
+    // For passed_date the receptionist says "last [weekday]" — check
+    // for that phrase pattern as anchor.
+    const weekday = d.toLocaleString("en-US", { weekday: "long", timeZone: "America/New_York" });
+    anchors.push(`\\blast\\s+${weekday}\\b`);
+    anchors.push(`\\b${weekday}\\b`);
+    const re = new RegExp(anchors.join("|"), "i");
+    return re.test(transcript);
+  }
+  const patternRan = patternRanInTranscript();
+
+  const dateAccuracyComputed: { pass: boolean; note: string; na?: boolean } | null = oracle
+    ? !patternRan
+      ? {
+          pass: true, // N/A — don't hard-fail Kate when the harness didn't actually test the date pattern
+          na: true,
+          note: `N/A — Sandra's edge case overrode the date pattern. Intended phrase "${oracle.intended_phrase ?? ""}" did not appear in the transcript, so the ${oracle.date_pattern} test did not run on this call. Behavior graded by rubric only.`,
+        }
+      : expectsRefusal
       ? bookedIso
         ? {
             pass: false,
@@ -258,6 +297,7 @@ ${transcript}`
       analysisData.rubric.date_accuracy = {
         pass: dateAccuracyComputed.pass,
         note: dateAccuracyComputed.note,
+        ...(dateAccuracyComputed.na ? { na: true } : {}),
       };
       if (!dateAccuracyComputed.pass) {
         analysisData.pass = false;
