@@ -4,7 +4,7 @@
  * Public landing — Quarterback Health.
  *
  * v5 brand language: cream background, Quarterback Health wordmark
- * (Fraunces serif, electric-blue "Health"), Inter for body, glass
+ * (Lora serif, electric-blue "Health"), Inter for body, glass
  * surfaces. Sections: nav, hero with phone mock, how it works, trust
  * pillars, pricing teaser, footer. Authed visitors get redirected
  * straight to /dashboard.
@@ -17,11 +17,11 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Inter, Fraunces } from "next/font/google";
+import { Inter, Lora } from "next/font/google";
 import { createClient } from "../lib/supabase/client";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
-const austin = Fraunces({ subsets: ["latin"], weight: ["400", "500", "600"] });
+const austin = Lora({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 const T = {
   navy: "#061225",

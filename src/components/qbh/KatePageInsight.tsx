@@ -106,17 +106,11 @@ export default function KatePageInsight() {
   useEffect(() => {
     if (pathname === "/dashboard") return;
 
-    // Set a fallback immediately while data loads
-    const fallbacks: Record<string, string> = {
-      "/providers": "Manage your care team and keep your providers up to date.",
-      "/visits": "Track your appointments and stay on top of your care.",
-      "/timeline": "Your health story — past visits, upcoming appointments, and connections.",
-      "/goals": "Set goals and let Kate help you track your progress.",
-      "/account": "Keep your profile up to date for the best experience.",
-      "/calendar-view": "Your health calendar — see what's coming up.",
-    };
-    const fallback = fallbacks[pathname];
-    setInsight(fallback ? { text: fallback } : null);
+    // No fallback copy — the per-page subtitle already tells the user
+    // what the page is about. The Kate-card only renders when we have
+    // a *real* generated insight, otherwise it reads as an orphan card
+    // restating the page title.
+    setInsight(null);
 
     Promise.all([
       apiFetch("/api/dashboard/data").then((r) => r.json()).catch(() => null),

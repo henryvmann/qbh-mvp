@@ -57,6 +57,12 @@ export function normalizeProviderName(name: string): NormalizedName {
     cleaned = cleaned.replace(/\b\w+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
   }
 
+  // Strip any trailing punctuation (commas/periods/spaces) left behind
+  // after credential extraction. Without this, a source name like
+  // "Karen J. Leiser, MD" strips to "Karen J. Leiser," and the append
+  // below produces "Karen J. Leiser,, MD".
+  cleaned = cleaned.replace(/[,\s.]+$/, "");
+
   if (credentials.length > 0) {
     cleaned = `${cleaned}, ${credentials.join(", ")}`;
   }

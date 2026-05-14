@@ -442,7 +442,7 @@ function DashboardInner() {
           <StatTile
             href="/visits"
             value={overdueCount}
-            label="To schedule"
+            label="Overdue"
             color={T.red}
           />
         )}
@@ -646,6 +646,7 @@ function StatTile({
               textTransform: "uppercase",
               color: T.lightMuted,
               marginTop: 8,
+              whiteSpace: "nowrap",
             }}
           >
             {label}

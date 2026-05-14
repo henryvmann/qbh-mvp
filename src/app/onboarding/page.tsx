@@ -273,11 +273,14 @@ export default function OnboardingPage() {
     localStorage.setItem("qbh_user_id", userId);
   }, [userId]);
 
-  // T3-4: if the visitor already has an authenticated session, they
-  // already created their account — don't restart the intro. Send them
-  // to the dashboard instead. (Common case: user creates account, mid-
-  // Plaid the page freezes, they refresh, and end up looking at the
-  // welcome screen they just completed.)
+  // Mount-time resume:
+  //   • If we have a saved phase from a prior session, restore it so a
+  //     refresh mid-onboarding picks up where the user left off (and
+  //     doesn't reset them to the welcome screen).
+  //   • Else if the user already has an authenticated session and no
+  //     saved phase, they completed onboarding before — send them to
+  //     the dashboard.
+  //   • Else: brand-new visitor, start from intro.
   useEffect(() => {
     if (typeof window === "undefined") return;
     // Honor the Google-Calendar return path — that effect runs separately
@@ -288,10 +291,30 @@ export default function OnboardingPage() {
     let cancelled = false;
     (async () => {
       try {
+        const savedPhase = localStorage.getItem("qbh_onboarding_phase");
+        const savedFlags = localStorage.getItem("qbh_onboarding_flags");
         const supabase = createClient();
         const { data } = await supabase.auth.getSession();
         if (cancelled) return;
-        if (data?.session?.user) {
+        const hasSession = !!data?.session?.user;
+
+        if (savedPhase && savedPhase !== "intro") {
+          // Restore discovery choice flags first so advanceAfter routes
+          // correctly when the user re-enters mid-flow.
+          if (savedFlags) {
+            try {
+              const f = JSON.parse(savedFlags) as {
+                bank?: boolean; calendar?: boolean; manual?: boolean;
+              };
+              if (typeof f.bank === "boolean") setConnectBank(f.bank);
+              if (typeof f.calendar === "boolean") setConnectCalendar(f.calendar);
+              if (typeof f.manual === "boolean") setConnectManual(f.manual);
+            } catch {}
+          }
+          setPhase(savedPhase);
+          return;
+        }
+        if (hasSession) {
           router.replace("/dashboard");
         }
       } catch {
@@ -304,6 +327,20 @@ export default function OnboardingPage() {
   // Run once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Persist phase + discovery flags so a refresh can resume.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (phase === "intro") return;
+    localStorage.setItem("qbh_onboarding_phase", phase);
+  }, [phase]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(
+      "qbh_onboarding_flags",
+      JSON.stringify({ bank: connectBank, calendar: connectCalendar, manual: connectManual })
+    );
+  }, [connectBank, connectCalendar, connectManual]);
 
   // Resume after Google Calendar OAuth round-trip. The callback redirects to
   // /onboarding?calendar_connected=1 when the user came in via the onboarding
@@ -409,15 +446,15 @@ export default function OnboardingPage() {
     // streamed into the chat like every other message so there's no
     // out-of-flow component to flicker on transition.
     const valueProps: React.ReactNode[] = [
-      <><strong>I&rsquo;ll find your doctors.</strong> I scan your co-pays so every name and date lives in one place.</>,
-      <><strong>I&rsquo;ll book your appointments.</strong> I call the office and schedule. You don&rsquo;t pick up the phone.</>,
-      <><strong>I&rsquo;ll connect the dots.</strong> I track what&rsquo;s pending, prep you before visits, and follow up after.</>,
+      <><strong>I&rsquo;ll find your doctors.</strong> I scan your co-pays and calendar. Just like that, every doctor, every appointment, every piece of your healthcare lives in one place for the first time ever.</>,
+      <><strong>I&rsquo;ll book your appointments.</strong> I call the office and schedule. You don&rsquo;t have to pick up the phone.</>,
+      <><strong>I&rsquo;ll connect the dots.</strong> I track what&rsquo;s pending, prep you before visits, and follow up after. I make you the expert of your own care. Past, present, and future.</>,
     ];
     if (value === "simple") {
       addUserMessage("A few doctors, mostly simple");
       setTimeout(() => {
         addKateMessages([
-          "Got it. I'll keep things light \u2014 handle booking calls, surface what's pending, stay out of the way otherwise.",
+          "Even a short list adds up \u2014 calls, cadence, follow-ups, prep before visits. Let me carry it. You get the headspace back.",
           "Here's how it works:",
           ...valueProps,
         ]);
@@ -475,7 +512,7 @@ export default function OnboardingPage() {
       pregnancy: "Pregnancy",
       caregiving: "Caregiving",
       other_now: customText?.trim() || "Something else",
-      other_later: "Something else \u2014 I'll share when I'm ready",
+      other_later: "Something else. I'll share when I'm ready.",
     };
     addUserMessage(labels[value] ?? value);
     // Persist the typed text on "other_now" so Kate has it to work
@@ -589,8 +626,26 @@ export default function OnboardingPage() {
     if (connectCalendar) selected.push("calendar");
     if (connectManual) selected.push("manual");
     addUserMessage(selected.join(" + ") || "none");
+
+    // Speak to what the user actually picked. If they opted into bank
+    // and/or calendar, name those sources so the "set up your account"
+    // step has obvious context. If they only picked manual (or nothing),
+    // skip the source-naming and frame the pause as setup.
+    const sources: string[] = [];
+    if (connectBank) sources.push("bank");
+    if (connectCalendar) sources.push("calendar");
+    const sourcePhrase =
+      sources.length === 0
+        ? null
+        : sources.length === 1
+          ? `your ${sources[0]}`
+          : `your ${sources[0]} and ${sources[1]}`;
+    const intro = sourcePhrase
+      ? `Before we scan ${sourcePhrase}, let's set up your account so I can save everything to your hub.`
+      : `Before we get started, let's set up your account so I can save everything to your hub.`;
+
     setTimeout(() => {
-      addKateMessage("Last thing \u2014 let's set up your account so I can save everything.");
+      addKateMessage(intro);
       setTimeout(() => setPhase("account-create"), 1200);
     }, 400);
   }
@@ -605,7 +660,15 @@ export default function OnboardingPage() {
   // flagged review_needed) need user confirmation before they hit the
   // dashboard. advanceAfter is the raw helper used by the manual/skip paths.
 async function advanceWithReview(completed: "bank" | "calendar", foundCount: number = 0, silentOnEmpty: boolean = false): Promise<void> {
-    const next = advanceAfter(completed);
+    let next = advanceAfter(completed);
+    // If discovery turned up nothing AND manual wasn't queued, force
+    // the user into manual-search so they can seed their team. Without
+    // this, Kate tells them "type a doctor's name in the next step"
+    // and then drops them straight onto score-reveal with no input.
+    if (foundCount === 0 && next === "score-reveal" && !silentOnEmpty) {
+      setConnectManual(true);
+      next = "manual-search";
+    }
     // Only interject review-team if discovery is done (we're heading to manual
     // or score). Skip if next is another discovery step (e.g., calendar still
     // pending after bank).
@@ -646,8 +709,8 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
         if (foundCount === 0 && !silentOnEmpty) {
           addKateMessage(
             completed === "bank"
-              ? "Quiet scan — your card statements didn't surface any providers. Sometimes copays come from a different card or insurance covers everything. Type a doctor's name in the next step and I'll build from there."
-              : "Quiet scan — your calendar didn't surface any providers. Could be your visits aren't on this calendar. Type a doctor's name in the next step and I'll build from there."
+              ? "Quiet scan. Your card statements didn't surface any providers. Sometimes copays come from a different card or insurance covers everything. Type a doctor's name in the next step and I'll build from there."
+              : "Quiet scan. Your calendar didn't surface any providers. Could be your visits aren't on this calendar. Type a doctor's name in the next step and I'll build from there."
           );
           await new Promise((r) => setTimeout(r, 800));
         }
@@ -762,7 +825,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
       const supabase = createClient();
       await supabase.auth.signInWithPassword({ email: email.trim(), password });
 
-      addSystemMessage("Account created — welcome aboard.");
+      addSystemMessage("Account created. Welcome aboard.");
 
       // Sequenced pipeline: bank → calendar → manual → score, executed
       // only for the steps the user opted into on the discovery-method screen.
@@ -788,7 +851,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
               ]
           : next === "calendar-connect"
           ? [
-              "Now let's peek at your calendar — I'll grab any doctor visits past or present and add them to your timeline.",
+              "Now let's peek at your calendar. I'll grab any doctor visits past or present and add them to your timeline.",
               "Google or Outlook, both work. Read-only, only events that look healthcare-related. I never touch the rest of your calendar.",
             ]
           : next === "manual-search"
@@ -1227,6 +1290,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
     lastName.trim().length > 0 &&
     email.trim().length > 0 &&
     password.length >= 6 &&
+    patientDob.trim().length > 0 &&
     consentGiven &&
     !isUnder18 &&
     !creatingAccount &&
@@ -1324,7 +1388,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                 key={opt.value}
                 onClick={() => {
                   if (opt.value === "other") {
-                    setOtherSubStep("ask");
+                    setOtherSubStep("input");
                   } else {
                     handleMedicalContext(opt.value);
                   }
@@ -1342,51 +1406,21 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
           </div>
         )}
 
-        {/* "Something else" sub-flow: ask whether to share now or later.
-            Tapping Now reveals a text input so the user can answer in
-            the same screen instead of being deferred to a future moment
-            they may never return to. */}
-        {phase === "medical-context" && !responded && otherSubStep === "ask" && (
-          <div className="flex flex-wrap gap-2 justify-end animate-fadeIn">
-            <button
-              onClick={() => setOtherSubStep("input")}
-              className="rounded-xl px-4 py-2.5 text-sm font-medium text-white transition active:scale-[0.98]"
-              style={{ backgroundColor: "#1677FF", border: "1px solid #1677FF" }}
-            >
-              I&rsquo;ll tell you now
-            </button>
-            <button
-              onClick={() => handleMedicalContext("other_later")}
-              className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
-              style={{
-                backgroundColor: "white",
-                border: "1px solid #E5EAF2",
-                color: "#4F5F73",
-              }}
-            >
-              Share when I&rsquo;m ready
-            </button>
-          </div>
-        )}
-
+        {/* "Something else" sub-flow: the input box opens directly so
+            the user can answer in the moment. "Share when I'm ready"
+            sits below as a secondary out, so deferring stays available
+            without forcing a two-step intermediate screen. */}
         {phase === "medical-context" && !responded && otherSubStep === "input" && (
           <div className="space-y-2 animate-fadeIn">
             <textarea
               autoFocus
               value={otherText}
               onChange={(e) => setOtherText(e.target.value)}
-              placeholder="Whatever&rsquo;s on your mind — a few words is plenty."
+              placeholder="Whatever&rsquo;s on your mind. A few words is plenty."
               rows={3}
               className="w-full rounded-xl border border-[#E5EAF2] bg-white px-3 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
             />
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => { setOtherSubStep("ask"); setOtherText(""); }}
-                className="rounded-xl px-3 py-2 text-xs font-medium text-[#4F5F73]"
-              >
-                Back
-              </button>
+            <div className="flex justify-end">
               <button
                 type="button"
                 disabled={!otherText.trim()}
@@ -1395,6 +1429,15 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                 style={{ backgroundColor: "#1677FF" }}
               >
                 Send
+              </button>
+            </div>
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => { setOtherText(""); handleMedicalContext("other_later"); }}
+                className="text-xs font-medium text-[#4F5F73] underline underline-offset-2 hover:text-[#071832]"
+              >
+                I&rsquo;ll share when I&rsquo;m ready
               </button>
             </div>
           </div>
@@ -1407,18 +1450,13 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
             actually changes — the tone selection is plumbed into
             Kate's chat system prompt so picking one isn't decorative. */}
         {phase === "kate-prefs" && !responded && (() => {
-          const TONE_OPTS = [
-            { v: "warm", label: "Warm but professional", desc: "Friendly but focused. Like a helpful friend who knows healthcare." },
-            { v: "casual", label: "Casual", desc: "Relaxed and conversational. Contractions, light tone, easy to talk to." },
-            { v: "professional", label: "Direct, get to the point", desc: "Brief and structured. No fluff — just what you need." },
-          ] as const;
           const PROACTIVITY_OPTS = [
-            { v: "proactive", label: "Push me", desc: "Multiple notifications. I'll surface anything I notice — care gaps, overdue visits, follow-ups." },
+            { v: "proactive", label: "Push me", desc: "Multiple notifications. I'll surface anything I notice: care gaps, overdue visits, follow-ups." },
             { v: "balanced", label: "Mention it once", desc: "I'll surface things once on your dashboard and leave them there for you." },
             { v: "minimal", label: "Only when it's time-sensitive", desc: "I'll stay quiet unless something really can't wait." },
           ] as const;
           const CALENDAR_OPTS = [
-            { v: "flexible", label: "Flexible", desc: "Book what works — Kate decides based on availability." },
+            { v: "flexible", label: "Flexible", desc: "Book what works. Kate decides based on availability." },
             { v: "balanced", label: "Don't double-book me unless it's more than a month out", desc: "Kate avoids conflicts for anything in the next month." },
             { v: "strict", label: "Don't book over anything in my calendar", desc: "Kate treats your calendar as set in stone." },
           ] as const;
@@ -1449,14 +1487,16 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
 
           return (
             <div className="space-y-4 animate-fadeIn">
-              {/* Tone */}
+              {/* Calendar booking — primary preference. The user's
+                  calendar is the most concrete constraint Kate
+                  operates against, so we ask about it first. */}
               <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
-                  How should I talk to you?
+                  Generally, how should I book your appointments?
                 </div>
                 <div className="space-y-1.5">
-                  {TONE_OPTS.map((opt) =>
-                    renderOptionCard(opt, kateTone === opt.v, () => setKateTone(opt.v))
+                  {CALENDAR_OPTS.map((opt) =>
+                    renderOptionCard(opt, calendarFlex === opt.v, () => setCalendarFlex(opt.v))
                   )}
                 </div>
               </div>
@@ -1469,21 +1509,6 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                 <div className="space-y-1.5">
                   {PROACTIVITY_OPTS.map((opt) =>
                     renderOptionCard(opt, kateProactivity === opt.v, () => setKateProactivity(opt.v))
-                  )}
-                </div>
-              </div>
-
-              {/* Calendar — framed as a booking-preference question, not
-                  a "strictness" rating. At this point in onboarding the
-                  user doesn't yet know how booking works, so the framing
-                  needs to be neutral. */}
-              <div className="rounded-xl bg-white border border-[#E5EAF2] p-3 space-y-2">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-[#4F5F73]">
-                  Generally, how should I book your appointments?
-                </div>
-                <div className="space-y-1.5">
-                  {CALENDAR_OPTS.map((opt) =>
-                    renderOptionCard(opt, calendarFlex === opt.v, () => setCalendarFlex(opt.v))
                   )}
                 </div>
               </div>
@@ -1709,8 +1734,8 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Date of birth</label>
-                <input type="date" value={patientDob} onChange={(e) => setPatientDob(e.target.value)} className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" style={isUnder18 ? { borderColor: "#E53E3E" } : {}} />
+                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Date of birth <span className="text-red-500">*</span></label>
+                <input type="date" value={patientDob} onChange={(e) => setPatientDob(e.target.value)} required className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" style={isUnder18 ? { borderColor: "#E53E3E" } : {}} />
                 {isUnder18 && <p className="mt-1 text-[10px] text-red-500">Must be 18 or older.</p>}
               </div>
               <div>
@@ -1798,6 +1823,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                   placeholder="(555) 123-4567"
                   className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
                 />
+                <p className="mt-1 text-[10px] text-[#4F5F73]">So the office can call you back if need be.</p>
               </div>
               <div>
                 <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Zip code <span className="text-red-500">*</span></label>
@@ -1846,9 +1872,22 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
             each connect step still triggers its own flow. */}
         {(phase === "plaid-connect" || phase === "calendar-connect") && !responded && (() => {
           const onPlaid = () => openPlaidLink();
-          const onCalendar = async () => {
+          const onGoogleCalendar = async () => {
             try {
               const res = await apiFetch("/api/google-calendar/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ app_user_id: userId, return_to: "onboarding" }),
+              });
+              const data = await res.json();
+              if (data?.ok && data?.authorize_url) {
+                window.location.href = data.authorize_url;
+              }
+            } catch {}
+          };
+          const onOutlookCalendar = async () => {
+            try {
+              const res = await apiFetch("/api/outlook-calendar/connect", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ app_user_id: userId, return_to: "onboarding" }),
@@ -1961,14 +2000,37 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                 nextHint: "Up next after calendar",
                 onClick: onPlaid,
               })}
-              {renderTile({
-                status: calendarStatus,
-                label: "Connect Google Calendar",
-                doneLabel: "Calendar connected",
-                skippedLabel: "Calendar skipped",
-                nextHint: "Up next after bank",
-                onClick: onCalendar,
-              })}
+              {calendarStatus === "active" ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={onGoogleCalendar}
+                    className="rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                    style={{ backgroundColor: ACCENT }}
+                  >
+                    Connect Google
+                  </button>
+                  <button
+                    onClick={onOutlookCalendar}
+                    className="rounded-xl px-4 py-3 text-sm font-semibold"
+                    style={{
+                      backgroundColor: "white",
+                      border: `1px solid ${ACCENT}`,
+                      color: ACCENT,
+                    }}
+                  >
+                    Connect Outlook
+                  </button>
+                </div>
+              ) : (
+                renderTile({
+                  status: calendarStatus,
+                  label: "Connect your calendar",
+                  doneLabel: "Calendar connected",
+                  skippedLabel: "Calendar skipped",
+                  nextHint: "Up next after bank",
+                  onClick: onGoogleCalendar,
+                })
+              )}
               <button
                 onClick={handleSkip}
                 className="w-full text-center text-xs text-[#4F5F73] hover:text-[#4F5F73] pt-1"
@@ -2052,7 +2114,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
             yields ambiguous rows; transitions to postReviewPhase on done. */}
         {phase === "review-team" && !responded && (
           <div className="animate-fadeIn space-y-3">
-            <KateBubble>I picked up a few I wasn't sure about — care for you, or just somewhere you shop?</KateBubble>
+            <KateBubble>I picked up a few I wasn&rsquo;t sure about. Are the below healthcare related, or just somewhere you shop?</KateBubble>
             <div className="space-y-2">
               {ambiguousProviders.map((p) => {
                 const isPharmacy = p.provider_type === "pharmacy";
@@ -2083,7 +2145,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                         className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
                         style={{ backgroundColor: ACCENT, color: "white" }}
                       >
-                        Keep
+                        Health
                       </button>
                       <button
                         disabled={reviewActioning === p.id}
@@ -2100,24 +2162,29 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                         }}
                         className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-[#E5EAF2] text-[#4F5F73] hover:bg-[#F0F2F5] disabled:opacity-50"
                       >
-                        Drop
+                        Shop
                       </button>
                     </div>
                   </div>
                 );
               })}
             </div>
-            <button
-              onClick={() => {
-                addKateMessage("Got it — moving on.");
-                setTimeout(() => setPhase(postReviewPhase), 600);
-              }}
-              className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
-              style={{ backgroundColor: ACCENT }}
-              disabled={ambiguousProviders.length > 0}
-            >
-              {ambiguousProviders.length > 0 ? `${ambiguousProviders.length} more to review` : "Done"}
-            </button>
+            {ambiguousProviders.length > 0 ? (
+              <p className="text-center text-xs text-[#4F5F73] pt-1">
+                {ambiguousProviders.length} more to review
+              </p>
+            ) : (
+              <button
+                onClick={() => {
+                  addKateMessage("Got it. Moving on.");
+                  setTimeout(() => setPhase(postReviewPhase), 600);
+                }}
+                className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                style={{ backgroundColor: ACCENT }}
+              >
+                Done
+              </button>
+            )}
           </div>
         )}
 
@@ -2205,8 +2272,16 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                           disabled={isAdded || manualAdding === key}
                           onClick={async () => {
                             setManualAdding(key);
+                            // Mark added + clear the search optimistically so
+                            // the input is empty before the network call
+                            // returns. The user shouldn't have to wait for
+                            // the API to type the next name.
+                            setManualAdded((prev) => new Set([...prev, key]));
+                            setManualSearchQuery("");
+                            setManualSearchResults([]);
+                            setTimeout(() => manualSearchInputRef.current?.focus(), 0);
                             try {
-                              const res = await apiFetch("/api/providers/add-manual", {
+                              await apiFetch("/api/providers/add-manual", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
@@ -2217,19 +2292,6 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                                   npi: r.npi,
                                 }),
                               });
-                              const data = await res.json();
-                              if (data?.ok) {
-                                setManualAdded((prev) => new Set([...prev, key]));
-                                // Clear the search input so the user can type
-                                // the next name without backspacing the old
-                                // one — Jenny's "search needs help" complaint
-                                // in the May 11 review. Effect at line ~1120
-                                // also clears manualSearchResults when the
-                                // query goes empty. Re-focus the input so the
-                                // keyboard stays open for back-to-back adds.
-                                setManualSearchQuery("");
-                                setTimeout(() => manualSearchInputRef.current?.focus(), 0);
-                              }
                             } finally {
                               setManualAdding(null);
                             }
@@ -2374,7 +2436,15 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                 </KateBubble>
               </div>
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => {
+                  // Onboarding's done — clear the resume markers so a
+                  // future visit to /onboarding doesn't restore mid-flow.
+                  try {
+                    localStorage.removeItem("qbh_onboarding_phase");
+                    localStorage.removeItem("qbh_onboarding_flags");
+                  } catch {}
+                  router.push("/dashboard");
+                }}
                 className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
                 style={{ backgroundColor: ACCENT }}
               >

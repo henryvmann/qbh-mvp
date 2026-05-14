@@ -3,11 +3,11 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Inter, Fraunces } from "next/font/google";
+import { Inter, Lora } from "next/font/google";
 import { createClient } from "../../lib/supabase/client";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
-const austin = Fraunces({ subsets: ["latin"], weight: ["400", "500", "600"] });
+const austin = Lora({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 const T = {
   electric: "#1677FF",

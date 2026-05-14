@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { apiFetch } from "../../lib/api";
 import BrandShell from "../../components/brand/BrandShell";
 import { GlassCard } from "../../components/brand/cards";
@@ -390,8 +391,19 @@ function Bubble({ role, children }: { role: "user" | "assistant"; children: Reac
       style={{
         display: "flex",
         justifyContent: isUser ? "flex-end" : "flex-start",
+        alignItems: "flex-end",
+        gap: 8,
       }}
     >
+      {!isUser && (
+        <Image
+          src="/kate-avatar.png"
+          alt="Kate"
+          width={28}
+          height={28}
+          style={{ borderRadius: "50%", flexShrink: 0 }}
+        />
+      )}
       <div
         style={{
           maxWidth: "84%",
@@ -417,7 +429,14 @@ function Bubble({ role, children }: { role: "user" | "assistant"; children: Reac
 
 function TypingIndicator() {
   return (
-    <div style={{ display: "flex", justifyContent: "flex-start" }}>
+    <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-end", gap: 8 }}>
+      <Image
+        src="/kate-avatar.png"
+        alt="Kate"
+        width={28}
+        height={28}
+        style={{ borderRadius: "50%", flexShrink: 0 }}
+      />
       <div
         style={{
           padding: "12px 14px",
