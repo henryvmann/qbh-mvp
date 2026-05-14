@@ -89,11 +89,14 @@ export async function POST(req: Request) {
   let bookedIso: string | null = null;
   if (oracle?.attempt_id) {
     try {
+      // No status filter — test-loop wipes prior test bookings between
+      // calls (sets them to "cancelled") so the provider doesn't trip
+      // EXISTING_FUTURE_CONFIRMED_EVENT. Once an attempt has any
+      // calendar_event row, the booking happened, period.
       const { data } = await supabaseAdmin
         .from("calendar_events")
-        .select("start_at")
+        .select("start_at, status")
         .eq("attempt_id", Number(oracle.attempt_id))
-        .eq("status", "confirmed")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
