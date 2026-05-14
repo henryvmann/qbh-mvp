@@ -301,6 +301,8 @@ async function handleOne(
     provider_id_raw: args.provider_id ?? null,
     provider_id_uuid: providerIdUuid,
     proposal_id: proposalId || null,
+    office_offer_raw_text: officeOfferRawText || null,
+    parsable_text: parsableText || null,
   };
 
   await logCallEvent({
