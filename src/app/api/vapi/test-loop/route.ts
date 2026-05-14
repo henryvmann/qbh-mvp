@@ -451,8 +451,17 @@ function pickRandomPersona() {
  * POST /api/vapi/test-loop
  * Triggers a Kate→Sandra test call. Rotates Sandra's persona every 5 calls.
  */
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    // Optional overrides: ?date_pattern=X, ?edge_case=Y, ?base=Z.
+    // Used during tuning to force a specific scenario so we can verify
+    // a targeted fix without relying on the random roller.
+    const url = new URL(req.url);
+    const forceDatePattern = url.searchParams.get("date_pattern");
+    const forceEdgeCase = url.searchParams.get("edge_case");
+    const forceBase = url.searchParams.get("base");
+    const forceRegression = url.searchParams.get("regression") === "1";
+
     // Count recent test calls (used in the response so we can chart progress)
     const { count } = await supabaseAdmin
       .from("call_test_logs")
@@ -460,7 +469,8 @@ export async function POST() {
 
     const callNumber = (count || 0);
     // Every Nth call is the pinned regression. Otherwise randomize.
-    const isRegressionCall = (callNumber + 1) % REGRESSION_INTERVAL === 0;
+    const isRegressionCall =
+      forceRegression || (callNumber + 1) % REGRESSION_INTERVAL === 0;
     const persona = isRegressionCall
       ? (() => {
           const r = buildRegressionPersona();
@@ -472,7 +482,30 @@ export async function POST() {
             isRegression: true,
           };
         })()
-      : pickRandomPersona();
+      : (() => {
+          if (forceDatePattern || forceEdgeCase || forceBase) {
+            const base =
+              BASE_PERSONAS.find((b) => b.name.toLowerCase() === (forceBase ?? "").toLowerCase()) ??
+              BASE_PERSONAS[Math.floor(Math.random() * BASE_PERSONAS.length)];
+            const edgeCase =
+              EDGE_CASES.find((e) => e.name === forceEdgeCase) ??
+              EDGE_CASES[Math.floor(Math.random() * EDGE_CASES.length)];
+            const patternDef = DATE_PATTERNS.find((p) => p.name === forceDatePattern);
+            const dpBuilt = patternDef
+              ? { name: patternDef.name, description: patternDef.description, ...patternDef.build(new Date()) }
+              : pickDatePattern(new Date());
+            return {
+              ...composePersona(base, edgeCase, dpBuilt),
+              basePersona: base.name,
+              edgeCase: edgeCase.name,
+              datePattern: dpBuilt.name,
+              intendedIso: dpBuilt.intendedIso,
+              spokenPhrase: dpBuilt.spokenPhrase,
+              isRegression: false,
+            };
+          }
+          return pickRandomPersona();
+        })();
 
     // Update Sandra's prompt via VAPI API
     const vapiKey = process.env.VAPI_API_KEY;
