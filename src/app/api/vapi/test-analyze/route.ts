@@ -39,6 +39,73 @@ export async function POST(req: Request) {
     console.error("[test-analyze] dedupe check failed:", dedupeErr);
   }
 
+  // Step 0: Look up the oracle (intended date + scenario) written by
+  // test-loop before the call started. Used to grade date_accuracy
+  // separately from behavior. Best-effort — if the table or row is
+  // missing, fall through to plain rubric-only grading.
+  let oracle:
+    | {
+        vapi_call_id: string;
+        scenario: string;
+        date_pattern: string | null;
+        intended_iso: string | null;
+        intended_phrase: string | null;
+        is_regression: boolean;
+        attempt_id: string | null;
+      }
+    | null = null;
+  try {
+    const { data } = await supabaseAdmin
+      .from("call_test_oracles")
+      .select("vapi_call_id, scenario, date_pattern, intended_iso, intended_phrase, is_regression, attempt_id")
+      .eq("vapi_call_id", callId)
+      .maybeSingle();
+    if (data) oracle = data;
+  } catch (oracleErr) {
+    console.error("[test-analyze] oracle lookup failed:", oracleErr);
+  }
+
+  // Step 0.5: If we have an oracle and an attempt_id, look up what
+  // calendar_event actually got booked. Three-way comparison
+  // (intended vs transcript vs booked) catches the failure mode that
+  // the Caroline Andrew bug landed in: transcript said "the 28th",
+  // calendar_event landed on the 14th.
+  let bookedIso: string | null = null;
+  if (oracle?.attempt_id) {
+    try {
+      const { data } = await supabaseAdmin
+        .from("calendar_events")
+        .select("start_at")
+        .eq("schedule_attempt_id", oracle.attempt_id)
+        .eq("status", "confirmed")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data?.start_at) bookedIso = data.start_at;
+    } catch {}
+  }
+
+  // Compute date_accuracy deterministically (same calendar day in ET).
+  // We don't compare exact times because the receptionist sometimes
+  // drifts a few minutes between offer and confirm. The day is what
+  // breaks user trust.
+  function sameDay(a: string | null, b: string | null): boolean {
+    if (!a || !b) return false;
+    return new Date(a).toISOString().slice(0, 10) ===
+      new Date(b).toISOString().slice(0, 10);
+  }
+  const dateAccuracyComputed: { pass: boolean; note: string } | null = oracle
+    ? bookedIso
+      ? {
+          pass: sameDay(bookedIso, oracle.intended_iso),
+          note: `Intended: ${oracle.intended_iso?.slice(0, 10) ?? "?"} | Booked: ${bookedIso.slice(0, 10)} | Phrase: "${oracle.intended_phrase ?? ""}"`,
+        }
+      : {
+          pass: false,
+          note: `No confirmed booking landed; intended ${oracle.intended_iso?.slice(0, 10) ?? "?"} from phrase "${oracle.intended_phrase ?? ""}". Either Kate didn't book, or the booking didn't reach calendar_events.`,
+        }
+    : null;
+
   try {
     // Step 1: Analyze and score
     const analysis = await openai.chat.completions.create({
@@ -92,7 +159,10 @@ Return a JSON object (no markdown, just raw JSON) with this exact structure:
     "no_forced_booking": { "pass": true/false, "note": "did Kate AVOID pushing for a booking when the scenario clearly didn't allow one (walk-in only, voicemail, balance owed, etc.)?" },
     "patient_info_protected": { "pass": true/false, "note": "did Kate share only the info that was actually requested? Didn't leak DOB/insurance/SSN unnecessarily?" },
     "graceful_close": { "pass": true/false, "note": "did Kate end the call politely with a clear next step (booked / will call back / message left)?" },
-    "correct_doctor_name": { "pass": true/false, "note": "did Kate use the right doctor name (ignore phonetic transcript drift like Nasonson↔Niesanson↔Nissenson — the speech-to-text frequently mis-spells unusual names; only fail this if Kate clearly said a DIFFERENT person's name or used DDS/MD/Dr. prefixes wrong)?" }
+    "correct_doctor_name": { "pass": true/false, "note": "did Kate use the right doctor name (ignore phonetic transcript drift like Nasonson↔Niesanson↔Nissenson — the speech-to-text frequently mis-spells unusual names; only fail this if Kate clearly said a DIFFERENT person's name or used DDS/MD/Dr. prefixes wrong)?" },
+    "date_accuracy": { "pass": true/false, "note": "Did Kate book the date the receptionist actually meant? Compare the receptionist's literal offer in the transcript with what Kate confirmed back. If the receptionist said 'Thursday the 28th' and Kate confirmed back any other date, FAIL. If the receptionist's offer was ambiguous and Kate clarified before committing, PASS. The ORACLE block below (when present) tells you the date the receptionist was scripted to convey." },
+    "disambiguation_when_needed": { "pass": true/false, "note": "When the receptionist used ambiguous date phrasing ('this Thursday', 'two Thursdays from now', a wrong day-of-week assertion, a mid-sentence correction, a mumbled time), did Kate ask a CLARIFYING question before committing? PASS = Kate asked 'just to confirm, that's [explicit date]?' or similar. FAIL = Kate accepted silently. N/A only when the receptionist's offer was unambiguous." },
+    "care_coordinator_posture": { "pass": true/false, "note": "Did Kate sound like the patient's advocate and operational lead, not another receptionist? PASS signals: representing patient preferences, pushing back on bad slots, surfacing calendar conflicts, taking ownership of the call. FAIL signals: passively accepting whatever's offered, deferring questions she can answer, sounding like an intake form. THIS IS THE PRIMARY POSTURE TEST." }
   },
   "issues": ["specific things Kate did wrong, given the scenario"],
   "wins": ["specific things Kate did well, given the scenario"],
@@ -111,7 +181,25 @@ GUIDANCE FOR PROMPT FIXES — be conservative:
 
 Score 9-10 = handled an edge case excellently. Score 7-8 = solid, minor wobble. Score 5-6 = correct outcome but rough execution. Score 3-4 = wrong outcome or significant issues. Score 0-2 = catastrophic.`,
         },
-        { role: "user", content: `Transcript:\n\n${transcript}` },
+        {
+          role: "user",
+          content: oracle
+            ? `ORACLE (the scenario Sandra was scripted to run):
+- Scenario: ${oracle.scenario}
+- Date phrasing pattern: ${oracle.date_pattern ?? "none"}
+- Sandra was scripted to convey the date: ${oracle.intended_iso ?? "(none)"}
+- Sandra was scripted to speak this exact phrase: "${oracle.intended_phrase ?? "(none)"}"
+- Booked calendar_event start_at (what actually got written to the DB): ${bookedIso ?? "(no confirmed booking)"}
+- Date accuracy (computed deterministically by comparing intended vs booked day): ${dateAccuracyComputed ? (dateAccuracyComputed.pass ? "PASS" : "FAIL") : "unknown"}
+- Regression case (pinned, must always pass): ${oracle.is_regression ? "YES — this is the Caroline Andrew replay" : "no"}
+
+When grading date_accuracy, the deterministic computed answer above is authoritative. Mirror it in your rubric output. Use the transcript to explain WHY (did Kate confirm the date verbally? did the receptionist drift? did Kate fail to clarify?).
+
+Transcript:
+
+${transcript}`
+            : `Transcript:\n\n${transcript}`,
+        },
       ],
     });
 
@@ -123,6 +211,44 @@ Score 9-10 = handled an edge case excellently. Score 7-8 = solid, minor wobble. 
       analysisData = JSON.parse(cleaned);
     } catch {
       analysisData = { pass: false, score: 0, summary: analysis.choices[0]?.message?.content || "Parse error", issues: [], prompt_fixes: [] };
+    }
+
+    // Date accuracy is a HARD FAIL gate. If we computed deterministically
+    // that the booked date drifted from the intended date, force the
+    // rubric line + overall pass=false regardless of what the LLM said.
+    // The Caroline Andrew bug shipped to prod because no rubric line
+    // checked this; we don't let that happen twice.
+    if (dateAccuracyComputed) {
+      analysisData.rubric = analysisData.rubric || {};
+      analysisData.rubric.date_accuracy = {
+        pass: dateAccuracyComputed.pass,
+        note: dateAccuracyComputed.note,
+      };
+      if (!dateAccuracyComputed.pass) {
+        analysisData.pass = false;
+        analysisData.issues = Array.isArray(analysisData.issues)
+          ? analysisData.issues
+          : [];
+        analysisData.issues.unshift(
+          `DATE_ACCURACY HARD FAIL: ${dateAccuracyComputed.note}`
+        );
+        // Cap the score so a date-wrong call can never look like a win.
+        if (typeof analysisData.score === "number" && analysisData.score > 3) {
+          analysisData.score = 3;
+        }
+      }
+    }
+    // Surface oracle metadata in the saved analysis so we can group
+    // results by date_pattern / regression in dashboards later.
+    if (oracle) {
+      analysisData.oracle = {
+        scenario: oracle.scenario,
+        date_pattern: oracle.date_pattern,
+        intended_iso: oracle.intended_iso,
+        intended_phrase: oracle.intended_phrase,
+        booked_iso: bookedIso,
+        is_regression: oracle.is_regression,
+      };
     }
 
     // Step 2: Auto-apply high-confidence prompt fixes.

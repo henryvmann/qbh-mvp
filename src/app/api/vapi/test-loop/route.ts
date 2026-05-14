@@ -7,6 +7,10 @@ const SANDRA_ASSISTANT_ID = "23ad3cb8-9d16-4fe8-9db2-a1991e600d95";
 const KATE_ASSISTANT_ID = "c06f2b9d-bc33-4eaf-9843-4924488c4c00";
 const TEST_USER_ID = "6d7acd40-73ac-4389-8a81-992030b2b4f4";
 
+// Every Nth call replays the Caroline Andrew failure verbatim. Pinned
+// (not random) so a regression in date parsing is impossible to miss.
+const REGRESSION_INTERVAL = 10;
+
 /**
  * Sandra is composed of one of 5 base personalities × one of 20 edge cases.
  * Each test call randomly selects a (base, edgeCase) pair so Kate gets stress-
@@ -147,7 +151,182 @@ const EDGE_CASES: EdgeCase[] = [
   },
 ];
 
-function composePersona(base: BasePersona, edgeCase: EdgeCase): {
+// ─────────────────────────────────────────────────────────────────
+// Date-trickiness dimension — orthogonal to base persona and edge
+// case. Every test call now exercises one date-phrasing pattern as
+// part of Sandra's slot offer. These are the patterns that have
+// actually burned us on real calls (Caroline Andrew = dow_dom_match)
+// or have known parsing risk (mid-sentence corrections, mumbled
+// times, wrong-day assertions).
+//
+// Each pattern emits a slot the persona must offer + an oracle ISO
+// for the date_accuracy rubric. composePersona injects the slot
+// instruction directly into the prompt so Sandra speaks the exact
+// phrasing.
+// ─────────────────────────────────────────────────────────────────
+
+type DatePattern = {
+  name: string;
+  description: string;
+  // Build a slot offer for Sandra to speak + the oracle ISO that
+  // represents the date Sandra is actually conveying.
+  build: (now: Date) => { spokenPhrase: string; intendedIso: string };
+};
+
+// Helpers used inside DatePattern.build
+function nextWeekdayDate(now: Date, weekdayIdx: number, weeksOut = 1): Date {
+  const d = new Date(now);
+  const diff = ((weekdayIdx - d.getDay() + 7) % 7) + 7 * (weeksOut - 1);
+  d.setDate(d.getDate() + (diff === 0 ? 7 : diff));
+  d.setHours(14, 30, 0, 0);
+  return d;
+}
+function fmtMonthDay(d: Date): string {
+  return d.toLocaleString("en-US", { month: "long", day: "numeric" });
+}
+function fmtWeekday(d: Date): string {
+  return d.toLocaleString("en-US", { weekday: "long" });
+}
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+const DATE_PATTERNS: DatePattern[] = [
+  {
+    name: "dow_dom_match",
+    description: "Day-of-week + day-of-month, both correct (Caroline Andrew shape).",
+    build: (now) => {
+      // Pick a Thursday 2-3 weeks out so day-of-month is plausibly distant.
+      const d = nextWeekdayDate(now, 4, 3);
+      const phrase = `${fmtWeekday(d)} the ${ordinal(d.getDate())} at 2:30 PM`;
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+  {
+    name: "dow_dom_mismatch",
+    description: "States the wrong day-of-week for the date offered. Kate should push back.",
+    build: (now) => {
+      const d = nextWeekdayDate(now, 3, 2); // Wednesday
+      const wrongDow = "Thursday"; // intentionally wrong
+      const phrase = `${wrongDow} the ${ordinal(d.getDate())} — that's a ${wrongDow}, right? At 10 AM`;
+      d.setHours(10, 0, 0, 0);
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+  {
+    name: "this_thursday_ambiguous",
+    description: "Vague 'this' qualifier — Kate must clarify before committing.",
+    build: (now) => {
+      const d = nextWeekdayDate(now, 4, 1);
+      const phrase = `this Thursday at 3 PM`;
+      d.setHours(15, 0, 0, 0);
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+  {
+    name: "counted_weekday",
+    description: "'Two Thursdays from now' — ordinal counting from speaker's frame.",
+    build: (now) => {
+      const d = nextWeekdayDate(now, 4, 2);
+      const phrase = `two Thursdays from now at 11 AM`;
+      d.setHours(11, 0, 0, 0);
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+  {
+    name: "cross_month",
+    description: "'15th of next month' — Kate must resolve month context.",
+    build: (now) => {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() + 1);
+      d.setDate(15);
+      d.setHours(9, 30, 0, 0);
+      const phrase = `the 15th of next month at 9:30 in the morning`;
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+  {
+    name: "mid_sentence_correction",
+    description: "Receptionist corrects themselves mid-offer. Kate must take the corrected date.",
+    build: (now) => {
+      const d = nextWeekdayDate(now, 2, 2); // Tuesday
+      const wrongDate = new Date(d);
+      wrongDate.setDate(d.getDate() - 1);
+      const phrase = `${fmtMonthDay(wrongDate)}... wait, no, ${fmtMonthDay(d)}. At 4 PM.`;
+      d.setHours(16, 0, 0, 0);
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+  {
+    name: "passed_date",
+    description: "Receptionist offers a date in the past. Kate should push back, not book it.",
+    build: (now) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 5);
+      d.setHours(14, 0, 0, 0);
+      const phrase = `how about last ${fmtWeekday(d)} at 2 PM`;
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+  {
+    name: "mumbled_time",
+    description: "Time delivered with pauses + filler. Tests STT robustness + Kate's confirm behavior.",
+    build: (now) => {
+      const d = nextWeekdayDate(now, 5, 1); // Friday
+      d.setHours(13, 45, 0, 0);
+      const phrase = `${fmtWeekday(d)} the ${ordinal(d.getDate())} at... uhh... one... forty-five? in the afternoon`;
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+  {
+    name: "awkward_silence",
+    description: "10-second pause before answering. Kate must wait, not fill the silence with junk.",
+    build: (now) => {
+      const d = nextWeekdayDate(now, 1, 2); // Monday
+      d.setHours(8, 30, 0, 0);
+      const phrase = `[PAUSE 10 SECONDS] sorry, let me look. ${fmtWeekday(d)} the ${ordinal(d.getDate())} at 8:30 AM`;
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+  {
+    name: "verbal_spelling",
+    description: "Time spelled out verbally ('two thirty', 'half past three'). Confirms STT + parse.",
+    build: (now) => {
+      const d = nextWeekdayDate(now, 3, 1); // Wednesday
+      d.setHours(14, 30, 0, 0);
+      const phrase = `${fmtWeekday(d)} the ${ordinal(d.getDate())} at two thirty in the afternoon`;
+      return { spokenPhrase: phrase, intendedIso: d.toISOString() };
+    },
+  },
+];
+
+// The Caroline Andrew regression. Pinned, runs every Nth call.
+function buildCarolineAndrewRegression(now: Date) {
+  // Pick the next Thursday-the-28th. If the next Thursday doesn't fall
+  // on the 28th, just pin to a Thursday 2-3 weeks out and use its date.
+  const d = nextWeekdayDate(now, 4, 3);
+  d.setHours(14, 30, 0, 0);
+  return {
+    name: "REGRESSION:caroline_andrew",
+    spokenPhrase: `Thursday the ${ordinal(d.getDate())} at two thirty`,
+    intendedIso: d.toISOString(),
+    isRegression: true,
+  };
+}
+
+function pickDatePattern(now: Date) {
+  const p = DATE_PATTERNS[Math.floor(Math.random() * DATE_PATTERNS.length)];
+  const { spokenPhrase, intendedIso } = p.build(now);
+  return { name: p.name, description: p.description, spokenPhrase, intendedIso };
+}
+
+function composePersona(
+  base: BasePersona,
+  edgeCase: EdgeCase,
+  datePattern?: { name: string; description: string; spokenPhrase: string }
+): {
   name: string;
   firstMessage: string;
   prompt: string;
@@ -163,10 +342,23 @@ function composePersona(base: BasePersona, edgeCase: EdgeCase): {
     };
   }
 
+  // When a date pattern is active, Sandra's available slots are
+  // replaced with the single scripted phrasing. This is the heart of
+  // the date-trickiness dimension: instead of testing parsing on
+  // pristine "Monday May 4 at 3:45 PM" copy, every call exercises one
+  // realistic, ambiguous, or messy way real receptionists actually
+  // describe time.
+  const slotBlock = datePattern
+    ? `\nAVAILABLE APPOINTMENT (offer exactly ONE slot when the caller asks for times — speak it EXACTLY as written, including pauses or self-corrections):
+"${datePattern.spokenPhrase}"
+
+If the caller asks for an alternative, say there's nothing else this week and re-offer the same slot. Do NOT silently change phrasing. The exact wording is the test.`
+    : COMMON_SLOTS;
+
   const prompt = `You are Sandra, a receptionist at a doctor's office. You answer calls to schedule appointments. You schedule for ANY doctor — when the caller mentions a provider name, just check availability.
 
 ${base.personality}
-${COMMON_SLOTS}
+${slotBlock}
 
 EDGE CASE FOR THIS CALL (this OVERRIDES the general flow whenever they conflict):
 ${edgeCase.situation}
@@ -174,23 +366,69 @@ ${edgeCase.situation}
 GENERAL FLOW (only when the edge case doesn't say otherwise):
 - Ask if the patient is new or existing
 - Ask what the appointment is for
-- Offer 2-3 available times
+- Offer the slot (above) using the exact wording
 - Confirm the booking
 
 YOUR JOB IS TO BE REALISTIC, not helpful. The edge case ALWAYS wins. If the edge case says "do not offer times", do NOT offer times — even if the conversation drags. Stay in character. The correct outcome is whatever the edge case dictates.
 ${COMMON_END_RULE}`;
 
   return {
-    name: `${base.name} / ${edgeCase.name}`,
+    name: datePattern
+      ? `${base.name} / ${edgeCase.name} / ${datePattern.name}`
+      : `${base.name} / ${edgeCase.name}`,
     firstMessage: edgeCase.firstMessageOverride ?? base.firstMessage,
     prompt,
+  };
+}
+
+// Caroline Andrew regression: one fixed persona that replays the exact
+// phrasing from the original failure. Skips the random matrix so we
+// always know whether the original bug has come back.
+function buildRegressionPersona(): {
+  name: string;
+  firstMessage: string;
+  prompt: string;
+  intendedIso: string;
+  spokenPhrase: string;
+} {
+  const r = buildCarolineAndrewRegression(new Date());
+  const prompt = `You are Sandra, a friendly receptionist at a doctor's office. You answer calls to schedule appointments.
+
+Personality: warm, helpful, professional. Use "um" occasionally. Mirror the caller's energy.
+
+When the caller asks for an appointment, offer EXACTLY this slot, spoken EXACTLY as written (do NOT rephrase, do NOT add a year, do NOT swap "Thursday" for a date or vice versa):
+"${r.spokenPhrase}"
+
+If the caller pushes for another time, say "that's all I have this week — want me to book it?" and re-offer the same wording.
+
+GENERAL FLOW:
+- Ask if the patient is new or existing
+- Ask what the appointment is for
+- Offer the slot above
+- Confirm the booking
+${COMMON_END_RULE}`;
+  return {
+    name: r.name,
+    firstMessage: "Good morning, thank you for calling. This is Sandra, how can I help you?",
+    prompt,
+    intendedIso: r.intendedIso,
+    spokenPhrase: r.spokenPhrase,
   };
 }
 
 function pickRandomPersona() {
   const base = BASE_PERSONAS[Math.floor(Math.random() * BASE_PERSONAS.length)];
   const edgeCase = EDGE_CASES[Math.floor(Math.random() * EDGE_CASES.length)];
-  return composePersona(base, edgeCase);
+  const datePattern = pickDatePattern(new Date());
+  return {
+    ...composePersona(base, edgeCase, datePattern),
+    basePersona: base.name,
+    edgeCase: edgeCase.name,
+    datePattern: datePattern.name,
+    intendedIso: datePattern.intendedIso,
+    spokenPhrase: datePattern.spokenPhrase,
+    isRegression: false,
+  };
 }
 
 /**
@@ -205,7 +443,20 @@ export async function POST() {
       .select("id", { count: "exact", head: true });
 
     const callNumber = (count || 0);
-    const persona = pickRandomPersona();
+    // Every Nth call is the pinned regression. Otherwise randomize.
+    const isRegressionCall = (callNumber + 1) % REGRESSION_INTERVAL === 0;
+    const persona = isRegressionCall
+      ? (() => {
+          const r = buildRegressionPersona();
+          return {
+            ...r,
+            basePersona: "REGRESSION",
+            edgeCase: "caroline_andrew",
+            datePattern: "regression_dow_dom_match",
+            isRegression: true,
+          };
+        })()
+      : pickRandomPersona();
 
     // Update Sandra's prompt via VAPI API
     const vapiKey = process.env.VAPI_API_KEY;
@@ -282,11 +533,46 @@ export async function POST() {
 
     const callData = await callRes.json();
 
+    // Extract the VAPI call_id so test-analyze can correlate the oracle
+    // row to the call when grading. start-call returns the raw VAPI
+    // response in `vapi`; the id can land on either the root or under
+    // `.call.id` depending on how VAPI wraps it.
+    const vapiCallId: string | null =
+      callData?.vapi?.id ||
+      callData?.vapi?.call?.id ||
+      null;
+
+    // Persist the oracle row. Best-effort — the table may not exist
+    // yet if the migration hasn't been applied. Falls back to console
+    // log so test-analyze can still grade against what's in the
+    // analysis blob.
+    if (vapiCallId) {
+      try {
+        await supabaseAdmin.from("call_test_oracles").insert({
+          vapi_call_id: vapiCallId,
+          attempt_id: callData?.attempt_id ?? null,
+          scenario: persona.name,
+          base_persona: persona.basePersona,
+          edge_case: persona.edgeCase,
+          date_pattern: persona.datePattern,
+          intended_iso: persona.intendedIso ?? null,
+          intended_phrase: persona.spokenPhrase ?? null,
+          is_regression: persona.isRegression === true,
+        });
+      } catch (oracleErr) {
+        console.error("[test-loop] oracle insert failed:", oracleErr);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       callNumber: callNumber + 1,
       sandraPersona: persona.name,
       provider: provider.name,
+      isRegression: persona.isRegression === true,
+      datePattern: persona.datePattern,
+      intendedIso: persona.intendedIso ?? null,
+      vapiCallId,
       callResult: callData,
     });
   } catch (err) {
