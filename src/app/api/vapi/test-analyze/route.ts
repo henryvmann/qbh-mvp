@@ -133,22 +133,30 @@ export async function POST(req: Request) {
     const d = new Date(oracle.intended_iso);
     if (Number.isNaN(d.getTime())) return false;
     const dayNum = d.getDate();
-    const month = d.toLocaleString("en-US", { month: "long", timeZone: "America/New_York" });
-    const shortMonth = d.toLocaleString("en-US", { month: "short", timeZone: "America/New_York" });
-    const ordinalWords = ["", "first","second","third","fourth","fifth","sixth","seventh","eighth","ninth","tenth","eleventh","twelfth","thirteenth","fourteenth","fifteenth","sixteenth","seventeenth","eighteenth","nineteenth","twentieth","twenty[- ]?first","twenty[- ]?second","twenty[- ]?third","twenty[- ]?fourth","twenty[- ]?fifth","twenty[- ]?sixth","twenty[- ]?seventh","twenty[- ]?eighth","twenty[- ]?ninth","thirtieth","thirty[- ]?first"];
-    const anchors: string[] = [
-      `\\b${dayNum}(st|nd|rd|th)?\\b`,
-      `\\b${month}\\b`,
-      `\\b${shortMonth}\\b`,
-    ];
-    if (ordinalWords[dayNum]) anchors.push(`\\b${ordinalWords[dayNum]}\\b`);
-    // For passed_date the receptionist says "last [weekday]" — check
-    // for that phrase pattern as anchor.
     const weekday = d.toLocaleString("en-US", { weekday: "long", timeZone: "America/New_York" });
-    anchors.push(`\\blast\\s+${weekday}\\b`);
-    anchors.push(`\\b${weekday}\\b`);
-    const re = new RegExp(anchors.join("|"), "i");
-    return re.test(transcript);
+    const ordinalWords = ["", "first","second","third","fourth","fifth","sixth","seventh","eighth","ninth","tenth","eleventh","twelfth","thirteenth","fourteenth","fifteenth","sixteenth","seventeenth","eighteenth","nineteenth","twentieth","twenty[- ]?first","twenty[- ]?second","twenty[- ]?third","twenty[- ]?fourth","twenty[- ]?fifth","twenty[- ]?sixth","twenty[- ]?seventh","twenty[- ]?eighth","twenty[- ]?ninth","thirtieth","thirty[- ]?first"];
+
+    // Refusal patterns: Sandra's phrase contains the weekday (e.g.
+    // "last Saturday") but typically NOT a day-of-month. Anchor on
+    // the weekday combined with a "last" qualifier when present, or
+    // any clear "wrong day-of-week" assertion.
+    if (oracle.date_pattern && ["passed_date", "dow_dom_mismatch"].includes(oracle.date_pattern)) {
+      const refusalAnchors = [
+        `\\blast\\s+${weekday}\\b`,
+        `\\b${dayNum}(st|nd|rd|th)?\\b`,
+      ];
+      if (ordinalWords[dayNum]) refusalAnchors.push(`\\b${ordinalWords[dayNum]}\\b`);
+      return new RegExp(refusalAnchors.join("|"), "i").test(transcript);
+    }
+
+    // Booking patterns: the day-of-month is the most specific
+    // fragment. Month-name alone is too lenient (call 598 had Sandra
+    // run a different edge-case slot that still said "May" — same
+    // month as intended — and falsely matched). Day-of-month rarely
+    // collides between intended and overridden offers.
+    const bookingAnchors = [`\\b${dayNum}(st|nd|rd|th)?\\b`];
+    if (ordinalWords[dayNum]) bookingAnchors.push(`\\b${ordinalWords[dayNum]}\\b`);
+    return new RegExp(bookingAnchors.join("|"), "i").test(transcript);
   }
   const patternRan = patternRanInTranscript();
 
