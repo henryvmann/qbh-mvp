@@ -135,9 +135,21 @@ export default function PageIntro() {
   let tooltipStyle: React.CSSProperties = {};
   if (hasTarget) {
     const tooltipWidth = 340;
+    // Reserve ~200px for the tooltip card; if the requested side
+    // doesn't have room, auto-flip to the other side so the Next
+    // button stays in view. The author's hint (slide.position) still
+    // wins when both sides fit.
+    const ESTIMATED_TOOLTIP_HEIGHT = 200;
+    const spaceBelow = window.innerHeight - targetRect.bottom - padding - 12;
+    const spaceAbove = targetRect.top - padding - 12;
+    const wantsBelow = slide.position === "below";
+    const placeBelow = wantsBelow
+      ? spaceBelow >= ESTIMATED_TOOLTIP_HEIGHT || spaceAbove < spaceBelow
+      : spaceAbove < ESTIMATED_TOOLTIP_HEIGHT && spaceBelow > spaceAbove;
+
     const left = Math.max(16, Math.min(targetRect.left, window.innerWidth - tooltipWidth - 16));
 
-    if (slide.position === "below") {
+    if (placeBelow) {
       tooltipStyle = {
         position: "fixed",
         top: targetRect.bottom + padding + 12,

@@ -138,13 +138,24 @@ export default function SetupWizard() {
       }
     : null;
 
-  // Position tooltip relative to target
+  // Position tooltip relative to target, with auto-flip when the
+  // requested side doesn't fit the viewport so the Next button stays
+  // visible. Author's slide.position is the hint; we override only
+  // when forced.
   let tooltipStyle: React.CSSProperties = {};
   if (hasTarget) {
     const tooltipWidth = 360;
+    const ESTIMATED_TOOLTIP_HEIGHT = 220;
+    const spaceBelow = window.innerHeight - targetRect.bottom - padding - 20;
+    const spaceAbove = targetRect.top - padding - 20;
+    const wantsBelow = step.position === "below";
+    const placeBelow = wantsBelow
+      ? spaceBelow >= ESTIMATED_TOOLTIP_HEIGHT || spaceAbove < spaceBelow
+      : spaceAbove < ESTIMATED_TOOLTIP_HEIGHT && spaceBelow > spaceAbove;
+
     const left = Math.max(16, Math.min(targetRect.left, window.innerWidth - tooltipWidth - 16));
 
-    if (step.position === "below") {
+    if (placeBelow) {
       tooltipStyle = {
         position: "fixed",
         top: targetRect.bottom + padding + 20,

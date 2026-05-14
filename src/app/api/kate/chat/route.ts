@@ -49,7 +49,7 @@ type ChatMessage = {
 };
 
 async function buildContext(appUserId: string): Promise<{ text: string; commStyle: string; proactivity: string }> {
-  const [providersRes, userRes, eventsRes, visitsRes] = await Promise.all([
+  const [providersRes, userRes, eventsRes, visitsRes, attemptsRes] = await Promise.all([
     // Pull every active provider regardless of source. The earlier
     // .neq("provider_type", "calendar") filter excluded calendar-
     // discovered providers from Kate's context, so she'd answer
@@ -58,7 +58,7 @@ async function buildContext(appUserId: string): Promise<{ text: string; commStyl
     // care team members now.
     supabaseAdmin
       .from("providers")
-      .select("name, status, provider_type, doctor_name, specialty, phone_number, source")
+      .select("id, name, status, provider_type, doctor_name, specialty, phone_number, source")
       .eq("app_user_id", appUserId)
       .eq("status", "active"),
     supabaseAdmin
@@ -80,13 +80,52 @@ async function buildContext(appUserId: string): Promise<{ text: string; commStyl
       .eq("app_user_id", appUserId)
       .order("visit_date", { ascending: false })
       .limit(20),
+    // Recent call attempts so Kate can answer "when did we last call X".
+    // Without this her context only knew about visits + appointments,
+    // so a call yesterday looked like "we haven't called in a while".
+    supabaseAdmin
+      .from("schedule_attempts")
+      .select("provider_id, status, created_at, updated_at")
+      .eq("app_user_id", appUserId)
+      .gte("created_at", new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
 
   const providers = providersRes.data || [];
   const profile = (userRes.data?.patient_profile || {}) as Record<string, string | null>;
   const events = eventsRes.data || [];
   const visits = visitsRes.data || [];
+  const attempts = attemptsRes.data || [];
   const now = new Date();
+
+  // Map provider_id → name for call-history rendering
+  const providerNameById = new Map(providers.map((p) => [p.id, p.name]));
+  function relativeDate(iso: string): string {
+    const t = new Date(iso).getTime();
+    if (!t) return iso;
+    const hrs = Math.round((Date.now() - t) / 3_600_000);
+    if (hrs < 1) return "just now";
+    if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+    const days = Math.round(hrs / 24);
+    if (days <= 1) return "yesterday";
+    if (days < 14) return `${days} days ago`;
+    const weeks = Math.round(days / 7);
+    if (weeks < 8) return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+    const months = Math.round(days / 30);
+    return `${months} month${months === 1 ? "" : "s"} ago`;
+  }
+  const callHistoryLines = attempts
+    .map((a) => {
+      const name = a.provider_id ? providerNameById.get(a.provider_id) : null;
+      if (!name) return null;
+      const when = relativeDate(a.created_at);
+      const status = String(a.status || "").toLowerCase();
+      return `- ${name}: called ${when} (${status})`;
+    })
+    .filter(Boolean)
+    .slice(0, 10)
+    .join("\n");
 
   const providerMap = new Map(providers.map((p) => [p.name, p]));
 
@@ -157,6 +196,7 @@ ${providerList || "No providers yet."}
 
 ${upcomingEvents ? `Upcoming appointments:\n${upcomingEvents}` : "No upcoming appointments."}
 ${recentPastEvents ? `Recent past appointments:\n${recentPastEvents}` : ""}
+${callHistoryLines ? `\nRecent calls (Kate calling provider offices on the user's behalf):\n${callHistoryLines}\nIf the user asks "when did we last call X" or anything similar, answer from this list directly.\n` : ""}
 `;
 
   return { text, commStyle, proactivity };
