@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Search, Calendar, Building2, ShieldCheck, Brain, Phone, Eye, EyeOff } from "lucide-react";
 import { apiFetch } from "../../lib/api";
 import { createClient } from "../../lib/supabase/client";
+import { buildConsentRecord, detectConsentMethod } from "../../lib/legal-doc-versions";
 import { theme } from "../../components/qbh/theme";
 
 /* ── Design tokens (from greenhouse theme) ── */
@@ -816,7 +817,13 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
             kate_proactivity: kateProactivity || undefined,
             calendar_flexibility: calendarFlex || undefined,
           },
-          consents: { ai_calls: true, phi_sharing: true, terms: true, consented_at: new Date().toISOString() },
+          consents: buildConsentRecord({
+            aiCalls: true,
+            phiSharing: true,
+            termsAndPrivacy: consentGiven,
+            method: detectConsentMethod(typeof navigator !== "undefined" ? navigator.userAgent : null),
+            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          }),
         }),
       });
       const data = await signupRes.json();

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { LEGAL_DOC_VERSIONS } from "../../../../lib/legal-doc-versions";
 
 /**
  * Creates a user with auto-confirmed email so they can sign in immediately.
@@ -33,6 +34,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Hard-require a versioned consent record. Counsel asked us to be
+    // able to demonstrate every user accepted the specific document
+    // version in effect at signup; we never create a user without it.
+    // Server stamps the canonical versions even if the client omits or
+    // sends stale ones, so the record matches what was actually live.
+    if (!consents || typeof consents !== "object" || consents.terms !== true) {
+      return NextResponse.json(
+        { ok: false, error: "Terms and Privacy Policy must be accepted before account creation." },
+        { status: 400 }
+      );
+    }
+    const stampedConsents = {
+      ...consents,
+      privacy_policy_version: LEGAL_DOC_VERSIONS.privacy_policy,
+      terms_version: LEGAL_DOC_VERSIONS.terms,
+      consented_at: consents.consented_at || new Date().toISOString(),
+      method: consents.method || "web",
+    };
+
     // Under-18 blocker
     const dob = body?.patient_info?.date_of_birth;
     if (dob) {
@@ -58,7 +78,7 @@ export async function POST(req: NextRequest) {
         name,
         app_user_id: appUserId,
         survey_answers: surveyAnswers,
-        consents: consents || undefined,
+        consents: stampedConsents,
       },
     });
 
@@ -100,7 +120,7 @@ export async function POST(req: NextRequest) {
           {
             id: appUserId,
             auth_user_id: userData.user.id,
-            ...(consents ? { consents } : {}),
+            consents: stampedConsents,
             ...(Object.keys(patientProfile).length > 0 ? { patient_profile: patientProfile } : {}),
           },
           { onConflict: "id" }
