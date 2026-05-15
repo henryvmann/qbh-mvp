@@ -427,17 +427,20 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (phase !== "intro") return;
     const t1 = setTimeout(() => {
-      setMessages([{ id: "k1", sender: "kate", content: "Hey, I'm Kate. I run point on your healthcare \u2014 calls, scheduling, follow-ups, paperwork." }]);
+      setMessages([{ id: "k0", sender: "kate", content: "Welcome. I'm Kate, your care coordinator. Let's get you set up." }]);
     }, 600);
     const t2 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Some people have a few doctors and don't think about it much. Others are juggling specialists, scans, refills, follow-ups." }]);
-    }, 2000);
+      setMessages((prev) => [...prev, { id: "k1", sender: "kate", content: "I'll run point on your healthcare from here. Calls, scheduling, follow-ups, paperwork. Right now I just need to learn a little about you so I can hit the ground running." }]);
+    }, 2200);
     const t3 = setTimeout(() => {
+      setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Some people have a few doctors and don't think about it much. Others are juggling specialists, scans, refills, follow-ups." }]);
+    }, 3800);
+    const t4 = setTimeout(() => {
       setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you fall on that spectrum, I'll meet you there. Just let me know:" }]);
       setTyping(false);
-    }, 3400);
+    }, 5200);
     setTyping(true);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [phase]);
 
   // ── Phase handlers ──
@@ -1318,12 +1321,22 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
         .animate-fadeIn { animation: fadeIn 0.4s ease-out both; }
       `}</style>
 
-      {/* Header */}
+      {/* Header — shows Kate's identity AND that we're mid-setup so
+          users who arrive from "Let's get started" don't think they
+          landed somewhere unexpected. The status pill stays visible
+          until phase advances past account-create. */}
       <div className="sticky top-0 z-10 backdrop-blur-md border-b px-6 py-3" style={{ background: "rgba(250,248,244,0.85)", borderColor: "#E5EAF2" }}>
         <div className="mx-auto max-w-lg flex items-center gap-2">
           <Image src="/kate-avatar.png" alt="Kate" width={28} height={28} className="rounded-full" />
-          <span className="text-sm font-semibold text-[#071832]">Kate</span>
-          <span className="text-[10px] text-[#1677FF] font-medium ml-1">Care Coordinator</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-[#071832]">Kate</span>
+              <span className="text-[10px] text-[#1677FF] font-medium">Care Coordinator</span>
+            </div>
+            <div className="text-[10px] text-[#4F5F73] mt-0.5">
+              Setting up your account · just a few minutes
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1346,7 +1359,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
         {/* ── Phase-specific interactive content ── */}
 
         {/* Intro: response buttons */}
-        {phase === "intro" && !typing && !responded && messages.length >= 3 && (
+        {phase === "intro" && !typing && !responded && messages.length >= 4 && (
           <OptionButtons
             options={[
               { label: "A few doctors, mostly simple", value: "simple" },
