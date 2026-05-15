@@ -426,19 +426,24 @@ export default function OnboardingPage() {
   // ── Phase: Intro ──
   useEffect(() => {
     if (phase !== "intro") return;
+    // System banner lands FIRST so the user sees "this is the
+    // onboarding chat" before Kate even starts. Without it, a user
+    // who clicked "Let's get started" sees a blank screen + a typing
+    // indicator and may think something is wrong.
+    setMessages([{ id: "s0", sender: "system", content: "Let's get you onboarded." }]);
     const t1 = setTimeout(() => {
-      setMessages([{ id: "k0", sender: "kate", content: "Welcome. I'm Kate, your care coordinator. Let's get you set up." }]);
-    }, 600);
+      setMessages((prev) => [...prev, { id: "k0", sender: "kate", content: "Welcome. I'm Kate, your care coordinator. Let's get you set up." }]);
+    }, 700);
     const t2 = setTimeout(() => {
       setMessages((prev) => [...prev, { id: "k1", sender: "kate", content: "I'll run point on your healthcare from here. Calls, scheduling, follow-ups, paperwork. Right now I just need to learn a little about you so I can hit the ground running." }]);
-    }, 2200);
+    }, 2300);
     const t3 = setTimeout(() => {
       setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Some people have a few doctors and don't think about it much. Others are juggling specialists, scans, refills, follow-ups." }]);
-    }, 3800);
+    }, 3900);
     const t4 = setTimeout(() => {
       setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you fall on that spectrum, I'll meet you there. Just let me know:" }]);
       setTyping(false);
-    }, 5200);
+    }, 5300);
     setTyping(true);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [phase]);
@@ -1359,7 +1364,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
         {/* ── Phase-specific interactive content ── */}
 
         {/* Intro: response buttons */}
-        {phase === "intro" && !typing && !responded && messages.length >= 4 && (
+        {phase === "intro" && !typing && !responded && messages.length >= 5 && (
           <OptionButtons
             options={[
               { label: "A few doctors, mostly simple", value: "simple" },
