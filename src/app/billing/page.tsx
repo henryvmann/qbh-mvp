@@ -68,25 +68,66 @@ function BillingContent() {
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean>(false);
+  const [periodEndIso, setPeriodEndIso] = useState<string | null>(null);
+  const [cancelBusy, setCancelBusy] = useState<"cancel" | "resume" | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const success = searchParams.get("success");
   const canceled = searchParams.get("canceled");
 
-  useEffect(() => {
-    async function loadSubscription() {
-      try {
-        const res = await apiFetch("/api/dashboard/data");
-        const data = await res.json();
-        if (data?.subscription_status) {
-          setSubscriptionStatus(data.subscription_status);
-          setCurrentPlan(data.stripe_plan || null);
-        }
-      } catch {
-        // No subscription data
+  async function refreshStatus() {
+    try {
+      const [dashRes, subRes] = await Promise.all([
+        apiFetch("/api/dashboard/data").then((r) => r.json()).catch(() => null),
+        apiFetch("/api/stripe/subscription-status").then((r) => r.json()).catch(() => null),
+      ]);
+      if (dashRes?.subscription_status) {
+        setSubscriptionStatus(dashRes.subscription_status);
+        setCurrentPlan(dashRes.stripe_plan || null);
       }
+      const sub = subRes?.subscription;
+      if (sub) {
+        setCancelAtPeriodEnd(sub.cancel_at_period_end === true);
+        setPeriodEndIso(
+          sub.current_period_end
+            ? new Date(sub.current_period_end * 1000).toISOString()
+            : null,
+        );
+      }
+    } catch {
+      // best-effort — UI will render whatever loaded
     }
-    loadSubscription();
+  }
+
+  useEffect(() => {
+    refreshStatus();
   }, []);
+
+  async function handleCancelSubscription(cancel: boolean) {
+    if (cancelBusy) return;
+    if (cancel && !confirm("Cancel your subscription? You'll keep access through the end of your current billing period, then it won't renew.")) {
+      return;
+    }
+    setCancelBusy(cancel ? "cancel" : "resume");
+    setCancelError(null);
+    try {
+      const res = await apiFetch("/api/stripe/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cancel }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Couldn't update subscription");
+      }
+      await refreshStatus();
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setCancelBusy(null);
+    }
+  }
 
   async function handleCheckout(plan: "solo" | "family") {
     setLoading(plan);
@@ -145,23 +186,60 @@ function BillingContent() {
 
         {isActive && (
           <div className="mt-4 rounded-xl bg-[#F0F4F0] border border-[#D0D8D0] px-4 py-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <span className="text-sm font-semibold text-[#071832]">
                   Current plan: {currentPlan === "family" ? "QB Family" : "QB Solo"}
                 </span>
-                <span className="ml-2 inline-block rounded-full bg-[#1677FF] px-2 py-0.5 text-[10px] font-bold text-white uppercase">
-                  Active
+                <span
+                  className={`ml-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                    cancelAtPeriodEnd ? "bg-[#9B6B00] text-white" : "bg-[#1677FF] text-white"
+                  }`}
+                >
+                  {cancelAtPeriodEnd ? "Ends Soon" : "Active"}
                 </span>
+                {periodEndIso && (
+                  <div className="mt-1 text-xs text-[#4F5F73]">
+                    {cancelAtPeriodEnd ? "Cancels on " : "Renews on "}
+                    {new Date(periodEndIso).toLocaleDateString("en-US", {
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                    .
+                  </div>
+                )}
               </div>
-              <button
-                onClick={handleManageSubscription}
-                disabled={portalLoading}
-                className="text-sm text-[#1677FF] font-medium hover:underline"
-              >
-                {portalLoading ? "Loading..." : "Manage Subscription"}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={portalLoading}
+                  className="text-sm text-[#1677FF] font-medium hover:underline"
+                >
+                  {portalLoading ? "Loading..." : "Manage payment"}
+                </button>
+                {cancelAtPeriodEnd ? (
+                  <button
+                    onClick={() => handleCancelSubscription(false)}
+                    disabled={cancelBusy !== null}
+                    className="rounded-lg bg-[#1677FF] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                  >
+                    {cancelBusy === "resume" ? "Resuming..." : "Resume subscription"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleCancelSubscription(true)}
+                    disabled={cancelBusy !== null}
+                    className="rounded-lg border border-[#E5EAF2] px-3 py-1.5 text-xs font-medium text-[#4F5F73] hover:bg-[#F0F2F5] disabled:opacity-50"
+                  >
+                    {cancelBusy === "cancel" ? "Canceling..." : "Cancel subscription"}
+                  </button>
+                )}
+              </div>
             </div>
+            {cancelError && (
+              <div className="mt-2 text-xs text-red-600">{cancelError}</div>
+            )}
           </div>
         )}
 
