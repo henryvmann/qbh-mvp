@@ -10,7 +10,7 @@ const PUBLIC_PATHS = [
   "/handle-first", "/dashboard", "/providers", "/visits", "/goals", "/timeline",
   "/notes", "/calendar-view", "/calendar-connect", "/settings", "/account",
   "/medications", "/recordings", "/analytics", "/admin", "/portal-connect", "/care-recipients",
-  "/billing", "/privacy", "/terms", "/documents", "/health-card", "/kate", "/coverage",
+  "/billing", "/privacy", "/terms", "/pricing-terms", "/documents", "/health-card", "/kate", "/coverage",
   "/caregiver",
   "/call-test", "/call-test/results",
 ];
