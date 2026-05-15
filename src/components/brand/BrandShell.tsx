@@ -29,6 +29,7 @@ import {
   CalendarIcon,
 } from "./icons";
 import HamburgerMenu from "../qbh/HamburgerMenu";
+import LegalFooter from "./LegalFooter";
 import {
   brandTheme,
   T,
@@ -93,6 +94,7 @@ export default function BrandShell({
       >
         {children}
       </div>
+      <LegalFooter mode={mode} withBottomPad={showNav} />
       {showNav && <BottomNav mode={mode} items={navItems} />}
     </main>
   );

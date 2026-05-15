@@ -8,6 +8,7 @@ import { Search, Calendar, Building2, ShieldCheck, Brain, Phone, Eye, EyeOff } f
 import { apiFetch } from "../../lib/api";
 import { createClient } from "../../lib/supabase/client";
 import { buildConsentRecord, detectConsentMethod } from "../../lib/legal-doc-versions";
+import LegalFooter from "../../components/brand/LegalFooter";
 import { theme } from "../../components/qbh/theme";
 
 /* ── Design tokens (from greenhouse theme) ── */
@@ -2539,6 +2540,7 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
 
         <div ref={chatEndRef} />
       </div>
+      <LegalFooter mode="light" />
     </div>
   );
 }

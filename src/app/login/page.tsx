@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Inter, Lora } from "next/font/google";
 import { createClient } from "../../lib/supabase/client";
+import LegalFooter from "../../components/brand/LegalFooter";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 const austin = Lora({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
@@ -400,6 +401,7 @@ export default function LoginPage() {
           </>)}
         </div>
       </div>
+      <LegalFooter mode="light" />
     </main>
   );
 }
