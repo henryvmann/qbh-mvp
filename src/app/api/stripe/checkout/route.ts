@@ -83,6 +83,22 @@ export async function POST(req: NextRequest) {
 
   const baseUrl = process.env.QBH_BASE_URL || process.env.PUBLIC_BASE_URL || "http://localhost:3000";
 
+  // Counsel-mandated auto-renewal compliance (re: ToU comment #8):
+  //  - consent_collection.terms_of_service forces an explicit "I
+  //    agree to the Terms" checkbox on Stripe Checkout. Requires the
+  //    Terms of Service URL to be set in Stripe Dashboard →
+  //    Settings → Public details (set to /terms).
+  //  - custom_text.submit.message renders renewal + cancellation
+  //    language directly above the Subscribe button so it is the
+  //    last thing the user reads before paying. Stripe caps the
+  //    field at ~1k chars; keep it short.
+  //  - subscription_data.metadata mirrors session metadata onto the
+  //    subscription itself, so the Stripe webhook + invoices can
+  //    resolve the QBH user without re-querying the session.
+  //  - subscription_data.description shows on invoices and the
+  //    customer-facing receipt email.
+  const planName = plan === "family" ? "QB Family" : "QB Solo";
+  const planPrice = plan === "family" ? "$49" : "$24";
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
@@ -92,6 +108,16 @@ export async function POST(req: NextRequest) {
     success_url: `${baseUrl}/billing?success=true`,
     cancel_url: `${baseUrl}/billing?canceled=true`,
     metadata: { app_user_id: appUserId, plan },
+    consent_collection: { terms_of_service: "required" },
+    custom_text: {
+      submit: {
+        message: `Your ${planName} subscription renews automatically at ${planPrice}/month until you cancel. Cancel any time from Account Settings; access continues through the end of your current billing period. See full Paid Services Terms at getquarterback.com/pricing-terms.`,
+      },
+    },
+    subscription_data: {
+      description: `Quarterback Health — ${planName}`,
+      metadata: { app_user_id: appUserId, plan },
+    },
   });
 
   return NextResponse.json({ url: session.url });
