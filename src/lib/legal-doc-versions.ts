@@ -16,7 +16,7 @@
 
 export const LEGAL_DOC_VERSIONS = {
   privacy_policy: "v1-2026-05-14",
-  terms: "v1-2026-05-14",
+  terms: "v2-2026-05-20",
 } as const;
 
 export type ConsentMethod = "web" | "mobile-web" | "ios" | "android";
