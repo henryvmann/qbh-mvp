@@ -59,3 +59,4 @@ next-env.d.ts
 .env*.local
 scripts/classifier-eval/runs/*.json
 scripts/kate-eval/runs/*.json
+demo-recordings/

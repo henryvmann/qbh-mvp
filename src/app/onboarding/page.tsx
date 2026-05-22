@@ -101,20 +101,25 @@ function SystemBanner({ children }: { children: React.ReactNode }) {
 }
 
 function OptionButtons({ options, onSelect }: { options: Array<{ label: string; value: string }>; onSelect: (value: string) => void }) {
+  // Outlined style so reply options are visually distinct from
+  // user-message bubbles (which use the same brand blue as a solid
+  // fill). The hover/active shadow gives the tap affordance that
+  // was missing in the flat solid version.
   return (
     <div className="flex flex-wrap gap-2 justify-end animate-fadeIn">
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onSelect(opt.value)}
-          className="rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98]"
+          className="rounded-full px-4 py-2.5 text-sm font-semibold transition active:scale-[0.98] hover:bg-[#1677FF] hover:text-white"
           style={{
-            backgroundColor: "#1677FF",
-            border: "1px solid #1677FF",
-            color: "#FFFFFF",
+            backgroundColor: "#FFFFFF",
+            border: "1.5px solid #1677FF",
+            color: "#1677FF",
+            boxShadow: "0 2px 6px rgba(22,119,255,0.12)",
           }}
         >
-          {opt.label}
+          {opt.label} <span aria-hidden style={{ marginLeft: 4, opacity: 0.7 }}>→</span>
         </button>
       ))}
     </div>
@@ -251,7 +256,7 @@ export default function OnboardingPage() {
 
   // Manual NPI search (third step in the discovery pipeline)
   const [manualSearchQuery, setManualSearchQuery] = useState("");
-  const [manualSearchResults, setManualSearchResults] = useState<Array<{ name: string; npi: string; specialty?: string; phone?: string; address?: string }>>([]);
+  const [manualSearchResults, setManualSearchResults] = useState<Array<{ name: string; npi: string; specialty?: string; phone?: string; address?: string; city?: string | null; state?: string | null }>>([]);
   const manualSearchInputRef = useRef<HTMLInputElement>(null);
   const [manualSearching, setManualSearching] = useState(false);
   const [manualAdding, setManualAdding] = useState<string | null>(null);
@@ -449,6 +454,24 @@ export default function OnboardingPage() {
   }, [phase]);
 
   // ── Phase handlers ──
+  // Lightweight intro start: send a single Kate confirmation and
+  // advance to the quick-doctor step. The earlier path (value props
+  // → who-for → medical-context → kate-prefs → discovery-method →
+  // account-create → plaid/calendar) ran ~7 steps before the user
+  // saw any personalized output. F&F feedback was that the bank ask
+  // landed before any value was delivered. New flow: 1 doctor +
+  // small account form, then drop to the dashboard.
+  function handleIntroStart() {
+    setResponded(true);
+    addUserMessage("Let's go");
+    setTimeout(() => {
+      addKateMessage(
+        "Great. Type the name of any doctor you've seen, and I'll find them. Or skip and we'll add doctors after."
+      );
+      setTimeout(() => setPhase("quick-doctor"), 1100);
+    }, 400);
+  }
+
   function handleIntroResponse(value: string) {
     setResponded(true);
     // Three Kate-voice "what you can look forward to" lines that
@@ -843,8 +866,21 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
 
       addSystemMessage("Account created. Welcome aboard.");
 
-      // Sequenced pipeline: bank → calendar → manual → score, executed
-      // only for the steps the user opted into on the discovery-method screen.
+      // New lightweight flow: skip the discovery cascade. Doctors typed
+      // in quick-doctor are already saved (add-manual fires inline as
+      // the user taps Add). Bank + calendar are deferred to a
+      // dashboard tile so users see value before they hand over
+      // financial credentials. The legacy sequenced pipeline below is
+      // dead code on the new path but kept for resume-from-saved
+      // sessions started on the old version.
+      try {
+        localStorage.removeItem("qbh_onboarding_phase");
+        localStorage.removeItem("qbh_onboarding_flags");
+      } catch {}
+      setTimeout(() => router.push("/dashboard"), 900);
+      return;
+
+      // eslint-disable-next-line no-unreachable
       const next = advanceAfter(null);
       // Lead-in messages explain what's about to happen so the user
       // isn't dropped on a "Connect" button without context. Bank in
@@ -1265,8 +1301,10 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
 
   // ── Manual-search debounce ──
   // Single source of truth for the NPI search query; cancels stale fetches.
+  // Fires for both the legacy manual-search phase AND the new
+  // quick-doctor phase that reuses the same input.
   useEffect(() => {
-    if (phase !== "manual-search") return;
+    if (phase !== "manual-search" && phase !== "quick-doctor") return;
     const q = manualSearchQuery.trim();
     if (q.length < 2) { setManualSearchResults([]); setManualSearching(false); return; }
     let cancelled = false;
@@ -1363,22 +1401,132 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
 
         {/* ── Phase-specific interactive content ── */}
 
-        {/* Intro: response buttons */}
+        {/* Intro: single "Get started" CTA. The old simple-vs-complex
+            choice didn't branch anything meaningful downstream; users
+            still want the same setup. Lighter onboarding now starts
+            with a single doctor name and a small account form,
+            deferring bank/calendar to the dashboard. */}
         {phase === "intro" && !typing && !responded && messages.length >= 5 && (
           <OptionButtons
-            options={[
-              { label: "A few doctors, mostly simple", value: "simple" },
-              { label: "I see a lot of specialists", value: "complex" },
-            ]}
-            onSelect={(v) => { setPhase("intro-responded"); handleIntroResponse(v); }}
+            options={[{ label: "Get started", value: "go" }]}
+            onSelect={() => { setPhase("intro-responded"); handleIntroStart(); }}
           />
         )}
 
         {/* Value Props — bullets are now streamed as Kate chat
             messages in handleIntroResponse(). Only the proceed
-            button remains here. */}
+            button remains here. Kept for backward compatibility
+            with the resume flow; new signups no longer route here. */}
         {phase === "value-props" && !responded && (
           <OptionButtons options={[{ label: "Let's do it", value: "go" }]} onSelect={handleValuePropsNext} />
+        )}
+
+        {/* Quick-doctor — reuses the same NPI search as the manual-
+            search phase, but framed as a single-doctor entry point.
+            Adding a doctor is one tap; skipping is one tap. Either
+            way the user advances to account-create. */}
+        {phase === "quick-doctor" && !responded && (
+          <div className="animate-fadeIn space-y-3">
+            <div className="rounded-2xl bg-white border border-[#E5EAF2] shadow-sm p-4 space-y-3">
+              <label className="block text-xs font-semibold text-[#071832] mb-1">
+                Type a doctor you&rsquo;ve seen
+              </label>
+              <p className="text-[11px] text-[#4F5F73] mb-2">
+                Name, specialty (&ldquo;dentist&rdquo;), or &ldquo;doctor city&rdquo;. Tap Add on any match.
+              </p>
+              <input
+                ref={manualSearchInputRef}
+                type="text"
+                placeholder="e.g. Dr. Smith, dentist, cardiologist NYC"
+                value={manualSearchQuery}
+                onChange={(e) => setManualSearchQuery(e.target.value)}
+                className="w-full rounded-xl border border-[#E5EAF2] bg-white px-3 py-2.5 text-sm text-[#071832] placeholder:text-[#4F5F73] focus:outline-none focus:ring-2 focus:ring-[#1677FF]/30"
+              />
+              {manualSearching && <div className="text-xs text-[#4F5F73]">Searching…</div>}
+              {manualSearchResults.length > 0 && (
+                <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                  {manualSearchResults.slice(0, 10).map((r) => {
+                    const key = `${r.name}|${r.npi}`;
+                    const isAdded = manualAdded.has(key);
+                    return (
+                      <div key={key} className="flex items-center gap-2 rounded-xl border border-[#E5EAF2] px-3 py-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-[#071832] truncate">{r.name}</div>
+                          <div className="text-[10px] text-[#4F5F73] truncate">
+                            {[r.specialty, [r.city, r.state].filter(Boolean).join(", ") || r.address].filter(Boolean).join(" · ")}
+                          </div>
+                        </div>
+                        <button
+                          disabled={isAdded || manualAdding === key}
+                          onClick={async () => {
+                            setManualAdding(key);
+                            setManualAdded((prev) => new Set([...prev, key]));
+                            setManualSearchQuery("");
+                            setManualSearchResults([]);
+                            setTimeout(() => manualSearchInputRef.current?.focus(), 0);
+                            try {
+                              await apiFetch("/api/providers/add-manual", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  app_user_id: userId,
+                                  name: r.name,
+                                  phone_number: r.phone,
+                                  specialty: r.specialty,
+                                  npi: r.npi,
+                                }),
+                              });
+                            } finally {
+                              setManualAdding(null);
+                            }
+                          }}
+                          className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                          style={{ backgroundColor: isAdded ? "#E5EAF2" : ACCENT, color: isAdded ? "#4F5F73" : "white" }}
+                        >
+                          {isAdded ? "Added" : manualAdding === key ? "Adding…" : "Add"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {manualSearchQuery.trim().length >= 2 && !manualSearching && manualSearchResults.length === 0 && (
+                <div className="text-xs text-[#4F5F73]">No matches. Try a different spelling.</div>
+              )}
+              {manualAdded.size > 0 && (
+                <div className="rounded-lg bg-[#1677FF]/5 border border-[#1677FF]/20 px-3 py-2 text-[11px] text-[#1677FF]">
+                  {manualAdded.size} added. Add more or continue.
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setResponded(true);
+                  addUserMessage(manualAdded.size > 0 ? `Added ${manualAdded.size}` : "I'll add doctors later");
+                  setTimeout(() => {
+                    addKateMessage(
+                      manualAdded.size > 0
+                        ? "Got it. One quick step to set up your account."
+                        : "No problem. Just one quick step to set up your account."
+                    );
+                    setTimeout(() => setPhase("account-create"), 1100);
+                  }, 400);
+                }}
+                className="rounded-full px-4 py-2.5 text-sm font-semibold transition active:scale-[0.98] hover:bg-[#1677FF] hover:text-white"
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: "1.5px solid #1677FF",
+                  color: "#1677FF",
+                  boxShadow: "0 2px 6px rgba(22,119,255,0.12)",
+                }}
+              >
+                {manualAdded.size > 0 ? "Continue" : "Skip. I’ll add doctors later"}{" "}
+                <span aria-hidden style={{ marginLeft: 4, opacity: 0.7 }}>→</span>
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Who for */}
@@ -1758,6 +1906,10 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                 </div>
               )}
             </div>
+            {/* DOB + Zip kept on this short form. Sex, insurance,
+                and phone are collected later in context (insurance
+                on first booking; phone in account settings) to keep
+                the entry path as short as possible. */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Date of birth <span className="text-red-500">*</span></label>
@@ -1765,96 +1917,9 @@ async function advanceWithReview(completed: "bank" | "calendar", foundCount: num
                 {isUnder18 && <p className="mt-1 text-[10px] text-red-500">Must be 18 or older.</p>}
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Sex</label>
-                <div className="flex gap-1.5">
-                  {[{ v: "male", l: "Male" }, { v: "female", l: "Female" }, { v: "non-binary", l: "Non-binary" }, { v: "other", l: "Other" }, { v: "prefer-not-to-say", l: "Prefer not to say" }].map((o) => (
-                    <button key={o.v} type="button" onClick={() => setPatientGender(o.v)}
-                      className={`flex-1 rounded-xl py-2.5 text-[10px] font-medium transition ${patientGender === o.v ? "bg-[#1677FF] text-white" : "bg-[#F0F2F5] text-[#4F5F73] border border-[#E5EAF2]"}`}>
-                      {o.l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="relative">
-              <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Insurance provider</label>
-              <input
-                type="text"
-                value={patientInsurance}
-                onChange={(e) => {
-                  setPatientInsurance(e.target.value);
-                  setInsuranceConfirmed(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    setInsuranceConfirmed(true);
-                    (e.currentTarget as HTMLInputElement).blur();
-                  } else if (e.key === "Escape") {
-                    setInsuranceConfirmed(true);
-                  }
-                }}
-                placeholder="Start typing..."
-                className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
-              />
-              <p className="mt-1 text-[10px] text-[#4F5F73]">
-                Don&rsquo;t see yours? Just type it in — I&rsquo;ll save what you write.
-              </p>
-              {patientInsurance.length >= 2 && !KNOWN_INSURANCE.includes(patientInsurance) && !insuranceConfirmed && (
-                <div className="absolute z-10 mt-1 w-full rounded-xl border border-[#E5EAF2] bg-white shadow-lg max-h-44 overflow-y-auto">
-                  {filteredInsurance.map((ins) => (
-                    <button
-                      key={ins}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        setPatientInsurance(ins);
-                        setInsuranceConfirmed(true);
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm text-[#071832] hover:bg-[#F0F2F5]"
-                    >
-                      {ins}
-                    </button>
-                  ))}
-                  {/* Always offer the typed value as a "use this" option so
-                      carriers we don't have in KNOWN_INSURANCE aren't a
-                      dead-end. Footer-styled to distinguish from matches. */}
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setInsuranceConfirmed(true)}
-                    className="w-full px-3 py-2 text-left text-sm text-[#1677FF] font-semibold border-t border-[#E5EAF2] hover:bg-[#F0F4FF]"
-                  >
-                    Use &ldquo;{patientInsurance}&rdquo;
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Phone number</label>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  value={patientPhone}
-                  onChange={(e) => {
-                    const d = e.target.value.replace(/\D/g, "").slice(0, 10);
-                    const f = d.length === 0
-                      ? ""
-                      : d.length <= 3
-                        ? `(${d}`
-                        : d.length <= 6
-                          ? `(${d.slice(0, 3)}) ${d.slice(3)}`
-                          : `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-                    setPatientPhone(f);
-                  }}
-                  placeholder="(555) 123-4567"
-                  className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]"
-                />
-                <p className="mt-1 text-[10px] text-[#4F5F73]">So the office can call you back if need be.</p>
-              </div>
-              <div>
                 <label className="block text-[10px] font-medium text-[#4F5F73] mb-1">Zip code <span className="text-red-500">*</span></label>
                 <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="06880" maxLength={10} required className="w-full rounded-xl border border-[#E5EAF2] bg-[#F0F2F5] px-3 py-2.5 text-sm text-[#071832] focus:outline-none focus:ring-1 focus:ring-[#1677FF]" />
-                <p className="mt-1 text-[10px] text-[#4F5F73]">Helps me find the right local providers when there are multiple with the same name.</p>
+                <p className="mt-1 text-[10px] text-[#4F5F73]">Helps me find local providers.</p>
               </div>
             </div>
             {/* Email confirmation (read-only) */}

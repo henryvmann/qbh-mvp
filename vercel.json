@@ -11,10 +11,6 @@
     {
       "path": "/api/cron/notifications-drain",
       "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/vapi/test-loop",
-      "schedule": "*/5 * * * *"
     }
   ]
 }

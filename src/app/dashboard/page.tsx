@@ -25,6 +25,7 @@ import UserAvatar from "../../components/qbh/UserAvatar";
 import { apiFetch } from "../../lib/api";
 import HandleItButton from "../../components/qbh/HandleItButton";
 import BestNextStep from "../../components/qbh/BestNextStep";
+import FindMoreDoctorsTile from "../../components/qbh/FindMoreDoctorsTile";
 import ProviderLink from "../../components/qbh/ProviderLink";
 import HealthScoreRing from "../../components/qbh/HealthScoreRing";
 import StuckPrompt from "../../components/qbh/StuckPrompt";
@@ -374,6 +375,13 @@ function DashboardInner() {
           to drive intake completion. Self-hides on completion or
           dismissal. */}
       <IntakeCTA />
+
+      {/* Find-my-other-doctors — deferred bank/calendar pitch. Shown
+          to users who landed on the dashboard from the lightweight
+          onboarding (no bank or calendar source on any provider yet).
+          Self-hides once a connected source exists or the user
+          dismisses. */}
+      <FindMoreDoctorsTile />
 
       {/* Kate's #1 Suggestion — fallback Kate-suggestion slot. Only
           renders when none of walkthrough / stuck / welcome are active,

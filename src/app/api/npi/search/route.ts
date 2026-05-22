@@ -354,6 +354,33 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Collapse same-person-same-location duplicates. The NPI registry
+    // sometimes returns multiple registrations for the same provider
+    // (Type 1 individual vs Type 2 organization, prior solo + current
+    // group, etc.) under distinct NPI numbers. The earlier seen-by-
+    // number dedupe doesn't catch these. Canonical-name + city/state
+    // does — and we keep the longest name (typically the one with
+    // credentials) so the UI shows the most informative form.
+    function canonicalName(s: string): string {
+      return s
+        .toLowerCase()
+        .replace(/\b(dr|mr|ms|mrs|prof)\.?\b/g, "")
+        .replace(/\b(m\.?d\.?|d\.?o\.?|d\.?d\.?s\.?|d\.?m\.?d\.?|ph\.?d\.?|psy\.?d\.?|d\.?p\.?m\.?|o\.?d\.?|d\.?c\.?|np|pa-?c|rn|lmhc|lcsw|lmft|lpc|aprn|fnp-?bc)\b/g, "")
+        .replace(/[.,'"]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    const collapsed = new Map<string, (typeof results)[number]>();
+    for (const r of results) {
+      const key = `${canonicalName(r.name)}|${(r.city ?? "").toUpperCase()}|${(r.state ?? "").toUpperCase()}`;
+      const prev = collapsed.get(key);
+      if (!prev || r.name.length > prev.name.length) {
+        collapsed.set(key, r);
+      }
+    }
+    results.length = 0;
+    results.push(...collapsed.values());
+
     // Sort: prioritize results matching the city if one was detected
     if (city) {
       const cityUpper = city.toUpperCase();
