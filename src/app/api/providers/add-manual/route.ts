@@ -31,6 +31,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Missing app_user_id or name" }, { status: 400 });
     }
 
+    // During onboarding the client generates a UUID and calls this route
+    // *before* the auth account exists, so there is no app_users row to
+    // satisfy the providers FK yet. Upsert a stub row keyed on the client
+    // id — signup later fills in auth_user_id via the same id.
+    await supabaseAdmin
+      .from("app_users")
+      .upsert({ id: appUserId }, { onConflict: "id", ignoreDuplicates: true });
+
     // Auto-assign to the primary user when the caller didn't specify a
     // recipient. Otherwise the provider lands as "no one yet" and the
     // user has to manually reassign every newly-added provider — the
