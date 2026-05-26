@@ -201,6 +201,53 @@ export async function lookupPlaceDetails(
   return { phone: top.phone, address: top.address, placeName: top.name };
 }
 
+/**
+ * Searches Google Places for businesses near the user — no strict name
+ * validation, just nearest results for the given query + location. Used
+ * by Kate chat for "find pharmacies near me" style asks where the user
+ * isn't naming a specific business. Always pass a zip if you have one
+ * — without it Places falls back to the IP geolocation of the caller
+ * (us, on Vercel) and returns results in Iowa.
+ */
+export type NearbyPlace = {
+  name: string;
+  phone: string | null;
+  address: string | null;
+};
+
+export async function searchPlacesNearby(
+  query: string,
+  zip: string,
+  maxResults = 5
+): Promise<NearbyPlace[]> {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  if (!apiKey || !zip) return [];
+
+  try {
+    const fullQuery = `${query} near ${zip}`;
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(fullQuery)}&key=${apiKey}`;
+    const searchRes = await fetch(searchUrl, { signal: AbortSignal.timeout(8000) });
+    const searchData = await searchRes.json();
+    if (!searchData.results?.length) return [];
+
+    const top = searchData.results.slice(0, maxResults);
+    const detailed = await Promise.all(
+      top.map(async (r: { place_id?: string; name?: string; formatted_address?: string }) => {
+        if (!r.place_id) return null;
+        const detail = await fetchPlaceDetails(r.place_id, apiKey);
+        return {
+          name: detail.name || r.name || "Unknown",
+          phone: detail.phone,
+          address: detail.address || r.formatted_address || null,
+        };
+      })
+    );
+    return detailed.filter((c): c is NearbyPlace => c !== null);
+  } catch {
+    return [];
+  }
+}
+
 /** Backwards-compatible wrapper used by build-provider-registry. */
 export async function lookupPlacePhone(
   businessName: string,

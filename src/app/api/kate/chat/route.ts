@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import OpenAI from "openai";
 import { getSessionAppUserId } from "../../../../lib/auth/get-session-app-user-id";
 import { supabaseAdmin } from "../../../../lib/supabase-server";
+import { searchPlacesNearby } from "../../../../lib/google/places-lookup";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -41,14 +42,42 @@ const KATE_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "search_pharmacies",
+      description: "Find pharmacies near the user by brand or generic. Use this for ANY pharmacy lookup — never use search_providers for pharmacies, that's the NPI registry and returns wrong results. Always pass the user's zip code; if you don't have it, ask for it.",
+      parameters: {
+        type: "object",
+        properties: {
+          brand: { type: "string", description: "Pharmacy brand or keyword, e.g. 'CVS', 'Walgreens', 'pharmacy' for any chain" },
+          zip: { type: "string", description: "User's 5-digit zip code — required for location bias" },
+        },
+        required: ["brand", "zip"],
+      },
+    },
+  },
 ];
+
+async function searchPharmacies(brand: string, zip: string): Promise<string> {
+  const results = await searchPlacesNearby(brand, zip, 5);
+  if (results.length === 0) {
+    return `No ${brand} results found near ${zip}. The user may need to try a different brand or check their zip.`;
+  }
+  return results
+    .map((r) => {
+      const phone = r.phone ? r.phone.replace(/^\+1/, "").replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3") : "no phone listed";
+      return `- ${r.name}${r.address ? ` — ${r.address}` : ""} — ${phone}`;
+    })
+    .join("\n");
+}
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
 };
 
-async function buildContext(appUserId: string): Promise<{ text: string; commStyle: string; proactivity: string }> {
+async function buildContext(appUserId: string): Promise<{ text: string; commStyle: string; proactivity: string; zip: string | null }> {
   const [providersRes, userRes, eventsRes, visitsRes, attemptsRes] = await Promise.all([
     // Pull every active provider regardless of source. The earlier
     // .neq("provider_type", "calendar") filter excluded calendar-
@@ -153,6 +182,17 @@ async function buildContext(appUserId: string): Promise<{ text: string; commStyl
 
   const displayName = profile.display_name || profile.nickname || profile.full_name || "Unknown";
 
+  // Address surfacing. Without this Kate falls back to IP geolocation
+  // (often the Vercel POP, not the user) and answers location questions
+  // with the wrong city. patient_profile.address can be a free-form
+  // string or split fields — render whatever is present.
+  const addressParts: string[] = [];
+  if (profile.address) addressParts.push(String(profile.address));
+  if (profile.city && profile.state) addressParts.push(`${profile.city}, ${profile.state}`);
+  if (profile.zip_code) addressParts.push(String(profile.zip_code));
+  const userAddress = addressParts.join(" · ");
+  const userZip = profile.zip_code ? String(profile.zip_code) : null;
+
   // Load survey answers from auth user metadata
   let surveyContext = "";
   try {
@@ -190,6 +230,7 @@ async function buildContext(appUserId: string): Promise<{ text: string; commStyl
 
   const text = `User's name: ${displayName} (full name: ${profile.full_name || "Unknown"})
 Today: ${now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+${userAddress ? `User's home address: ${userAddress}` : "User's home address: not on file"}
 ${focusSection}${healthHistorySection}${surveyContext}
 Providers on file:
 ${providerList || "No providers yet."}
@@ -199,7 +240,7 @@ ${recentPastEvents ? `Recent past appointments:\n${recentPastEvents}` : ""}
 ${callHistoryLines ? `\nRecent calls (Kate calling provider offices on the user's behalf):\n${callHistoryLines}\nIf the user asks "when did we last call X" or anything similar, answer from this list directly.\n` : ""}
 `;
 
-  return { text, commStyle, proactivity };
+  return { text, commStyle, proactivity, zip: userZip };
 }
 
 export async function POST(req: NextRequest) {
@@ -237,7 +278,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { text: context, commStyle, proactivity } = await buildContext(appUserId);
+  const { text: context, commStyle, proactivity, zip: userZip } = await buildContext(appUserId);
 
   const pageContext = {
     "/dashboard": "The user is on their main dashboard — they can see their health score, overdue providers, and upcoming appointments.",
@@ -324,7 +365,8 @@ CRISIS: If the user mentions self-harm, suicide, hurting themselves or someone e
 
 What you DO:
 - Book appointments — tell them to tap "Book" on the provider card, or offer to call the office for them
-- Find new providers via search_providers tool. USE IT for any "find me a..." request. Search by specialty + their location (${userLocation || "unknown"}). Return real results.
+- Find new providers via search_providers tool. USE IT for any "find me a..." request. Search by specialty + their location (${userZip ? `zip ${userZip}` : userLocation || "unknown"}). Return real results.
+- Find pharmacies via search_pharmacies tool — pass their zip ${userZip ? `(${userZip})` : "(ask them if you don't have it)"} and the brand they want. NEVER use search_providers for pharmacies.
 - Summarize what's pending and what's caught up
 - Prepare for upcoming appointments — specific questions based on the provider and their history
 - Follow up after appointments with one open question ("how'd that go?") — not a check-in script
@@ -336,6 +378,8 @@ What you DON'T do:
 - Diagnose or give medical advice — defer to the doctor
 - Prescribe visit frequencies ("every 6 months") — that's between them and their doctor
 - Invent provider names not in their data
+- Invent or fabricate pharmacy/business names, phone numbers, or addresses. Only return what tools returned. If you didn't run a tool, you don't know.
+- Roleplay actions you cannot actually take. You CANNOT make phone calls from this chat — never write "[Calling...]" or "I'm calling now" or "Please hold on while I call." If the user asks you to call a doctor, point them to the Call button on that provider's card on the Providers page. If the user asks you to call a pharmacy or anywhere else, say plainly: "I can't dial from chat yet — I can pull up the numbers so you can call, or text your doctor's office for a transfer." Never simulate a call you didn't make.
 - Suggest lifestyle interventions (water, exercise, diet) — redirect: "good conversation for your doctor"
 - Lecture, moralize, or push positivity
 
@@ -375,6 +419,18 @@ Guidelines:
         const args = JSON.parse(fn.arguments);
         const searchLocation = args.location || userLocation || "";
         const results = await searchProviders(args.query, searchLocation);
+        toolMessages.push({
+          role: "tool",
+          tool_call_id: tc.id,
+          content: results,
+        });
+      } else if (fn?.name === "search_pharmacies") {
+        const args = JSON.parse(fn.arguments);
+        const zip = String(args.zip || userZip || "").trim();
+        const brand = String(args.brand || "pharmacy").trim();
+        const results = zip
+          ? await searchPharmacies(brand, zip)
+          : "No zip code available for the user — ask them for one before searching.";
         toolMessages.push({
           role: "tool",
           tool_call_id: tc.id,
