@@ -429,28 +429,76 @@ export default function OnboardingPage() {
   }, [phase]);
 
   // ── Phase: Intro ──
+  // The intro is a "WOW reel": five oversized Kate lines that tell
+  // the user what's actually possible (calls, discovery, tracking,
+  // prep, follow-up) before we ask for anything. The earlier intro
+  // funneled to "add one doctor" without explaining what we do, so
+  // F&F testers were adding a doctor but never finding the magic.
+  // Returning users skip the reel via localStorage flag.
   useEffect(() => {
     if (phase !== "intro") return;
-    // System banner lands FIRST so the user sees "this is the
-    // onboarding chat" before Kate even starts. Without it, a user
-    // who clicked "Let's get started" sees a blank screen + a typing
-    // indicator and may think something is wrong.
-    setMessages([{ id: "s0", sender: "system", content: "Let's get you onboarded." }]);
-    const t1 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k0", sender: "kate", content: "Welcome. I'm Kate, your care coordinator. Let's get you set up." }]);
-    }, 700);
-    const t2 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k1", sender: "kate", content: "I'll run point on your healthcare from here. Calls, scheduling, follow-ups, paperwork. Right now I just need to learn a little about you so I can hit the ground running." }]);
-    }, 2300);
-    const t3 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k2", sender: "kate", content: "Some people have a few doctors and don't think about it much. Others are juggling specialists, scans, refills, follow-ups." }]);
-    }, 3900);
-    const t4 = setTimeout(() => {
-      setMessages((prev) => [...prev, { id: "k3", sender: "kate", content: "Wherever you fall on that spectrum, I'll meet you there. Just let me know:" }]);
+
+    const seen = typeof window !== "undefined" && localStorage.getItem("qbh_onboarding_intro_seen") === "1";
+
+    if (seen) {
+      // Short re-entry: one Kate greeting, then the Get started button
+      // appears via the standard messages.length >= 5 gate. We pad to
+      // five so the gate fires immediately.
+      setMessages([
+        { id: "s0", sender: "system", content: "Welcome back." },
+        { id: "k0", sender: "kate", content: "Picking up where we left off. Let's get one doctor in so I can start helping." },
+        { id: "k1", sender: "kate", content: " " },
+        { id: "k2", sender: "kate", content: " " },
+        { id: "k3", sender: "kate", content: " " },
+      ]);
       setTyping(false);
-    }, 5300);
+      return;
+    }
+
+    // Each WOW message is a headline + subtitle. The headline renders
+    // large; the subtitle is regular weight, slightly muted.
+    function wow(headline: string, subtitle: string): React.ReactNode {
+      return (
+        <div>
+          <div className="text-xl sm:text-2xl font-bold leading-tight" style={{ color: "#071832" }}>
+            {headline}
+          </div>
+          <div className="text-sm mt-1.5" style={{ color: TEXT_SECONDARY }}>
+            {subtitle}
+          </div>
+        </div>
+      );
+    }
+
+    const reel: { id: string; content: React.ReactNode }[] = [
+      { id: "wow1", content: wow("I'll call your doctors for you.", "Booking, rescheduling, refill chases. You tell me what you need, I dial.") },
+      { id: "wow2", content: wow("I'll find every provider you've seen.", "Connect your calendar or bank and I'll pull them in automatically.") },
+      { id: "wow3", content: wow("I'll keep your care on the rails.", "Overdue visits, pending referrals, who's waiting on what.") },
+      { id: "wow4", content: wow("I'll prep you before appointments.", "Real questions to ask, based on your history with that doctor.") },
+      { id: "wow5", content: wow("And I'll handle the follow-up after.", "Notes, records, next steps. The things that fall through the cracks.") },
+    ];
+
+    setMessages([{ id: "s0", sender: "system", content: "Let's get you onboarded." }]);
     setTyping(true);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    // First WOW lands at 700ms, then one every 2.5s.
+    const CADENCE = 2500;
+    const START = 700;
+    reel.forEach((m, i) => {
+      timeouts.push(setTimeout(() => {
+        setMessages((prev) => [...prev, { id: m.id, sender: "kate", content: m.content }]);
+      }, START + i * CADENCE));
+    });
+    // Final transition line after the reel, then drop the typing
+    // indicator so the Get-started button can render.
+    const TRANSITION_AT = START + reel.length * CADENCE;
+    timeouts.push(setTimeout(() => {
+      setMessages((prev) => [...prev, { id: "k-transition", sender: "kate", content: "Let's start with one doctor so I can show you." }]);
+      setTyping(false);
+    }, TRANSITION_AT));
+
+    return () => { timeouts.forEach(clearTimeout); };
   }, [phase]);
 
   // ── Phase handlers ──
@@ -463,10 +511,11 @@ export default function OnboardingPage() {
   // small account form, then drop to the dashboard.
   function handleIntroStart() {
     setResponded(true);
+    try { localStorage.setItem("qbh_onboarding_intro_seen", "1"); } catch {}
     addUserMessage("Let's go");
     setTimeout(() => {
       addKateMessage(
-        "Great. Type the name of any doctor you've seen, and I'll find them. Or skip and we'll add doctors after."
+        "Type the name of any doctor you've seen and I'll pull them in. Or skip and we'll add them after."
       );
       setTimeout(() => setPhase("quick-doctor"), 1100);
     }, 400);
