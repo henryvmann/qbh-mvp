@@ -60,6 +60,10 @@ export default function LegalFooter({
         Privacy
       </Link>
       <span aria-hidden style={{ opacity: 0.6 }}>·</span>
+      <Link href="/consumer-health-privacy" style={{ color: t.muted, textDecoration: "none" }}>
+        Consumer Health Data
+      </Link>
+      <span aria-hidden style={{ opacity: 0.6 }}>·</span>
       <Link href="/terms" style={{ color: t.muted, textDecoration: "none" }}>
         Terms
       </Link>

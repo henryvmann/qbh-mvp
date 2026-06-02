@@ -1,20 +1,12 @@
 "use client";
 
-/**
- * /privacy/print — printable rendering of the Privacy Policy.
- * Counsel's placeholder for "[INSERT LINK THAT LAUNCHES PRINTABLE
- * VERSION]" points here. Auto-fires window.print() on mount and
- * strips chrome via print stylesheet.
- */
-
 import { useEffect } from "react";
-import PrivacyContent from "../PrivacyContent";
+import ConsumerHealthPrivacyContent from "../ConsumerHealthPrivacyContent";
 
 const LAST_UPDATED = "May 31, 2026";
 
-export default function PrivacyPrintPage() {
+export default function ConsumerHealthPrivacyPrintPage() {
   useEffect(() => {
-    // Slight delay so layout settles before the print dialog opens.
     const t = setTimeout(() => window.print(), 350);
     return () => clearTimeout(t);
   }, []);
@@ -32,9 +24,7 @@ export default function PrivacyPrintPage() {
             font-size: 90%;
             color: #444;
           }
-          /* Strip the global LegalFooter from print */
           footer { display: none !important; }
-          /* Strip the legacy entity prefixes */
           a[href^="#"]::after { content: ""; }
         }
         body { background: white; }
@@ -43,8 +33,8 @@ export default function PrivacyPrintPage() {
         <div className="mx-auto max-w-3xl px-6 py-10 print:py-0 print:px-0">
           <div className="print-hide mb-6 flex items-center justify-between text-xs">
             <span className="text-[#4F5F73]">
-              Printing the Quarterback Health Privacy Policy. If the print dialog didn&rsquo;t
-              open, use your browser&rsquo;s print command.
+              Printing the Quarterback Health Consumer Health Data Privacy Policy. If the print
+              dialog didn&rsquo;t open, use your browser&rsquo;s print command.
             </span>
             <button
               onClick={() => window.print()}
@@ -53,7 +43,7 @@ export default function PrivacyPrintPage() {
               Print
             </button>
           </div>
-          <PrivacyContent lastUpdated={LAST_UPDATED} />
+          <ConsumerHealthPrivacyContent lastUpdated={LAST_UPDATED} />
         </div>
       </div>
     </>
